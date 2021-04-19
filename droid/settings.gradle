@@ -1,0 +1,3 @@
+include ':droidnet'
+include ':app'
+rootProject.name = "Droid"
