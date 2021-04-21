@@ -3,7 +3,7 @@
 #include "native-log.h"
 
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
-    ALOGI("OnLoad");
+    ALOGI("DROID_OnLoad");
     return JNI_VERSION_1_4;
 }
 
