@@ -7,7 +7,7 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.contoso.droidnet.DroidNet
-import com.contoso.droidvr.BaseActivity
+import com.contoso.droidvr.OVRActivity
 import kotlin.system.exitProcess
 
 private const val TAG = "TAG1"
@@ -17,7 +17,7 @@ private var permissionCount = 0
 private const val READ_EXTERNAL_STORAGE_PERMISSION_ID = 1
 private const val WRITE_EXTERNAL_STORAGE_PERMISSION_ID = 2
 
-class MainActivity : BaseActivity() {
+class MainActivity : OVRActivity() {
     external fun stringFromJNI(): String
 
     companion object {

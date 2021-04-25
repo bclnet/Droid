@@ -22,14 +22,7 @@ private var audioTrack: AudioTrack? = null
 private var audioRecord: AudioRecord? = null
 
 // Activity lifecycle
-external fun onCreate(
-    obj: Activity,
-    commandLineParams: String,
-    refresh: Long,
-    ss: Float,
-    msaa: Long
-): Long
-
+external fun onCreate(obj: Activity, commandLineParams: String, refresh: Long, ss: Float, msaa: Long): Long
 external fun onStart(handle: Long, obj: Any)
 external fun onResume(handle: Long)
 external fun onPause(handle: Long)
@@ -41,9 +34,9 @@ external fun onSurfaceCreated(handle: Long, s: Surface?)
 external fun onSurfaceChanged(handle: Long, s: Surface?)
 external fun onSurfaceDestroyed(handle: Long)
 
-open class BaseActivity : Activity(), SurfaceHolder.Callback {
+open class OVRActivity : Activity(), SurfaceHolder.Callback {
     companion object {
-        var instance: BaseActivity? = null
+        var instance: OVRActivity? = null
 
         init {
             System.loadLibrary("droidvr")
