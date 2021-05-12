@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Framework\Console.cpp" />
+    <None Remove="Framework\Console.h" />
+    <None Remove="Framework\EventLoop.cpp" />
+    <None Remove="Framework\EventLoop.h" />
+    <None Remove="Framework\KeyInput.cpp" />
+    <None Remove="Framework\KeyInput.h" />
+    <None Remove="Framework\Session.cpp" />
+    <None Remove="Framework\Session.h" />
+    <None Remove="Framework\Session_local.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Droid.Core\Droid.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="CollisionModel\" />
+  </ItemGroup>
+
+</Project>

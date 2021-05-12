@@ -1,8 +1,15 @@
 #include <jni.h>
+#include <unistd.h>
+#include "app.h"
 #include "native-log.h"
 
 void AppMain(int argc, char **argv) {
     ALOGI("APPMAIN");
+    while (true) {
+        App_FrameSetup(0, 0, 60);
+        usleep(1000);
+        App_SubmitFrame();
+    }
 }
 
 void Sys_AddMouseMoveEvent(int dx, int dy) {
