@@ -1,0 +1,9 @@
+<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ import namespace="System" #>
+<#@ output extension=".cs" #>
+<# String type = null; #>
+namespace Droid.Core
+{
+<# type = "float"; #>
+<#@ include file="Curve.cs.t4" #>
+}

@@ -9,6 +9,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Core\math\Curve.cs" />
+    <Compile Remove="Core\math\Interpolate.cs" />
+    <Compile Remove="Core\math\Lcp.cs" />
+    <Compile Remove="Core\math\Ode.cs" />
+    <Compile Remove="Core\math\Plane.cs" />
+    <Compile Remove="Core\math\Pluecker.cs" />
+    <Compile Remove="Core\math\Polynomial.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Core\math\Plane.cpp" />
     <None Remove="Framework\Console.cpp" />
     <None Remove="Framework\Console.h" />
     <None Remove="Framework\EventLoop.cpp" />
@@ -21,7 +32,22 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Core\math\Extrapolate.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Extrapolate.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Core\math\Extrapolate.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Extrapolate.cs</LastGenOutput>
+    </None>
   </ItemGroup>
 
 </Project>
