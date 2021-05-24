@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <Compile Remove="Core\math\Curve.cs" />
-    <Compile Remove="Core\math\Interpolate.cs" />
     <Compile Remove="Core\math\Lcp.cs" />
     <Compile Remove="Core\math\Ode.cs" />
     <Compile Remove="Core\math\Plane.cs" />
@@ -19,6 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Core\math\Curve.cs.t4" />
+    <None Remove="Core\math\Curve.tt" />
     <None Remove="Core\math\Plane.cpp" />
     <None Remove="Framework\Console.cpp" />
     <None Remove="Framework\Console.h" />
@@ -41,9 +42,18 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Extrapolate.tt</DependentUpon>
     </Compile>
+    <Compile Update="Core\math\Interpolate.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Interpolate.tt</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Core\math\Interpolate.tt">
+      <LastGenOutput>Interpolate.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
     <None Update="Core\math\Extrapolate.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>Extrapolate.cs</LastGenOutput>

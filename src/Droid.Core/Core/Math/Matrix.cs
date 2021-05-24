@@ -2323,6 +2323,19 @@ namespace Droid.Core
                 return mat.AsSpan(index * numColumns);
             }
         }
+
+//        public static implicit operator MatrixX(MatrixX a)
+//        {
+//            SetSize(a.numRows, a.numColumns);
+//#if         MATX_SIMD
+//            SIMDProcessor->Copy16(mat, a.mat, a.numRows * a.numColumns);
+//#else
+//            memcpy(mat, a.mat, a.numRows * a.numColumns * sizeof(float));
+//#endif
+//            tempIndex = 0;
+//            return this;
+//        }
+
         public static MatrixX operator *(MatrixX _, float a)
         {
             var m = new MatrixX();

@@ -5,4 +5,8 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Droid.Core\Droid.Core.csproj" />
+  </ItemGroup>
+
 </Project>

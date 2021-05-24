@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Droid.Core;
+using System;
 
 namespace Droid
 {
@@ -7,6 +8,7 @@ namespace Droid
         static void Main(string[] args)
         {
             Console.WriteLine("Hello World!");
+            MatrixX.Test();
         }
     }
 }
