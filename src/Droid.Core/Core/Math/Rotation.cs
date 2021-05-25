@@ -157,9 +157,9 @@ namespace Droid.Core
             float yy = y * y2, yz = y * z2, zz = z * z2;
             float wx = c * x2, wy = c * y2, wz = c * z2;
 
-            axis.mat0.x = 1.0f - (yy + zz); axis.mat0.y = xy - wz; axis.mat0.z = xz + wy;
-            axis.mat1.x = xy + wz; axis.mat1.y = 1.0f - (xx + zz); axis.mat1.z = yz - wx;
-            axis.mat2.x = xz - wy; axis.mat2.y = yz + wx; axis.mat2.z = 1.0f - (xx + yy);
+            axis.mat[0].x = 1.0f - (yy + zz); axis.mat[0].y = xy - wz; axis.mat[0].z = xz + wy;
+            axis.mat[1].x = xy + wz; axis.mat[1].y = 1.0f - (xx + zz); axis.mat[1].z = yz - wx;
+            axis.mat[2].x = xz - wy; axis.mat[2].y = yz + wx; axis.mat[2].z = 1.0f - (xx + yy);
 
             axisValid = true;
 

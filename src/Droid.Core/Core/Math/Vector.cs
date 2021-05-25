@@ -1131,10 +1131,33 @@ namespace Droid.Core
 
     public struct VectorX
     {
+        static float[] temp = new float[VECX_MAX_TEMP + 4];   // used to store intermediate results
+        static int tempPtr = 0; // (float *) ( ( (intptr_t)temp + 15 ) & ~15 );              // pointer to 16 byte aligned temporary memory
+        static int tempIndex = 0;               // index into memory pool, wraps around
         const int VECX_MAX_TEMP = 1024;
         static unsafe int VECX_QUAD(int x) => ((x + 3) & ~3) * sizeof(float);
         void VECX_CLEAREND() { var s = size; while (s < ((s + 3) & ~3)) p[pi + s++] = 0.0f; }
         internal static float[] VECX_ALLOCA(int n) => new float[VECX_QUAD(n)];
+
+        int size;                   // size of the vector
+        int alloced;                // if -1 p points to data set with SetData
+        internal float[] p;                       // memory the vector is stored
+        internal int pi;
+
+        internal unsafe void SetTempSize(int size)
+        {
+            this.size = size;
+            alloced = (size + 3) & ~3;
+            Debug.Assert(alloced < VECX_MAX_TEMP);
+            if (tempIndex + alloced > VECX_MAX_TEMP)
+                tempIndex = 0;
+            p = temp;
+            fixed (float* p = &temp[0])
+                tempPtr = (int)((ulong)p + 15) & ~15;
+            pi = tempPtr + tempIndex;
+            tempIndex += alloced;
+            VECX_CLEAREND();
+        }
 
         //public VectorX()
         //{
@@ -1152,6 +1175,18 @@ namespace Droid.Core
             size = alloced = 0;
             p = null; pi = 0;
             SetData(length, data);
+        }
+        public VectorX(VectorX a)
+        {
+            size = alloced = 0;
+            p = null; pi = 0;
+            SetSize(a.size);
+#if VECX_SIMD
+            SIMDProcessor.Copy16(p, a.p, a.size);
+#else
+            Array.Copy(a.p, p, a.size);
+#endif
+            tempIndex = 0;
         }
 
         public float this[int index]
@@ -1453,30 +1488,6 @@ namespace Droid.Core
         {
             var dimension = Dimension;
             return ToFloatPtr(array => StringX.FloatArrayToString(array, dimension, precision));
-        }
-
-        int size;                   // size of the vector
-        int alloced;                // if -1 p points to data set with SetData
-        internal float[] p;                       // memory the vector is stored
-        internal int pi;
-
-        static float[] temp = new float[VECX_MAX_TEMP + 4];   // used to store intermediate results
-        static int tempPtr = 0; // (float *) ( ( (intptr_t)temp + 15 ) & ~15 );              // pointer to 16 byte aligned temporary memory
-        static int tempIndex = 0;               // index into memory pool, wraps around
-
-        internal unsafe void SetTempSize(int size)
-        {
-            this.size = size;
-            alloced = (size + 3) & ~3;
-            Debug.Assert(alloced < VECX_MAX_TEMP);
-            if (tempIndex + alloced > VECX_MAX_TEMP)
-                tempIndex = 0;
-            p = temp;
-            fixed (float* p = &temp[0])
-                tempPtr = (int)((ulong)p + 15) & ~15;
-            pi = tempPtr + tempIndex;
-            tempIndex += alloced;
-            VECX_CLEAREND();
         }
     }
 

@@ -14,55 +14,54 @@ namespace Droid.Core
     {
         public Matrix2x2(Vector2 x, Vector2 y)
         {
-            mat0.x = x.x; mat0.y = x.y;
-            mat1.x = y.x; mat1.y = y.y;
+            mat = new Vector2[2];
+            mat[0].x = x.x; mat[0].y = x.y;
+            mat[1].x = y.x; mat[1].y = y.y;
         }
         public Matrix2x2(float xx, float xy, float yx, float yy)
         {
-            mat0.x = xx; mat0.y = xy;
-            mat1.x = yx; mat1.y = yy;
+            mat = new Vector2[2];
+            mat[0].x = xx; mat[0].y = xy;
+            mat[1].x = yx; mat[1].y = yy;
         }
         public Matrix2x2(float[][] src)
         {
-            mat0 = new Vector2(src[0][0], src[0][1]);
-            mat1 = new Vector2(src[1][0], src[1][1]);
+            mat = new Vector2[2];
+            mat[0] = new Vector2(src[0][0], src[0][1]);
+            mat[1] = new Vector2(src[1][0], src[1][1]);
         }
+        internal unsafe Matrix2x2(Vector2[] mat)
+            => this.mat = mat;
 
-        public unsafe ref Vector2 this[int index]
-        {
-            get
-            {
-                fixed (Vector2* mat = &mat0)
-                    return ref mat[index];
-            }
-        }
+        public ref Vector2 this[int index]
+            => ref mat[index];
 
         public static Matrix2x2 operator -(Matrix2x2 _)
             => new(
-            -_.mat0.x, -_.mat0.y,
-            -_.mat1.x, -_.mat1.y);
+            -_.mat[0].x, -_.mat[0].y,
+            -_.mat[1].x, -_.mat[1].y);
         public static Matrix2x2 operator *(Matrix2x2 _, float a)
             => new(
-            _.mat0.x * a, _.mat0.y * a,
-            _.mat1.x * a, _.mat1.y * a);
+            _.mat[0].x * a, _.mat[0].y * a,
+            _.mat[1].x * a, _.mat[1].y * a);
         public static Vector2 operator *(Matrix2x2 _, Vector2 vec)
             => new(
-            _.mat0.x * vec.x + _.mat0.y * vec.y,
-            _.mat1.x * vec.x + _.mat1.y * vec.y);
+            _.mat[0].x * vec.x + _.mat[0].y * vec.y,
+            _.mat[1].x * vec.x + _.mat[1].y * vec.y);
         public static Matrix2x2 operator *(Matrix2x2 _, Matrix2x2 a)
             => new(
-            _.mat0.x * a.mat0.x + _.mat0.y * a.mat1.x,
-            _.mat0.x * a.mat0.y + _.mat0.y * a.mat1.y,
-            _.mat1.x * a.mat0.x + _.mat1.y * a.mat1.x,
-            _.mat1.x * a.mat0.y + _.mat1.y * a.mat1.y);
+            _.mat[0].x * a.mat[0].x + _.mat[0].y * a.mat[1].x,
+            _.mat[0].x * a.mat[0].y + _.mat[0].y * a.mat[1].y,
+            _.mat[1].x * a.mat[0].x + _.mat[1].y * a.mat[1].x,
+            _.mat[1].x * a.mat[0].y + _.mat[1].y * a.mat[1].y);
         public static Matrix2x2 operator +(Matrix2x2 _, Matrix2x2 a)
             => new(
-            _.mat0.x + a.mat0.x, _.mat0.y + a.mat0.y,
-            _.mat1.x + a.mat1.x, _.mat1.y + a.mat1.y);
+            _.mat[0].x + a.mat[0].x, _.mat[0].y + a.mat[0].y,
+            _.mat[1].x + a.mat[1].x, _.mat[1].y + a.mat[1].y);
         public static Matrix2x2 operator -(Matrix2x2 _, Matrix2x2 a)
             => new(
-            _.mat0.x - a.mat0.x, _.mat0.y - a.mat0.y,
-            _.mat1.x - a.mat1.x, _.mat1.y - a.mat1.y);
+            _.mat[0].x - a.mat[0].x, _.mat[0].y - a.mat[0].y,
+            _.mat[1].x - a.mat[1].x, _.mat[1].y - a.mat[1].y);
 
         public static Matrix2x2 operator *(float a, Matrix2x2 mat)
             => mat * a;
@@ -71,15 +70,15 @@ namespace Droid.Core
 
         public bool Compare(Matrix2x2 a)                        // exact compare, no epsilon
         {
-            if (mat0.Compare(a.mat0) &&
-                mat1.Compare(a.mat1))
+            if (mat[0].Compare(a.mat[0]) &&
+                mat[1].Compare(a.mat[1]))
                 return true;
             return false;
         }
         public bool Compare(Matrix2x2 a, float epsilon)   // compare with epsilon
         {
-            if (mat0.Compare(a.mat0, epsilon) &&
-                mat1.Compare(a.mat1, epsilon))
+            if (mat[0].Compare(a.mat[0], epsilon) &&
+                mat[1].Compare(a.mat[1], epsilon))
                 return true;
             return false;
         }
@@ -90,40 +89,40 @@ namespace Droid.Core
         public override bool Equals(object obj)
             => obj is Matrix2x2 q && Compare(q);
         public override int GetHashCode()
-            => mat0.GetHashCode();
+            => mat[0].GetHashCode();
 
         public void Zero()
         {
-            mat0.Zero();
-            mat1.Zero();
+            mat[0].Zero();
+            mat[1].Zero();
         }
         public void Identity()
             => this = identity;
         public bool IsIdentity(float epsilon = Matrix_.MATRIX_EPSILON)
             => Compare(identity, epsilon);
         public bool IsSymmetric(float epsilon = Matrix_.MATRIX_EPSILON)
-            => MathX.Fabs(mat0.y - mat1.x) < epsilon;
+            => MathX.Fabs(mat[0].y - mat[1].x) < epsilon;
         public bool IsDiagonal(float epsilon = Matrix_.MATRIX_EPSILON)
         {
-            if (MathX.Fabs(mat0.y) > epsilon ||
-                MathX.Fabs(mat1.x) > epsilon)
+            if (MathX.Fabs(mat[0].y) > epsilon ||
+                MathX.Fabs(mat[1].x) > epsilon)
                 return false;
             return true;
         }
 
         public float Trace()
-            => mat0.x + mat1.y;
+            => mat[0].x + mat[1].y;
         public float Determinant()
-            => mat0.x * mat1.y - mat0.y * mat1.x;
+            => mat[0].x * mat[1].y - mat[0].y * mat[1].x;
         public Matrix2x2 Transpose()   // returns transpose
             => new(
-            mat0.x, mat1.x,
-            mat0.y, mat1.y);
+            mat[0].x, mat[1].x,
+            mat[0].y, mat[1].y);
         public Matrix2x2 TransposeSelf()
         {
-            var tmp = mat0.y;
-            mat0.y = mat1.x;
-            mat1.x = tmp;
+            var tmp = mat[0].y;
+            mat[0].y = mat[1].x;
+            mat[1].x = tmp;
             return this;
         }
         public Matrix2x2 Inverse()      // returns the inverse ( m * m.Inverse() = identity )
@@ -137,16 +136,16 @@ namespace Droid.Core
         {
             // 2+4 = 6 multiplications
             //		 1 division
-            var det = mat0.x * mat1.y - mat0.y * mat1.x;
+            var det = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
             if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
                 return false;
 
             var invDet = 1.0f / det;
-            var a = mat0.x;
-            mat0.x = mat1.y * invDet;
-            mat0.y = -mat0.y * invDet;
-            mat1.x = -mat1.x * invDet;
-            mat1.y = a * invDet;
+            var a = mat[0].x;
+            mat[0].x = mat[1].y * invDet;
+            mat[0].y = -mat[0].y * invDet;
+            mat[1].x = -mat[1].x * invDet;
+            mat[1].y = a * invDet;
             return true;
         }
         public Matrix2x2 InverseFast()  // returns the inverse ( m * m.Inverse() = identity )
@@ -160,16 +159,16 @@ namespace Droid.Core
         {
             // 2+4 = 6 multiplications
             //		 1 division
-            var det = mat0.x * mat1.y - mat0.y * mat1.x;
+            var det = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
             if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
                 return false;
 
             var invDet = 1.0f / det;
-            var a = mat0.x;
-            mat0.x = mat1.y * invDet;
-            mat0.y = -mat0.y * invDet;
-            mat1.x = -mat1.x * invDet;
-            mat1.y = a * invDet;
+            var a = mat[0].x;
+            mat[0].x = mat[1].y * invDet;
+            mat[0].y = -mat[0].y * invDet;
+            mat[1].x = -mat[1].x * invDet;
+            mat[1].y = a * invDet;
             return true;
         }
 
@@ -177,12 +176,11 @@ namespace Droid.Core
             => 4;
 
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
-            => mat0.ToFloatPtr(callback);
+            => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
 
-        internal Vector2 mat0;
-        internal Vector2 mat1;
+        internal Vector2[] mat;
 
         public static Matrix2x2 zero = new(new Vector2(0, 0), new Vector2(0, 0));
         public static Matrix2x2 identity = new(new Vector2(1, 0), new Vector2(0, 1));
@@ -193,78 +191,80 @@ namespace Droid.Core
     {
         public Matrix3x3(Vector3 x, Vector3 y, Vector3 z)
         {
-            mat0.x = x.x; mat0.y = x.y; mat0.z = x.z;
-            mat1.x = y.x; mat1.y = y.y; mat1.z = y.z;
-            mat2.x = z.x; mat2.y = z.y; mat2.z = z.z;
+            mat = new Vector3[3];
+            mat[0].x = x.x; mat[0].y = x.y; mat[0].z = x.z;
+            mat[1].x = y.x; mat[1].y = y.y; mat[1].z = y.z;
+            mat[2].x = z.x; mat[2].y = z.y; mat[2].z = z.z;
         }
         public Matrix3x3(float xx, float xy, float xz, float yx, float yy, float yz, float zx, float zy, float zz)
         {
-            mat0.x = xx; mat0.y = xy; mat0.z = xz;
-            mat1.x = yx; mat1.y = yy; mat1.z = yz;
-            mat2.x = zx; mat2.y = zy; mat2.z = zz;
+            mat = new Vector3[3];
+            mat[0].x = xx; mat[0].y = xy; mat[0].z = xz;
+            mat[1].x = yx; mat[1].y = yy; mat[1].z = yz;
+            mat[2].x = zx; mat[2].y = zy; mat[2].z = zz;
         }
         public unsafe Matrix3x3(float[][] src)
         {
-            mat0 = new Vector3(src[0][0], src[0][1], src[0][2]);
-            mat1 = new Vector3(src[1][0], src[1][1], src[1][2]);
-            mat2 = new Vector3(src[2][0], src[2][1], src[2][2]);
+            mat = new Vector3[3];
+            mat[0] = new Vector3(src[0][0], src[0][1], src[0][2]);
+            mat[1] = new Vector3(src[1][0], src[1][1], src[1][2]);
+            mat[2] = new Vector3(src[2][0], src[2][1], src[2][2]);
         }
+        internal unsafe Matrix3x3(Vector3[] mat)
+            => this.mat = mat;
 
-        public unsafe ref Vector3 this[int index]
-        {
-            get
-            {
-                fixed (Vector3* mat = &mat0)
-                    return ref mat[index];
-            }
-        }
+        public ref Vector3 this[int index]
+            => ref mat[index];
 
         public static Matrix3x3 operator -(Matrix3x3 _)
             => new(
-            -_.mat0.x, -_.mat0.y, -_.mat0.z,
-            -_.mat1.x, -_.mat1.y, -_.mat1.z,
-            -_.mat2.x, -_.mat2.y, -_.mat2.z);
+            -_.mat[0].x, -_.mat[0].y, -_.mat[0].z,
+            -_.mat[1].x, -_.mat[1].y, -_.mat[1].z,
+            -_.mat[2].x, -_.mat[2].y, -_.mat[2].z);
         public static Matrix3x3 operator *(Matrix3x3 _, float a)
             => new(
-            _.mat0.x * a, _.mat0.y * a, _.mat0.z * a,
-            _.mat1.x * a, _.mat1.y * a, _.mat1.z * a,
-            _.mat2.x * a, _.mat2.y * a, _.mat2.z * a);
+            _.mat[0].x * a, _.mat[0].y * a, _.mat[0].z * a,
+            _.mat[1].x * a, _.mat[1].y * a, _.mat[1].z * a,
+            _.mat[2].x * a, _.mat[2].y * a, _.mat[2].z * a);
         public static Vector3 operator *(Matrix3x3 _, Vector3 vec)
             => new(
-            _.mat0.x * vec.x + _.mat1.x * vec.y + _.mat2.x * vec.z,
-            _.mat0.y * vec.x + _.mat1.y * vec.y + _.mat2.y * vec.z,
-            _.mat0.z * vec.x + _.mat1.z * vec.y + _.mat2.z * vec.z);
+            _.mat[0].x * vec.x + _.mat[1].x * vec.y + _.mat[2].x * vec.z,
+            _.mat[0].y * vec.x + _.mat[1].y * vec.y + _.mat[2].y * vec.z,
+            _.mat[0].z * vec.x + _.mat[1].z * vec.y + _.mat[2].z * vec.z);
 
         public static unsafe Matrix3x3 operator *(Matrix3x3 _, Matrix3x3 a)
         {
-            Matrix3x3 dst;
-            var m1Ptr = (float*)&_;
-            var m2Ptr = (float*)&a;
-            var dstPtr = (float*)&dst;
-            for (var i = 0; i < 3; i++)
+            Matrix3x3 dst = new();
+            fixed (void* __ = &_.mat[0], a_ = &a.mat[0], dst_ = &dst.mat[0])
             {
-                for (var j = 0; j < 3; j++)
+                var m1Ptr = (float*)__;
+                var m2Ptr = (float*)a_;
+                var dstPtr = (float*)dst_;
+                for (var i = 0; i < 3; i++)
                 {
-                    *dstPtr = m1Ptr[0] * m2Ptr[0 * 3 + j]
-                            + m1Ptr[1] * m2Ptr[1 * 3 + j]
-                            + m1Ptr[2] * m2Ptr[2 * 3 + j];
-                    dstPtr++;
+                    for (var j = 0; j < 3; j++)
+                    {
+                        *dstPtr = m1Ptr[0] * m2Ptr[0 * 3 + j]
+                                + m1Ptr[1] * m2Ptr[1 * 3 + j]
+                                + m1Ptr[2] * m2Ptr[2 * 3 + j];
+                        dstPtr++;
+                    }
+                    m1Ptr += 3;
                 }
-                m1Ptr += 3;
+                return dst;
             }
-            return dst;
         }
 
         public static Matrix3x3 operator +(Matrix3x3 _, Matrix3x3 a)
             => new(
-            _.mat0.x + a.mat0.x, _.mat0.y + a.mat0.y, _.mat0.z + a.mat0.z,
-            _.mat1.x + a.mat1.x, _.mat1.y + a.mat1.y, _.mat1.z + a.mat1.z,
-            _.mat2.x + a.mat2.x, _.mat2.y + a.mat2.y, _.mat2.z + a.mat2.z);
+            _.mat[0].x + a.mat[0].x, _.mat[0].y + a.mat[0].y, _.mat[0].z + a.mat[0].z,
+            _.mat[1].x + a.mat[1].x, _.mat[1].y + a.mat[1].y, _.mat[1].z + a.mat[1].z,
+            _.mat[2].x + a.mat[2].x, _.mat[2].y + a.mat[2].y, _.mat[2].z + a.mat[2].z);
         public static Matrix3x3 operator -(Matrix3x3 _, Matrix3x3 a)
             => new(
-            _.mat0.x - a.mat0.x, _.mat0.y - a.mat0.y, _.mat0.z - a.mat0.z,
-            _.mat1.x - a.mat1.x, _.mat1.y - a.mat1.y, _.mat1.z - a.mat1.z,
-            _.mat2.x - a.mat2.x, _.mat2.y - a.mat2.y, _.mat2.z - a.mat2.z);
+            _.mat[0].x - a.mat[0].x, _.mat[0].y - a.mat[0].y, _.mat[0].z - a.mat[0].z,
+            _.mat[1].x - a.mat[1].x, _.mat[1].y - a.mat[1].y, _.mat[1].z - a.mat[1].z,
+            _.mat[2].x - a.mat[2].x, _.mat[2].y - a.mat[2].y, _.mat[2].z - a.mat[2].z);
 
         public static Matrix3x3 operator *(float a, Matrix3x3 mat)
             => mat * a;
@@ -273,17 +273,17 @@ namespace Droid.Core
 
         public bool Compare(Matrix3x3 a)                       // exact compare, no epsilon
         {
-            if (mat0.Compare(a.mat0) &&
-                mat1.Compare(a.mat1) &&
-                mat2.Compare(a.mat2))
+            if (mat[0].Compare(a.mat[0]) &&
+                mat[1].Compare(a.mat[1]) &&
+                mat[2].Compare(a.mat[2]))
                 return true;
             return false;
         }
         public bool Compare(Matrix3x3 a, float epsilon)  // compare with epsilon
         {
-            if (mat0.Compare(a.mat0, epsilon) &&
-                mat1.Compare(a.mat1, epsilon) &&
-                mat2.Compare(a.mat2, epsilon))
+            if (mat[0].Compare(a.mat[0], epsilon) &&
+                mat[1].Compare(a.mat[1], epsilon) &&
+                mat[2].Compare(a.mat[2], epsilon))
                 return true;
             return false;
         }
@@ -294,32 +294,29 @@ namespace Droid.Core
         public override bool Equals(object obj)
             => obj is Matrix3x3 q && Compare(q);
         public override int GetHashCode()
-            => mat0.GetHashCode();
+            => mat[0].GetHashCode();
 
         public unsafe void Zero()
-        {
-            fixed (void* p = &this)
-                U.memset(p, 0, sizeof(Matrix3x3));
-        }
+            => Array.Clear(mat, 0, 3);
         public void Identity()
             => this = identity;
         public bool IsIdentity(float epsilon = Matrix_.MATRIX_EPSILON)
             => Compare(identity, epsilon);
         public bool IsSymmetric(float epsilon = Matrix_.MATRIX_EPSILON)
         {
-            if (MathX.Fabs(mat0.y - mat1.x) > epsilon) return false;
-            if (MathX.Fabs(mat0.z - mat2.x) > epsilon) return false;
-            if (MathX.Fabs(mat1.z - mat2.y) > epsilon) return false;
+            if (MathX.Fabs(mat[0].y - mat[1].x) > epsilon) return false;
+            if (MathX.Fabs(mat[0].z - mat[2].x) > epsilon) return false;
+            if (MathX.Fabs(mat[1].z - mat[2].y) > epsilon) return false;
             return true;
         }
         public bool IsDiagonal(float epsilon = Matrix_.MATRIX_EPSILON)
         {
-            if (MathX.Fabs(mat0.y) > epsilon ||
-                MathX.Fabs(mat0.z) > epsilon ||
-                MathX.Fabs(mat1.x) > epsilon ||
-                MathX.Fabs(mat1.z) > epsilon ||
-                MathX.Fabs(mat2.x) > epsilon ||
-                MathX.Fabs(mat2.y) > epsilon)
+            if (MathX.Fabs(mat[0].y) > epsilon ||
+                MathX.Fabs(mat[0].z) > epsilon ||
+                MathX.Fabs(mat[1].x) > epsilon ||
+                MathX.Fabs(mat[1].z) > epsilon ||
+                MathX.Fabs(mat[2].x) > epsilon ||
+                MathX.Fabs(mat[2].y) > epsilon)
                 return false;
             return true;
         }
@@ -328,62 +325,62 @@ namespace Droid.Core
 
         public void ProjectVector(Vector3 src, out Vector3 dst)
         {
-            dst.x = src * mat0;
-            dst.y = src * mat1;
-            dst.z = src * mat2;
+            dst.x = src * mat[0];
+            dst.y = src * mat[1];
+            dst.z = src * mat[2];
         }
         public void UnprojectVector(Vector3 src, out Vector3 dst)
-            => dst = mat0 * src.x + mat1 * src.y + mat2 * src.z;
+            => dst = mat[0] * src.x + mat[1] * src.y + mat[2] * src.z;
 
         public bool FixDegeneracies()    // fix degenerate axial cases
         {
-            var r = mat0.FixDegenerateNormal();
-            r |= mat1.FixDegenerateNormal();
-            r |= mat2.FixDegenerateNormal();
+            var r = mat[0].FixDegenerateNormal();
+            r |= mat[1].FixDegenerateNormal();
+            r |= mat[2].FixDegenerateNormal();
             return r;
         }
         public bool FixDenormals()       // change tiny numbers to zero
         {
-            var r = mat0.FixDenormals();
-            r |= mat1.FixDenormals();
-            r |= mat2.FixDenormals();
+            var r = mat[0].FixDenormals();
+            r |= mat[1].FixDenormals();
+            r |= mat[2].FixDenormals();
             return r;
         }
 
         public float Trace()
-            => mat0.x + mat1.y + mat2.z;
+            => mat[0].x + mat[1].y + mat[2].z;
         public float Determinant()
         {
-            var det2_12_01 = mat1.x * mat2.y - mat1.y * mat2.x;
-            var det2_12_02 = mat1.x * mat2.z - mat1.z * mat2.x;
-            var det2_12_12 = mat1.y * mat2.z - mat1.z * mat2.y;
-            return mat0.x * det2_12_12 - mat0.y * det2_12_02 + mat0.z * det2_12_01;
+            var det2_12_01 = mat[1].x * mat[2].y - mat[1].y * mat[2].x;
+            var det2_12_02 = mat[1].x * mat[2].z - mat[1].z * mat[2].x;
+            var det2_12_12 = mat[1].y * mat[2].z - mat[1].z * mat[2].y;
+            return mat[0].x * det2_12_12 - mat[0].y * det2_12_02 + mat[0].z * det2_12_01;
         }
         public Matrix3x3 OrthoNormalize()
         {
             var ortho = this;
-            ortho.mat0.Normalize();
-            ortho.mat2.Cross(mat0, mat1); ortho.mat2.Normalize();
-            ortho.mat1.Cross(mat2, mat0); ortho.mat1.Normalize();
+            ortho.mat[0].Normalize();
+            ortho.mat[2].Cross(mat[0], mat[1]); ortho.mat[2].Normalize();
+            ortho.mat[1].Cross(mat[2], mat[0]); ortho.mat[1].Normalize();
             return ortho;
         }
         public Matrix3x3 OrthoNormalizeSelf()
         {
-            mat0.Normalize();
-            mat2.Cross(mat0, mat1); mat2.Normalize();
-            mat1.Cross(mat2, mat0); mat1.Normalize();
+            mat[0].Normalize();
+            mat[2].Cross(mat[0], mat[1]); mat[2].Normalize();
+            mat[1].Cross(mat[2], mat[0]); mat[1].Normalize();
             return this;
         }
         public Matrix3x3 Transpose()   // returns transpose
             => new(
-            mat0.x, mat1.x, mat2.x,
-            mat0.y, mat1.y, mat2.y,
-            mat0.z, mat1.z, mat2.z);
+            mat[0].x, mat[1].x, mat[2].x,
+            mat[0].y, mat[1].y, mat[2].y,
+            mat[0].z, mat[1].z, mat[2].z);
         public Matrix3x3 TransposeSelf()
         {
-            var tmp0 = mat0.y; mat0.y = mat1.x; mat1.x = tmp0;
-            var tmp1 = mat0.z; mat0.z = mat2.x; mat2.x = tmp1;
-            var tmp2 = mat1.z; mat1.z = mat2.y; mat2.y = tmp2;
+            var tmp0 = mat[0].y; mat[0].y = mat[1].x; mat[1].x = tmp0;
+            var tmp1 = mat[0].z; mat[0].z = mat[2].x; mat[2].x = tmp1;
+            var tmp2 = mat[1].z; mat[1].z = mat[2].y; mat[2].y = tmp2;
             return this;
         }
 
@@ -398,26 +395,26 @@ namespace Droid.Core
         {
             // 18+3+9 = 30 multiplications
             //			 1 division
-            Matrix3x3 inverse;
-            inverse.mat0.x = mat1.y * mat2.z - mat1.z * mat2.y;
-            inverse.mat1.x = mat1.z * mat2.x - mat1.x * mat2.z;
-            inverse.mat2.x = mat1.x * mat2.y - mat1.y * mat2.x;
+            Matrix3x3 inverse = new();
+            inverse.mat[0].x = mat[1].y * mat[2].z - mat[1].z * mat[2].y;
+            inverse.mat[1].x = mat[1].z * mat[2].x - mat[1].x * mat[2].z;
+            inverse.mat[2].x = mat[1].x * mat[2].y - mat[1].y * mat[2].x;
 
-            var det = mat0.x * inverse.mat0.x + mat0.y * inverse.mat1.x + mat0.z * inverse.mat2.x;
+            var det = mat[0].x * inverse.mat[0].x + mat[0].y * inverse.mat[1].x + mat[0].z * inverse.mat[2].x;
             if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
                 return false;
 
-            inverse.mat0.y = mat0.z * mat2.y - mat0.y * mat2.z;
-            inverse.mat0.z = mat0.y * mat1.z - mat0.z * mat1.y;
-            inverse.mat1.y = mat0.x * mat2.z - mat0.z * mat2.x;
-            inverse.mat1.z = mat0.z * mat1.x - mat0.x * mat1.z;
-            inverse.mat2.y = mat0.y * mat2.x - mat0.x * mat2.y;
-            inverse.mat2.z = mat0.x * mat1.y - mat0.y * mat1.x;
+            inverse.mat[0].y = mat[0].z * mat[2].y - mat[0].y * mat[2].z;
+            inverse.mat[0].z = mat[0].y * mat[1].z - mat[0].z * mat[1].y;
+            inverse.mat[1].y = mat[0].x * mat[2].z - mat[0].z * mat[2].x;
+            inverse.mat[1].z = mat[0].z * mat[1].x - mat[0].x * mat[1].z;
+            inverse.mat[2].y = mat[0].y * mat[2].x - mat[0].x * mat[2].y;
+            inverse.mat[2].z = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
 
             var invDet = 1.0f / det;
-            mat0.x = inverse.mat0.x * invDet; mat0.y = inverse.mat0.y * invDet; mat0.z = inverse.mat0.z * invDet;
-            mat1.x = inverse.mat1.x * invDet; mat1.y = inverse.mat1.y * invDet; mat1.z = inverse.mat1.z * invDet;
-            mat2.x = inverse.mat2.x * invDet; mat2.y = inverse.mat2.y * invDet; mat2.z = inverse.mat2.z * invDet;
+            mat[0].x = inverse.mat[0].x * invDet; mat[0].y = inverse.mat[0].y * invDet; mat[0].z = inverse.mat[0].z * invDet;
+            mat[1].x = inverse.mat[1].x * invDet; mat[1].y = inverse.mat[1].y * invDet; mat[1].z = inverse.mat[1].z * invDet;
+            mat[2].x = inverse.mat[2].x * invDet; mat[2].y = inverse.mat[2].y * invDet; mat[2].z = inverse.mat[2].z * invDet;
 
             return true;
         }
@@ -432,53 +429,53 @@ namespace Droid.Core
         {
             // 18+3+9 = 30 multiplications
             //			 1 division
-            Matrix3x3 inverse;
-            inverse.mat0.x = mat1.y * mat2.z - mat1.z * mat2.y;
-            inverse.mat1.x = mat1.z * mat2.x - mat1.x * mat2.z;
-            inverse.mat2.x = mat1.x * mat2.y - mat1.y * mat2.x;
+            Matrix3x3 inverse = new();
+            inverse.mat[0].x = mat[1].y * mat[2].z - mat[1].z * mat[2].y;
+            inverse.mat[1].x = mat[1].z * mat[2].x - mat[1].x * mat[2].z;
+            inverse.mat[2].x = mat[1].x * mat[2].y - mat[1].y * mat[2].x;
 
-            var det = mat0.x * inverse.mat0.x + mat0.y * inverse.mat1.x + mat0.z * inverse.mat2.x;
+            var det = mat[0].x * inverse.mat[0].x + mat[0].y * inverse.mat[1].x + mat[0].z * inverse.mat[2].x;
             if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
                 return false;
 
-            inverse.mat0.y = mat0.z * mat2.y - mat0.y * mat2.z;
-            inverse.mat0.z = mat0.y * mat1.z - mat0.z * mat1.y;
-            inverse.mat1.y = mat0.x * mat2.z - mat0.z * mat2.x;
-            inverse.mat1.z = mat0.z * mat1.x - mat0.x * mat1.z;
-            inverse.mat2.y = mat0.y * mat2.x - mat0.x * mat2.y;
-            inverse.mat2.z = mat0.x * mat1.y - mat0.y * mat1.x;
+            inverse.mat[0].y = mat[0].z * mat[2].y - mat[0].y * mat[2].z;
+            inverse.mat[0].z = mat[0].y * mat[1].z - mat[0].z * mat[1].y;
+            inverse.mat[1].y = mat[0].x * mat[2].z - mat[0].z * mat[2].x;
+            inverse.mat[1].z = mat[0].z * mat[1].x - mat[0].x * mat[1].z;
+            inverse.mat[2].y = mat[0].y * mat[2].x - mat[0].x * mat[2].y;
+            inverse.mat[2].z = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
 
             var invDet = 1.0f / det;
-            mat0.x = inverse.mat0.x * invDet; mat0.y = inverse.mat0.y * invDet; mat0.z = inverse.mat0.z * invDet;
-            mat1.x = inverse.mat1.x * invDet; mat1.y = inverse.mat1.y * invDet; mat1.z = inverse.mat1.z * invDet;
-            mat2.x = inverse.mat2.x * invDet; mat2.y = inverse.mat2.y * invDet; mat2.z = inverse.mat2.z * invDet;
+            mat[0].x = inverse.mat[0].x * invDet; mat[0].y = inverse.mat[0].y * invDet; mat[0].z = inverse.mat[0].z * invDet;
+            mat[1].x = inverse.mat[1].x * invDet; mat[1].y = inverse.mat[1].y * invDet; mat[1].z = inverse.mat[1].z * invDet;
+            mat[2].x = inverse.mat[2].x * invDet; mat[2].y = inverse.mat[2].y * invDet; mat[2].z = inverse.mat[2].z * invDet;
 
             return true;
         }
         public Matrix3x3 TransposeMultiply(Matrix3x3 b)
             => new(
-            mat0.x * b.mat0.x + mat1.x * b.mat1.x + mat2.x * b.mat2.x,
-            mat0.x * b.mat0.y + mat1.x * b.mat1.y + mat2.x * b.mat2.y,
-            mat0.x * b.mat0.z + mat1.x * b.mat1.z + mat2.x * b.mat2.z,
-            mat0.y * b.mat0.x + mat1.y * b.mat1.x + mat2.y * b.mat2.x,
-            mat0.y * b.mat0.y + mat1.y * b.mat1.y + mat2.y * b.mat2.y,
-            mat0.y * b.mat0.z + mat1.y * b.mat1.z + mat2.y * b.mat2.z,
-            mat0.z * b.mat0.x + mat1.z * b.mat1.x + mat2.z * b.mat2.x,
-            mat0.z * b.mat0.y + mat1.z * b.mat1.y + mat2.z * b.mat2.y,
-            mat0.z * b.mat0.z + mat1.z * b.mat1.z + mat2.z * b.mat2.z);
+            mat[0].x * b.mat[0].x + mat[1].x * b.mat[1].x + mat[2].x * b.mat[2].x,
+            mat[0].x * b.mat[0].y + mat[1].x * b.mat[1].y + mat[2].x * b.mat[2].y,
+            mat[0].x * b.mat[0].z + mat[1].x * b.mat[1].z + mat[2].x * b.mat[2].z,
+            mat[0].y * b.mat[0].x + mat[1].y * b.mat[1].x + mat[2].y * b.mat[2].x,
+            mat[0].y * b.mat[0].y + mat[1].y * b.mat[1].y + mat[2].y * b.mat[2].y,
+            mat[0].y * b.mat[0].z + mat[1].y * b.mat[1].z + mat[2].y * b.mat[2].z,
+            mat[0].z * b.mat[0].x + mat[1].z * b.mat[1].x + mat[2].z * b.mat[2].x,
+            mat[0].z * b.mat[0].y + mat[1].z * b.mat[1].y + mat[2].z * b.mat[2].y,
+            mat[0].z * b.mat[0].z + mat[1].z * b.mat[1].z + mat[2].z * b.mat[2].z);
 
         public Matrix3x3 InertiaTranslate(float mass, Vector3 centerOfMass, Vector3 translation)
         {
             var newCenter = centerOfMass + translation;
 
-            Matrix3x3 m;
-            m.mat0.x = mass * ((centerOfMass.y * centerOfMass.y + centerOfMass.z * centerOfMass.z) - (newCenter.y * newCenter.y + newCenter.z * newCenter.z));
-            m.mat1.y = mass * ((centerOfMass.x * centerOfMass.x + centerOfMass.z * centerOfMass.z) - (newCenter.x * newCenter.x + newCenter.z * newCenter.z));
-            m.mat2.z = mass * ((centerOfMass.x * centerOfMass.x + centerOfMass.y * centerOfMass.y) - (newCenter.x * newCenter.x + newCenter.y * newCenter.y));
+            Matrix3x3 m = new();
+            m.mat[0].x = mass * ((centerOfMass.y * centerOfMass.y + centerOfMass.z * centerOfMass.z) - (newCenter.y * newCenter.y + newCenter.z * newCenter.z));
+            m.mat[1].y = mass * ((centerOfMass.x * centerOfMass.x + centerOfMass.z * centerOfMass.z) - (newCenter.x * newCenter.x + newCenter.z * newCenter.z));
+            m.mat[2].z = mass * ((centerOfMass.x * centerOfMass.x + centerOfMass.y * centerOfMass.y) - (newCenter.x * newCenter.x + newCenter.y * newCenter.y));
 
-            m.mat0.y = m.mat1.x = mass * (newCenter.x * newCenter.y - centerOfMass.x * centerOfMass.y);
-            m.mat1.z = m.mat2.y = mass * (newCenter.y * newCenter.z - centerOfMass.y * centerOfMass.z);
-            m.mat0.z = m.mat2.x = mass * (newCenter.x * newCenter.z - centerOfMass.x * centerOfMass.z);
+            m.mat[0].y = m.mat[1].x = mass * (newCenter.x * newCenter.y - centerOfMass.x * centerOfMass.y);
+            m.mat[1].z = m.mat[2].y = mass * (newCenter.y * newCenter.z - centerOfMass.y * centerOfMass.z);
+            m.mat[0].z = m.mat[2].x = mass * (newCenter.x * newCenter.z - centerOfMass.x * centerOfMass.z);
 
             return this + m;
         }
@@ -486,14 +483,14 @@ namespace Droid.Core
         {
             var newCenter = centerOfMass + translation;
 
-            Matrix3x3 m;
-            m.mat0.x = mass * ((centerOfMass.y * centerOfMass.y + centerOfMass.z * centerOfMass.z) - (newCenter.y * newCenter.y + newCenter.z * newCenter.z));
-            m.mat1.y = mass * ((centerOfMass.x * centerOfMass.x + centerOfMass.z * centerOfMass.z) - (newCenter.x * newCenter.x + newCenter.z * newCenter.z));
-            m.mat2.z = mass * ((centerOfMass.x * centerOfMass.x + centerOfMass.y * centerOfMass.y) - (newCenter.x * newCenter.x + newCenter.y * newCenter.y));
+            Matrix3x3 m = new();
+            m.mat[0].x = mass * ((centerOfMass.y * centerOfMass.y + centerOfMass.z * centerOfMass.z) - (newCenter.y * newCenter.y + newCenter.z * newCenter.z));
+            m.mat[1].y = mass * ((centerOfMass.x * centerOfMass.x + centerOfMass.z * centerOfMass.z) - (newCenter.x * newCenter.x + newCenter.z * newCenter.z));
+            m.mat[2].z = mass * ((centerOfMass.x * centerOfMass.x + centerOfMass.y * centerOfMass.y) - (newCenter.x * newCenter.x + newCenter.y * newCenter.y));
 
-            m.mat0.y = m.mat1.x = mass * (newCenter.x * newCenter.y - centerOfMass.x * centerOfMass.y);
-            m.mat1.z = m.mat2.y = mass * (newCenter.y * newCenter.z - centerOfMass.y * centerOfMass.z);
-            m.mat0.z = m.mat2.x = mass * (newCenter.x * newCenter.z - centerOfMass.x * centerOfMass.z);
+            m.mat[0].y = m.mat[1].x = mass * (newCenter.x * newCenter.y - centerOfMass.x * centerOfMass.y);
+            m.mat[1].z = m.mat[2].y = mass * (newCenter.y * newCenter.z - centerOfMass.y * centerOfMass.z);
+            m.mat[0].z = m.mat[2].x = mass * (newCenter.x * newCenter.z - centerOfMass.x * centerOfMass.z);
 
             this += m;
 
@@ -514,7 +511,7 @@ namespace Droid.Core
 
         public Angles ToAngles()
         {
-            var sp = mat0.z;
+            var sp = mat[0].z;
             // cap off our sin value so that we don't get any NANs
             if (sp > 1.0f) sp = 1.0f;
             else if (sp < -1.0f) sp = -1.0f;
@@ -526,13 +523,13 @@ namespace Droid.Core
             if (cp > 8192.0f * MathX.FLT_EPSILON)
             {
                 angles.pitch = MathX.RAD2DEG(theta);
-                angles.yaw = MathX.RAD2DEG((float)Math.Atan2(mat0.y, mat0.x));
-                angles.roll = MathX.RAD2DEG((float)Math.Atan2(mat1.z, mat2.z));
+                angles.yaw = MathX.RAD2DEG((float)Math.Atan2(mat[0].y, mat[0].x));
+                angles.roll = MathX.RAD2DEG((float)Math.Atan2(mat[1].z, mat[2].z));
             }
             else
             {
                 angles.pitch = MathX.RAD2DEG(theta);
-                angles.yaw = MathX.RAD2DEG(-(float)Math.Atan2(mat1.x, mat1.y));
+                angles.yaw = MathX.RAD2DEG(-(float)Math.Atan2(mat[1].x, mat[1].y));
                 angles.roll = 0;
             }
             return angles;
@@ -543,22 +540,22 @@ namespace Droid.Core
             float t, s;
             var q = new Quat();
 
-            var trace = mat0.x + mat1.y + mat2.z;
+            var trace = mat[0].x + mat[1].y + mat[2].z;
             if (trace > 0.0f)
             {
                 t = trace + 1.0f;
                 s = MathX.InvSqrt(t) * 0.5f;
 
                 q.w = s * t;
-                q.x = (mat2.y - mat1.z) * s;
-                q.y = (mat0.z - mat2.x) * s;
-                q.z = (mat1.x - mat0.y) * s;
+                q.x = (mat[2].y - mat[1].z) * s;
+                q.y = (mat[0].z - mat[2].x) * s;
+                q.z = (mat[1].x - mat[0].y) * s;
             }
             else
             {
                 var i = 0;
-                if (mat1.y > mat0.x) i = 1;
-                if (mat2.z > this[i][i]) i = 2;
+                if (mat[1].y > mat[0].x) i = 1;
+                if (mat[2].z > this[i][i]) i = 2;
                 var j = _ToQuat_next[i];
                 var k = _ToQuat_next[j];
 
@@ -585,22 +582,22 @@ namespace Droid.Core
             var r = new Rotation();
             float t, s;
 
-            var trace = mat0.x + mat1.y + mat2.z;
+            var trace = mat[0].x + mat[1].y + mat[2].z;
             if (trace > 0.0f)
             {
                 t = trace + 1.0f;
                 s = MathX.InvSqrt(t) * 0.5f;
 
                 r.angle = s * t;
-                r.vec.x = (mat2.y - mat1.z) * s;
-                r.vec.y = (mat0.z - mat2.x) * s;
-                r.vec.z = (mat1.x - mat0.y) * s;
+                r.vec.x = (mat[2].y - mat[1].z) * s;
+                r.vec.y = (mat[0].z - mat[2].x) * s;
+                r.vec.z = (mat[1].x - mat[0].y) * s;
             }
             else
             {
                 var i = 0;
-                if (mat1.y > mat0.x) i = 1;
-                if (mat2.z > this[i][i]) i = 2;
+                if (mat[1].y > mat[0].x) i = 1;
+                if (mat[2].z > this[i][i]) i = 2;
                 var j = _ToRotation_next[i];
                 var k = _ToRotation_next[j];
 
@@ -633,9 +630,9 @@ namespace Droid.Core
         public Matrix4x4 ToMat4()
             // NOTE: Matrix3x3 is transposed because it is column-major
             => new(
-                mat0.x, mat1.x, mat2.x, 0.0f,
-                mat0.y, mat1.y, mat2.y, 0.0f,
-                mat0.z, mat1.z, mat2.z, 0.0f,
+                mat[0].x, mat[1].x, mat[2].x, 0.0f,
+                mat[0].y, mat[1].y, mat[2].y, 0.0f,
+                mat[0].z, mat[1].z, mat[2].z, 0.0f,
                 0.0f, 0.0f, 0.0f, 1.0f);
         public Vector3 ToAngularVelocity()
         {
@@ -643,28 +640,27 @@ namespace Droid.Core
             return rotation.GetVec() * MathX.DEG2RAD(rotation.GetAngle());
         }
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
-            => mat0.ToFloatPtr(callback);
+            => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
 
         public void TransposeMultiply(Matrix3x3 inv, Matrix3x3 b, out Matrix3x3 dst)
         {
-            dst.mat0.x = inv.mat0.x * b.mat0.x + inv.mat1.x * b.mat1.x + inv.mat2.x * b.mat2.x;
-            dst.mat0.y = inv.mat0.x * b.mat0.y + inv.mat1.x * b.mat1.y + inv.mat2.x * b.mat2.y;
-            dst.mat0.z = inv.mat0.x * b.mat0.z + inv.mat1.x * b.mat1.z + inv.mat2.x * b.mat2.z;
-            dst.mat1.x = inv.mat0.y * b.mat0.x + inv.mat1.y * b.mat1.x + inv.mat2.y * b.mat2.x;
-            dst.mat1.y = inv.mat0.y * b.mat0.y + inv.mat1.y * b.mat1.y + inv.mat2.y * b.mat2.y;
-            dst.mat1.z = inv.mat0.y * b.mat0.z + inv.mat1.y * b.mat1.z + inv.mat2.y * b.mat2.z;
-            dst.mat2.x = inv.mat0.z * b.mat0.x + inv.mat1.z * b.mat1.x + inv.mat2.z * b.mat2.x;
-            dst.mat2.y = inv.mat0.z * b.mat0.y + inv.mat1.z * b.mat1.y + inv.mat2.z * b.mat2.y;
-            dst.mat2.z = inv.mat0.z * b.mat0.z + inv.mat1.z * b.mat1.z + inv.mat2.z * b.mat2.z;
+            dst = new();
+            dst.mat[0].x = inv.mat[0].x * b.mat[0].x + inv.mat[1].x * b.mat[1].x + inv.mat[2].x * b.mat[2].x;
+            dst.mat[0].y = inv.mat[0].x * b.mat[0].y + inv.mat[1].x * b.mat[1].y + inv.mat[2].x * b.mat[2].y;
+            dst.mat[0].z = inv.mat[0].x * b.mat[0].z + inv.mat[1].x * b.mat[1].z + inv.mat[2].x * b.mat[2].z;
+            dst.mat[1].x = inv.mat[0].y * b.mat[0].x + inv.mat[1].y * b.mat[1].x + inv.mat[2].y * b.mat[2].x;
+            dst.mat[1].y = inv.mat[0].y * b.mat[0].y + inv.mat[1].y * b.mat[1].y + inv.mat[2].y * b.mat[2].y;
+            dst.mat[1].z = inv.mat[0].y * b.mat[0].z + inv.mat[1].y * b.mat[1].z + inv.mat[2].y * b.mat[2].z;
+            dst.mat[2].x = inv.mat[0].z * b.mat[0].x + inv.mat[1].z * b.mat[1].x + inv.mat[2].z * b.mat[2].x;
+            dst.mat[2].y = inv.mat[0].z * b.mat[0].y + inv.mat[1].z * b.mat[1].y + inv.mat[2].z * b.mat[2].y;
+            dst.mat[2].z = inv.mat[0].z * b.mat[0].z + inv.mat[1].z * b.mat[1].z + inv.mat[2].z * b.mat[2].z;
         }
         public Matrix3x3 SkewSymmetric(Vector3 src)
             => new(0.0f, -src.z, src.y, src.z, 0.0f, -src.x, -src.y, src.x, 0.0f);
 
-        internal Vector3 mat0;
-        internal Vector3 mat1;
-        internal Vector3 mat2;
+        internal Vector3[] mat;
 
         public static Matrix3x3 zero = new(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0));
         public static Matrix3x3 identity = new(new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1));
@@ -675,122 +671,125 @@ namespace Droid.Core
     {
         public Matrix4x4(Vector4 x, Vector4 y, Vector4 z, Vector4 w)
         {
-            mat0 = x;
-            mat1 = y;
-            mat2 = z;
-            mat3 = w;
+            mat = new Vector4[4];
+            mat[0] = x;
+            mat[1] = y;
+            mat[2] = z;
+            mat[3] = w;
         }
         public Matrix4x4(float xx, float xy, float xz, float xw,
             float yx, float yy, float yz, float yw,
             float zx, float zy, float zz, float zw,
             float wx, float wy, float wz, float ww)
         {
-            mat0.x = xx; mat0.y = xy; mat0.z = xz; mat0.w = xw;
-            mat1.x = yx; mat1.y = yy; mat1.z = yz; mat1.w = yw;
-            mat2.x = zx; mat2.y = zy; mat2.z = zz; mat2.w = zw;
-            mat3.x = wx; mat3.y = wy; mat3.z = wz; mat3.w = ww;
+            mat = new Vector4[4];
+            mat[0].x = xx; mat[0].y = xy; mat[0].z = xz; mat[0].w = xw;
+            mat[1].x = yx; mat[1].y = yy; mat[1].z = yz; mat[1].w = yw;
+            mat[2].x = zx; mat[2].y = zy; mat[2].z = zz; mat[2].w = zw;
+            mat[3].x = wx; mat[3].y = wy; mat[3].z = wz; mat[3].w = ww;
         }
         public Matrix4x4(Matrix3x3 rotation, Vector3 translation)
         {
             // NOTE: Matrix3x3 is transposed because it is column-major
-            mat0.x = rotation.mat0.x;
-            mat0.y = rotation.mat1.x;
-            mat0.z = rotation.mat2.x;
-            mat0.w = translation.x;
-            mat1.x = rotation.mat0.y;
-            mat1.y = rotation.mat1.y;
-            mat1.z = rotation.mat2.y;
-            mat1.w = translation.y;
-            mat2.x = rotation.mat0.z;
-            mat2.y = rotation.mat1.z;
-            mat2.z = rotation.mat2.z;
-            mat2.w = translation.z;
-            mat3.x = 0.0f;
-            mat3.y = 0.0f;
-            mat3.z = 0.0f;
-            mat3.w = 1.0f;
+            mat = new Vector4[4];
+            mat[0].x = rotation.mat[0].x;
+            mat[0].y = rotation.mat[1].x;
+            mat[0].z = rotation.mat[2].x;
+            mat[0].w = translation.x;
+            mat[1].x = rotation.mat[0].y;
+            mat[1].y = rotation.mat[1].y;
+            mat[1].z = rotation.mat[2].y;
+            mat[1].w = translation.y;
+            mat[2].x = rotation.mat[0].z;
+            mat[2].y = rotation.mat[1].z;
+            mat[2].z = rotation.mat[2].z;
+            mat[2].w = translation.z;
+            mat[3].x = 0.0f;
+            mat[3].y = 0.0f;
+            mat[3].z = 0.0f;
+            mat[3].w = 1.0f;
         }
         public Matrix4x4(float[][] src)
         {
-            mat0 = new Vector4(src[0][0], src[0][1], src[0][2], src[0][3]);
-            mat1 = new Vector4(src[1][0], src[1][1], src[1][2], src[1][3]);
-            mat2 = new Vector4(src[2][0], src[2][1], src[2][2], src[2][3]);
-            mat3 = new Vector4(src[3][0], src[3][1], src[3][2], src[3][3]);
+            mat = new Vector4[4];
+            mat[0] = new Vector4(src[0][0], src[0][1], src[0][2], src[0][3]);
+            mat[1] = new Vector4(src[1][0], src[1][1], src[1][2], src[1][3]);
+            mat[2] = new Vector4(src[2][0], src[2][1], src[2][2], src[2][3]);
+            mat[3] = new Vector4(src[3][0], src[3][1], src[3][2], src[3][3]);
         }
+        internal unsafe Matrix4x4(Vector4[] mat)
+            => this.mat = mat;
 
-        public unsafe ref Vector4 this[int index]
-        {
-            get
-            {
-                fixed (Vector4* mat = &mat0)
-                    return ref mat[index];
-            }
-        }
+        public ref Vector4 this[int index]
+            => ref mat[index];
 
         public static Matrix4x4 operator *(Matrix4x4 _, float a)
             => new(
-            _.mat0.x * a, _.mat0.y * a, _.mat0.z * a, _.mat0.w * a,
-            _.mat1.x * a, _.mat1.y * a, _.mat1.z * a, _.mat1.w * a,
-            _.mat2.x * a, _.mat2.y * a, _.mat2.z * a, _.mat2.w * a,
-            _.mat3.x * a, _.mat3.y * a, _.mat3.z * a, _.mat3.w * a);
+            _.mat[0].x * a, _.mat[0].y * a, _.mat[0].z * a, _.mat[0].w * a,
+            _.mat[1].x * a, _.mat[1].y * a, _.mat[1].z * a, _.mat[1].w * a,
+            _.mat[2].x * a, _.mat[2].y * a, _.mat[2].z * a, _.mat[2].w * a,
+            _.mat[3].x * a, _.mat[3].y * a, _.mat[3].z * a, _.mat[3].w * a);
         public static Vector4 operator *(Matrix4x4 _, Vector4 vec)
             => new(
-            _.mat0.x * vec.x + _.mat0.y * vec.y + _.mat0.z * vec.z + _.mat0.w * vec.w,
-            _.mat1.x * vec.x + _.mat1.y * vec.y + _.mat1.z * vec.z + _.mat1.w * vec.w,
-            _.mat2.x * vec.x + _.mat2.y * vec.y + _.mat2.z * vec.z + _.mat2.w * vec.w,
-            _.mat3.x * vec.x + _.mat3.y * vec.y + _.mat3.z * vec.z + _.mat3.w * vec.w);
+            _.mat[0].x * vec.x + _.mat[0].y * vec.y + _.mat[0].z * vec.z + _.mat[0].w * vec.w,
+            _.mat[1].x * vec.x + _.mat[1].y * vec.y + _.mat[1].z * vec.z + _.mat[1].w * vec.w,
+            _.mat[2].x * vec.x + _.mat[2].y * vec.y + _.mat[2].z * vec.z + _.mat[2].w * vec.w,
+            _.mat[3].x * vec.x + _.mat[3].y * vec.y + _.mat[3].z * vec.z + _.mat[3].w * vec.w);
         public static Vector3 operator *(Matrix4x4 _, Vector3 vec)
         {
-            var s = _.mat3.x * vec.x + _.mat3.y * vec.y + _.mat3.z * vec.z + _.mat3.w;
+            var s = _.mat[3].x * vec.x + _.mat[3].y * vec.y + _.mat[3].z * vec.z + _.mat[3].w;
             if (s == 0.0f)
                 return new(0.0f, 0.0f, 0.0f);
             if (s == 1.0f)
                 return new(
-                _.mat0.x * vec.x + _.mat0.y * vec.y + _.mat0.z * vec.z + _.mat0.w,
-                _.mat1.x * vec.x + _.mat1.y * vec.y + _.mat1.z * vec.z + _.mat1.w,
-                _.mat2.x * vec.x + _.mat2.y * vec.y + _.mat2.z * vec.z + _.mat2.w);
+                _.mat[0].x * vec.x + _.mat[0].y * vec.y + _.mat[0].z * vec.z + _.mat[0].w,
+                _.mat[1].x * vec.x + _.mat[1].y * vec.y + _.mat[1].z * vec.z + _.mat[1].w,
+                _.mat[2].x * vec.x + _.mat[2].y * vec.y + _.mat[2].z * vec.z + _.mat[2].w);
             else
             {
                 var invS = 1.0f / s;
                 return new(
-                (_.mat0.x * vec.x + _.mat0.y * vec.y + _.mat0.z * vec.z + _.mat0.w) * invS,
-                (_.mat1.x * vec.x + _.mat1.y * vec.y + _.mat1.z * vec.z + _.mat1.w) * invS,
-                (_.mat2.x * vec.x + _.mat2.y * vec.y + _.mat2.z * vec.z + _.mat2.w) * invS);
+                (_.mat[0].x * vec.x + _.mat[0].y * vec.y + _.mat[0].z * vec.z + _.mat[0].w) * invS,
+                (_.mat[1].x * vec.x + _.mat[1].y * vec.y + _.mat[1].z * vec.z + _.mat[1].w) * invS,
+                (_.mat[2].x * vec.x + _.mat[2].y * vec.y + _.mat[2].z * vec.z + _.mat[2].w) * invS);
             }
         }
         public static unsafe Matrix4x4 operator *(Matrix4x4 _, Matrix4x4 a)
         {
-            Matrix4x4 dst;
-            var m1Ptr = (float*)&_;
-            var m2Ptr = (float*)&a;
-            var dstPtr = (float*)&dst;
-            for (var i = 0; i < 4; i++)
+            Matrix4x4 dst = new();
+            fixed (void* __ = &_.mat[0], a_ = &a.mat[0], dst_ = &dst.mat[0])
             {
-                for (var j = 0; j < 4; j++)
+                var m1Ptr = (float*)__;
+                var m2Ptr = (float*)a_;
+                var dstPtr = (float*)dst_;
+                for (var i = 0; i < 4; i++)
                 {
-                    *dstPtr = m1Ptr[0] * m2Ptr[0 * 4 + j]
-                            + m1Ptr[1] * m2Ptr[1 * 4 + j]
-                            + m1Ptr[2] * m2Ptr[2 * 4 + j]
-                            + m1Ptr[3] * m2Ptr[3 * 4 + j];
-                    dstPtr++;
+                    for (var j = 0; j < 4; j++)
+                    {
+                        *dstPtr = m1Ptr[0] * m2Ptr[0 * 4 + j]
+                                + m1Ptr[1] * m2Ptr[1 * 4 + j]
+                                + m1Ptr[2] * m2Ptr[2 * 4 + j]
+                                + m1Ptr[3] * m2Ptr[3 * 4 + j];
+                        dstPtr++;
+                    }
+                    m1Ptr += 4;
                 }
-                m1Ptr += 4;
+                return dst;
             }
-            return dst;
         }
 
         public static Matrix4x4 operator +(Matrix4x4 _, Matrix4x4 a)
             => new(
-            _.mat0.x + a.mat0.x, _.mat0.y + a.mat0.y, _.mat0.z + a.mat0.z, _.mat0.w + a.mat0.w,
-            _.mat1.x + a.mat1.x, _.mat1.y + a.mat1.y, _.mat1.z + a.mat1.z, _.mat1.w + a.mat1.w,
-            _.mat2.x + a.mat2.x, _.mat2.y + a.mat2.y, _.mat2.z + a.mat2.z, _.mat2.w + a.mat2.w,
-            _.mat3.x + a.mat3.x, _.mat3.y + a.mat3.y, _.mat3.z + a.mat3.z, _.mat3.w + a.mat3.w);
+            _.mat[0].x + a.mat[0].x, _.mat[0].y + a.mat[0].y, _.mat[0].z + a.mat[0].z, _.mat[0].w + a.mat[0].w,
+            _.mat[1].x + a.mat[1].x, _.mat[1].y + a.mat[1].y, _.mat[1].z + a.mat[1].z, _.mat[1].w + a.mat[1].w,
+            _.mat[2].x + a.mat[2].x, _.mat[2].y + a.mat[2].y, _.mat[2].z + a.mat[2].z, _.mat[2].w + a.mat[2].w,
+            _.mat[3].x + a.mat[3].x, _.mat[3].y + a.mat[3].y, _.mat[3].z + a.mat[3].z, _.mat[3].w + a.mat[3].w);
         public static Matrix4x4 operator -(Matrix4x4 _, Matrix4x4 a)
             => new(
-            _.mat0.x - a.mat0.x, _.mat0.y - a.mat0.y, _.mat0.z - a.mat0.z, _.mat0.w - a.mat0.w,
-            _.mat1.x - a.mat1.x, _.mat1.y - a.mat1.y, _.mat1.z - a.mat1.z, _.mat1.w - a.mat1.w,
-            _.mat2.x - a.mat2.x, _.mat2.y - a.mat2.y, _.mat2.z - a.mat2.z, _.mat2.w - a.mat2.w,
-            _.mat3.x - a.mat3.x, _.mat3.y - a.mat3.y, _.mat3.z - a.mat3.z, _.mat3.w - a.mat3.w);
+            _.mat[0].x - a.mat[0].x, _.mat[0].y - a.mat[0].y, _.mat[0].z - a.mat[0].z, _.mat[0].w - a.mat[0].w,
+            _.mat[1].x - a.mat[1].x, _.mat[1].y - a.mat[1].y, _.mat[1].z - a.mat[1].z, _.mat[1].w - a.mat[1].w,
+            _.mat[2].x - a.mat[2].x, _.mat[2].y - a.mat[2].y, _.mat[2].z - a.mat[2].z, _.mat[2].w - a.mat[2].w,
+            _.mat[3].x - a.mat[3].x, _.mat[3].y - a.mat[3].y, _.mat[3].z - a.mat[3].z, _.mat[3].w - a.mat[3].w);
 
         public static Matrix4x4 operator *(float a, Matrix4x4 mat)
             => mat * a;
@@ -801,10 +800,10 @@ namespace Droid.Core
 
         public unsafe bool Compare(Matrix4x4 a)                       // exact compare, no epsilon
         {
-            fixed (void* mat = &mat0)
+            fixed (void* mat_ = &mat[0], a_ = &a.mat[0])
             {
-                var ptr1 = (float*)&mat;
-                var ptr2 = (float*)&a.mat0;
+                var ptr1 = (float*)mat_;
+                var ptr2 = (float*)a_;
                 for (var i = 0; i < 4 * 4; i++)
                     if (ptr1[i] != ptr2[i])
                         return false;
@@ -813,10 +812,10 @@ namespace Droid.Core
         }
         public unsafe bool Compare(Matrix4x4 a, float epsilon)  // compare with epsilon
         {
-            fixed (void* mat = &mat0)
+            fixed (void* mat_ = &mat[0], a_ = &a.mat[0])
             {
-                var ptr1 = (float*)&mat;
-                var ptr2 = (float*)&a.mat0;
+                var ptr1 = (float*)mat_;
+                var ptr2 = (float*)a_;
                 for (var i = 0; i < 4 * 4; i++)
                     if (MathX.Fabs(ptr1[i] - ptr2[i]) > epsilon)
                         return false;
@@ -830,13 +829,10 @@ namespace Droid.Core
         public override bool Equals(object obj)
             => obj is Matrix4x4 q && Compare(q);
         public override int GetHashCode()
-            => mat0.GetHashCode();
+            => mat[0].GetHashCode();
 
         public unsafe void Zero()
-        {
-            fixed (void* p = &this)
-                U.memset(p, 0, sizeof(Matrix4x4));
-        }
+            => Array.Clear(mat, 0, 4);
         public void Identity()
             => this = identity;
         public bool IsIdentity(float epsilon = Matrix_.MATRIX_EPSILON)
@@ -859,42 +855,42 @@ namespace Droid.Core
         }
         public bool IsRotated()
         {
-            if (mat0.y == 0 && mat0.z == 0 &&
-                mat1.x == 0 && mat1.z == 0 &&
-                mat2.x == 0 && mat2.y == 0)
+            if (mat[0].y == 0 && mat[0].z == 0 &&
+                mat[1].x == 0 && mat[1].z == 0 &&
+                mat[2].x == 0 && mat[2].y == 0)
                 return false;
             return true;
         }
 
         public void ProjectVector(Vector4 src, out Vector4 dst)
         {
-            dst.x = src * mat0;
-            dst.y = src * mat1;
-            dst.z = src * mat2;
-            dst.w = src * mat3;
+            dst.x = src * mat[0];
+            dst.y = src * mat[1];
+            dst.z = src * mat[2];
+            dst.w = src * mat[3];
         }
         public void UnprojectVector(Vector4 src, out Vector4 dst)
-            => dst = mat0 * src.x + mat1 * src.y + mat2 * src.z + mat3 * src.w;
+            => dst = mat[0] * src.x + mat[1] * src.y + mat[2] * src.z + mat[3] * src.w;
 
         public float Trace()
-            => mat0.x + mat1.y + mat2.z + mat3.w;
+            => mat[0].x + mat[1].y + mat[2].z + mat[3].w;
         public float Determinant()
         {
             // 2x2 sub-determinants
-            var det2_01_01 = mat0.x * mat1.y - mat0.y * mat1.x;
-            var det2_01_02 = mat0.x * mat1.z - mat0.z * mat1.x;
-            var det2_01_03 = mat0.x * mat1.w - mat0.w * mat1.x;
-            var det2_01_12 = mat0.y * mat1.z - mat0.z * mat1.y;
-            var det2_01_13 = mat0.y * mat1.w - mat0.w * mat1.y;
-            var det2_01_23 = mat0.z * mat1.w - mat0.w * mat1.z;
+            var det2_01_01 = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
+            var det2_01_02 = mat[0].x * mat[1].z - mat[0].z * mat[1].x;
+            var det2_01_03 = mat[0].x * mat[1].w - mat[0].w * mat[1].x;
+            var det2_01_12 = mat[0].y * mat[1].z - mat[0].z * mat[1].y;
+            var det2_01_13 = mat[0].y * mat[1].w - mat[0].w * mat[1].y;
+            var det2_01_23 = mat[0].z * mat[1].w - mat[0].w * mat[1].z;
 
             // 3x3 sub-determinants
-            var det3_201_012 = mat2.x * det2_01_12 - mat2.y * det2_01_02 + mat2.z * det2_01_01;
-            var det3_201_013 = mat2.x * det2_01_13 - mat2.y * det2_01_03 + mat2.w * det2_01_01;
-            var det3_201_023 = mat2.x * det2_01_23 - mat2.z * det2_01_03 + mat2.w * det2_01_02;
-            var det3_201_123 = mat2.y * det2_01_23 - mat2.z * det2_01_13 + mat2.w * det2_01_12;
+            var det3_201_012 = mat[2].x * det2_01_12 - mat[2].y * det2_01_02 + mat[2].z * det2_01_01;
+            var det3_201_013 = mat[2].x * det2_01_13 - mat[2].y * det2_01_03 + mat[2].w * det2_01_01;
+            var det3_201_023 = mat[2].x * det2_01_23 - mat[2].z * det2_01_03 + mat[2].w * det2_01_02;
+            var det3_201_123 = mat[2].y * det2_01_23 - mat[2].z * det2_01_13 + mat[2].w * det2_01_12;
 
-            return -det3_201_123 * mat3.x + det3_201_023 * mat3.y - det3_201_013 * mat3.z + det3_201_012 * mat3.w;
+            return -det3_201_123 * mat[3].x + det3_201_023 * mat[3].y - det3_201_013 * mat[3].z + det3_201_012 * mat[3].w;
         }
         public Matrix4x4 Transpose()   // returns transpose
         {
@@ -927,60 +923,60 @@ namespace Droid.Core
             // 84+4+16 = 104 multiplications
             //			   1 division
             // 2x2 sub-determinants required to calculate 4x4 determinant
-            var det2_01_01 = mat0.x * mat1.y - mat0.y * mat1.x;
-            var det2_01_02 = mat0.x * mat1.z - mat0.z * mat1.x;
-            var det2_01_03 = mat0.x * mat1.w - mat0.w * mat1.x;
-            var det2_01_12 = mat0.y * mat1.z - mat0.z * mat1.y;
-            var det2_01_13 = mat0.y * mat1.w - mat0.w * mat1.y;
-            var det2_01_23 = mat0.z * mat1.w - mat0.w * mat1.z;
+            var det2_01_01 = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
+            var det2_01_02 = mat[0].x * mat[1].z - mat[0].z * mat[1].x;
+            var det2_01_03 = mat[0].x * mat[1].w - mat[0].w * mat[1].x;
+            var det2_01_12 = mat[0].y * mat[1].z - mat[0].z * mat[1].y;
+            var det2_01_13 = mat[0].y * mat[1].w - mat[0].w * mat[1].y;
+            var det2_01_23 = mat[0].z * mat[1].w - mat[0].w * mat[1].z;
 
             // 3x3 sub-determinants required to calculate 4x4 determinant
-            var det3_201_012 = mat2.x * det2_01_12 - mat2.y * det2_01_02 + mat2.z * det2_01_01;
-            var det3_201_013 = mat2.x * det2_01_13 - mat2.y * det2_01_03 + mat2.w * det2_01_01;
-            var det3_201_023 = mat2.x * det2_01_23 - mat2.z * det2_01_03 + mat2.w * det2_01_02;
-            var det3_201_123 = mat2.y * det2_01_23 - mat2.z * det2_01_13 + mat2.w * det2_01_12;
+            var det3_201_012 = mat[2].x * det2_01_12 - mat[2].y * det2_01_02 + mat[2].z * det2_01_01;
+            var det3_201_013 = mat[2].x * det2_01_13 - mat[2].y * det2_01_03 + mat[2].w * det2_01_01;
+            var det3_201_023 = mat[2].x * det2_01_23 - mat[2].z * det2_01_03 + mat[2].w * det2_01_02;
+            var det3_201_123 = mat[2].y * det2_01_23 - mat[2].z * det2_01_13 + mat[2].w * det2_01_12;
 
-            var det = -det3_201_123 * mat3.x + det3_201_023 * mat3.y - det3_201_013 * mat3.z + det3_201_012 * mat3.w;
+            var det = -det3_201_123 * mat[3].x + det3_201_023 * mat[3].y - det3_201_013 * mat[3].z + det3_201_012 * mat[3].w;
             if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
                 return false;
 
             var invDet = 1.0f / det;
 
             // remaining 2x2 sub-determinants
-            var det2_03_01 = mat0.x * mat3.y - mat0.y * mat3.x;
-            var det2_03_02 = mat0.x * mat3.z - mat0.z * mat3.x;
-            var det2_03_03 = mat0.x * mat3.w - mat0.w * mat3.x;
-            var det2_03_12 = mat0.y * mat3.z - mat0.y * mat3.y;
-            var det2_03_13 = mat0.y * mat3.z - mat0.z * mat3.y;
-            var det2_03_23 = mat0.z * mat3.z - mat0.z * mat3.z;
+            var det2_03_01 = mat[0].x * mat[3].y - mat[0].y * mat[3].x;
+            var det2_03_02 = mat[0].x * mat[3].z - mat[0].z * mat[3].x;
+            var det2_03_03 = mat[0].x * mat[3].w - mat[0].w * mat[3].x;
+            var det2_03_12 = mat[0].y * mat[3].z - mat[0].y * mat[3].y;
+            var det2_03_13 = mat[0].y * mat[3].z - mat[0].z * mat[3].y;
+            var det2_03_23 = mat[0].z * mat[3].z - mat[0].z * mat[3].z;
 
-            var det2_13_01 = mat1.x * mat3.y - mat1.y * mat3.x;
-            var det2_13_02 = mat1.x * mat3.z - mat1.z * mat3.x;
-            var det2_13_03 = mat1.x * mat3.w - mat1.w * mat3.x;
-            var det2_13_12 = mat1.y * mat3.z - mat1.z * mat3.y;
-            var det2_13_13 = mat1.y * mat3.w - mat1.w * mat3.y;
-            var det2_13_23 = mat1.z * mat3.w - mat1.w * mat3.z;
+            var det2_13_01 = mat[1].x * mat[3].y - mat[1].y * mat[3].x;
+            var det2_13_02 = mat[1].x * mat[3].z - mat[1].z * mat[3].x;
+            var det2_13_03 = mat[1].x * mat[3].w - mat[1].w * mat[3].x;
+            var det2_13_12 = mat[1].y * mat[3].z - mat[1].z * mat[3].y;
+            var det2_13_13 = mat[1].y * mat[3].w - mat[1].w * mat[3].y;
+            var det2_13_23 = mat[1].z * mat[3].w - mat[1].w * mat[3].z;
 
             // remaining 3x3 sub-determinants
-            var det3_203_012 = mat2.x * det2_03_12 - mat2.y * det2_03_02 + mat2.z * det2_03_01;
-            var det3_203_013 = mat2.x * det2_03_13 - mat2.y * det2_03_03 + mat2.w * det2_03_01;
-            var det3_203_023 = mat2.x * det2_03_23 - mat2.z * det2_03_03 + mat2.w * det2_03_02;
-            var det3_203_123 = mat2.y * det2_03_23 - mat2.z * det2_03_13 + mat2.w * det2_03_12;
+            var det3_203_012 = mat[2].x * det2_03_12 - mat[2].y * det2_03_02 + mat[2].z * det2_03_01;
+            var det3_203_013 = mat[2].x * det2_03_13 - mat[2].y * det2_03_03 + mat[2].w * det2_03_01;
+            var det3_203_023 = mat[2].x * det2_03_23 - mat[2].z * det2_03_03 + mat[2].w * det2_03_02;
+            var det3_203_123 = mat[2].y * det2_03_23 - mat[2].z * det2_03_13 + mat[2].w * det2_03_12;
 
-            var det3_213_012 = mat2.x * det2_13_12 - mat2.y * det2_13_02 + mat2.z * det2_13_01;
-            var det3_213_013 = mat2.x * det2_13_13 - mat2.y * det2_13_03 + mat2.w * det2_13_01;
-            var det3_213_023 = mat2.x * det2_13_23 - mat2.z * det2_13_03 + mat2.w * det2_13_02;
-            var det3_213_123 = mat2.y * det2_13_23 - mat2.z * det2_13_13 + mat2.w * det2_13_12;
+            var det3_213_012 = mat[2].x * det2_13_12 - mat[2].y * det2_13_02 + mat[2].z * det2_13_01;
+            var det3_213_013 = mat[2].x * det2_13_13 - mat[2].y * det2_13_03 + mat[2].w * det2_13_01;
+            var det3_213_023 = mat[2].x * det2_13_23 - mat[2].z * det2_13_03 + mat[2].w * det2_13_02;
+            var det3_213_123 = mat[2].y * det2_13_23 - mat[2].z * det2_13_13 + mat[2].w * det2_13_12;
 
-            var det3_301_012 = mat3.x * det2_01_12 - mat3.y * det2_01_02 + mat3.z * det2_01_01;
-            var det3_301_013 = mat3.x * det2_01_13 - mat3.y * det2_01_03 + mat3.w * det2_01_01;
-            var det3_301_023 = mat3.x * det2_01_23 - mat3.z * det2_01_03 + mat3.w * det2_01_02;
-            var det3_301_123 = mat3.y * det2_01_23 - mat3.z * det2_01_13 + mat3.w * det2_01_12;
+            var det3_301_012 = mat[3].x * det2_01_12 - mat[3].y * det2_01_02 + mat[3].z * det2_01_01;
+            var det3_301_013 = mat[3].x * det2_01_13 - mat[3].y * det2_01_03 + mat[3].w * det2_01_01;
+            var det3_301_023 = mat[3].x * det2_01_23 - mat[3].z * det2_01_03 + mat[3].w * det2_01_02;
+            var det3_301_123 = mat[3].y * det2_01_23 - mat[3].z * det2_01_13 + mat[3].w * det2_01_12;
 
-            mat0.x = -det3_213_123 * invDet; mat1.x = +det3_213_023 * invDet; mat2.x = -det3_213_013 * invDet; mat3.x = +det3_213_012 * invDet;
-            mat0.y = +det3_203_123 * invDet; mat1.y = -det3_203_023 * invDet; mat2.y = +det3_203_013 * invDet; mat3.y = -det3_203_012 * invDet;
-            mat0.z = +det3_301_123 * invDet; mat1.z = -det3_301_023 * invDet; mat2.z = +det3_301_013 * invDet; mat3.z = -det3_301_012 * invDet;
-            mat0.w = -det3_201_123 * invDet; mat1.w = +det3_201_023 * invDet; mat2.w = -det3_201_013 * invDet; mat3.w = +det3_201_012 * invDet;
+            mat[0].x = -det3_213_123 * invDet; mat[1].x = +det3_213_023 * invDet; mat[2].x = -det3_213_013 * invDet; mat[3].x = +det3_213_012 * invDet;
+            mat[0].y = +det3_203_123 * invDet; mat[1].y = -det3_203_023 * invDet; mat[2].y = +det3_203_013 * invDet; mat[3].y = -det3_203_012 * invDet;
+            mat[0].z = +det3_301_123 * invDet; mat[1].z = -det3_301_023 * invDet; mat[2].z = +det3_301_013 * invDet; mat[3].z = -det3_301_012 * invDet;
+            mat[0].w = -det3_201_123 * invDet; mat[1].w = +det3_201_023 * invDet; mat[2].w = -det3_201_013 * invDet; mat[3].w = +det3_201_012 * invDet;
 
             return true;
         }
@@ -996,60 +992,60 @@ namespace Droid.Core
             // 84+4+16 = 104 multiplications
             //			   1 division
             // 2x2 sub-determinants required to calculate 4x4 determinant
-            var det2_01_01 = mat0.x * mat1.y - mat0.y * mat1.x;
-            var det2_01_02 = mat0.x * mat1.z - mat0.z * mat1.x;
-            var det2_01_03 = mat0.x * mat1.w - mat0.w * mat1.x;
-            var det2_01_12 = mat0.y * mat1.z - mat0.z * mat1.y;
-            var det2_01_13 = mat0.y * mat1.w - mat0.w * mat1.y;
-            var det2_01_23 = mat0.z * mat1.w - mat0.w * mat1.z;
+            var det2_01_01 = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
+            var det2_01_02 = mat[0].x * mat[1].z - mat[0].z * mat[1].x;
+            var det2_01_03 = mat[0].x * mat[1].w - mat[0].w * mat[1].x;
+            var det2_01_12 = mat[0].y * mat[1].z - mat[0].z * mat[1].y;
+            var det2_01_13 = mat[0].y * mat[1].w - mat[0].w * mat[1].y;
+            var det2_01_23 = mat[0].z * mat[1].w - mat[0].w * mat[1].z;
 
             // 3x3 sub-determinants required to calculate 4x4 determinant
-            var det3_201_012 = mat2.x * det2_01_12 - mat2.y * det2_01_02 + mat2.z * det2_01_01;
-            var det3_201_013 = mat2.x * det2_01_13 - mat2.y * det2_01_03 + mat2.w * det2_01_01;
-            var det3_201_023 = mat2.x * det2_01_23 - mat2.z * det2_01_03 + mat2.w * det2_01_02;
-            var det3_201_123 = mat2.y * det2_01_23 - mat2.z * det2_01_13 + mat2.w * det2_01_12;
+            var det3_201_012 = mat[2].x * det2_01_12 - mat[2].y * det2_01_02 + mat[2].z * det2_01_01;
+            var det3_201_013 = mat[2].x * det2_01_13 - mat[2].y * det2_01_03 + mat[2].w * det2_01_01;
+            var det3_201_023 = mat[2].x * det2_01_23 - mat[2].z * det2_01_03 + mat[2].w * det2_01_02;
+            var det3_201_123 = mat[2].y * det2_01_23 - mat[2].z * det2_01_13 + mat[2].w * det2_01_12;
 
-            var det = -det3_201_123 * mat3.x + det3_201_023 * mat3.y - det3_201_013 * mat3.z + det3_201_012 * mat3.w;
+            var det = -det3_201_123 * mat[3].x + det3_201_023 * mat[3].y - det3_201_013 * mat[3].z + det3_201_012 * mat[3].w;
             if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
                 return false;
 
             var invDet = 1.0f / det;
 
             // remaining 2x2 sub-determinants
-            var det2_03_01 = mat0.x * mat3.y - mat0.y * mat3.x;
-            var det2_03_02 = mat0.x * mat3.z - mat0.z * mat3.x;
-            var det2_03_03 = mat0.x * mat3.w - mat0.w * mat3.x;
-            var det2_03_12 = mat0.y * mat3.z - mat0.z * mat3.y;
-            var det2_03_13 = mat0.y * mat3.w - mat0.w * mat3.y;
-            var det2_03_23 = mat0.z * mat3.w - mat0.w * mat3.z;
+            var det2_03_01 = mat[0].x * mat[3].y - mat[0].y * mat[3].x;
+            var det2_03_02 = mat[0].x * mat[3].z - mat[0].z * mat[3].x;
+            var det2_03_03 = mat[0].x * mat[3].w - mat[0].w * mat[3].x;
+            var det2_03_12 = mat[0].y * mat[3].z - mat[0].z * mat[3].y;
+            var det2_03_13 = mat[0].y * mat[3].w - mat[0].w * mat[3].y;
+            var det2_03_23 = mat[0].z * mat[3].w - mat[0].w * mat[3].z;
 
-            var det2_13_01 = mat1.x * mat3.y - mat1.y * mat3.x;
-            var det2_13_02 = mat1.x * mat3.z - mat1.z * mat3.x;
-            var det2_13_03 = mat1.x * mat3.w - mat1.w * mat3.x;
-            var det2_13_12 = mat1.y * mat3.z - mat1.z * mat3.y;
-            var det2_13_13 = mat1.y * mat3.w - mat1.w * mat3.y;
-            var det2_13_23 = mat1.z * mat3.w - mat1.w * mat3.z;
+            var det2_13_01 = mat[1].x * mat[3].y - mat[1].y * mat[3].x;
+            var det2_13_02 = mat[1].x * mat[3].z - mat[1].z * mat[3].x;
+            var det2_13_03 = mat[1].x * mat[3].w - mat[1].w * mat[3].x;
+            var det2_13_12 = mat[1].y * mat[3].z - mat[1].z * mat[3].y;
+            var det2_13_13 = mat[1].y * mat[3].w - mat[1].w * mat[3].y;
+            var det2_13_23 = mat[1].z * mat[3].w - mat[1].w * mat[3].z;
 
             // remaining 3x3 sub-determinants
-            var det3_203_012 = mat2.x * det2_03_12 - mat2.y * det2_03_02 + mat2.y * det2_03_01;
-            var det3_203_013 = mat2.x * det2_03_13 - mat2.y * det2_03_03 + mat2.z * det2_03_01;
-            var det3_203_023 = mat2.x * det2_03_23 - mat2.z * det2_03_03 + mat2.z * det2_03_02;
-            var det3_203_123 = mat2.y * det2_03_23 - mat2.z * det2_03_13 + mat2.z * det2_03_12;
+            var det3_203_012 = mat[2].x * det2_03_12 - mat[2].y * det2_03_02 + mat[2].y * det2_03_01;
+            var det3_203_013 = mat[2].x * det2_03_13 - mat[2].y * det2_03_03 + mat[2].z * det2_03_01;
+            var det3_203_023 = mat[2].x * det2_03_23 - mat[2].z * det2_03_03 + mat[2].z * det2_03_02;
+            var det3_203_123 = mat[2].y * det2_03_23 - mat[2].z * det2_03_13 + mat[2].z * det2_03_12;
 
-            var det3_213_012 = mat2.x * det2_13_12 - mat2.y * det2_13_02 + mat2.y * det2_13_01;
-            var det3_213_013 = mat2.x * det2_13_13 - mat2.y * det2_13_03 + mat2.z * det2_13_01;
-            var det3_213_023 = mat2.x * det2_13_23 - mat2.z * det2_13_03 + mat2.z * det2_13_02;
-            var det3_213_123 = mat2.y * det2_13_23 - mat2.z * det2_13_13 + mat2.z * det2_13_12;
+            var det3_213_012 = mat[2].x * det2_13_12 - mat[2].y * det2_13_02 + mat[2].y * det2_13_01;
+            var det3_213_013 = mat[2].x * det2_13_13 - mat[2].y * det2_13_03 + mat[2].z * det2_13_01;
+            var det3_213_023 = mat[2].x * det2_13_23 - mat[2].z * det2_13_03 + mat[2].z * det2_13_02;
+            var det3_213_123 = mat[2].y * det2_13_23 - mat[2].z * det2_13_13 + mat[2].z * det2_13_12;
 
-            var det3_301_012 = mat3.x * det2_01_12 - mat3.y * det2_01_02 + mat3.y * det2_01_01;
-            var det3_301_013 = mat3.x * det2_01_13 - mat3.y * det2_01_03 + mat3.z * det2_01_01;
-            var det3_301_023 = mat3.x * det2_01_23 - mat3.z * det2_01_03 + mat3.z * det2_01_02;
-            var det3_301_123 = mat3.y * det2_01_23 - mat3.z * det2_01_13 + mat3.z * det2_01_12;
+            var det3_301_012 = mat[3].x * det2_01_12 - mat[3].y * det2_01_02 + mat[3].y * det2_01_01;
+            var det3_301_013 = mat[3].x * det2_01_13 - mat[3].y * det2_01_03 + mat[3].z * det2_01_01;
+            var det3_301_023 = mat[3].x * det2_01_23 - mat[3].z * det2_01_03 + mat[3].z * det2_01_02;
+            var det3_301_123 = mat[3].y * det2_01_23 - mat[3].z * det2_01_13 + mat[3].z * det2_01_12;
 
-            mat0.x = -det3_213_123 * invDet; mat1.x = +det3_213_023 * invDet; mat2.x = -det3_213_013 * invDet; mat3.x = +det3_213_012 * invDet;
-            mat0.y = +det3_203_123 * invDet; mat1.y = -det3_203_023 * invDet; mat2.y = +det3_203_013 * invDet; mat3.y = -det3_203_012 * invDet;
-            mat0.z = +det3_301_123 * invDet; mat1.z = -det3_301_023 * invDet; mat2.z = +det3_301_013 * invDet; mat3.z = -det3_301_012 * invDet;
-            mat0.w = -det3_201_123 * invDet; mat1.w = +det3_201_023 * invDet; mat2.w = -det3_201_013 * invDet; mat3.w = +det3_201_012 * invDet;
+            mat[0].x = -det3_213_123 * invDet; mat[1].x = +det3_213_023 * invDet; mat[2].x = -det3_213_013 * invDet; mat[3].x = +det3_213_012 * invDet;
+            mat[0].y = +det3_203_123 * invDet; mat[1].y = -det3_203_023 * invDet; mat[2].y = +det3_203_013 * invDet; mat[3].y = -det3_203_012 * invDet;
+            mat[0].z = +det3_301_123 * invDet; mat[1].z = -det3_301_023 * invDet; mat[2].z = +det3_301_013 * invDet; mat[3].z = -det3_301_012 * invDet;
+            mat[0].w = -det3_201_123 * invDet; mat[1].w = +det3_201_023 * invDet; mat[2].w = -det3_201_013 * invDet; mat[3].w = +det3_201_012 * invDet;
 
             return true;
         }
@@ -1060,14 +1056,11 @@ namespace Droid.Core
             => 16;
 
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
-            => mat0.ToFloatPtr(callback);
+            => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
 
-        internal Vector4 mat0;
-        internal Vector4 mat1;
-        internal Vector4 mat2;
-        internal Vector4 mat3;
+        internal Vector4[] mat;
 
         public static Matrix4x4 zero = new(new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0));
         public static Matrix4x4 identity = new(new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), new Vector4(0, 0, 1, 0), new Vector4(0, 0, 0, 1));
@@ -1078,79 +1071,80 @@ namespace Droid.Core
     {
         public Matrix5x5(Vector5 v0, Vector5 v1, Vector5 v2, Vector5 v3, Vector5 v4)
         {
-            mat0 = v0;
-            mat1 = v1;
-            mat2 = v2;
-            mat3 = v3;
-            mat4 = v4;
+            mat = new Vector5[5];
+            mat[0] = v0;
+            mat[1] = v1;
+            mat[2] = v2;
+            mat[3] = v3;
+            mat[4] = v4;
         }
         public Matrix5x5(float[][] src)
         {
-            mat0 = new Vector5(src[0][0], src[0][1], src[0][2], src[0][3], src[0][4]);
-            mat1 = new Vector5(src[1][0], src[1][1], src[1][2], src[1][3], src[1][4]);
-            mat2 = new Vector5(src[2][0], src[2][1], src[2][2], src[2][3], src[2][4]);
-            mat3 = new Vector5(src[3][0], src[3][1], src[3][2], src[3][3], src[3][4]);
-            mat4 = new Vector5(src[4][0], src[4][1], src[4][2], src[4][3], src[4][4]);
+            mat = new Vector5[5];
+            mat[0] = new Vector5(src[0][0], src[0][1], src[0][2], src[0][3], src[0][4]);
+            mat[1] = new Vector5(src[1][0], src[1][1], src[1][2], src[1][3], src[1][4]);
+            mat[2] = new Vector5(src[2][0], src[2][1], src[2][2], src[2][3], src[2][4]);
+            mat[3] = new Vector5(src[3][0], src[3][1], src[3][2], src[3][3], src[3][4]);
+            mat[4] = new Vector5(src[4][0], src[4][1], src[4][2], src[4][3], src[4][4]);
         }
+        internal unsafe Matrix5x5(Vector5[] mat)
+            => this.mat = mat;
 
-        public unsafe ref Vector5 this[int index]
-        {
-            get
-            {
-                fixed (Vector5* mat = &mat0)
-                    return ref mat[index];
-            }
-        }
+        public ref Vector5 this[int index]
+            => ref mat[index];
 
         public static Matrix5x5 operator *(Matrix5x5 _, float a)
             => new(
-            new Vector5(_.mat0.x * a, _.mat0.y * a, _.mat0.z * a, _.mat0.s * a, _.mat0.t * a),
-            new Vector5(_.mat1.x * a, _.mat1.y * a, _.mat1.z * a, _.mat1.s * a, _.mat1.t * a),
-            new Vector5(_.mat2.x * a, _.mat2.y * a, _.mat2.z * a, _.mat2.s * a, _.mat2.t * a),
-            new Vector5(_.mat3.x * a, _.mat3.y * a, _.mat3.z * a, _.mat3.s * a, _.mat3.t * a),
-            new Vector5(_.mat4.x * a, _.mat4.y * a, _.mat4.z * a, _.mat4.s * a, _.mat4.t * a));
+            new Vector5(_.mat[0].x * a, _.mat[0].y * a, _.mat[0].z * a, _.mat[0].s * a, _.mat[0].t * a),
+            new Vector5(_.mat[1].x * a, _.mat[1].y * a, _.mat[1].z * a, _.mat[1].s * a, _.mat[1].t * a),
+            new Vector5(_.mat[2].x * a, _.mat[2].y * a, _.mat[2].z * a, _.mat[2].s * a, _.mat[2].t * a),
+            new Vector5(_.mat[3].x * a, _.mat[3].y * a, _.mat[3].z * a, _.mat[3].s * a, _.mat[3].t * a),
+            new Vector5(_.mat[4].x * a, _.mat[4].y * a, _.mat[4].z * a, _.mat[4].s * a, _.mat[4].t * a));
         public static Vector5 operator *(Matrix5x5 _, Vector5 vec)
             => new(
-            _.mat0.x * vec.x + _.mat0.y * vec.y + _.mat0.z * vec.z + _.mat0.s * vec.s + _.mat0.t * vec.t,
-            _.mat1.x * vec.x + _.mat1.y * vec.y + _.mat1.z * vec.z + _.mat1.s * vec.s + _.mat1.t * vec.t,
-            _.mat2.x * vec.x + _.mat2.y * vec.y + _.mat2.z * vec.z + _.mat2.s * vec.s + _.mat2.t * vec.t,
-            _.mat3.x * vec.x + _.mat3.y * vec.y + _.mat3.z * vec.z + _.mat3.s * vec.s + _.mat3.t * vec.t,
-            _.mat4.x * vec.x + _.mat4.y * vec.y + _.mat4.z * vec.z + _.mat4.s * vec.s + _.mat4.t * vec.t);
+            _.mat[0].x * vec.x + _.mat[0].y * vec.y + _.mat[0].z * vec.z + _.mat[0].s * vec.s + _.mat[0].t * vec.t,
+            _.mat[1].x * vec.x + _.mat[1].y * vec.y + _.mat[1].z * vec.z + _.mat[1].s * vec.s + _.mat[1].t * vec.t,
+            _.mat[2].x * vec.x + _.mat[2].y * vec.y + _.mat[2].z * vec.z + _.mat[2].s * vec.s + _.mat[2].t * vec.t,
+            _.mat[3].x * vec.x + _.mat[3].y * vec.y + _.mat[3].z * vec.z + _.mat[3].s * vec.s + _.mat[3].t * vec.t,
+            _.mat[4].x * vec.x + _.mat[4].y * vec.y + _.mat[4].z * vec.z + _.mat[4].s * vec.s + _.mat[4].t * vec.t);
         public static unsafe Matrix5x5 operator *(Matrix5x5 _, Matrix5x5 a)
         {
-            Matrix5x5 dst;
-            var m1Ptr = (float*)&_;
-            var m2Ptr = (float*)&a;
-            var dstPtr = (float*)&dst;
-            for (var i = 0; i < 5; i++)
+            Matrix5x5 dst = new();
+            fixed (void* __ = &_.mat[0], a_ = &a.mat[0], dst_ = &dst.mat[0])
             {
-                for (var j = 0; j < 5; j++)
+                var m1Ptr = (float*)__;
+                var m2Ptr = (float*)a_;
+                var dstPtr = (float*)dst_;
+                for (var i = 0; i < 5; i++)
                 {
-                    *dstPtr = m1Ptr[0] * m2Ptr[0 * 5 + j]
-                        + m1Ptr[1] * m2Ptr[1 * 5 + j]
-                        + m1Ptr[2] * m2Ptr[2 * 5 + j]
-                        + m1Ptr[3] * m2Ptr[3 * 5 + j]
-                        + m1Ptr[4] * m2Ptr[4 * 5 + j];
-                    dstPtr++;
+                    for (var j = 0; j < 5; j++)
+                    {
+                        *dstPtr = m1Ptr[0] * m2Ptr[0 * 5 + j]
+                            + m1Ptr[1] * m2Ptr[1 * 5 + j]
+                            + m1Ptr[2] * m2Ptr[2 * 5 + j]
+                            + m1Ptr[3] * m2Ptr[3 * 5 + j]
+                            + m1Ptr[4] * m2Ptr[4 * 5 + j];
+                        dstPtr++;
+                    }
+                    m1Ptr += 5;
                 }
-                m1Ptr += 5;
+                return dst;
             }
-            return dst;
         }
         public static Matrix5x5 operator +(Matrix5x5 _, Matrix5x5 a)
             => new(
-            new Vector5(_.mat0.x + a.mat0.x, _.mat0.y + a.mat0.y, _.mat0.z + a.mat0.z, _.mat0.s + a.mat0.s, _.mat0.t + a.mat0.t),
-            new Vector5(_.mat1.x + a.mat1.x, _.mat1.y + a.mat1.y, _.mat1.z + a.mat1.z, _.mat1.s + a.mat1.s, _.mat1.t + a.mat1.t),
-            new Vector5(_.mat2.x + a.mat2.x, _.mat2.y + a.mat2.y, _.mat2.z + a.mat2.z, _.mat2.s + a.mat2.s, _.mat2.t + a.mat2.t),
-            new Vector5(_.mat3.x + a.mat3.x, _.mat3.y + a.mat3.y, _.mat3.z + a.mat3.z, _.mat3.s + a.mat3.s, _.mat3.t + a.mat3.t),
-            new Vector5(_.mat4.x + a.mat4.x, _.mat4.y + a.mat4.y, _.mat4.z + a.mat4.z, _.mat4.s + a.mat4.s, _.mat4.t + a.mat4.t));
+            new Vector5(_.mat[0].x + a.mat[0].x, _.mat[0].y + a.mat[0].y, _.mat[0].z + a.mat[0].z, _.mat[0].s + a.mat[0].s, _.mat[0].t + a.mat[0].t),
+            new Vector5(_.mat[1].x + a.mat[1].x, _.mat[1].y + a.mat[1].y, _.mat[1].z + a.mat[1].z, _.mat[1].s + a.mat[1].s, _.mat[1].t + a.mat[1].t),
+            new Vector5(_.mat[2].x + a.mat[2].x, _.mat[2].y + a.mat[2].y, _.mat[2].z + a.mat[2].z, _.mat[2].s + a.mat[2].s, _.mat[2].t + a.mat[2].t),
+            new Vector5(_.mat[3].x + a.mat[3].x, _.mat[3].y + a.mat[3].y, _.mat[3].z + a.mat[3].z, _.mat[3].s + a.mat[3].s, _.mat[3].t + a.mat[3].t),
+            new Vector5(_.mat[4].x + a.mat[4].x, _.mat[4].y + a.mat[4].y, _.mat[4].z + a.mat[4].z, _.mat[4].s + a.mat[4].s, _.mat[4].t + a.mat[4].t));
         public static Matrix5x5 operator -(Matrix5x5 _, Matrix5x5 a)
             => new(
-            new Vector5(_.mat0.x - a.mat0.x, _.mat0.y - a.mat0.y, _.mat0.z - a.mat0.z, _.mat0.s - a.mat0.s, _.mat0.t - a.mat0.t),
-            new Vector5(_.mat1.x - a.mat1.x, _.mat1.y - a.mat1.y, _.mat1.z - a.mat1.z, _.mat1.s - a.mat1.s, _.mat1.t - a.mat1.t),
-            new Vector5(_.mat2.x - a.mat2.x, _.mat2.y - a.mat2.y, _.mat2.z - a.mat2.z, _.mat2.s - a.mat2.s, _.mat2.t - a.mat2.t),
-            new Vector5(_.mat3.x - a.mat3.x, _.mat3.y - a.mat3.y, _.mat3.z - a.mat3.z, _.mat3.s - a.mat3.s, _.mat3.t - a.mat3.t),
-            new Vector5(_.mat4.x - a.mat4.x, _.mat4.y - a.mat4.y, _.mat4.z - a.mat4.z, _.mat4.s - a.mat4.s, _.mat4.t - a.mat4.t));
+            new Vector5(_.mat[0].x - a.mat[0].x, _.mat[0].y - a.mat[0].y, _.mat[0].z - a.mat[0].z, _.mat[0].s - a.mat[0].s, _.mat[0].t - a.mat[0].t),
+            new Vector5(_.mat[1].x - a.mat[1].x, _.mat[1].y - a.mat[1].y, _.mat[1].z - a.mat[1].z, _.mat[1].s - a.mat[1].s, _.mat[1].t - a.mat[1].t),
+            new Vector5(_.mat[2].x - a.mat[2].x, _.mat[2].y - a.mat[2].y, _.mat[2].z - a.mat[2].z, _.mat[2].s - a.mat[2].s, _.mat[2].t - a.mat[2].t),
+            new Vector5(_.mat[3].x - a.mat[3].x, _.mat[3].y - a.mat[3].y, _.mat[3].z - a.mat[3].z, _.mat[3].s - a.mat[3].s, _.mat[3].t - a.mat[3].t),
+            new Vector5(_.mat[4].x - a.mat[4].x, _.mat[4].y - a.mat[4].y, _.mat[4].z - a.mat[4].z, _.mat[4].s - a.mat[4].s, _.mat[4].t - a.mat[4].t));
 
         public static Matrix5x5 operator *(float a, Matrix5x5 mat)
             => mat * a;
@@ -1159,10 +1153,10 @@ namespace Droid.Core
 
         public unsafe bool Compare(Matrix5x5 a)                       // exact compare, no epsilon
         {
-            fixed (void* mat = &mat0)
+            fixed (void* mat_ = &mat[0], a_ = &a.mat[0])
             {
-                var ptr1 = (float*)&mat;
-                var ptr2 = (float*)&a.mat0;
+                var ptr1 = (float*)mat_;
+                var ptr2 = (float*)a_;
                 for (var i = 0; i < 5 * 5; i++)
                     if (ptr1[i] != ptr2[i])
                         return false;
@@ -1171,10 +1165,10 @@ namespace Droid.Core
         }
         public unsafe bool Compare(Matrix5x5 a, float epsilon)  // compare with epsilon
         {
-            fixed (void* mat = &mat0)
+            fixed (void* mat_ = &mat[0], a_ = &a.mat[0])
             {
-                var ptr1 = (float*)&mat;
-                var ptr2 = (float*)&a.mat0;
+                var ptr1 = (float*)mat_;
+                var ptr2 = (float*)a_;
                 for (var i = 0; i < 5 * 5; i++)
                     if (MathX.Fabs(ptr1[i] - ptr2[i]) > epsilon)
                         return false;
@@ -1188,13 +1182,10 @@ namespace Droid.Core
         public override bool Equals(object obj)
             => obj is Matrix5x5 q && Compare(q);
         public override int GetHashCode()
-            => mat0.GetHashCode();
+            => mat[0].GetHashCode();
 
         public unsafe void Zero()
-        {
-            fixed (void* p = &this)
-                U.memset(p, 0, sizeof(Matrix5x5));
-        }
+            => Array.Clear(mat, 0, 5);
         public void Identity()
             => this = identity;
         public bool IsIdentity(float epsilon = Matrix_.MATRIX_EPSILON)
@@ -1217,42 +1208,42 @@ namespace Droid.Core
         }
 
         public float Trace()
-            => mat0.x + mat1.y + mat2.z + mat3.s + mat4.t;
+            => mat[0].x + mat[1].y + mat[2].z + mat[3].s + mat[4].t;
         public float Determinant()
         {
             // 2x2 sub-determinants required to calculate 5x5 determinant
-            var det2_34_01 = mat3.x * mat4.y - mat3.y * mat4.x;
-            var det2_34_02 = mat3.x * mat4.z - mat3.z * mat4.x;
-            var det2_34_03 = mat3.x * mat4.s - mat3.s * mat4.x;
-            var det2_34_04 = mat3.x * mat4.t - mat3.t * mat4.x;
-            var det2_34_12 = mat3.y * mat4.z - mat3.z * mat4.y;
-            var det2_34_13 = mat3.y * mat4.s - mat3.s * mat4.y;
-            var det2_34_14 = mat3.y * mat4.t - mat3.t * mat4.y;
-            var det2_34_23 = mat3.z * mat4.s - mat3.s * mat4.z;
-            var det2_34_24 = mat3.z * mat4.t - mat3.t * mat4.z;
-            var det2_34_34 = mat3.s * mat4.t - mat3.t * mat4.s;
+            var det2_34_01 = mat[3].x * mat[4].y - mat[3].y * mat[4].x;
+            var det2_34_02 = mat[3].x * mat[4].z - mat[3].z * mat[4].x;
+            var det2_34_03 = mat[3].x * mat[4].s - mat[3].s * mat[4].x;
+            var det2_34_04 = mat[3].x * mat[4].t - mat[3].t * mat[4].x;
+            var det2_34_12 = mat[3].y * mat[4].z - mat[3].z * mat[4].y;
+            var det2_34_13 = mat[3].y * mat[4].s - mat[3].s * mat[4].y;
+            var det2_34_14 = mat[3].y * mat[4].t - mat[3].t * mat[4].y;
+            var det2_34_23 = mat[3].z * mat[4].s - mat[3].s * mat[4].z;
+            var det2_34_24 = mat[3].z * mat[4].t - mat[3].t * mat[4].z;
+            var det2_34_34 = mat[3].s * mat[4].t - mat[3].t * mat[4].s;
 
             // 3x3 sub-determinants required to calculate 5x5 determinant
-            var det3_234_012 = mat2.x * det2_34_12 - mat2.y * det2_34_02 + mat2.z * det2_34_01;
-            var det3_234_013 = mat2.x * det2_34_13 - mat2.y * det2_34_03 + mat2.s * det2_34_01;
-            var det3_234_014 = mat2.x * det2_34_14 - mat2.y * det2_34_04 + mat2.t * det2_34_01;
-            var det3_234_023 = mat2.x * det2_34_23 - mat2.z * det2_34_03 + mat2.s * det2_34_02;
-            var det3_234_024 = mat2.x * det2_34_24 - mat2.z * det2_34_04 + mat2.t * det2_34_02;
-            var det3_234_034 = mat2.x * det2_34_34 - mat2.s * det2_34_04 + mat2.t * det2_34_03;
-            var det3_234_123 = mat2.y * det2_34_23 - mat2.z * det2_34_13 + mat2.s * det2_34_12;
-            var det3_234_124 = mat2.y * det2_34_24 - mat2.z * det2_34_14 + mat2.t * det2_34_12;
-            var det3_234_134 = mat2.y * det2_34_34 - mat2.s * det2_34_14 + mat2.t * det2_34_13;
-            var det3_234_234 = mat2.z * det2_34_34 - mat2.s * det2_34_24 + mat2.t * det2_34_23;
+            var det3_234_012 = mat[2].x * det2_34_12 - mat[2].y * det2_34_02 + mat[2].z * det2_34_01;
+            var det3_234_013 = mat[2].x * det2_34_13 - mat[2].y * det2_34_03 + mat[2].s * det2_34_01;
+            var det3_234_014 = mat[2].x * det2_34_14 - mat[2].y * det2_34_04 + mat[2].t * det2_34_01;
+            var det3_234_023 = mat[2].x * det2_34_23 - mat[2].z * det2_34_03 + mat[2].s * det2_34_02;
+            var det3_234_024 = mat[2].x * det2_34_24 - mat[2].z * det2_34_04 + mat[2].t * det2_34_02;
+            var det3_234_034 = mat[2].x * det2_34_34 - mat[2].s * det2_34_04 + mat[2].t * det2_34_03;
+            var det3_234_123 = mat[2].y * det2_34_23 - mat[2].z * det2_34_13 + mat[2].s * det2_34_12;
+            var det3_234_124 = mat[2].y * det2_34_24 - mat[2].z * det2_34_14 + mat[2].t * det2_34_12;
+            var det3_234_134 = mat[2].y * det2_34_34 - mat[2].s * det2_34_14 + mat[2].t * det2_34_13;
+            var det3_234_234 = mat[2].z * det2_34_34 - mat[2].s * det2_34_24 + mat[2].t * det2_34_23;
 
             // 4x4 sub-determinants required to calculate 5x5 determinant
-            var det4_1234_0123 = mat1.x * det3_234_123 - mat1.y * det3_234_023 + mat1.z * det3_234_013 - mat1.s * det3_234_012;
-            var det4_1234_0124 = mat1.x * det3_234_124 - mat1.y * det3_234_024 + mat1.z * det3_234_014 - mat1.t * det3_234_012;
-            var det4_1234_0134 = mat1.x * det3_234_134 - mat1.y * det3_234_034 + mat1.s * det3_234_014 - mat1.t * det3_234_013;
-            var det4_1234_0234 = mat1.x * det3_234_234 - mat1.z * det3_234_034 + mat1.s * det3_234_024 - mat1.t * det3_234_023;
-            var det4_1234_1234 = mat1.y * det3_234_234 - mat1.z * det3_234_134 + mat1.s * det3_234_124 - mat1.t * det3_234_123;
+            var det4_1234_0123 = mat[1].x * det3_234_123 - mat[1].y * det3_234_023 + mat[1].z * det3_234_013 - mat[1].s * det3_234_012;
+            var det4_1234_0124 = mat[1].x * det3_234_124 - mat[1].y * det3_234_024 + mat[1].z * det3_234_014 - mat[1].t * det3_234_012;
+            var det4_1234_0134 = mat[1].x * det3_234_134 - mat[1].y * det3_234_034 + mat[1].s * det3_234_014 - mat[1].t * det3_234_013;
+            var det4_1234_0234 = mat[1].x * det3_234_234 - mat[1].z * det3_234_034 + mat[1].s * det3_234_024 - mat[1].t * det3_234_023;
+            var det4_1234_1234 = mat[1].y * det3_234_234 - mat[1].z * det3_234_134 + mat[1].s * det3_234_124 - mat[1].t * det3_234_123;
 
             // determinant of 5x5 matrix
-            return mat0.x * det4_1234_1234 - mat0.y * det4_1234_0234 + mat0.z * det4_1234_0134 - mat0.s * det4_1234_0124 + mat0.t * det4_1234_0123;
+            return mat[0].x * det4_1234_1234 - mat[0].y * det4_1234_0234 + mat[0].z * det4_1234_0134 - mat[0].s * det4_1234_0124 + mat[0].t * det4_1234_0123;
         }
         public Matrix5x5 Transpose()   // returns transpose
         {
@@ -1285,124 +1276,124 @@ namespace Droid.Core
             // 280+5+25 = 310 multiplications
             //				1 division
             // 2x2 sub-determinants required to calculate 5x5 determinant
-            var det2_34_01 = mat3.x * mat4.y - mat3.y * mat4.x;
-            var det2_34_02 = mat3.x * mat4.z - mat3.z * mat4.x;
-            var det2_34_03 = mat3.x * mat4.s - mat3.s * mat4.x;
-            var det2_34_04 = mat3.x * mat4.t - mat3.t * mat4.x;
-            var det2_34_12 = mat3.y * mat4.y - mat3.z * mat4.y;
-            var det2_34_13 = mat3.y * mat4.s - mat3.s * mat4.y;
-            var det2_34_14 = mat3.y * mat4.t - mat3.t * mat4.y;
-            var det2_34_23 = mat3.z * mat4.s - mat3.s * mat4.z;
-            var det2_34_24 = mat3.z * mat4.t - mat3.t * mat4.z;
-            var det2_34_34 = mat3.s * mat4.t - mat3.t * mat4.s;
+            var det2_34_01 = mat[3].x * mat[4].y - mat[3].y * mat[4].x;
+            var det2_34_02 = mat[3].x * mat[4].z - mat[3].z * mat[4].x;
+            var det2_34_03 = mat[3].x * mat[4].s - mat[3].s * mat[4].x;
+            var det2_34_04 = mat[3].x * mat[4].t - mat[3].t * mat[4].x;
+            var det2_34_12 = mat[3].y * mat[4].y - mat[3].z * mat[4].y;
+            var det2_34_13 = mat[3].y * mat[4].s - mat[3].s * mat[4].y;
+            var det2_34_14 = mat[3].y * mat[4].t - mat[3].t * mat[4].y;
+            var det2_34_23 = mat[3].z * mat[4].s - mat[3].s * mat[4].z;
+            var det2_34_24 = mat[3].z * mat[4].t - mat[3].t * mat[4].z;
+            var det2_34_34 = mat[3].s * mat[4].t - mat[3].t * mat[4].s;
 
             // 3x3 sub-determinants required to calculate 5x5 determinant
-            var det3_234_012 = mat2.x * det2_34_12 - mat2.y * det2_34_02 + mat2.z * det2_34_01;
-            var det3_234_013 = mat2.x * det2_34_13 - mat2.y * det2_34_03 + mat2.s * det2_34_01;
-            var det3_234_014 = mat2.x * det2_34_14 - mat2.y * det2_34_04 + mat2.t * det2_34_01;
-            var det3_234_023 = mat2.x * det2_34_23 - mat2.z * det2_34_03 + mat2.s * det2_34_02;
-            var det3_234_024 = mat2.x * det2_34_24 - mat2.z * det2_34_04 + mat2.t * det2_34_02;
-            var det3_234_034 = mat2.x * det2_34_34 - mat2.s * det2_34_04 + mat2.t * det2_34_03;
-            var det3_234_123 = mat2.y * det2_34_23 - mat2.z * det2_34_13 + mat2.s * det2_34_12;
-            var det3_234_124 = mat2.y * det2_34_24 - mat2.z * det2_34_14 + mat2.t * det2_34_12;
-            var det3_234_134 = mat2.y * det2_34_34 - mat2.s * det2_34_14 + mat2.t * det2_34_13;
-            var det3_234_234 = mat2.z * det2_34_34 - mat2.s * det2_34_24 + mat2.t * det2_34_23;
+            var det3_234_012 = mat[2].x * det2_34_12 - mat[2].y * det2_34_02 + mat[2].z * det2_34_01;
+            var det3_234_013 = mat[2].x * det2_34_13 - mat[2].y * det2_34_03 + mat[2].s * det2_34_01;
+            var det3_234_014 = mat[2].x * det2_34_14 - mat[2].y * det2_34_04 + mat[2].t * det2_34_01;
+            var det3_234_023 = mat[2].x * det2_34_23 - mat[2].z * det2_34_03 + mat[2].s * det2_34_02;
+            var det3_234_024 = mat[2].x * det2_34_24 - mat[2].z * det2_34_04 + mat[2].t * det2_34_02;
+            var det3_234_034 = mat[2].x * det2_34_34 - mat[2].s * det2_34_04 + mat[2].t * det2_34_03;
+            var det3_234_123 = mat[2].y * det2_34_23 - mat[2].z * det2_34_13 + mat[2].s * det2_34_12;
+            var det3_234_124 = mat[2].y * det2_34_24 - mat[2].z * det2_34_14 + mat[2].t * det2_34_12;
+            var det3_234_134 = mat[2].y * det2_34_34 - mat[2].s * det2_34_14 + mat[2].t * det2_34_13;
+            var det3_234_234 = mat[2].z * det2_34_34 - mat[2].s * det2_34_24 + mat[2].t * det2_34_23;
 
             // 4x4 sub-determinants required to calculate 5x5 determinant
-            var det4_1234_0123 = mat1.x * det3_234_123 - mat1.y * det3_234_023 + mat1.z * det3_234_013 - mat1.s * det3_234_012;
-            var det4_1234_0124 = mat1.x * det3_234_124 - mat1.y * det3_234_024 + mat1.z * det3_234_014 - mat1.t * det3_234_012;
-            var det4_1234_0134 = mat1.x * det3_234_134 - mat1.y * det3_234_034 + mat1.s * det3_234_014 - mat1.t * det3_234_013;
-            var det4_1234_0234 = mat1.x * det3_234_234 - mat1.z * det3_234_034 + mat1.s * det3_234_024 - mat1.t * det3_234_023;
-            var det4_1234_1234 = mat1.y * det3_234_234 - mat1.z * det3_234_134 + mat1.s * det3_234_124 - mat1.t * det3_234_123;
+            var det4_1234_0123 = mat[1].x * det3_234_123 - mat[1].y * det3_234_023 + mat[1].z * det3_234_013 - mat[1].s * det3_234_012;
+            var det4_1234_0124 = mat[1].x * det3_234_124 - mat[1].y * det3_234_024 + mat[1].z * det3_234_014 - mat[1].t * det3_234_012;
+            var det4_1234_0134 = mat[1].x * det3_234_134 - mat[1].y * det3_234_034 + mat[1].s * det3_234_014 - mat[1].t * det3_234_013;
+            var det4_1234_0234 = mat[1].x * det3_234_234 - mat[1].z * det3_234_034 + mat[1].s * det3_234_024 - mat[1].t * det3_234_023;
+            var det4_1234_1234 = mat[1].y * det3_234_234 - mat[1].z * det3_234_134 + mat[1].s * det3_234_124 - mat[1].t * det3_234_123;
 
             // determinant of 5x5 matrix
-            var det = mat0.x * det4_1234_1234 - mat0.y * det4_1234_0234 + mat0.z * det4_1234_0134 - mat0.s * det4_1234_0124 + mat0.t * det4_1234_0123;
+            var det = mat[0].x * det4_1234_1234 - mat[0].y * det4_1234_0234 + mat[0].z * det4_1234_0134 - mat[0].s * det4_1234_0124 + mat[0].t * det4_1234_0123;
             if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
                 return false;
 
             var invDet = 1.0f / det;
 
             // remaining 2x2 sub-determinants
-            var det2_23_01 = mat2.x * mat3.y - mat2.y * mat3.x;
-            var det2_23_02 = mat2.x * mat3.z - mat2.z * mat3.x;
-            var det2_23_03 = mat2.x * mat3.s - mat2.s * mat3.x;
-            var det2_23_04 = mat2.x * mat3.t - mat2.t * mat3.x;
-            var det2_23_12 = mat2.y * mat3.z - mat2.z * mat3.y;
-            var det2_23_13 = mat2.y * mat3.s - mat2.s * mat3.y;
-            var det2_23_14 = mat2.y * mat3.t - mat2.t * mat3.y;
-            var det2_23_23 = mat2.z * mat3.s - mat2.s * mat3.z;
-            var det2_23_24 = mat2.z * mat3.t - mat2.t * mat3.z;
-            var det2_23_34 = mat2.s * mat3.t - mat2.t * mat3.s;
-            var det2_24_01 = mat2.x * mat4.y - mat2.y * mat4.x;
-            var det2_24_02 = mat2.x * mat4.z - mat2.z * mat4.x;
-            var det2_24_03 = mat2.x * mat4.s - mat2.s * mat4.x;
-            var det2_24_04 = mat2.x * mat4.t - mat2.t * mat4.x;
-            var det2_24_12 = mat2.y * mat4.z - mat2.z * mat4.y;
-            var det2_24_13 = mat2.y * mat4.s - mat2.s * mat4.y;
-            var det2_24_14 = mat2.y * mat4.t - mat2.t * mat4.y;
-            var det2_24_23 = mat2.z * mat4.s - mat2.s * mat4.z;
-            var det2_24_24 = mat2.z * mat4.t - mat2.t * mat4.z;
-            var det2_24_34 = mat2.s * mat4.t - mat2.t * mat4.s;
+            var det2_23_01 = mat[2].x * mat[3].y - mat[2].y * mat[3].x;
+            var det2_23_02 = mat[2].x * mat[3].z - mat[2].z * mat[3].x;
+            var det2_23_03 = mat[2].x * mat[3].s - mat[2].s * mat[3].x;
+            var det2_23_04 = mat[2].x * mat[3].t - mat[2].t * mat[3].x;
+            var det2_23_12 = mat[2].y * mat[3].z - mat[2].z * mat[3].y;
+            var det2_23_13 = mat[2].y * mat[3].s - mat[2].s * mat[3].y;
+            var det2_23_14 = mat[2].y * mat[3].t - mat[2].t * mat[3].y;
+            var det2_23_23 = mat[2].z * mat[3].s - mat[2].s * mat[3].z;
+            var det2_23_24 = mat[2].z * mat[3].t - mat[2].t * mat[3].z;
+            var det2_23_34 = mat[2].s * mat[3].t - mat[2].t * mat[3].s;
+            var det2_24_01 = mat[2].x * mat[4].y - mat[2].y * mat[4].x;
+            var det2_24_02 = mat[2].x * mat[4].z - mat[2].z * mat[4].x;
+            var det2_24_03 = mat[2].x * mat[4].s - mat[2].s * mat[4].x;
+            var det2_24_04 = mat[2].x * mat[4].t - mat[2].t * mat[4].x;
+            var det2_24_12 = mat[2].y * mat[4].z - mat[2].z * mat[4].y;
+            var det2_24_13 = mat[2].y * mat[4].s - mat[2].s * mat[4].y;
+            var det2_24_14 = mat[2].y * mat[4].t - mat[2].t * mat[4].y;
+            var det2_24_23 = mat[2].z * mat[4].s - mat[2].s * mat[4].z;
+            var det2_24_24 = mat[2].z * mat[4].t - mat[2].t * mat[4].z;
+            var det2_24_34 = mat[2].s * mat[4].t - mat[2].t * mat[4].s;
 
             // remaining 3x3 sub-determinants
-            var det3_123_012 = mat1.x * det2_23_12 - mat1.y * det2_23_02 + mat1.z * det2_23_01;
-            var det3_123_013 = mat1.x * det2_23_13 - mat1.y * det2_23_03 + mat1.s * det2_23_01;
-            var det3_123_014 = mat1.x * det2_23_14 - mat1.y * det2_23_04 + mat1.t * det2_23_01;
-            var det3_123_023 = mat1.x * det2_23_23 - mat1.z * det2_23_03 + mat1.s * det2_23_02;
-            var det3_123_024 = mat1.x * det2_23_24 - mat1.z * det2_23_04 + mat1.t * det2_23_02;
-            var det3_123_034 = mat1.x * det2_23_34 - mat1.s * det2_23_04 + mat1.t * det2_23_03;
-            var det3_123_123 = mat1.y * det2_23_23 - mat1.z * det2_23_13 + mat1.s * det2_23_12;
-            var det3_123_124 = mat1.y * det2_23_24 - mat1.z * det2_23_14 + mat1.t * det2_23_12;
-            var det3_123_134 = mat1.y * det2_23_34 - mat1.s * det2_23_14 + mat1.t * det2_23_13;
-            var det3_123_234 = mat1.z * det2_23_34 - mat1.s * det2_23_24 + mat1.t * det2_23_23;
-            var det3_124_012 = mat1.x * det2_24_12 - mat1.y * det2_24_02 + mat1.z * det2_24_01;
-            var det3_124_013 = mat1.x * det2_24_13 - mat1.y * det2_24_03 + mat1.s * det2_24_01;
-            var det3_124_014 = mat1.x * det2_24_14 - mat1.y * det2_24_04 + mat1.t * det2_24_01;
-            var det3_124_023 = mat1.x * det2_24_23 - mat1.z * det2_24_03 + mat1.s * det2_24_02;
-            var det3_124_024 = mat1.x * det2_24_24 - mat1.z * det2_24_04 + mat1.t * det2_24_02;
-            var det3_124_034 = mat1.x * det2_24_34 - mat1.s * det2_24_04 + mat1.t * det2_24_03;
-            var det3_124_123 = mat1.y * det2_24_23 - mat1.z * det2_24_13 + mat1.s * det2_24_12;
-            var det3_124_124 = mat1.y * det2_24_24 - mat1.z * det2_24_14 + mat1.t * det2_24_12;
-            var det3_124_134 = mat1.y * det2_24_34 - mat1.s * det2_24_14 + mat1.t * det2_24_13;
-            var det3_124_234 = mat1.z * det2_24_34 - mat1.s * det2_24_24 + mat1.t * det2_24_23;
-            var det3_134_012 = mat1.x * det2_34_12 - mat1.y * det2_34_02 + mat1.z * det2_34_01;
-            var det3_134_013 = mat1.x * det2_34_13 - mat1.y * det2_34_03 + mat1.s * det2_34_01;
-            var det3_134_014 = mat1.x * det2_34_14 - mat1.y * det2_34_04 + mat1.t * det2_34_01;
-            var det3_134_023 = mat1.x * det2_34_23 - mat1.z * det2_34_03 + mat1.s * det2_34_02;
-            var det3_134_024 = mat1.x * det2_34_24 - mat1.z * det2_34_04 + mat1.t * det2_34_02;
-            var det3_134_034 = mat1.x * det2_34_34 - mat1.s * det2_34_04 + mat1.t * det2_34_03;
-            var det3_134_123 = mat1.y * det2_34_23 - mat1.z * det2_34_13 + mat1.s * det2_34_12;
-            var det3_134_124 = mat1.y * det2_34_24 - mat1.z * det2_34_14 + mat1.t * det2_34_12;
-            var det3_134_134 = mat1.y * det2_34_34 - mat1.s * det2_34_14 + mat1.t * det2_34_13;
-            var det3_134_234 = mat1.z * det2_34_34 - mat1.s * det2_34_24 + mat1.t * det2_34_23;
+            var det3_123_012 = mat[1].x * det2_23_12 - mat[1].y * det2_23_02 + mat[1].z * det2_23_01;
+            var det3_123_013 = mat[1].x * det2_23_13 - mat[1].y * det2_23_03 + mat[1].s * det2_23_01;
+            var det3_123_014 = mat[1].x * det2_23_14 - mat[1].y * det2_23_04 + mat[1].t * det2_23_01;
+            var det3_123_023 = mat[1].x * det2_23_23 - mat[1].z * det2_23_03 + mat[1].s * det2_23_02;
+            var det3_123_024 = mat[1].x * det2_23_24 - mat[1].z * det2_23_04 + mat[1].t * det2_23_02;
+            var det3_123_034 = mat[1].x * det2_23_34 - mat[1].s * det2_23_04 + mat[1].t * det2_23_03;
+            var det3_123_123 = mat[1].y * det2_23_23 - mat[1].z * det2_23_13 + mat[1].s * det2_23_12;
+            var det3_123_124 = mat[1].y * det2_23_24 - mat[1].z * det2_23_14 + mat[1].t * det2_23_12;
+            var det3_123_134 = mat[1].y * det2_23_34 - mat[1].s * det2_23_14 + mat[1].t * det2_23_13;
+            var det3_123_234 = mat[1].z * det2_23_34 - mat[1].s * det2_23_24 + mat[1].t * det2_23_23;
+            var det3_124_012 = mat[1].x * det2_24_12 - mat[1].y * det2_24_02 + mat[1].z * det2_24_01;
+            var det3_124_013 = mat[1].x * det2_24_13 - mat[1].y * det2_24_03 + mat[1].s * det2_24_01;
+            var det3_124_014 = mat[1].x * det2_24_14 - mat[1].y * det2_24_04 + mat[1].t * det2_24_01;
+            var det3_124_023 = mat[1].x * det2_24_23 - mat[1].z * det2_24_03 + mat[1].s * det2_24_02;
+            var det3_124_024 = mat[1].x * det2_24_24 - mat[1].z * det2_24_04 + mat[1].t * det2_24_02;
+            var det3_124_034 = mat[1].x * det2_24_34 - mat[1].s * det2_24_04 + mat[1].t * det2_24_03;
+            var det3_124_123 = mat[1].y * det2_24_23 - mat[1].z * det2_24_13 + mat[1].s * det2_24_12;
+            var det3_124_124 = mat[1].y * det2_24_24 - mat[1].z * det2_24_14 + mat[1].t * det2_24_12;
+            var det3_124_134 = mat[1].y * det2_24_34 - mat[1].s * det2_24_14 + mat[1].t * det2_24_13;
+            var det3_124_234 = mat[1].z * det2_24_34 - mat[1].s * det2_24_24 + mat[1].t * det2_24_23;
+            var det3_134_012 = mat[1].x * det2_34_12 - mat[1].y * det2_34_02 + mat[1].z * det2_34_01;
+            var det3_134_013 = mat[1].x * det2_34_13 - mat[1].y * det2_34_03 + mat[1].s * det2_34_01;
+            var det3_134_014 = mat[1].x * det2_34_14 - mat[1].y * det2_34_04 + mat[1].t * det2_34_01;
+            var det3_134_023 = mat[1].x * det2_34_23 - mat[1].z * det2_34_03 + mat[1].s * det2_34_02;
+            var det3_134_024 = mat[1].x * det2_34_24 - mat[1].z * det2_34_04 + mat[1].t * det2_34_02;
+            var det3_134_034 = mat[1].x * det2_34_34 - mat[1].s * det2_34_04 + mat[1].t * det2_34_03;
+            var det3_134_123 = mat[1].y * det2_34_23 - mat[1].z * det2_34_13 + mat[1].s * det2_34_12;
+            var det3_134_124 = mat[1].y * det2_34_24 - mat[1].z * det2_34_14 + mat[1].t * det2_34_12;
+            var det3_134_134 = mat[1].y * det2_34_34 - mat[1].s * det2_34_14 + mat[1].t * det2_34_13;
+            var det3_134_234 = mat[1].z * det2_34_34 - mat[1].s * det2_34_24 + mat[1].t * det2_34_23;
 
             // remaining 4x4 sub-determinants
-            var det4_0123_0123 = mat0.x * det3_123_123 - mat0.y * det3_123_023 + mat0.z * det3_123_013 - mat0.s * det3_123_012;
-            var det4_0123_0124 = mat0.x * det3_123_124 - mat0.y * det3_123_024 + mat0.z * det3_123_014 - mat0.t * det3_123_012;
-            var det4_0123_0134 = mat0.x * det3_123_134 - mat0.y * det3_123_034 + mat0.s * det3_123_014 - mat0.t * det3_123_013;
-            var det4_0123_0234 = mat0.x * det3_123_234 - mat0.z * det3_123_034 + mat0.s * det3_123_024 - mat0.t * det3_123_023;
-            var det4_0123_1234 = mat0.y * det3_123_234 - mat0.z * det3_123_134 + mat0.s * det3_123_124 - mat0.t * det3_123_123;
-            var det4_0124_0123 = mat0.x * det3_124_123 - mat0.y * det3_124_023 + mat0.z * det3_124_013 - mat0.s * det3_124_012;
-            var det4_0124_0124 = mat0.x * det3_124_124 - mat0.y * det3_124_024 + mat0.z * det3_124_014 - mat0.t * det3_124_012;
-            var det4_0124_0134 = mat0.x * det3_124_134 - mat0.y * det3_124_034 + mat0.s * det3_124_014 - mat0.t * det3_124_013;
-            var det4_0124_0234 = mat0.x * det3_124_234 - mat0.z * det3_124_034 + mat0.s * det3_124_024 - mat0.t * det3_124_023;
-            var det4_0124_1234 = mat0.y * det3_124_234 - mat0.z * det3_124_134 + mat0.s * det3_124_124 - mat0.t * det3_124_123;
-            var det4_0134_0123 = mat0.x * det3_134_123 - mat0.y * det3_134_023 + mat0.z * det3_134_013 - mat0.s * det3_134_012;
-            var det4_0134_0124 = mat0.x * det3_134_124 - mat0.y * det3_134_024 + mat0.z * det3_134_014 - mat0.t * det3_134_012;
-            var det4_0134_0134 = mat0.x * det3_134_134 - mat0.y * det3_134_034 + mat0.s * det3_134_014 - mat0.t * det3_134_013;
-            var det4_0134_0234 = mat0.x * det3_134_234 - mat0.z * det3_134_034 + mat0.s * det3_134_024 - mat0.t * det3_134_023;
-            var det4_0134_1234 = mat0.y * det3_134_234 - mat0.z * det3_134_134 + mat0.s * det3_134_124 - mat0.t * det3_134_123;
-            var det4_0234_0123 = mat0.x * det3_234_123 - mat0.y * det3_234_023 + mat0.z * det3_234_013 - mat0.s * det3_234_012;
-            var det4_0234_0124 = mat0.x * det3_234_124 - mat0.y * det3_234_024 + mat0.z * det3_234_014 - mat0.t * det3_234_012;
-            var det4_0234_0134 = mat0.x * det3_234_134 - mat0.y * det3_234_034 + mat0.s * det3_234_014 - mat0.t * det3_234_013;
-            var det4_0234_0234 = mat0.x * det3_234_234 - mat0.z * det3_234_034 + mat0.s * det3_234_024 - mat0.t * det3_234_023;
-            var det4_0234_1234 = mat0.y * det3_234_234 - mat0.z * det3_234_134 + mat0.s * det3_234_124 - mat0.t * det3_234_123;
+            var det4_0123_0123 = mat[0].x * det3_123_123 - mat[0].y * det3_123_023 + mat[0].z * det3_123_013 - mat[0].s * det3_123_012;
+            var det4_0123_0124 = mat[0].x * det3_123_124 - mat[0].y * det3_123_024 + mat[0].z * det3_123_014 - mat[0].t * det3_123_012;
+            var det4_0123_0134 = mat[0].x * det3_123_134 - mat[0].y * det3_123_034 + mat[0].s * det3_123_014 - mat[0].t * det3_123_013;
+            var det4_0123_0234 = mat[0].x * det3_123_234 - mat[0].z * det3_123_034 + mat[0].s * det3_123_024 - mat[0].t * det3_123_023;
+            var det4_0123_1234 = mat[0].y * det3_123_234 - mat[0].z * det3_123_134 + mat[0].s * det3_123_124 - mat[0].t * det3_123_123;
+            var det4_0124_0123 = mat[0].x * det3_124_123 - mat[0].y * det3_124_023 + mat[0].z * det3_124_013 - mat[0].s * det3_124_012;
+            var det4_0124_0124 = mat[0].x * det3_124_124 - mat[0].y * det3_124_024 + mat[0].z * det3_124_014 - mat[0].t * det3_124_012;
+            var det4_0124_0134 = mat[0].x * det3_124_134 - mat[0].y * det3_124_034 + mat[0].s * det3_124_014 - mat[0].t * det3_124_013;
+            var det4_0124_0234 = mat[0].x * det3_124_234 - mat[0].z * det3_124_034 + mat[0].s * det3_124_024 - mat[0].t * det3_124_023;
+            var det4_0124_1234 = mat[0].y * det3_124_234 - mat[0].z * det3_124_134 + mat[0].s * det3_124_124 - mat[0].t * det3_124_123;
+            var det4_0134_0123 = mat[0].x * det3_134_123 - mat[0].y * det3_134_023 + mat[0].z * det3_134_013 - mat[0].s * det3_134_012;
+            var det4_0134_0124 = mat[0].x * det3_134_124 - mat[0].y * det3_134_024 + mat[0].z * det3_134_014 - mat[0].t * det3_134_012;
+            var det4_0134_0134 = mat[0].x * det3_134_134 - mat[0].y * det3_134_034 + mat[0].s * det3_134_014 - mat[0].t * det3_134_013;
+            var det4_0134_0234 = mat[0].x * det3_134_234 - mat[0].z * det3_134_034 + mat[0].s * det3_134_024 - mat[0].t * det3_134_023;
+            var det4_0134_1234 = mat[0].y * det3_134_234 - mat[0].z * det3_134_134 + mat[0].s * det3_134_124 - mat[0].t * det3_134_123;
+            var det4_0234_0123 = mat[0].x * det3_234_123 - mat[0].y * det3_234_023 + mat[0].z * det3_234_013 - mat[0].s * det3_234_012;
+            var det4_0234_0124 = mat[0].x * det3_234_124 - mat[0].y * det3_234_024 + mat[0].z * det3_234_014 - mat[0].t * det3_234_012;
+            var det4_0234_0134 = mat[0].x * det3_234_134 - mat[0].y * det3_234_034 + mat[0].s * det3_234_014 - mat[0].t * det3_234_013;
+            var det4_0234_0234 = mat[0].x * det3_234_234 - mat[0].z * det3_234_034 + mat[0].s * det3_234_024 - mat[0].t * det3_234_023;
+            var det4_0234_1234 = mat[0].y * det3_234_234 - mat[0].z * det3_234_134 + mat[0].s * det3_234_124 - mat[0].t * det3_234_123;
 
-            mat0.x = det4_1234_1234 * invDet; mat0.y = -det4_0234_1234 * invDet; mat0.z = det4_0134_1234 * invDet; mat0.s = -det4_0124_1234 * invDet; mat0.t = det4_0123_1234 * invDet;
-            mat1.x = -det4_1234_0234 * invDet; mat1.y = det4_0234_0234 * invDet; mat1.z = -det4_0134_0234 * invDet; mat1.s = det4_0124_0234 * invDet; mat1.t = -det4_0123_0234 * invDet;
-            mat2.x = det4_1234_0134 * invDet; mat2.y = -det4_0234_0134 * invDet; mat2.z = det4_0134_0134 * invDet; mat2.s = -det4_0124_0134 * invDet; mat2.t = det4_0123_0134 * invDet;
-            mat3.x = -det4_1234_0124 * invDet; mat3.y = det4_0234_0124 * invDet; mat3.z = -det4_0134_0124 * invDet; mat3.s = det4_0124_0124 * invDet; mat3.t = -det4_0123_0124 * invDet;
-            mat4.x = det4_1234_0123 * invDet; mat4.y = -det4_0234_0123 * invDet; mat4.z = det4_0134_0123 * invDet; mat4.s = -det4_0124_0123 * invDet; mat4.t = det4_0123_0123 * invDet;
+            mat[0].x = det4_1234_1234 * invDet; mat[0].y = -det4_0234_1234 * invDet; mat[0].z = det4_0134_1234 * invDet; mat[0].s = -det4_0124_1234 * invDet; mat[0].t = det4_0123_1234 * invDet;
+            mat[1].x = -det4_1234_0234 * invDet; mat[1].y = det4_0234_0234 * invDet; mat[1].z = -det4_0134_0234 * invDet; mat[1].s = det4_0124_0234 * invDet; mat[1].t = -det4_0123_0234 * invDet;
+            mat[2].x = det4_1234_0134 * invDet; mat[2].y = -det4_0234_0134 * invDet; mat[2].z = det4_0134_0134 * invDet; mat[2].s = -det4_0124_0134 * invDet; mat[2].t = det4_0123_0134 * invDet;
+            mat[3].x = -det4_1234_0124 * invDet; mat[3].y = det4_0234_0124 * invDet; mat[3].z = -det4_0134_0124 * invDet; mat[3].s = det4_0124_0124 * invDet; mat[3].t = -det4_0123_0124 * invDet;
+            mat[4].x = det4_1234_0123 * invDet; mat[4].y = -det4_0234_0123 * invDet; mat[4].z = det4_0134_0123 * invDet; mat[4].s = -det4_0124_0123 * invDet; mat[4].t = det4_0123_0123 * invDet;
 
             return true;
         }
@@ -1417,7 +1408,7 @@ namespace Droid.Core
         {
             // 86+30+6 = 122 multiplications
             //	  2*1  =   2 divisions
-            fixed (float* mat = &mat0.x)
+            fixed (float* mat = &this.mat[0].x)
             {
                 //r0 = m0.Inverse();	// 3x3
                 var c0 = mat[1 * 5 + 1] * mat[2 * 5 + 2] - mat[1 * 5 + 2] * mat[2 * 5 + 1];
@@ -1431,92 +1422,92 @@ namespace Droid.Core
                 var invDet = 1.0f / det;
 
                 var r0 = new Matrix3x3();
-                r0.mat0.x = c0 * invDet;
-                r0.mat0.y = (mat[0 * 5 + 2] * mat[2 * 5 + 1] - mat[0 * 5 + 1] * mat[2 * 5 + 2]) * invDet;
-                r0.mat0.z = (mat[0 * 5 + 1] * mat[1 * 5 + 2] - mat[0 * 5 + 2] * mat[1 * 5 + 1]) * invDet;
-                r0.mat1.x = c1 * invDet;
-                r0.mat1.y = (mat[0 * 5 + 0] * mat[2 * 5 + 2] - mat[0 * 5 + 2] * mat[2 * 5 + 0]) * invDet;
-                r0.mat1.z = (mat[0 * 5 + 2] * mat[1 * 5 + 0] - mat[0 * 5 + 0] * mat[1 * 5 + 2]) * invDet;
-                r0.mat2.x = c2 * invDet;
-                r0.mat2.y = (mat[0 * 5 + 1] * mat[2 * 5 + 0] - mat[0 * 5 + 0] * mat[2 * 5 + 1]) * invDet;
-                r0.mat2.z = (mat[0 * 5 + 0] * mat[1 * 5 + 1] - mat[0 * 5 + 1] * mat[1 * 5 + 0]) * invDet;
+                r0.mat[0].x = c0 * invDet;
+                r0.mat[0].y = (mat[0 * 5 + 2] * mat[2 * 5 + 1] - mat[0 * 5 + 1] * mat[2 * 5 + 2]) * invDet;
+                r0.mat[0].z = (mat[0 * 5 + 1] * mat[1 * 5 + 2] - mat[0 * 5 + 2] * mat[1 * 5 + 1]) * invDet;
+                r0.mat[1].x = c1 * invDet;
+                r0.mat[1].y = (mat[0 * 5 + 0] * mat[2 * 5 + 2] - mat[0 * 5 + 2] * mat[2 * 5 + 0]) * invDet;
+                r0.mat[1].z = (mat[0 * 5 + 2] * mat[1 * 5 + 0] - mat[0 * 5 + 0] * mat[1 * 5 + 2]) * invDet;
+                r0.mat[2].x = c2 * invDet;
+                r0.mat[2].y = (mat[0 * 5 + 1] * mat[2 * 5 + 0] - mat[0 * 5 + 0] * mat[2 * 5 + 1]) * invDet;
+                r0.mat[2].z = (mat[0 * 5 + 0] * mat[1 * 5 + 1] - mat[0 * 5 + 1] * mat[1 * 5 + 0]) * invDet;
 
                 // r1 = r0 * m1;		// 3x2 = 3x3 * 3x2
                 var r1 = new Matrix3x3();
-                r1.mat0.x = r0.mat0.x * mat[0 * 5 + 3] + r0.mat0.y * mat[1 * 5 + 3] + r0.mat0.z * mat[2 * 5 + 3];
-                r1.mat0.y = r0.mat0.x * mat[0 * 5 + 4] + r0.mat0.y * mat[1 * 5 + 4] + r0.mat0.z * mat[2 * 5 + 4];
-                r1.mat1.x = r0.mat1.x * mat[0 * 5 + 3] + r0.mat1.y * mat[1 * 5 + 3] + r0.mat1.z * mat[2 * 5 + 3];
-                r1.mat1.y = r0.mat1.x * mat[0 * 5 + 4] + r0.mat1.y * mat[1 * 5 + 4] + r0.mat1.z * mat[2 * 5 + 4];
-                r1.mat2.x = r0.mat2.x * mat[0 * 5 + 3] + r0.mat2.y * mat[1 * 5 + 3] + r0.mat2.z * mat[2 * 5 + 3];
-                r1.mat2.y = r0.mat2.x * mat[0 * 5 + 4] + r0.mat2.y * mat[1 * 5 + 4] + r0.mat2.z * mat[2 * 5 + 4];
+                r1.mat[0].x = r0.mat[0].x * mat[0 * 5 + 3] + r0.mat[0].y * mat[1 * 5 + 3] + r0.mat[0].z * mat[2 * 5 + 3];
+                r1.mat[0].y = r0.mat[0].x * mat[0 * 5 + 4] + r0.mat[0].y * mat[1 * 5 + 4] + r0.mat[0].z * mat[2 * 5 + 4];
+                r1.mat[1].x = r0.mat[1].x * mat[0 * 5 + 3] + r0.mat[1].y * mat[1 * 5 + 3] + r0.mat[1].z * mat[2 * 5 + 3];
+                r1.mat[1].y = r0.mat[1].x * mat[0 * 5 + 4] + r0.mat[1].y * mat[1 * 5 + 4] + r0.mat[1].z * mat[2 * 5 + 4];
+                r1.mat[2].x = r0.mat[2].x * mat[0 * 5 + 3] + r0.mat[2].y * mat[1 * 5 + 3] + r0.mat[2].z * mat[2 * 5 + 3];
+                r1.mat[2].y = r0.mat[2].x * mat[0 * 5 + 4] + r0.mat[2].y * mat[1 * 5 + 4] + r0.mat[2].z * mat[2 * 5 + 4];
 
                 // r2 = m2 * r1;		// 2x2 = 2x3 * 3x2
                 var r2 = new Matrix3x3();
-                r2.mat0.x = mat[3 * 5 + 0] * r1.mat0.x + mat[3 * 5 + 1] * r1.mat1.x + mat[3 * 5 + 2] * r1.mat2.x;
-                r2.mat0.y = mat[3 * 5 + 0] * r1.mat0.y + mat[3 * 5 + 1] * r1.mat1.y + mat[3 * 5 + 2] * r1.mat2.y;
-                r2.mat1.x = mat[4 * 5 + 0] * r1.mat0.x + mat[4 * 5 + 1] * r1.mat1.x + mat[4 * 5 + 2] * r1.mat2.x;
-                r2.mat1.y = mat[4 * 5 + 0] * r1.mat0.y + mat[4 * 5 + 1] * r1.mat1.y + mat[4 * 5 + 2] * r1.mat2.y;
+                r2.mat[0].x = mat[3 * 5 + 0] * r1.mat[0].x + mat[3 * 5 + 1] * r1.mat[1].x + mat[3 * 5 + 2] * r1.mat[2].x;
+                r2.mat[0].y = mat[3 * 5 + 0] * r1.mat[0].y + mat[3 * 5 + 1] * r1.mat[1].y + mat[3 * 5 + 2] * r1.mat[2].y;
+                r2.mat[1].x = mat[4 * 5 + 0] * r1.mat[0].x + mat[4 * 5 + 1] * r1.mat[1].x + mat[4 * 5 + 2] * r1.mat[2].x;
+                r2.mat[1].y = mat[4 * 5 + 0] * r1.mat[0].y + mat[4 * 5 + 1] * r1.mat[1].y + mat[4 * 5 + 2] * r1.mat[2].y;
 
                 // r3 = r2 - m3;		// 2x2 = 2x2 - 2x2
                 var r3 = new Matrix3x3();
-                r3.mat0.x = r2.mat0.x - mat[3 * 5 + 3];
-                r3.mat0.y = r2.mat0.y - mat[3 * 5 + 4];
-                r3.mat1.x = r2.mat1.x - mat[4 * 5 + 3];
-                r3.mat1.y = r2.mat1.y - mat[4 * 5 + 4];
+                r3.mat[0].x = r2.mat[0].x - mat[3 * 5 + 3];
+                r3.mat[0].y = r2.mat[0].y - mat[3 * 5 + 4];
+                r3.mat[1].x = r2.mat[1].x - mat[4 * 5 + 3];
+                r3.mat[1].y = r2.mat[1].y - mat[4 * 5 + 4];
 
                 // r3.InverseSelf();	// 2x2
-                det = r3.mat0.x * r3.mat1.y - r3.mat0.y * r3.mat1.x;
+                det = r3.mat[0].x * r3.mat[1].y - r3.mat[0].y * r3.mat[1].x;
                 if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
                     return false;
 
                 invDet = 1.0f / det;
 
-                c0 = r3.mat0.x;
-                r3.mat0[0] = r3.mat1.y * invDet;
-                r3.mat0[1] = -r3.mat0.y * invDet;
-                r3.mat1[0] = -r3.mat1.x * invDet;
-                r3.mat1[1] = c0 * invDet;
+                c0 = r3.mat[0].x;
+                r3.mat[0][0] = r3.mat[1].y * invDet;
+                r3.mat[0][1] = -r3.mat[0].y * invDet;
+                r3.mat[1][0] = -r3.mat[1].x * invDet;
+                r3.mat[1][1] = c0 * invDet;
 
                 // r2 = m2 * r0;		// 2x3 = 2x3 * 3x3
-                r2.mat0[0] = mat[3 * 5 + 0] * r0.mat0.x + mat[3 * 5 + 1] * r0.mat1.x + mat[3 * 5 + 2] * r0.mat2.x;
-                r2.mat0[1] = mat[3 * 5 + 0] * r0.mat0.y + mat[3 * 5 + 1] * r0.mat1.y + mat[3 * 5 + 2] * r0.mat2.y;
-                r2.mat0[2] = mat[3 * 5 + 0] * r0.mat0.z + mat[3 * 5 + 1] * r0.mat1.z + mat[3 * 5 + 2] * r0.mat2.z;
-                r2.mat1[0] = mat[4 * 5 + 0] * r0.mat0.x + mat[4 * 5 + 1] * r0.mat1.x + mat[4 * 5 + 2] * r0.mat2.x;
-                r2.mat1[1] = mat[4 * 5 + 0] * r0.mat0.y + mat[4 * 5 + 1] * r0.mat1.y + mat[4 * 5 + 2] * r0.mat2.y;
-                r2.mat1[2] = mat[4 * 5 + 0] * r0.mat0.z + mat[4 * 5 + 1] * r0.mat1.z + mat[4 * 5 + 2] * r0.mat2.z;
+                r2.mat[0][0] = mat[3 * 5 + 0] * r0.mat[0].x + mat[3 * 5 + 1] * r0.mat[1].x + mat[3 * 5 + 2] * r0.mat[2].x;
+                r2.mat[0][1] = mat[3 * 5 + 0] * r0.mat[0].y + mat[3 * 5 + 1] * r0.mat[1].y + mat[3 * 5 + 2] * r0.mat[2].y;
+                r2.mat[0][2] = mat[3 * 5 + 0] * r0.mat[0].z + mat[3 * 5 + 1] * r0.mat[1].z + mat[3 * 5 + 2] * r0.mat[2].z;
+                r2.mat[1][0] = mat[4 * 5 + 0] * r0.mat[0].x + mat[4 * 5 + 1] * r0.mat[1].x + mat[4 * 5 + 2] * r0.mat[2].x;
+                r2.mat[1][1] = mat[4 * 5 + 0] * r0.mat[0].y + mat[4 * 5 + 1] * r0.mat[1].y + mat[4 * 5 + 2] * r0.mat[2].y;
+                r2.mat[1][2] = mat[4 * 5 + 0] * r0.mat[0].z + mat[4 * 5 + 1] * r0.mat[1].z + mat[4 * 5 + 2] * r0.mat[2].z;
 
                 // m2 = r3 * r2;		// 2x3 = 2x2 * 2x3
-                mat[3 * 5 + 0] = r3.mat0.x * r2.mat0.x + r3.mat0.y * r2.mat1.x;
-                mat[3 * 5 + 1] = r3.mat0.x * r2.mat0.y + r3.mat0.y * r2.mat1.y;
-                mat[3 * 5 + 2] = r3.mat0.x * r2.mat0.z + r3.mat0.y * r2.mat1.z;
-                mat[4 * 5 + 0] = r3.mat1.x * r2.mat0.x + r3.mat1.y * r2.mat1.x;
-                mat[4 * 5 + 1] = r3.mat1.x * r2.mat0.y + r3.mat1.y * r2.mat1.y;
-                mat[4 * 5 + 2] = r3.mat1.x * r2.mat0.z + r3.mat1.y * r2.mat1.z;
+                mat[3 * 5 + 0] = r3.mat[0].x * r2.mat[0].x + r3.mat[0].y * r2.mat[1].x;
+                mat[3 * 5 + 1] = r3.mat[0].x * r2.mat[0].y + r3.mat[0].y * r2.mat[1].y;
+                mat[3 * 5 + 2] = r3.mat[0].x * r2.mat[0].z + r3.mat[0].y * r2.mat[1].z;
+                mat[4 * 5 + 0] = r3.mat[1].x * r2.mat[0].x + r3.mat[1].y * r2.mat[1].x;
+                mat[4 * 5 + 1] = r3.mat[1].x * r2.mat[0].y + r3.mat[1].y * r2.mat[1].y;
+                mat[4 * 5 + 2] = r3.mat[1].x * r2.mat[0].z + r3.mat[1].y * r2.mat[1].z;
 
                 // m0 = r0 - r1 * m2;	// 3x3 = 3x3 - 3x2 * 2x3
-                mat[0 * 5 + 0] = r0.mat0.x - r1.mat0[0] * mat[3 * 5 + 0] - r1.mat0.y * mat[4 * 5 + 0];
-                mat[0 * 5 + 1] = r0.mat0.y - r1.mat0[0] * mat[3 * 5 + 1] - r1.mat0.y * mat[4 * 5 + 1];
-                mat[0 * 5 + 2] = r0.mat0.z - r1.mat0[0] * mat[3 * 5 + 2] - r1.mat0.y * mat[4 * 5 + 2];
-                mat[1 * 5 + 0] = r0.mat1.x - r1.mat1[0] * mat[3 * 5 + 0] - r1.mat1.y * mat[4 * 5 + 0];
-                mat[1 * 5 + 1] = r0.mat1.y - r1.mat1[0] * mat[3 * 5 + 1] - r1.mat1.y * mat[4 * 5 + 1];
-                mat[1 * 5 + 2] = r0.mat1.z - r1.mat1[0] * mat[3 * 5 + 2] - r1.mat1.y * mat[4 * 5 + 2];
-                mat[2 * 5 + 0] = r0.mat2.x - r1.mat2[0] * mat[3 * 5 + 0] - r1.mat2.y * mat[4 * 5 + 0];
-                mat[2 * 5 + 1] = r0.mat2.y - r1.mat2[0] * mat[3 * 5 + 1] - r1.mat2.y * mat[4 * 5 + 1];
-                mat[2 * 5 + 2] = r0.mat2.z - r1.mat2[0] * mat[3 * 5 + 2] - r1.mat2.y * mat[4 * 5 + 2];
+                mat[0 * 5 + 0] = r0.mat[0].x - r1.mat[0][0] * mat[3 * 5 + 0] - r1.mat[0].y * mat[4 * 5 + 0];
+                mat[0 * 5 + 1] = r0.mat[0].y - r1.mat[0][0] * mat[3 * 5 + 1] - r1.mat[0].y * mat[4 * 5 + 1];
+                mat[0 * 5 + 2] = r0.mat[0].z - r1.mat[0][0] * mat[3 * 5 + 2] - r1.mat[0].y * mat[4 * 5 + 2];
+                mat[1 * 5 + 0] = r0.mat[1].x - r1.mat[1][0] * mat[3 * 5 + 0] - r1.mat[1].y * mat[4 * 5 + 0];
+                mat[1 * 5 + 1] = r0.mat[1].y - r1.mat[1][0] * mat[3 * 5 + 1] - r1.mat[1].y * mat[4 * 5 + 1];
+                mat[1 * 5 + 2] = r0.mat[1].z - r1.mat[1][0] * mat[3 * 5 + 2] - r1.mat[1].y * mat[4 * 5 + 2];
+                mat[2 * 5 + 0] = r0.mat[2].x - r1.mat[2][0] * mat[3 * 5 + 0] - r1.mat[2].y * mat[4 * 5 + 0];
+                mat[2 * 5 + 1] = r0.mat[2].y - r1.mat[2][0] * mat[3 * 5 + 1] - r1.mat[2].y * mat[4 * 5 + 1];
+                mat[2 * 5 + 2] = r0.mat[2].z - r1.mat[2][0] * mat[3 * 5 + 2] - r1.mat[2].y * mat[4 * 5 + 2];
 
                 // m1 = r1 * r3;		// 3x2 = 3x2 * 2x2
-                mat[0 * 5 + 3] = r1.mat0.x * r3.mat0.x + r1.mat0.y * r3.mat1.x;
-                mat[0 * 5 + 4] = r1.mat0.x * r3.mat0.y + r1.mat0.y * r3.mat1.y;
-                mat[1 * 5 + 3] = r1.mat1.x * r3.mat0.x + r1.mat1.y * r3.mat1.x;
-                mat[1 * 5 + 4] = r1.mat1.x * r3.mat0.y + r1.mat1.y * r3.mat1.y;
-                mat[2 * 5 + 3] = r1.mat2.x * r3.mat0.x + r1.mat2.y * r3.mat1.x;
-                mat[2 * 5 + 4] = r1.mat2.x * r3.mat0.y + r1.mat2.y * r3.mat1.y;
+                mat[0 * 5 + 3] = r1.mat[0].x * r3.mat[0].x + r1.mat[0].y * r3.mat[1].x;
+                mat[0 * 5 + 4] = r1.mat[0].x * r3.mat[0].y + r1.mat[0].y * r3.mat[1].y;
+                mat[1 * 5 + 3] = r1.mat[1].x * r3.mat[0].x + r1.mat[1].y * r3.mat[1].x;
+                mat[1 * 5 + 4] = r1.mat[1].x * r3.mat[0].y + r1.mat[1].y * r3.mat[1].y;
+                mat[2 * 5 + 3] = r1.mat[2].x * r3.mat[0].x + r1.mat[2].y * r3.mat[1].x;
+                mat[2 * 5 + 4] = r1.mat[2].x * r3.mat[0].y + r1.mat[2].y * r3.mat[1].y;
 
                 // m3 = -r3;			// 2x2 = - 2x2
-                mat[3 * 5 + 3] = -r3.mat0.x;
-                mat[3 * 5 + 4] = -r3.mat0.y;
-                mat[4 * 5 + 3] = -r3.mat1.x;
-                mat[4 * 5 + 4] = -r3.mat1.y;
+                mat[3 * 5 + 3] = -r3.mat[0].x;
+                mat[3 * 5 + 4] = -r3.mat[0].y;
+                mat[4 * 5 + 3] = -r3.mat[1].x;
+                mat[4 * 5 + 4] = -r3.mat[1].y;
             }
 
             return true;
@@ -1526,15 +1517,11 @@ namespace Droid.Core
             => 25;
 
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
-            => mat0.ToFloatPtr(callback);
+            => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
 
-        internal Vector5 mat0;
-        internal Vector5 mat1;
-        internal Vector5 mat2;
-        internal Vector5 mat3;
-        internal Vector5 mat4;
+        internal Vector5[] mat;
 
         public static Matrix5x5 zero = new(new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0));
         public static Matrix5x5 identity = new(new Vector5(1, 0, 0, 0, 0), new Vector5(0, 1, 0, 0, 0), new Vector5(0, 0, 1, 0, 0), new Vector5(0, 0, 0, 1, 0), new Vector5(0, 0, 0, 0, 1));
@@ -1545,97 +1532,99 @@ namespace Droid.Core
     {
         public Matrix6x6(Vector6 v0, Vector6 v1, Vector6 v2, Vector6 v3, Vector6 v4, Vector6 v5)
         {
-            mat0 = v0;
-            mat1 = v1;
-            mat2 = v2;
-            mat3 = v3;
-            mat4 = v4;
-            mat5 = v5;
+            mat = new Vector6[6];
+            mat[0] = v0;
+            mat[1] = v1;
+            mat[2] = v2;
+            mat[3] = v3;
+            mat[4] = v4;
+            mat[5] = v5;
         }
         public Matrix6x6(Matrix3x3 m0, Matrix3x3 m1, Matrix3x3 m2, Matrix3x3 m3)
         {
-            mat0 = new Vector6(m0[0].x, m0[0].y, m0[0].z, m1[0].x, m1[0].y, m1[0].z);
-            mat1 = new Vector6(m0[1].x, m0[1].y, m0[1].z, m1[1].x, m1[1].y, m1[1].z);
-            mat2 = new Vector6(m0[2].x, m0[2].y, m0[2].z, m1[2].x, m1[2].y, m1[2].z);
-            mat3 = new Vector6(m2[0].x, m2[0].y, m2[0].z, m3[0].x, m3[0].y, m3[0].z);
-            mat4 = new Vector6(m2[1].x, m2[1].y, m2[1].z, m3[1].x, m3[1].y, m3[1].z);
-            mat5 = new Vector6(m2[2].x, m2[2].y, m2[2].z, m3[2].x, m3[2].y, m3[2].z);
+            mat = new Vector6[6];
+            mat[0] = new Vector6(m0[0].x, m0[0].y, m0[0].z, m1[0].x, m1[0].y, m1[0].z);
+            mat[1] = new Vector6(m0[1].x, m0[1].y, m0[1].z, m1[1].x, m1[1].y, m1[1].z);
+            mat[2] = new Vector6(m0[2].x, m0[2].y, m0[2].z, m1[2].x, m1[2].y, m1[2].z);
+            mat[3] = new Vector6(m2[0].x, m2[0].y, m2[0].z, m3[0].x, m3[0].y, m3[0].z);
+            mat[4] = new Vector6(m2[1].x, m2[1].y, m2[1].z, m3[1].x, m3[1].y, m3[1].z);
+            mat[5] = new Vector6(m2[2].x, m2[2].y, m2[2].z, m3[2].x, m3[2].y, m3[2].z);
         }
 
         public Matrix6x6(float[][] src)
         {
-            mat0 = new Vector6(src[0][0], src[0][1], src[0][2], src[0][3], src[0][4], src[0][5]);
-            mat1 = new Vector6(src[1][0], src[1][1], src[1][2], src[1][3], src[1][4], src[1][5]);
-            mat2 = new Vector6(src[2][0], src[2][1], src[2][2], src[2][3], src[2][4], src[2][5]);
-            mat3 = new Vector6(src[3][0], src[3][1], src[3][2], src[3][3], src[3][4], src[3][5]);
-            mat4 = new Vector6(src[4][0], src[4][1], src[4][2], src[4][3], src[4][4], src[4][5]);
-            mat5 = new Vector6(src[5][0], src[5][1], src[5][2], src[5][3], src[5][4], src[5][5]);
+            mat = new Vector6[6];
+            mat[0] = new Vector6(src[0][0], src[0][1], src[0][2], src[0][3], src[0][4], src[0][5]);
+            mat[1] = new Vector6(src[1][0], src[1][1], src[1][2], src[1][3], src[1][4], src[1][5]);
+            mat[2] = new Vector6(src[2][0], src[2][1], src[2][2], src[2][3], src[2][4], src[2][5]);
+            mat[3] = new Vector6(src[3][0], src[3][1], src[3][2], src[3][3], src[3][4], src[3][5]);
+            mat[4] = new Vector6(src[4][0], src[4][1], src[4][2], src[4][3], src[4][4], src[4][5]);
+            mat[5] = new Vector6(src[5][0], src[5][1], src[5][2], src[5][3], src[5][4], src[5][5]);
         }
+        internal unsafe Matrix6x6(Vector6[] mat)
+            => this.mat = mat;
 
-        public unsafe ref Vector6 this[int index]
-        {
-            get
-            {
-                fixed (Vector6* mat = &mat0)
-                    return ref mat[index];
-            }
-        }
+        public ref Vector6 this[int index]
+           => ref mat[index];
 
         public static Matrix6x6 operator *(Matrix6x6 _, float a)
             => new(
-            new Vector6(_.mat0[0] * a, _.mat0[1] * a, _.mat0[2] * a, _.mat0[3] * a, _.mat0[4] * a, _.mat0[5] * a),
-            new Vector6(_.mat1[0] * a, _.mat1[1] * a, _.mat1[2] * a, _.mat1[3] * a, _.mat1[4] * a, _.mat1[5] * a),
-            new Vector6(_.mat2[0] * a, _.mat2[1] * a, _.mat2[2] * a, _.mat2[3] * a, _.mat2[4] * a, _.mat2[5] * a),
-            new Vector6(_.mat3[0] * a, _.mat3[1] * a, _.mat3[2] * a, _.mat3[3] * a, _.mat3[4] * a, _.mat3[5] * a),
-            new Vector6(_.mat4[0] * a, _.mat4[1] * a, _.mat4[2] * a, _.mat4[3] * a, _.mat4[4] * a, _.mat4[5] * a),
-            new Vector6(_.mat5[0] * a, _.mat5[1] * a, _.mat5[2] * a, _.mat5[3] * a, _.mat5[4] * a, _.mat5[5] * a));
+            new Vector6(_.mat[0][0] * a, _.mat[0][1] * a, _.mat[0][2] * a, _.mat[0][3] * a, _.mat[0][4] * a, _.mat[0][5] * a),
+            new Vector6(_.mat[1][0] * a, _.mat[1][1] * a, _.mat[1][2] * a, _.mat[1][3] * a, _.mat[1][4] * a, _.mat[1][5] * a),
+            new Vector6(_.mat[2][0] * a, _.mat[2][1] * a, _.mat[2][2] * a, _.mat[2][3] * a, _.mat[2][4] * a, _.mat[2][5] * a),
+            new Vector6(_.mat[3][0] * a, _.mat[3][1] * a, _.mat[3][2] * a, _.mat[3][3] * a, _.mat[3][4] * a, _.mat[3][5] * a),
+            new Vector6(_.mat[4][0] * a, _.mat[4][1] * a, _.mat[4][2] * a, _.mat[4][3] * a, _.mat[4][4] * a, _.mat[4][5] * a),
+            new Vector6(_.mat[5][0] * a, _.mat[5][1] * a, _.mat[5][2] * a, _.mat[5][3] * a, _.mat[5][4] * a, _.mat[5][5] * a));
 
         public static Vector6 operator *(Matrix6x6 _, Vector6 vec)
             => new(
-            _.mat0[0] * vec[0] + _.mat0[1] * vec[1] + _.mat0[2] * vec[2] + _.mat0[3] * vec[3] + _.mat0[4] * vec[4] + _.mat0[5] * vec[5],
-            _.mat1[0] * vec[0] + _.mat1[1] * vec[1] + _.mat1[2] * vec[2] + _.mat1[3] * vec[3] + _.mat1[4] * vec[4] + _.mat1[5] * vec[5],
-            _.mat2[0] * vec[0] + _.mat2[1] * vec[1] + _.mat2[2] * vec[2] + _.mat2[3] * vec[3] + _.mat2[4] * vec[4] + _.mat2[5] * vec[5],
-            _.mat3[0] * vec[0] + _.mat3[1] * vec[1] + _.mat3[2] * vec[2] + _.mat3[3] * vec[3] + _.mat3[4] * vec[4] + _.mat3[5] * vec[5],
-            _.mat4[0] * vec[0] + _.mat4[1] * vec[1] + _.mat4[2] * vec[2] + _.mat4[3] * vec[3] + _.mat4[4] * vec[4] + _.mat4[5] * vec[5],
-            _.mat5[0] * vec[0] + _.mat5[1] * vec[1] + _.mat5[2] * vec[2] + _.mat5[3] * vec[3] + _.mat5[4] * vec[4] + _.mat5[5] * vec[5]);
+            _.mat[0][0] * vec[0] + _.mat[0][1] * vec[1] + _.mat[0][2] * vec[2] + _.mat[0][3] * vec[3] + _.mat[0][4] * vec[4] + _.mat[0][5] * vec[5],
+            _.mat[1][0] * vec[0] + _.mat[1][1] * vec[1] + _.mat[1][2] * vec[2] + _.mat[1][3] * vec[3] + _.mat[1][4] * vec[4] + _.mat[1][5] * vec[5],
+            _.mat[2][0] * vec[0] + _.mat[2][1] * vec[1] + _.mat[2][2] * vec[2] + _.mat[2][3] * vec[3] + _.mat[2][4] * vec[4] + _.mat[2][5] * vec[5],
+            _.mat[3][0] * vec[0] + _.mat[3][1] * vec[1] + _.mat[3][2] * vec[2] + _.mat[3][3] * vec[3] + _.mat[3][4] * vec[4] + _.mat[3][5] * vec[5],
+            _.mat[4][0] * vec[0] + _.mat[4][1] * vec[1] + _.mat[4][2] * vec[2] + _.mat[4][3] * vec[3] + _.mat[4][4] * vec[4] + _.mat[4][5] * vec[5],
+            _.mat[5][0] * vec[0] + _.mat[5][1] * vec[1] + _.mat[5][2] * vec[2] + _.mat[5][3] * vec[3] + _.mat[5][4] * vec[4] + _.mat[5][5] * vec[5]);
         public static unsafe Matrix6x6 operator *(Matrix6x6 _, Matrix6x6 a)
         {
-            Matrix6x6 dst;
-            var m1Ptr = (float*)&_;
-            var m2Ptr = (float*)&a;
-            var dstPtr = (float*)&dst;
-            for (var i = 0; i < 6; i++)
+            Matrix6x6 dst = new();
+            fixed (void* __ = &_.mat[0], a_ = &a.mat[0], dst_ = &dst.mat[0])
             {
-                for (var j = 0; j < 6; j++)
+                var m1Ptr = (float*)__;
+                var m2Ptr = (float*)a_;
+                var dstPtr = (float*)dst_;
+                for (var i = 0; i < 6; i++)
                 {
-                    *dstPtr = m1Ptr[0] * m2Ptr[0 * 6 + j]
-                            + m1Ptr[1] * m2Ptr[1 * 6 + j]
-                            + m1Ptr[2] * m2Ptr[2 * 6 + j]
-                            + m1Ptr[3] * m2Ptr[3 * 6 + j]
-                            + m1Ptr[4] * m2Ptr[4 * 6 + j]
-                            + m1Ptr[5] * m2Ptr[5 * 6 + j];
-                    dstPtr++;
+                    for (var j = 0; j < 6; j++)
+                    {
+                        *dstPtr = m1Ptr[0] * m2Ptr[0 * 6 + j]
+                                + m1Ptr[1] * m2Ptr[1 * 6 + j]
+                                + m1Ptr[2] * m2Ptr[2 * 6 + j]
+                                + m1Ptr[3] * m2Ptr[3 * 6 + j]
+                                + m1Ptr[4] * m2Ptr[4 * 6 + j]
+                                + m1Ptr[5] * m2Ptr[5 * 6 + j];
+                        dstPtr++;
+                    }
+                    m1Ptr += 6;
                 }
-                m1Ptr += 6;
+                return dst;
             }
-            return dst;
         }
         public static Matrix6x6 operator +(Matrix6x6 _, Matrix6x6 a)
             => new(
-            new Vector6(_.mat0[0] + a.mat0[0], _.mat0[1] + a.mat0[1], _.mat0[2] + a.mat0[2], _.mat0[3] + a.mat0[3], _.mat0[4] + a.mat0[4], _.mat0[5] + a.mat0[5]),
-            new Vector6(_.mat1[0] + a.mat1[0], _.mat1[1] + a.mat1[1], _.mat1[2] + a.mat1[2], _.mat1[3] + a.mat1[3], _.mat1[4] + a.mat1[4], _.mat1[5] + a.mat1[5]),
-            new Vector6(_.mat2[0] + a.mat2[0], _.mat2[1] + a.mat2[1], _.mat2[2] + a.mat2[2], _.mat2[3] + a.mat2[3], _.mat2[4] + a.mat2[4], _.mat2[5] + a.mat2[5]),
-            new Vector6(_.mat3[0] + a.mat3[0], _.mat3[1] + a.mat3[1], _.mat3[2] + a.mat3[2], _.mat3[3] + a.mat3[3], _.mat3[4] + a.mat3[4], _.mat3[5] + a.mat3[5]),
-            new Vector6(_.mat4[0] + a.mat4[0], _.mat4[1] + a.mat4[1], _.mat4[2] + a.mat4[2], _.mat4[3] + a.mat4[3], _.mat4[4] + a.mat4[4], _.mat4[5] + a.mat4[5]),
-            new Vector6(_.mat5[0] + a[5][0], _.mat5[1] + a[5][1], _.mat5[2] + a[5][2], _.mat5[3] + a[5][3], _.mat5[4] + a[5][4], _.mat5[5] + a[5][5]));
+            new Vector6(_.mat[0][0] + a.mat[0][0], _.mat[0][1] + a.mat[0][1], _.mat[0][2] + a.mat[0][2], _.mat[0][3] + a.mat[0][3], _.mat[0][4] + a.mat[0][4], _.mat[0][5] + a.mat[0][5]),
+            new Vector6(_.mat[1][0] + a.mat[1][0], _.mat[1][1] + a.mat[1][1], _.mat[1][2] + a.mat[1][2], _.mat[1][3] + a.mat[1][3], _.mat[1][4] + a.mat[1][4], _.mat[1][5] + a.mat[1][5]),
+            new Vector6(_.mat[2][0] + a.mat[2][0], _.mat[2][1] + a.mat[2][1], _.mat[2][2] + a.mat[2][2], _.mat[2][3] + a.mat[2][3], _.mat[2][4] + a.mat[2][4], _.mat[2][5] + a.mat[2][5]),
+            new Vector6(_.mat[3][0] + a.mat[3][0], _.mat[3][1] + a.mat[3][1], _.mat[3][2] + a.mat[3][2], _.mat[3][3] + a.mat[3][3], _.mat[3][4] + a.mat[3][4], _.mat[3][5] + a.mat[3][5]),
+            new Vector6(_.mat[4][0] + a.mat[4][0], _.mat[4][1] + a.mat[4][1], _.mat[4][2] + a.mat[4][2], _.mat[4][3] + a.mat[4][3], _.mat[4][4] + a.mat[4][4], _.mat[4][5] + a.mat[4][5]),
+            new Vector6(_.mat[5][0] + a[5][0], _.mat[5][1] + a[5][1], _.mat[5][2] + a[5][2], _.mat[5][3] + a[5][3], _.mat[5][4] + a[5][4], _.mat[5][5] + a[5][5]));
         public static Matrix6x6 operator -(Matrix6x6 _, Matrix6x6 a)
             => new(
-            new Vector6(_.mat0[0] - a.mat0[0], _.mat0[1] - a.mat0[1], _.mat0[2] - a.mat0[2], _.mat0[3] - a.mat0[3], _.mat0[4] - a.mat0[4], _.mat0[5] - a.mat0[5]),
-            new Vector6(_.mat1[0] - a.mat1[0], _.mat1[1] - a.mat1[1], _.mat1[2] - a.mat1[2], _.mat1[3] - a.mat1[3], _.mat1[4] - a.mat1[4], _.mat1[5] - a.mat1[5]),
-            new Vector6(_.mat2[0] - a.mat2[0], _.mat2[1] - a.mat2[1], _.mat2[2] - a.mat2[2], _.mat2[3] - a.mat2[3], _.mat2[4] - a.mat2[4], _.mat2[5] - a.mat2[5]),
-            new Vector6(_.mat3[0] - a.mat3[0], _.mat3[1] - a.mat3[1], _.mat3[2] - a.mat3[2], _.mat3[3] - a.mat3[3], _.mat3[4] - a.mat3[4], _.mat3[5] - a.mat3[5]),
-            new Vector6(_.mat4[0] - a.mat4[0], _.mat4[1] - a.mat4[1], _.mat4[2] - a.mat4[2], _.mat4[3] - a.mat4[3], _.mat4[4] - a.mat4[4], _.mat4[5] - a.mat4[5]),
-            new Vector6(_.mat5[0] - a[5][0], _.mat5[1] - a[5][1], _.mat5[2] - a[5][2], _.mat5[3] - a[5][3], _.mat5[4] - a[5][4], _.mat5[5] - a[5][5]));
+            new Vector6(_.mat[0][0] - a.mat[0][0], _.mat[0][1] - a.mat[0][1], _.mat[0][2] - a.mat[0][2], _.mat[0][3] - a.mat[0][3], _.mat[0][4] - a.mat[0][4], _.mat[0][5] - a.mat[0][5]),
+            new Vector6(_.mat[1][0] - a.mat[1][0], _.mat[1][1] - a.mat[1][1], _.mat[1][2] - a.mat[1][2], _.mat[1][3] - a.mat[1][3], _.mat[1][4] - a.mat[1][4], _.mat[1][5] - a.mat[1][5]),
+            new Vector6(_.mat[2][0] - a.mat[2][0], _.mat[2][1] - a.mat[2][1], _.mat[2][2] - a.mat[2][2], _.mat[2][3] - a.mat[2][3], _.mat[2][4] - a.mat[2][4], _.mat[2][5] - a.mat[2][5]),
+            new Vector6(_.mat[3][0] - a.mat[3][0], _.mat[3][1] - a.mat[3][1], _.mat[3][2] - a.mat[3][2], _.mat[3][3] - a.mat[3][3], _.mat[3][4] - a.mat[3][4], _.mat[3][5] - a.mat[3][5]),
+            new Vector6(_.mat[4][0] - a.mat[4][0], _.mat[4][1] - a.mat[4][1], _.mat[4][2] - a.mat[4][2], _.mat[4][3] - a.mat[4][3], _.mat[4][4] - a.mat[4][4], _.mat[4][5] - a.mat[4][5]),
+            new Vector6(_.mat[5][0] - a[5][0], _.mat[5][1] - a[5][1], _.mat[5][2] - a[5][2], _.mat[5][3] - a[5][3], _.mat[5][4] - a[5][4], _.mat[5][5] - a[5][5]));
 
         public static Matrix6x6 operator *(float a, Matrix6x6 mat)
             => mat * a;
@@ -1644,10 +1633,10 @@ namespace Droid.Core
 
         public unsafe bool Compare(Matrix6x6 a)                       // exact compare, no epsilon
         {
-            fixed (void* mat = &mat0)
+            fixed (void* mat_ = &mat[0], a_ = &a.mat[0])
             {
-                var ptr1 = (float*)&mat;
-                var ptr2 = (float*)&a.mat0;
+                var ptr1 = (float*)mat_;
+                var ptr2 = (float*)a_;
                 for (var i = 0; i < 6 * 6; i++)
                     if (ptr1[i] != ptr2[i])
                         return false;
@@ -1656,10 +1645,10 @@ namespace Droid.Core
         }
         public unsafe bool Compare(Matrix6x6 a, float epsilon)  // compare with epsilon
         {
-            fixed (void* mat = &mat0)
+            fixed (void* mat_ = &mat[0], a_ = &a.mat[0])
             {
-                var ptr1 = (float*)&mat;
-                var ptr2 = (float*)&a.mat0;
+                var ptr1 = (float*)mat_;
+                var ptr2 = (float*)a_;
                 for (var i = 0; i < 6 * 6; i++)
                     if (MathX.Fabs(ptr1[i] - ptr2[i]) > epsilon)
                         return false;
@@ -1673,13 +1662,10 @@ namespace Droid.Core
         public override bool Equals(object obj)
             => obj is Matrix6x6 q && Compare(q);
         public override int GetHashCode()
-            => mat0.GetHashCode();
+            => mat[0].GetHashCode();
 
         public unsafe void Zero()
-        {
-            fixed (void* p = &this)
-                U.memset(p, 0, sizeof(Matrix6x6));
-        }
+            => Array.Clear(mat, 0, 6);
         public void Identity()
             => this = identity;
         public bool IsIdentity(float epsilon = Matrix_.MATRIX_EPSILON)
@@ -1712,76 +1698,76 @@ namespace Droid.Core
                 this[b0 + 2][b1 + 0], this[b0 + 2][b1 + 1], this[b0 + 2][b1 + 2]);
         }
         public float Trace()
-            => mat0[0] + mat1[1] + mat2[2] + mat3[3] + mat4[4] + mat5[5];
+            => mat[0][0] + mat[1][1] + mat[2][2] + mat[3][3] + mat[4][4] + mat[5][5];
         public float Determinant()
         {
             // 2x2 sub-determinants required to calculate 6x6 determinant
-            var det2_45_01 = mat4[0] * mat5[1] - mat4[1] * mat5[0];
-            var det2_45_02 = mat4[0] * mat5[2] - mat4[2] * mat5[0];
-            var det2_45_03 = mat4[0] * mat5[3] - mat4[3] * mat5[0];
-            var det2_45_04 = mat4[0] * mat5[4] - mat4[4] * mat5[0];
-            var det2_45_05 = mat4[0] * mat5[5] - mat4[5] * mat5[0];
-            var det2_45_12 = mat4[1] * mat5[2] - mat4[2] * mat5[1];
-            var det2_45_13 = mat4[1] * mat5[3] - mat4[3] * mat5[1];
-            var det2_45_14 = mat4[1] * mat5[4] - mat4[4] * mat5[1];
-            var det2_45_15 = mat4[1] * mat5[5] - mat4[5] * mat5[1];
-            var det2_45_23 = mat4[2] * mat5[3] - mat4[3] * mat5[2];
-            var det2_45_24 = mat4[2] * mat5[4] - mat4[4] * mat5[2];
-            var det2_45_25 = mat4[2] * mat5[5] - mat4[5] * mat5[2];
-            var det2_45_34 = mat4[3] * mat5[4] - mat4[4] * mat5[3];
-            var det2_45_35 = mat4[3] * mat5[5] - mat4[5] * mat5[3];
-            var det2_45_45 = mat4[4] * mat5[5] - mat4[5] * mat5[4];
+            var det2_45_01 = mat[4][0] * mat[5][1] - mat[4][1] * mat[5][0];
+            var det2_45_02 = mat[4][0] * mat[5][2] - mat[4][2] * mat[5][0];
+            var det2_45_03 = mat[4][0] * mat[5][3] - mat[4][3] * mat[5][0];
+            var det2_45_04 = mat[4][0] * mat[5][4] - mat[4][4] * mat[5][0];
+            var det2_45_05 = mat[4][0] * mat[5][5] - mat[4][5] * mat[5][0];
+            var det2_45_12 = mat[4][1] * mat[5][2] - mat[4][2] * mat[5][1];
+            var det2_45_13 = mat[4][1] * mat[5][3] - mat[4][3] * mat[5][1];
+            var det2_45_14 = mat[4][1] * mat[5][4] - mat[4][4] * mat[5][1];
+            var det2_45_15 = mat[4][1] * mat[5][5] - mat[4][5] * mat[5][1];
+            var det2_45_23 = mat[4][2] * mat[5][3] - mat[4][3] * mat[5][2];
+            var det2_45_24 = mat[4][2] * mat[5][4] - mat[4][4] * mat[5][2];
+            var det2_45_25 = mat[4][2] * mat[5][5] - mat[4][5] * mat[5][2];
+            var det2_45_34 = mat[4][3] * mat[5][4] - mat[4][4] * mat[5][3];
+            var det2_45_35 = mat[4][3] * mat[5][5] - mat[4][5] * mat[5][3];
+            var det2_45_45 = mat[4][4] * mat[5][5] - mat[4][5] * mat[5][4];
 
             // 3x3 sub-determinants required to calculate 6x6 determinant
-            var det3_345_012 = mat3[0] * det2_45_12 - mat3[1] * det2_45_02 + mat3[2] * det2_45_01;
-            var det3_345_013 = mat3[0] * det2_45_13 - mat3[1] * det2_45_03 + mat3[3] * det2_45_01;
-            var det3_345_014 = mat3[0] * det2_45_14 - mat3[1] * det2_45_04 + mat3[4] * det2_45_01;
-            var det3_345_015 = mat3[0] * det2_45_15 - mat3[1] * det2_45_05 + mat3[5] * det2_45_01;
-            var det3_345_023 = mat3[0] * det2_45_23 - mat3[2] * det2_45_03 + mat3[3] * det2_45_02;
-            var det3_345_024 = mat3[0] * det2_45_24 - mat3[2] * det2_45_04 + mat3[4] * det2_45_02;
-            var det3_345_025 = mat3[0] * det2_45_25 - mat3[2] * det2_45_05 + mat3[5] * det2_45_02;
-            var det3_345_034 = mat3[0] * det2_45_34 - mat3[3] * det2_45_04 + mat3[4] * det2_45_03;
-            var det3_345_035 = mat3[0] * det2_45_35 - mat3[3] * det2_45_05 + mat3[5] * det2_45_03;
-            var det3_345_045 = mat3[0] * det2_45_45 - mat3[4] * det2_45_05 + mat3[5] * det2_45_04;
-            var det3_345_123 = mat3[1] * det2_45_23 - mat3[2] * det2_45_13 + mat3[3] * det2_45_12;
-            var det3_345_124 = mat3[1] * det2_45_24 - mat3[2] * det2_45_14 + mat3[4] * det2_45_12;
-            var det3_345_125 = mat3[1] * det2_45_25 - mat3[2] * det2_45_15 + mat3[5] * det2_45_12;
-            var det3_345_134 = mat3[1] * det2_45_34 - mat3[3] * det2_45_14 + mat3[4] * det2_45_13;
-            var det3_345_135 = mat3[1] * det2_45_35 - mat3[3] * det2_45_15 + mat3[5] * det2_45_13;
-            var det3_345_145 = mat3[1] * det2_45_45 - mat3[4] * det2_45_15 + mat3[5] * det2_45_14;
-            var det3_345_234 = mat3[2] * det2_45_34 - mat3[3] * det2_45_24 + mat3[4] * det2_45_23;
-            var det3_345_235 = mat3[2] * det2_45_35 - mat3[3] * det2_45_25 + mat3[5] * det2_45_23;
-            var det3_345_245 = mat3[2] * det2_45_45 - mat3[4] * det2_45_25 + mat3[5] * det2_45_24;
-            var det3_345_345 = mat3[3] * det2_45_45 - mat3[4] * det2_45_35 + mat3[5] * det2_45_34;
+            var det3_345_012 = mat[3][0] * det2_45_12 - mat[3][1] * det2_45_02 + mat[3][2] * det2_45_01;
+            var det3_345_013 = mat[3][0] * det2_45_13 - mat[3][1] * det2_45_03 + mat[3][3] * det2_45_01;
+            var det3_345_014 = mat[3][0] * det2_45_14 - mat[3][1] * det2_45_04 + mat[3][4] * det2_45_01;
+            var det3_345_015 = mat[3][0] * det2_45_15 - mat[3][1] * det2_45_05 + mat[3][5] * det2_45_01;
+            var det3_345_023 = mat[3][0] * det2_45_23 - mat[3][2] * det2_45_03 + mat[3][3] * det2_45_02;
+            var det3_345_024 = mat[3][0] * det2_45_24 - mat[3][2] * det2_45_04 + mat[3][4] * det2_45_02;
+            var det3_345_025 = mat[3][0] * det2_45_25 - mat[3][2] * det2_45_05 + mat[3][5] * det2_45_02;
+            var det3_345_034 = mat[3][0] * det2_45_34 - mat[3][3] * det2_45_04 + mat[3][4] * det2_45_03;
+            var det3_345_035 = mat[3][0] * det2_45_35 - mat[3][3] * det2_45_05 + mat[3][5] * det2_45_03;
+            var det3_345_045 = mat[3][0] * det2_45_45 - mat[3][4] * det2_45_05 + mat[3][5] * det2_45_04;
+            var det3_345_123 = mat[3][1] * det2_45_23 - mat[3][2] * det2_45_13 + mat[3][3] * det2_45_12;
+            var det3_345_124 = mat[3][1] * det2_45_24 - mat[3][2] * det2_45_14 + mat[3][4] * det2_45_12;
+            var det3_345_125 = mat[3][1] * det2_45_25 - mat[3][2] * det2_45_15 + mat[3][5] * det2_45_12;
+            var det3_345_134 = mat[3][1] * det2_45_34 - mat[3][3] * det2_45_14 + mat[3][4] * det2_45_13;
+            var det3_345_135 = mat[3][1] * det2_45_35 - mat[3][3] * det2_45_15 + mat[3][5] * det2_45_13;
+            var det3_345_145 = mat[3][1] * det2_45_45 - mat[3][4] * det2_45_15 + mat[3][5] * det2_45_14;
+            var det3_345_234 = mat[3][2] * det2_45_34 - mat[3][3] * det2_45_24 + mat[3][4] * det2_45_23;
+            var det3_345_235 = mat[3][2] * det2_45_35 - mat[3][3] * det2_45_25 + mat[3][5] * det2_45_23;
+            var det3_345_245 = mat[3][2] * det2_45_45 - mat[3][4] * det2_45_25 + mat[3][5] * det2_45_24;
+            var det3_345_345 = mat[3][3] * det2_45_45 - mat[3][4] * det2_45_35 + mat[3][5] * det2_45_34;
 
             // 4x4 sub-determinants required to calculate 6x6 determinant
-            var det4_2345_0123 = mat2[0] * det3_345_123 - mat2[1] * det3_345_023 + mat2[2] * det3_345_013 - mat2[3] * det3_345_012;
-            var det4_2345_0124 = mat2[0] * det3_345_124 - mat2[1] * det3_345_024 + mat2[2] * det3_345_014 - mat2[4] * det3_345_012;
-            var det4_2345_0125 = mat2[0] * det3_345_125 - mat2[1] * det3_345_025 + mat2[2] * det3_345_015 - mat2[5] * det3_345_012;
-            var det4_2345_0134 = mat2[0] * det3_345_134 - mat2[1] * det3_345_034 + mat2[3] * det3_345_014 - mat2[4] * det3_345_013;
-            var det4_2345_0135 = mat2[0] * det3_345_135 - mat2[1] * det3_345_035 + mat2[3] * det3_345_015 - mat2[5] * det3_345_013;
-            var det4_2345_0145 = mat2[0] * det3_345_145 - mat2[1] * det3_345_045 + mat2[4] * det3_345_015 - mat2[5] * det3_345_014;
-            var det4_2345_0234 = mat2[0] * det3_345_234 - mat2[2] * det3_345_034 + mat2[3] * det3_345_024 - mat2[4] * det3_345_023;
-            var det4_2345_0235 = mat2[0] * det3_345_235 - mat2[2] * det3_345_035 + mat2[3] * det3_345_025 - mat2[5] * det3_345_023;
-            var det4_2345_0245 = mat2[0] * det3_345_245 - mat2[2] * det3_345_045 + mat2[4] * det3_345_025 - mat2[5] * det3_345_024;
-            var det4_2345_0345 = mat2[0] * det3_345_345 - mat2[3] * det3_345_045 + mat2[4] * det3_345_035 - mat2[5] * det3_345_034;
-            var det4_2345_1234 = mat2[1] * det3_345_234 - mat2[2] * det3_345_134 + mat2[3] * det3_345_124 - mat2[4] * det3_345_123;
-            var det4_2345_1235 = mat2[1] * det3_345_235 - mat2[2] * det3_345_135 + mat2[3] * det3_345_125 - mat2[5] * det3_345_123;
-            var det4_2345_1245 = mat2[1] * det3_345_245 - mat2[2] * det3_345_145 + mat2[4] * det3_345_125 - mat2[5] * det3_345_124;
-            var det4_2345_1345 = mat2[1] * det3_345_345 - mat2[3] * det3_345_145 + mat2[4] * det3_345_135 - mat2[5] * det3_345_134;
-            var det4_2345_2345 = mat2[2] * det3_345_345 - mat2[3] * det3_345_245 + mat2[4] * det3_345_235 - mat2[5] * det3_345_234;
+            var det4_2345_0123 = mat[2][0] * det3_345_123 - mat[2][1] * det3_345_023 + mat[2][2] * det3_345_013 - mat[2][3] * det3_345_012;
+            var det4_2345_0124 = mat[2][0] * det3_345_124 - mat[2][1] * det3_345_024 + mat[2][2] * det3_345_014 - mat[2][4] * det3_345_012;
+            var det4_2345_0125 = mat[2][0] * det3_345_125 - mat[2][1] * det3_345_025 + mat[2][2] * det3_345_015 - mat[2][5] * det3_345_012;
+            var det4_2345_0134 = mat[2][0] * det3_345_134 - mat[2][1] * det3_345_034 + mat[2][3] * det3_345_014 - mat[2][4] * det3_345_013;
+            var det4_2345_0135 = mat[2][0] * det3_345_135 - mat[2][1] * det3_345_035 + mat[2][3] * det3_345_015 - mat[2][5] * det3_345_013;
+            var det4_2345_0145 = mat[2][0] * det3_345_145 - mat[2][1] * det3_345_045 + mat[2][4] * det3_345_015 - mat[2][5] * det3_345_014;
+            var det4_2345_0234 = mat[2][0] * det3_345_234 - mat[2][2] * det3_345_034 + mat[2][3] * det3_345_024 - mat[2][4] * det3_345_023;
+            var det4_2345_0235 = mat[2][0] * det3_345_235 - mat[2][2] * det3_345_035 + mat[2][3] * det3_345_025 - mat[2][5] * det3_345_023;
+            var det4_2345_0245 = mat[2][0] * det3_345_245 - mat[2][2] * det3_345_045 + mat[2][4] * det3_345_025 - mat[2][5] * det3_345_024;
+            var det4_2345_0345 = mat[2][0] * det3_345_345 - mat[2][3] * det3_345_045 + mat[2][4] * det3_345_035 - mat[2][5] * det3_345_034;
+            var det4_2345_1234 = mat[2][1] * det3_345_234 - mat[2][2] * det3_345_134 + mat[2][3] * det3_345_124 - mat[2][4] * det3_345_123;
+            var det4_2345_1235 = mat[2][1] * det3_345_235 - mat[2][2] * det3_345_135 + mat[2][3] * det3_345_125 - mat[2][5] * det3_345_123;
+            var det4_2345_1245 = mat[2][1] * det3_345_245 - mat[2][2] * det3_345_145 + mat[2][4] * det3_345_125 - mat[2][5] * det3_345_124;
+            var det4_2345_1345 = mat[2][1] * det3_345_345 - mat[2][3] * det3_345_145 + mat[2][4] * det3_345_135 - mat[2][5] * det3_345_134;
+            var det4_2345_2345 = mat[2][2] * det3_345_345 - mat[2][3] * det3_345_245 + mat[2][4] * det3_345_235 - mat[2][5] * det3_345_234;
 
             // 5x5 sub-determinants required to calculate 6x6 determinant
-            var det5_12345_01234 = mat1[0] * det4_2345_1234 - mat1[1] * det4_2345_0234 + mat1[2] * det4_2345_0134 - mat1[3] * det4_2345_0124 + mat1[4] * det4_2345_0123;
-            var det5_12345_01235 = mat1[0] * det4_2345_1235 - mat1[1] * det4_2345_0235 + mat1[2] * det4_2345_0135 - mat1[3] * det4_2345_0125 + mat1[5] * det4_2345_0123;
-            var det5_12345_01245 = mat1[0] * det4_2345_1245 - mat1[1] * det4_2345_0245 + mat1[2] * det4_2345_0145 - mat1[4] * det4_2345_0125 + mat1[5] * det4_2345_0124;
-            var det5_12345_01345 = mat1[0] * det4_2345_1345 - mat1[1] * det4_2345_0345 + mat1[3] * det4_2345_0145 - mat1[4] * det4_2345_0135 + mat1[5] * det4_2345_0134;
-            var det5_12345_02345 = mat1[0] * det4_2345_2345 - mat1[2] * det4_2345_0345 + mat1[3] * det4_2345_0245 - mat1[4] * det4_2345_0235 + mat1[5] * det4_2345_0234;
-            var det5_12345_12345 = mat1[1] * det4_2345_2345 - mat1[2] * det4_2345_1345 + mat1[3] * det4_2345_1245 - mat1[4] * det4_2345_1235 + mat1[5] * det4_2345_1234;
+            var det5_12345_01234 = mat[1][0] * det4_2345_1234 - mat[1][1] * det4_2345_0234 + mat[1][2] * det4_2345_0134 - mat[1][3] * det4_2345_0124 + mat[1][4] * det4_2345_0123;
+            var det5_12345_01235 = mat[1][0] * det4_2345_1235 - mat[1][1] * det4_2345_0235 + mat[1][2] * det4_2345_0135 - mat[1][3] * det4_2345_0125 + mat[1][5] * det4_2345_0123;
+            var det5_12345_01245 = mat[1][0] * det4_2345_1245 - mat[1][1] * det4_2345_0245 + mat[1][2] * det4_2345_0145 - mat[1][4] * det4_2345_0125 + mat[1][5] * det4_2345_0124;
+            var det5_12345_01345 = mat[1][0] * det4_2345_1345 - mat[1][1] * det4_2345_0345 + mat[1][3] * det4_2345_0145 - mat[1][4] * det4_2345_0135 + mat[1][5] * det4_2345_0134;
+            var det5_12345_02345 = mat[1][0] * det4_2345_2345 - mat[1][2] * det4_2345_0345 + mat[1][3] * det4_2345_0245 - mat[1][4] * det4_2345_0235 + mat[1][5] * det4_2345_0234;
+            var det5_12345_12345 = mat[1][1] * det4_2345_2345 - mat[1][2] * det4_2345_1345 + mat[1][3] * det4_2345_1245 - mat[1][4] * det4_2345_1235 + mat[1][5] * det4_2345_1234;
 
             // determinant of 6x6 matrix
-            return mat0[0] * det5_12345_12345 - mat0[1] * det5_12345_02345 + mat0[2] * det5_12345_01345 -
-                    mat0[3] * det5_12345_01245 + mat0[4] * det5_12345_01235 - mat0[5] * det5_12345_01234;
+            return mat[0][0] * det5_12345_12345 - mat[0][1] * det5_12345_02345 + mat[0][2] * det5_12345_01345 -
+                    mat[0][3] * det5_12345_01245 + mat[0][4] * det5_12345_01235 - mat[0][5] * det5_12345_01234;
         }
 
         public Matrix6x6 Transpose()   // returns transpose
@@ -1816,270 +1802,270 @@ namespace Droid.Core
             //				1 division
 
             // 2x2 sub-determinants required to calculate 6x6 determinant
-            var det2_45_01 = mat4[0] * mat5[1] - mat4[1] * mat5[0];
-            var det2_45_02 = mat4[0] * mat5[2] - mat4[2] * mat5[0];
-            var det2_45_03 = mat4[0] * mat5[3] - mat4[3] * mat5[0];
-            var det2_45_04 = mat4[0] * mat5[4] - mat4[4] * mat5[0];
-            var det2_45_05 = mat4[0] * mat5[5] - mat4[5] * mat5[0];
-            var det2_45_12 = mat4[1] * mat5[2] - mat4[2] * mat5[1];
-            var det2_45_13 = mat4[1] * mat5[3] - mat4[3] * mat5[1];
-            var det2_45_14 = mat4[1] * mat5[4] - mat4[4] * mat5[1];
-            var det2_45_15 = mat4[1] * mat5[5] - mat4[5] * mat5[1];
-            var det2_45_23 = mat4[2] * mat5[3] - mat4[3] * mat5[2];
-            var det2_45_24 = mat4[2] * mat5[4] - mat4[4] * mat5[2];
-            var det2_45_25 = mat4[2] * mat5[5] - mat4[5] * mat5[2];
-            var det2_45_34 = mat4[3] * mat5[4] - mat4[4] * mat5[3];
-            var det2_45_35 = mat4[3] * mat5[5] - mat4[5] * mat5[3];
-            var det2_45_45 = mat4[4] * mat5[5] - mat4[5] * mat5[4];
+            var det2_45_01 = mat[4][0] * mat[5][1] - mat[4][1] * mat[5][0];
+            var det2_45_02 = mat[4][0] * mat[5][2] - mat[4][2] * mat[5][0];
+            var det2_45_03 = mat[4][0] * mat[5][3] - mat[4][3] * mat[5][0];
+            var det2_45_04 = mat[4][0] * mat[5][4] - mat[4][4] * mat[5][0];
+            var det2_45_05 = mat[4][0] * mat[5][5] - mat[4][5] * mat[5][0];
+            var det2_45_12 = mat[4][1] * mat[5][2] - mat[4][2] * mat[5][1];
+            var det2_45_13 = mat[4][1] * mat[5][3] - mat[4][3] * mat[5][1];
+            var det2_45_14 = mat[4][1] * mat[5][4] - mat[4][4] * mat[5][1];
+            var det2_45_15 = mat[4][1] * mat[5][5] - mat[4][5] * mat[5][1];
+            var det2_45_23 = mat[4][2] * mat[5][3] - mat[4][3] * mat[5][2];
+            var det2_45_24 = mat[4][2] * mat[5][4] - mat[4][4] * mat[5][2];
+            var det2_45_25 = mat[4][2] * mat[5][5] - mat[4][5] * mat[5][2];
+            var det2_45_34 = mat[4][3] * mat[5][4] - mat[4][4] * mat[5][3];
+            var det2_45_35 = mat[4][3] * mat[5][5] - mat[4][5] * mat[5][3];
+            var det2_45_45 = mat[4][4] * mat[5][5] - mat[4][5] * mat[5][4];
 
             // 3x3 sub-determinants required to calculate 6x6 determinant
-            var det3_345_012 = mat3[0] * det2_45_12 - mat3[1] * det2_45_02 + mat3[2] * det2_45_01;
-            var det3_345_013 = mat3[0] * det2_45_13 - mat3[1] * det2_45_03 + mat3[3] * det2_45_01;
-            var det3_345_014 = mat3[0] * det2_45_14 - mat3[1] * det2_45_04 + mat3[4] * det2_45_01;
-            var det3_345_015 = mat3[0] * det2_45_15 - mat3[1] * det2_45_05 + mat3[5] * det2_45_01;
-            var det3_345_023 = mat3[0] * det2_45_23 - mat3[2] * det2_45_03 + mat3[3] * det2_45_02;
-            var det3_345_024 = mat3[0] * det2_45_24 - mat3[2] * det2_45_04 + mat3[4] * det2_45_02;
-            var det3_345_025 = mat3[0] * det2_45_25 - mat3[2] * det2_45_05 + mat3[5] * det2_45_02;
-            var det3_345_034 = mat3[0] * det2_45_34 - mat3[3] * det2_45_04 + mat3[4] * det2_45_03;
-            var det3_345_035 = mat3[0] * det2_45_35 - mat3[3] * det2_45_05 + mat3[5] * det2_45_03;
-            var det3_345_045 = mat3[0] * det2_45_45 - mat3[4] * det2_45_05 + mat3[5] * det2_45_04;
-            var det3_345_123 = mat3[1] * det2_45_23 - mat3[2] * det2_45_13 + mat3[3] * det2_45_12;
-            var det3_345_124 = mat3[1] * det2_45_24 - mat3[2] * det2_45_14 + mat3[4] * det2_45_12;
-            var det3_345_125 = mat3[1] * det2_45_25 - mat3[2] * det2_45_15 + mat3[5] * det2_45_12;
-            var det3_345_134 = mat3[1] * det2_45_34 - mat3[3] * det2_45_14 + mat3[4] * det2_45_13;
-            var det3_345_135 = mat3[1] * det2_45_35 - mat3[3] * det2_45_15 + mat3[5] * det2_45_13;
-            var det3_345_145 = mat3[1] * det2_45_45 - mat3[4] * det2_45_15 + mat3[5] * det2_45_14;
-            var det3_345_234 = mat3[2] * det2_45_34 - mat3[3] * det2_45_24 + mat3[4] * det2_45_23;
-            var det3_345_235 = mat3[2] * det2_45_35 - mat3[3] * det2_45_25 + mat3[5] * det2_45_23;
-            var det3_345_245 = mat3[2] * det2_45_45 - mat3[4] * det2_45_25 + mat3[5] * det2_45_24;
-            var det3_345_345 = mat3[3] * det2_45_45 - mat3[4] * det2_45_35 + mat3[5] * det2_45_34;
+            var det3_345_012 = mat[3][0] * det2_45_12 - mat[3][1] * det2_45_02 + mat[3][2] * det2_45_01;
+            var det3_345_013 = mat[3][0] * det2_45_13 - mat[3][1] * det2_45_03 + mat[3][3] * det2_45_01;
+            var det3_345_014 = mat[3][0] * det2_45_14 - mat[3][1] * det2_45_04 + mat[3][4] * det2_45_01;
+            var det3_345_015 = mat[3][0] * det2_45_15 - mat[3][1] * det2_45_05 + mat[3][5] * det2_45_01;
+            var det3_345_023 = mat[3][0] * det2_45_23 - mat[3][2] * det2_45_03 + mat[3][3] * det2_45_02;
+            var det3_345_024 = mat[3][0] * det2_45_24 - mat[3][2] * det2_45_04 + mat[3][4] * det2_45_02;
+            var det3_345_025 = mat[3][0] * det2_45_25 - mat[3][2] * det2_45_05 + mat[3][5] * det2_45_02;
+            var det3_345_034 = mat[3][0] * det2_45_34 - mat[3][3] * det2_45_04 + mat[3][4] * det2_45_03;
+            var det3_345_035 = mat[3][0] * det2_45_35 - mat[3][3] * det2_45_05 + mat[3][5] * det2_45_03;
+            var det3_345_045 = mat[3][0] * det2_45_45 - mat[3][4] * det2_45_05 + mat[3][5] * det2_45_04;
+            var det3_345_123 = mat[3][1] * det2_45_23 - mat[3][2] * det2_45_13 + mat[3][3] * det2_45_12;
+            var det3_345_124 = mat[3][1] * det2_45_24 - mat[3][2] * det2_45_14 + mat[3][4] * det2_45_12;
+            var det3_345_125 = mat[3][1] * det2_45_25 - mat[3][2] * det2_45_15 + mat[3][5] * det2_45_12;
+            var det3_345_134 = mat[3][1] * det2_45_34 - mat[3][3] * det2_45_14 + mat[3][4] * det2_45_13;
+            var det3_345_135 = mat[3][1] * det2_45_35 - mat[3][3] * det2_45_15 + mat[3][5] * det2_45_13;
+            var det3_345_145 = mat[3][1] * det2_45_45 - mat[3][4] * det2_45_15 + mat[3][5] * det2_45_14;
+            var det3_345_234 = mat[3][2] * det2_45_34 - mat[3][3] * det2_45_24 + mat[3][4] * det2_45_23;
+            var det3_345_235 = mat[3][2] * det2_45_35 - mat[3][3] * det2_45_25 + mat[3][5] * det2_45_23;
+            var det3_345_245 = mat[3][2] * det2_45_45 - mat[3][4] * det2_45_25 + mat[3][5] * det2_45_24;
+            var det3_345_345 = mat[3][3] * det2_45_45 - mat[3][4] * det2_45_35 + mat[3][5] * det2_45_34;
 
             // 4x4 sub-determinants required to calculate 6x6 determinant
-            var det4_2345_0123 = mat2[0] * det3_345_123 - mat2[1] * det3_345_023 + mat2[2] * det3_345_013 - mat2[3] * det3_345_012;
-            var det4_2345_0124 = mat2[0] * det3_345_124 - mat2[1] * det3_345_024 + mat2[2] * det3_345_014 - mat2[4] * det3_345_012;
-            var det4_2345_0125 = mat2[0] * det3_345_125 - mat2[1] * det3_345_025 + mat2[2] * det3_345_015 - mat2[5] * det3_345_012;
-            var det4_2345_0134 = mat2[0] * det3_345_134 - mat2[1] * det3_345_034 + mat2[3] * det3_345_014 - mat2[4] * det3_345_013;
-            var det4_2345_0135 = mat2[0] * det3_345_135 - mat2[1] * det3_345_035 + mat2[3] * det3_345_015 - mat2[5] * det3_345_013;
-            var det4_2345_0145 = mat2[0] * det3_345_145 - mat2[1] * det3_345_045 + mat2[4] * det3_345_015 - mat2[5] * det3_345_014;
-            var det4_2345_0234 = mat2[0] * det3_345_234 - mat2[2] * det3_345_034 + mat2[3] * det3_345_024 - mat2[4] * det3_345_023;
-            var det4_2345_0235 = mat2[0] * det3_345_235 - mat2[2] * det3_345_035 + mat2[3] * det3_345_025 - mat2[5] * det3_345_023;
-            var det4_2345_0245 = mat2[0] * det3_345_245 - mat2[2] * det3_345_045 + mat2[4] * det3_345_025 - mat2[5] * det3_345_024;
-            var det4_2345_0345 = mat2[0] * det3_345_345 - mat2[3] * det3_345_045 + mat2[4] * det3_345_035 - mat2[5] * det3_345_034;
-            var det4_2345_1234 = mat2[1] * det3_345_234 - mat2[2] * det3_345_134 + mat2[3] * det3_345_124 - mat2[4] * det3_345_123;
-            var det4_2345_1235 = mat2[1] * det3_345_235 - mat2[2] * det3_345_135 + mat2[3] * det3_345_125 - mat2[5] * det3_345_123;
-            var det4_2345_1245 = mat2[1] * det3_345_245 - mat2[2] * det3_345_145 + mat2[4] * det3_345_125 - mat2[5] * det3_345_124;
-            var det4_2345_1345 = mat2[1] * det3_345_345 - mat2[3] * det3_345_145 + mat2[4] * det3_345_135 - mat2[5] * det3_345_134;
-            var det4_2345_2345 = mat2[2] * det3_345_345 - mat2[3] * det3_345_245 + mat2[4] * det3_345_235 - mat2[5] * det3_345_234;
+            var det4_2345_0123 = mat[2][0] * det3_345_123 - mat[2][1] * det3_345_023 + mat[2][2] * det3_345_013 - mat[2][3] * det3_345_012;
+            var det4_2345_0124 = mat[2][0] * det3_345_124 - mat[2][1] * det3_345_024 + mat[2][2] * det3_345_014 - mat[2][4] * det3_345_012;
+            var det4_2345_0125 = mat[2][0] * det3_345_125 - mat[2][1] * det3_345_025 + mat[2][2] * det3_345_015 - mat[2][5] * det3_345_012;
+            var det4_2345_0134 = mat[2][0] * det3_345_134 - mat[2][1] * det3_345_034 + mat[2][3] * det3_345_014 - mat[2][4] * det3_345_013;
+            var det4_2345_0135 = mat[2][0] * det3_345_135 - mat[2][1] * det3_345_035 + mat[2][3] * det3_345_015 - mat[2][5] * det3_345_013;
+            var det4_2345_0145 = mat[2][0] * det3_345_145 - mat[2][1] * det3_345_045 + mat[2][4] * det3_345_015 - mat[2][5] * det3_345_014;
+            var det4_2345_0234 = mat[2][0] * det3_345_234 - mat[2][2] * det3_345_034 + mat[2][3] * det3_345_024 - mat[2][4] * det3_345_023;
+            var det4_2345_0235 = mat[2][0] * det3_345_235 - mat[2][2] * det3_345_035 + mat[2][3] * det3_345_025 - mat[2][5] * det3_345_023;
+            var det4_2345_0245 = mat[2][0] * det3_345_245 - mat[2][2] * det3_345_045 + mat[2][4] * det3_345_025 - mat[2][5] * det3_345_024;
+            var det4_2345_0345 = mat[2][0] * det3_345_345 - mat[2][3] * det3_345_045 + mat[2][4] * det3_345_035 - mat[2][5] * det3_345_034;
+            var det4_2345_1234 = mat[2][1] * det3_345_234 - mat[2][2] * det3_345_134 + mat[2][3] * det3_345_124 - mat[2][4] * det3_345_123;
+            var det4_2345_1235 = mat[2][1] * det3_345_235 - mat[2][2] * det3_345_135 + mat[2][3] * det3_345_125 - mat[2][5] * det3_345_123;
+            var det4_2345_1245 = mat[2][1] * det3_345_245 - mat[2][2] * det3_345_145 + mat[2][4] * det3_345_125 - mat[2][5] * det3_345_124;
+            var det4_2345_1345 = mat[2][1] * det3_345_345 - mat[2][3] * det3_345_145 + mat[2][4] * det3_345_135 - mat[2][5] * det3_345_134;
+            var det4_2345_2345 = mat[2][2] * det3_345_345 - mat[2][3] * det3_345_245 + mat[2][4] * det3_345_235 - mat[2][5] * det3_345_234;
 
             // 5x5 sub-determinants required to calculate 6x6 determinant
-            var det5_12345_01234 = mat1[0] * det4_2345_1234 - mat1[1] * det4_2345_0234 + mat1[2] * det4_2345_0134 - mat1[3] * det4_2345_0124 + mat1[4] * det4_2345_0123;
-            var det5_12345_01235 = mat1[0] * det4_2345_1235 - mat1[1] * det4_2345_0235 + mat1[2] * det4_2345_0135 - mat1[3] * det4_2345_0125 + mat1[5] * det4_2345_0123;
-            var det5_12345_01245 = mat1[0] * det4_2345_1245 - mat1[1] * det4_2345_0245 + mat1[2] * det4_2345_0145 - mat1[4] * det4_2345_0125 + mat1[5] * det4_2345_0124;
-            var det5_12345_01345 = mat1[0] * det4_2345_1345 - mat1[1] * det4_2345_0345 + mat1[3] * det4_2345_0145 - mat1[4] * det4_2345_0135 + mat1[5] * det4_2345_0134;
-            var det5_12345_02345 = mat1[0] * det4_2345_2345 - mat1[2] * det4_2345_0345 + mat1[3] * det4_2345_0245 - mat1[4] * det4_2345_0235 + mat1[5] * det4_2345_0234;
-            var det5_12345_12345 = mat1[1] * det4_2345_2345 - mat1[2] * det4_2345_1345 + mat1[3] * det4_2345_1245 - mat1[4] * det4_2345_1235 + mat1[5] * det4_2345_1234;
+            var det5_12345_01234 = mat[1][0] * det4_2345_1234 - mat[1][1] * det4_2345_0234 + mat[1][2] * det4_2345_0134 - mat[1][3] * det4_2345_0124 + mat[1][4] * det4_2345_0123;
+            var det5_12345_01235 = mat[1][0] * det4_2345_1235 - mat[1][1] * det4_2345_0235 + mat[1][2] * det4_2345_0135 - mat[1][3] * det4_2345_0125 + mat[1][5] * det4_2345_0123;
+            var det5_12345_01245 = mat[1][0] * det4_2345_1245 - mat[1][1] * det4_2345_0245 + mat[1][2] * det4_2345_0145 - mat[1][4] * det4_2345_0125 + mat[1][5] * det4_2345_0124;
+            var det5_12345_01345 = mat[1][0] * det4_2345_1345 - mat[1][1] * det4_2345_0345 + mat[1][3] * det4_2345_0145 - mat[1][4] * det4_2345_0135 + mat[1][5] * det4_2345_0134;
+            var det5_12345_02345 = mat[1][0] * det4_2345_2345 - mat[1][2] * det4_2345_0345 + mat[1][3] * det4_2345_0245 - mat[1][4] * det4_2345_0235 + mat[1][5] * det4_2345_0234;
+            var det5_12345_12345 = mat[1][1] * det4_2345_2345 - mat[1][2] * det4_2345_1345 + mat[1][3] * det4_2345_1245 - mat[1][4] * det4_2345_1235 + mat[1][5] * det4_2345_1234;
 
             // determinant of 6x6 matrix
-            var det = mat0[0] * det5_12345_12345 - mat0[1] * det5_12345_02345 + mat0[2] * det5_12345_01345 - mat0[3] * det5_12345_01245 + mat0[4] * det5_12345_01235 - mat0[5] * det5_12345_01234;
+            var det = mat[0][0] * det5_12345_12345 - mat[0][1] * det5_12345_02345 + mat[0][2] * det5_12345_01345 - mat[0][3] * det5_12345_01245 + mat[0][4] * det5_12345_01235 - mat[0][5] * det5_12345_01234;
             if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
                 return false;
 
             var invDet = 1.0f / det;
 
             // remaining 2x2 sub-determinants
-            var det2_34_01 = mat3[0] * mat4[1] - mat3[1] * mat4[0];
-            var det2_34_02 = mat3[0] * mat4[2] - mat3[2] * mat4[0];
-            var det2_34_03 = mat3[0] * mat4[3] - mat3[3] * mat4[0];
-            var det2_34_04 = mat3[0] * mat4[4] - mat3[4] * mat4[0];
-            var det2_34_05 = mat3[0] * mat4[5] - mat3[5] * mat4[0];
-            var det2_34_12 = mat3[1] * mat4[2] - mat3[2] * mat4[1];
-            var det2_34_13 = mat3[1] * mat4[3] - mat3[3] * mat4[1];
-            var det2_34_14 = mat3[1] * mat4[4] - mat3[4] * mat4[1];
-            var det2_34_15 = mat3[1] * mat4[5] - mat3[5] * mat4[1];
-            var det2_34_23 = mat3[2] * mat4[3] - mat3[3] * mat4[2];
-            var det2_34_24 = mat3[2] * mat4[4] - mat3[4] * mat4[2];
-            var det2_34_25 = mat3[2] * mat4[5] - mat3[5] * mat4[2];
-            var det2_34_34 = mat3[3] * mat4[4] - mat3[4] * mat4[3];
-            var det2_34_35 = mat3[3] * mat4[5] - mat3[5] * mat4[3];
-            var det2_34_45 = mat3[4] * mat4[5] - mat3[5] * mat4[4];
-            var det2_35_01 = mat3[0] * mat5[1] - mat3[1] * mat5[0];
-            var det2_35_02 = mat3[0] * mat5[2] - mat3[2] * mat5[0];
-            var det2_35_03 = mat3[0] * mat5[3] - mat3[3] * mat5[0];
-            var det2_35_04 = mat3[0] * mat5[4] - mat3[4] * mat5[0];
-            var det2_35_05 = mat3[0] * mat5[5] - mat3[5] * mat5[0];
-            var det2_35_12 = mat3[1] * mat5[2] - mat3[2] * mat5[1];
-            var det2_35_13 = mat3[1] * mat5[3] - mat3[3] * mat5[1];
-            var det2_35_14 = mat3[1] * mat5[4] - mat3[4] * mat5[1];
-            var det2_35_15 = mat3[1] * mat5[5] - mat3[5] * mat5[1];
-            var det2_35_23 = mat3[2] * mat5[3] - mat3[3] * mat5[2];
-            var det2_35_24 = mat3[2] * mat5[4] - mat3[4] * mat5[2];
-            var det2_35_25 = mat3[2] * mat5[5] - mat3[5] * mat5[2];
-            var det2_35_34 = mat3[3] * mat5[4] - mat3[4] * mat5[3];
-            var det2_35_35 = mat3[3] * mat5[5] - mat3[5] * mat5[3];
-            var det2_35_45 = mat3[4] * mat5[5] - mat3[5] * mat5[4];
+            var det2_34_01 = mat[3][0] * mat[4][1] - mat[3][1] * mat[4][0];
+            var det2_34_02 = mat[3][0] * mat[4][2] - mat[3][2] * mat[4][0];
+            var det2_34_03 = mat[3][0] * mat[4][3] - mat[3][3] * mat[4][0];
+            var det2_34_04 = mat[3][0] * mat[4][4] - mat[3][4] * mat[4][0];
+            var det2_34_05 = mat[3][0] * mat[4][5] - mat[3][5] * mat[4][0];
+            var det2_34_12 = mat[3][1] * mat[4][2] - mat[3][2] * mat[4][1];
+            var det2_34_13 = mat[3][1] * mat[4][3] - mat[3][3] * mat[4][1];
+            var det2_34_14 = mat[3][1] * mat[4][4] - mat[3][4] * mat[4][1];
+            var det2_34_15 = mat[3][1] * mat[4][5] - mat[3][5] * mat[4][1];
+            var det2_34_23 = mat[3][2] * mat[4][3] - mat[3][3] * mat[4][2];
+            var det2_34_24 = mat[3][2] * mat[4][4] - mat[3][4] * mat[4][2];
+            var det2_34_25 = mat[3][2] * mat[4][5] - mat[3][5] * mat[4][2];
+            var det2_34_34 = mat[3][3] * mat[4][4] - mat[3][4] * mat[4][3];
+            var det2_34_35 = mat[3][3] * mat[4][5] - mat[3][5] * mat[4][3];
+            var det2_34_45 = mat[3][4] * mat[4][5] - mat[3][5] * mat[4][4];
+            var det2_35_01 = mat[3][0] * mat[5][1] - mat[3][1] * mat[5][0];
+            var det2_35_02 = mat[3][0] * mat[5][2] - mat[3][2] * mat[5][0];
+            var det2_35_03 = mat[3][0] * mat[5][3] - mat[3][3] * mat[5][0];
+            var det2_35_04 = mat[3][0] * mat[5][4] - mat[3][4] * mat[5][0];
+            var det2_35_05 = mat[3][0] * mat[5][5] - mat[3][5] * mat[5][0];
+            var det2_35_12 = mat[3][1] * mat[5][2] - mat[3][2] * mat[5][1];
+            var det2_35_13 = mat[3][1] * mat[5][3] - mat[3][3] * mat[5][1];
+            var det2_35_14 = mat[3][1] * mat[5][4] - mat[3][4] * mat[5][1];
+            var det2_35_15 = mat[3][1] * mat[5][5] - mat[3][5] * mat[5][1];
+            var det2_35_23 = mat[3][2] * mat[5][3] - mat[3][3] * mat[5][2];
+            var det2_35_24 = mat[3][2] * mat[5][4] - mat[3][4] * mat[5][2];
+            var det2_35_25 = mat[3][2] * mat[5][5] - mat[3][5] * mat[5][2];
+            var det2_35_34 = mat[3][3] * mat[5][4] - mat[3][4] * mat[5][3];
+            var det2_35_35 = mat[3][3] * mat[5][5] - mat[3][5] * mat[5][3];
+            var det2_35_45 = mat[3][4] * mat[5][5] - mat[3][5] * mat[5][4];
 
             // remaining 3x3 sub-determinants
-            var det3_234_012 = mat2[0] * det2_34_12 - mat2[1] * det2_34_02 + mat2[2] * det2_34_01;
-            var det3_234_013 = mat2[0] * det2_34_13 - mat2[1] * det2_34_03 + mat2[3] * det2_34_01;
-            var det3_234_014 = mat2[0] * det2_34_14 - mat2[1] * det2_34_04 + mat2[4] * det2_34_01;
-            var det3_234_015 = mat2[0] * det2_34_15 - mat2[1] * det2_34_05 + mat2[5] * det2_34_01;
-            var det3_234_023 = mat2[0] * det2_34_23 - mat2[2] * det2_34_03 + mat2[3] * det2_34_02;
-            var det3_234_024 = mat2[0] * det2_34_24 - mat2[2] * det2_34_04 + mat2[4] * det2_34_02;
-            var det3_234_025 = mat2[0] * det2_34_25 - mat2[2] * det2_34_05 + mat2[5] * det2_34_02;
-            var det3_234_034 = mat2[0] * det2_34_34 - mat2[3] * det2_34_04 + mat2[4] * det2_34_03;
-            var det3_234_035 = mat2[0] * det2_34_35 - mat2[3] * det2_34_05 + mat2[5] * det2_34_03;
-            var det3_234_045 = mat2[0] * det2_34_45 - mat2[4] * det2_34_05 + mat2[5] * det2_34_04;
-            var det3_234_123 = mat2[1] * det2_34_23 - mat2[2] * det2_34_13 + mat2[3] * det2_34_12;
-            var det3_234_124 = mat2[1] * det2_34_24 - mat2[2] * det2_34_14 + mat2[4] * det2_34_12;
-            var det3_234_125 = mat2[1] * det2_34_25 - mat2[2] * det2_34_15 + mat2[5] * det2_34_12;
-            var det3_234_134 = mat2[1] * det2_34_34 - mat2[3] * det2_34_14 + mat2[4] * det2_34_13;
-            var det3_234_135 = mat2[1] * det2_34_35 - mat2[3] * det2_34_15 + mat2[5] * det2_34_13;
-            var det3_234_145 = mat2[1] * det2_34_45 - mat2[4] * det2_34_15 + mat2[5] * det2_34_14;
-            var det3_234_234 = mat2[2] * det2_34_34 - mat2[3] * det2_34_24 + mat2[4] * det2_34_23;
-            var det3_234_235 = mat2[2] * det2_34_35 - mat2[3] * det2_34_25 + mat2[5] * det2_34_23;
-            var det3_234_245 = mat2[2] * det2_34_45 - mat2[4] * det2_34_25 + mat2[5] * det2_34_24;
-            var det3_234_345 = mat2[3] * det2_34_45 - mat2[4] * det2_34_35 + mat2[5] * det2_34_34;
-            var det3_235_012 = mat2[0] * det2_35_12 - mat2[1] * det2_35_02 + mat2[2] * det2_35_01;
-            var det3_235_013 = mat2[0] * det2_35_13 - mat2[1] * det2_35_03 + mat2[3] * det2_35_01;
-            var det3_235_014 = mat2[0] * det2_35_14 - mat2[1] * det2_35_04 + mat2[4] * det2_35_01;
-            var det3_235_015 = mat2[0] * det2_35_15 - mat2[1] * det2_35_05 + mat2[5] * det2_35_01;
-            var det3_235_023 = mat2[0] * det2_35_23 - mat2[2] * det2_35_03 + mat2[3] * det2_35_02;
-            var det3_235_024 = mat2[0] * det2_35_24 - mat2[2] * det2_35_04 + mat2[4] * det2_35_02;
-            var det3_235_025 = mat2[0] * det2_35_25 - mat2[2] * det2_35_05 + mat2[5] * det2_35_02;
-            var det3_235_034 = mat2[0] * det2_35_34 - mat2[3] * det2_35_04 + mat2[4] * det2_35_03;
-            var det3_235_035 = mat2[0] * det2_35_35 - mat2[3] * det2_35_05 + mat2[5] * det2_35_03;
-            var det3_235_045 = mat2[0] * det2_35_45 - mat2[4] * det2_35_05 + mat2[5] * det2_35_04;
-            var det3_235_123 = mat2[1] * det2_35_23 - mat2[2] * det2_35_13 + mat2[3] * det2_35_12;
-            var det3_235_124 = mat2[1] * det2_35_24 - mat2[2] * det2_35_14 + mat2[4] * det2_35_12;
-            var det3_235_125 = mat2[1] * det2_35_25 - mat2[2] * det2_35_15 + mat2[5] * det2_35_12;
-            var det3_235_134 = mat2[1] * det2_35_34 - mat2[3] * det2_35_14 + mat2[4] * det2_35_13;
-            var det3_235_135 = mat2[1] * det2_35_35 - mat2[3] * det2_35_15 + mat2[5] * det2_35_13;
-            var det3_235_145 = mat2[1] * det2_35_45 - mat2[4] * det2_35_15 + mat2[5] * det2_35_14;
-            var det3_235_234 = mat2[2] * det2_35_34 - mat2[3] * det2_35_24 + mat2[4] * det2_35_23;
-            var det3_235_235 = mat2[2] * det2_35_35 - mat2[3] * det2_35_25 + mat2[5] * det2_35_23;
-            var det3_235_245 = mat2[2] * det2_35_45 - mat2[4] * det2_35_25 + mat2[5] * det2_35_24;
-            var det3_235_345 = mat2[3] * det2_35_45 - mat2[4] * det2_35_35 + mat2[5] * det2_35_34;
-            var det3_245_012 = mat2[0] * det2_45_12 - mat2[1] * det2_45_02 + mat2[2] * det2_45_01;
-            var det3_245_013 = mat2[0] * det2_45_13 - mat2[1] * det2_45_03 + mat2[3] * det2_45_01;
-            var det3_245_014 = mat2[0] * det2_45_14 - mat2[1] * det2_45_04 + mat2[4] * det2_45_01;
-            var det3_245_015 = mat2[0] * det2_45_15 - mat2[1] * det2_45_05 + mat2[5] * det2_45_01;
-            var det3_245_023 = mat2[0] * det2_45_23 - mat2[2] * det2_45_03 + mat2[3] * det2_45_02;
-            var det3_245_024 = mat2[0] * det2_45_24 - mat2[2] * det2_45_04 + mat2[4] * det2_45_02;
-            var det3_245_025 = mat2[0] * det2_45_25 - mat2[2] * det2_45_05 + mat2[5] * det2_45_02;
-            var det3_245_034 = mat2[0] * det2_45_34 - mat2[3] * det2_45_04 + mat2[4] * det2_45_03;
-            var det3_245_035 = mat2[0] * det2_45_35 - mat2[3] * det2_45_05 + mat2[5] * det2_45_03;
-            var det3_245_045 = mat2[0] * det2_45_45 - mat2[4] * det2_45_05 + mat2[5] * det2_45_04;
-            var det3_245_123 = mat2[1] * det2_45_23 - mat2[2] * det2_45_13 + mat2[3] * det2_45_12;
-            var det3_245_124 = mat2[1] * det2_45_24 - mat2[2] * det2_45_14 + mat2[4] * det2_45_12;
-            var det3_245_125 = mat2[1] * det2_45_25 - mat2[2] * det2_45_15 + mat2[5] * det2_45_12;
-            var det3_245_134 = mat2[1] * det2_45_34 - mat2[3] * det2_45_14 + mat2[4] * det2_45_13;
-            var det3_245_135 = mat2[1] * det2_45_35 - mat2[3] * det2_45_15 + mat2[5] * det2_45_13;
-            var det3_245_145 = mat2[1] * det2_45_45 - mat2[4] * det2_45_15 + mat2[5] * det2_45_14;
-            var det3_245_234 = mat2[2] * det2_45_34 - mat2[3] * det2_45_24 + mat2[4] * det2_45_23;
-            var det3_245_235 = mat2[2] * det2_45_35 - mat2[3] * det2_45_25 + mat2[5] * det2_45_23;
-            var det3_245_245 = mat2[2] * det2_45_45 - mat2[4] * det2_45_25 + mat2[5] * det2_45_24;
-            var det3_245_345 = mat2[3] * det2_45_45 - mat2[4] * det2_45_35 + mat2[5] * det2_45_34;
+            var det3_234_012 = mat[2][0] * det2_34_12 - mat[2][1] * det2_34_02 + mat[2][2] * det2_34_01;
+            var det3_234_013 = mat[2][0] * det2_34_13 - mat[2][1] * det2_34_03 + mat[2][3] * det2_34_01;
+            var det3_234_014 = mat[2][0] * det2_34_14 - mat[2][1] * det2_34_04 + mat[2][4] * det2_34_01;
+            var det3_234_015 = mat[2][0] * det2_34_15 - mat[2][1] * det2_34_05 + mat[2][5] * det2_34_01;
+            var det3_234_023 = mat[2][0] * det2_34_23 - mat[2][2] * det2_34_03 + mat[2][3] * det2_34_02;
+            var det3_234_024 = mat[2][0] * det2_34_24 - mat[2][2] * det2_34_04 + mat[2][4] * det2_34_02;
+            var det3_234_025 = mat[2][0] * det2_34_25 - mat[2][2] * det2_34_05 + mat[2][5] * det2_34_02;
+            var det3_234_034 = mat[2][0] * det2_34_34 - mat[2][3] * det2_34_04 + mat[2][4] * det2_34_03;
+            var det3_234_035 = mat[2][0] * det2_34_35 - mat[2][3] * det2_34_05 + mat[2][5] * det2_34_03;
+            var det3_234_045 = mat[2][0] * det2_34_45 - mat[2][4] * det2_34_05 + mat[2][5] * det2_34_04;
+            var det3_234_123 = mat[2][1] * det2_34_23 - mat[2][2] * det2_34_13 + mat[2][3] * det2_34_12;
+            var det3_234_124 = mat[2][1] * det2_34_24 - mat[2][2] * det2_34_14 + mat[2][4] * det2_34_12;
+            var det3_234_125 = mat[2][1] * det2_34_25 - mat[2][2] * det2_34_15 + mat[2][5] * det2_34_12;
+            var det3_234_134 = mat[2][1] * det2_34_34 - mat[2][3] * det2_34_14 + mat[2][4] * det2_34_13;
+            var det3_234_135 = mat[2][1] * det2_34_35 - mat[2][3] * det2_34_15 + mat[2][5] * det2_34_13;
+            var det3_234_145 = mat[2][1] * det2_34_45 - mat[2][4] * det2_34_15 + mat[2][5] * det2_34_14;
+            var det3_234_234 = mat[2][2] * det2_34_34 - mat[2][3] * det2_34_24 + mat[2][4] * det2_34_23;
+            var det3_234_235 = mat[2][2] * det2_34_35 - mat[2][3] * det2_34_25 + mat[2][5] * det2_34_23;
+            var det3_234_245 = mat[2][2] * det2_34_45 - mat[2][4] * det2_34_25 + mat[2][5] * det2_34_24;
+            var det3_234_345 = mat[2][3] * det2_34_45 - mat[2][4] * det2_34_35 + mat[2][5] * det2_34_34;
+            var det3_235_012 = mat[2][0] * det2_35_12 - mat[2][1] * det2_35_02 + mat[2][2] * det2_35_01;
+            var det3_235_013 = mat[2][0] * det2_35_13 - mat[2][1] * det2_35_03 + mat[2][3] * det2_35_01;
+            var det3_235_014 = mat[2][0] * det2_35_14 - mat[2][1] * det2_35_04 + mat[2][4] * det2_35_01;
+            var det3_235_015 = mat[2][0] * det2_35_15 - mat[2][1] * det2_35_05 + mat[2][5] * det2_35_01;
+            var det3_235_023 = mat[2][0] * det2_35_23 - mat[2][2] * det2_35_03 + mat[2][3] * det2_35_02;
+            var det3_235_024 = mat[2][0] * det2_35_24 - mat[2][2] * det2_35_04 + mat[2][4] * det2_35_02;
+            var det3_235_025 = mat[2][0] * det2_35_25 - mat[2][2] * det2_35_05 + mat[2][5] * det2_35_02;
+            var det3_235_034 = mat[2][0] * det2_35_34 - mat[2][3] * det2_35_04 + mat[2][4] * det2_35_03;
+            var det3_235_035 = mat[2][0] * det2_35_35 - mat[2][3] * det2_35_05 + mat[2][5] * det2_35_03;
+            var det3_235_045 = mat[2][0] * det2_35_45 - mat[2][4] * det2_35_05 + mat[2][5] * det2_35_04;
+            var det3_235_123 = mat[2][1] * det2_35_23 - mat[2][2] * det2_35_13 + mat[2][3] * det2_35_12;
+            var det3_235_124 = mat[2][1] * det2_35_24 - mat[2][2] * det2_35_14 + mat[2][4] * det2_35_12;
+            var det3_235_125 = mat[2][1] * det2_35_25 - mat[2][2] * det2_35_15 + mat[2][5] * det2_35_12;
+            var det3_235_134 = mat[2][1] * det2_35_34 - mat[2][3] * det2_35_14 + mat[2][4] * det2_35_13;
+            var det3_235_135 = mat[2][1] * det2_35_35 - mat[2][3] * det2_35_15 + mat[2][5] * det2_35_13;
+            var det3_235_145 = mat[2][1] * det2_35_45 - mat[2][4] * det2_35_15 + mat[2][5] * det2_35_14;
+            var det3_235_234 = mat[2][2] * det2_35_34 - mat[2][3] * det2_35_24 + mat[2][4] * det2_35_23;
+            var det3_235_235 = mat[2][2] * det2_35_35 - mat[2][3] * det2_35_25 + mat[2][5] * det2_35_23;
+            var det3_235_245 = mat[2][2] * det2_35_45 - mat[2][4] * det2_35_25 + mat[2][5] * det2_35_24;
+            var det3_235_345 = mat[2][3] * det2_35_45 - mat[2][4] * det2_35_35 + mat[2][5] * det2_35_34;
+            var det3_245_012 = mat[2][0] * det2_45_12 - mat[2][1] * det2_45_02 + mat[2][2] * det2_45_01;
+            var det3_245_013 = mat[2][0] * det2_45_13 - mat[2][1] * det2_45_03 + mat[2][3] * det2_45_01;
+            var det3_245_014 = mat[2][0] * det2_45_14 - mat[2][1] * det2_45_04 + mat[2][4] * det2_45_01;
+            var det3_245_015 = mat[2][0] * det2_45_15 - mat[2][1] * det2_45_05 + mat[2][5] * det2_45_01;
+            var det3_245_023 = mat[2][0] * det2_45_23 - mat[2][2] * det2_45_03 + mat[2][3] * det2_45_02;
+            var det3_245_024 = mat[2][0] * det2_45_24 - mat[2][2] * det2_45_04 + mat[2][4] * det2_45_02;
+            var det3_245_025 = mat[2][0] * det2_45_25 - mat[2][2] * det2_45_05 + mat[2][5] * det2_45_02;
+            var det3_245_034 = mat[2][0] * det2_45_34 - mat[2][3] * det2_45_04 + mat[2][4] * det2_45_03;
+            var det3_245_035 = mat[2][0] * det2_45_35 - mat[2][3] * det2_45_05 + mat[2][5] * det2_45_03;
+            var det3_245_045 = mat[2][0] * det2_45_45 - mat[2][4] * det2_45_05 + mat[2][5] * det2_45_04;
+            var det3_245_123 = mat[2][1] * det2_45_23 - mat[2][2] * det2_45_13 + mat[2][3] * det2_45_12;
+            var det3_245_124 = mat[2][1] * det2_45_24 - mat[2][2] * det2_45_14 + mat[2][4] * det2_45_12;
+            var det3_245_125 = mat[2][1] * det2_45_25 - mat[2][2] * det2_45_15 + mat[2][5] * det2_45_12;
+            var det3_245_134 = mat[2][1] * det2_45_34 - mat[2][3] * det2_45_14 + mat[2][4] * det2_45_13;
+            var det3_245_135 = mat[2][1] * det2_45_35 - mat[2][3] * det2_45_15 + mat[2][5] * det2_45_13;
+            var det3_245_145 = mat[2][1] * det2_45_45 - mat[2][4] * det2_45_15 + mat[2][5] * det2_45_14;
+            var det3_245_234 = mat[2][2] * det2_45_34 - mat[2][3] * det2_45_24 + mat[2][4] * det2_45_23;
+            var det3_245_235 = mat[2][2] * det2_45_35 - mat[2][3] * det2_45_25 + mat[2][5] * det2_45_23;
+            var det3_245_245 = mat[2][2] * det2_45_45 - mat[2][4] * det2_45_25 + mat[2][5] * det2_45_24;
+            var det3_245_345 = mat[2][3] * det2_45_45 - mat[2][4] * det2_45_35 + mat[2][5] * det2_45_34;
 
             // remaining 4x4 sub-determinants
-            var det4_1234_0123 = mat1[0] * det3_234_123 - mat1[1] * det3_234_023 + mat1[2] * det3_234_013 - mat1[3] * det3_234_012;
-            var det4_1234_0124 = mat1[0] * det3_234_124 - mat1[1] * det3_234_024 + mat1[2] * det3_234_014 - mat1[4] * det3_234_012;
-            var det4_1234_0125 = mat1[0] * det3_234_125 - mat1[1] * det3_234_025 + mat1[2] * det3_234_015 - mat1[5] * det3_234_012;
-            var det4_1234_0134 = mat1[0] * det3_234_134 - mat1[1] * det3_234_034 + mat1[3] * det3_234_014 - mat1[4] * det3_234_013;
-            var det4_1234_0135 = mat1[0] * det3_234_135 - mat1[1] * det3_234_035 + mat1[3] * det3_234_015 - mat1[5] * det3_234_013;
-            var det4_1234_0145 = mat1[0] * det3_234_145 - mat1[1] * det3_234_045 + mat1[4] * det3_234_015 - mat1[5] * det3_234_014;
-            var det4_1234_0234 = mat1[0] * det3_234_234 - mat1[2] * det3_234_034 + mat1[3] * det3_234_024 - mat1[4] * det3_234_023;
-            var det4_1234_0235 = mat1[0] * det3_234_235 - mat1[2] * det3_234_035 + mat1[3] * det3_234_025 - mat1[5] * det3_234_023;
-            var det4_1234_0245 = mat1[0] * det3_234_245 - mat1[2] * det3_234_045 + mat1[4] * det3_234_025 - mat1[5] * det3_234_024;
-            var det4_1234_0345 = mat1[0] * det3_234_345 - mat1[3] * det3_234_045 + mat1[4] * det3_234_035 - mat1[5] * det3_234_034;
-            var det4_1234_1234 = mat1[1] * det3_234_234 - mat1[2] * det3_234_134 + mat1[3] * det3_234_124 - mat1[4] * det3_234_123;
-            var det4_1234_1235 = mat1[1] * det3_234_235 - mat1[2] * det3_234_135 + mat1[3] * det3_234_125 - mat1[5] * det3_234_123;
-            var det4_1234_1245 = mat1[1] * det3_234_245 - mat1[2] * det3_234_145 + mat1[4] * det3_234_125 - mat1[5] * det3_234_124;
-            var det4_1234_1345 = mat1[1] * det3_234_345 - mat1[3] * det3_234_145 + mat1[4] * det3_234_135 - mat1[5] * det3_234_134;
-            var det4_1234_2345 = mat1[2] * det3_234_345 - mat1[3] * det3_234_245 + mat1[4] * det3_234_235 - mat1[5] * det3_234_234;
-            var det4_1235_0123 = mat1[0] * det3_235_123 - mat1[1] * det3_235_023 + mat1[2] * det3_235_013 - mat1[3] * det3_235_012;
-            var det4_1235_0124 = mat1[0] * det3_235_124 - mat1[1] * det3_235_024 + mat1[2] * det3_235_014 - mat1[4] * det3_235_012;
-            var det4_1235_0125 = mat1[0] * det3_235_125 - mat1[1] * det3_235_025 + mat1[2] * det3_235_015 - mat1[5] * det3_235_012;
-            var det4_1235_0134 = mat1[0] * det3_235_134 - mat1[1] * det3_235_034 + mat1[3] * det3_235_014 - mat1[4] * det3_235_013;
-            var det4_1235_0135 = mat1[0] * det3_235_135 - mat1[1] * det3_235_035 + mat1[3] * det3_235_015 - mat1[5] * det3_235_013;
-            var det4_1235_0145 = mat1[0] * det3_235_145 - mat1[1] * det3_235_045 + mat1[4] * det3_235_015 - mat1[5] * det3_235_014;
-            var det4_1235_0234 = mat1[0] * det3_235_234 - mat1[2] * det3_235_034 + mat1[3] * det3_235_024 - mat1[4] * det3_235_023;
-            var det4_1235_0235 = mat1[0] * det3_235_235 - mat1[2] * det3_235_035 + mat1[3] * det3_235_025 - mat1[5] * det3_235_023;
-            var det4_1235_0245 = mat1[0] * det3_235_245 - mat1[2] * det3_235_045 + mat1[4] * det3_235_025 - mat1[5] * det3_235_024;
-            var det4_1235_0345 = mat1[0] * det3_235_345 - mat1[3] * det3_235_045 + mat1[4] * det3_235_035 - mat1[5] * det3_235_034;
-            var det4_1235_1234 = mat1[1] * det3_235_234 - mat1[2] * det3_235_134 + mat1[3] * det3_235_124 - mat1[4] * det3_235_123;
-            var det4_1235_1235 = mat1[1] * det3_235_235 - mat1[2] * det3_235_135 + mat1[3] * det3_235_125 - mat1[5] * det3_235_123;
-            var det4_1235_1245 = mat1[1] * det3_235_245 - mat1[2] * det3_235_145 + mat1[4] * det3_235_125 - mat1[5] * det3_235_124;
-            var det4_1235_1345 = mat1[1] * det3_235_345 - mat1[3] * det3_235_145 + mat1[4] * det3_235_135 - mat1[5] * det3_235_134;
-            var det4_1235_2345 = mat1[2] * det3_235_345 - mat1[3] * det3_235_245 + mat1[4] * det3_235_235 - mat1[5] * det3_235_234;
-            var det4_1245_0123 = mat1[0] * det3_245_123 - mat1[1] * det3_245_023 + mat1[2] * det3_245_013 - mat1[3] * det3_245_012;
-            var det4_1245_0124 = mat1[0] * det3_245_124 - mat1[1] * det3_245_024 + mat1[2] * det3_245_014 - mat1[4] * det3_245_012;
-            var det4_1245_0125 = mat1[0] * det3_245_125 - mat1[1] * det3_245_025 + mat1[2] * det3_245_015 - mat1[5] * det3_245_012;
-            var det4_1245_0134 = mat1[0] * det3_245_134 - mat1[1] * det3_245_034 + mat1[3] * det3_245_014 - mat1[4] * det3_245_013;
-            var det4_1245_0135 = mat1[0] * det3_245_135 - mat1[1] * det3_245_035 + mat1[3] * det3_245_015 - mat1[5] * det3_245_013;
-            var det4_1245_0145 = mat1[0] * det3_245_145 - mat1[1] * det3_245_045 + mat1[4] * det3_245_015 - mat1[5] * det3_245_014;
-            var det4_1245_0234 = mat1[0] * det3_245_234 - mat1[2] * det3_245_034 + mat1[3] * det3_245_024 - mat1[4] * det3_245_023;
-            var det4_1245_0235 = mat1[0] * det3_245_235 - mat1[2] * det3_245_035 + mat1[3] * det3_245_025 - mat1[5] * det3_245_023;
-            var det4_1245_0245 = mat1[0] * det3_245_245 - mat1[2] * det3_245_045 + mat1[4] * det3_245_025 - mat1[5] * det3_245_024;
-            var det4_1245_0345 = mat1[0] * det3_245_345 - mat1[3] * det3_245_045 + mat1[4] * det3_245_035 - mat1[5] * det3_245_034;
-            var det4_1245_1234 = mat1[1] * det3_245_234 - mat1[2] * det3_245_134 + mat1[3] * det3_245_124 - mat1[4] * det3_245_123;
-            var det4_1245_1235 = mat1[1] * det3_245_235 - mat1[2] * det3_245_135 + mat1[3] * det3_245_125 - mat1[5] * det3_245_123;
-            var det4_1245_1245 = mat1[1] * det3_245_245 - mat1[2] * det3_245_145 + mat1[4] * det3_245_125 - mat1[5] * det3_245_124;
-            var det4_1245_1345 = mat1[1] * det3_245_345 - mat1[3] * det3_245_145 + mat1[4] * det3_245_135 - mat1[5] * det3_245_134;
-            var det4_1245_2345 = mat1[2] * det3_245_345 - mat1[3] * det3_245_245 + mat1[4] * det3_245_235 - mat1[5] * det3_245_234;
-            var det4_1345_0123 = mat1[0] * det3_345_123 - mat1[1] * det3_345_023 + mat1[2] * det3_345_013 - mat1[3] * det3_345_012;
-            var det4_1345_0124 = mat1[0] * det3_345_124 - mat1[1] * det3_345_024 + mat1[2] * det3_345_014 - mat1[4] * det3_345_012;
-            var det4_1345_0125 = mat1[0] * det3_345_125 - mat1[1] * det3_345_025 + mat1[2] * det3_345_015 - mat1[5] * det3_345_012;
-            var det4_1345_0134 = mat1[0] * det3_345_134 - mat1[1] * det3_345_034 + mat1[3] * det3_345_014 - mat1[4] * det3_345_013;
-            var det4_1345_0135 = mat1[0] * det3_345_135 - mat1[1] * det3_345_035 + mat1[3] * det3_345_015 - mat1[5] * det3_345_013;
-            var det4_1345_0145 = mat1[0] * det3_345_145 - mat1[1] * det3_345_045 + mat1[4] * det3_345_015 - mat1[5] * det3_345_014;
-            var det4_1345_0234 = mat1[0] * det3_345_234 - mat1[2] * det3_345_034 + mat1[3] * det3_345_024 - mat1[4] * det3_345_023;
-            var det4_1345_0235 = mat1[0] * det3_345_235 - mat1[2] * det3_345_035 + mat1[3] * det3_345_025 - mat1[5] * det3_345_023;
-            var det4_1345_0245 = mat1[0] * det3_345_245 - mat1[2] * det3_345_045 + mat1[4] * det3_345_025 - mat1[5] * det3_345_024;
-            var det4_1345_0345 = mat1[0] * det3_345_345 - mat1[3] * det3_345_045 + mat1[4] * det3_345_035 - mat1[5] * det3_345_034;
-            var det4_1345_1234 = mat1[1] * det3_345_234 - mat1[2] * det3_345_134 + mat1[3] * det3_345_124 - mat1[4] * det3_345_123;
-            var det4_1345_1235 = mat1[1] * det3_345_235 - mat1[2] * det3_345_135 + mat1[3] * det3_345_125 - mat1[5] * det3_345_123;
-            var det4_1345_1245 = mat1[1] * det3_345_245 - mat1[2] * det3_345_145 + mat1[4] * det3_345_125 - mat1[5] * det3_345_124;
-            var det4_1345_1345 = mat1[1] * det3_345_345 - mat1[3] * det3_345_145 + mat1[4] * det3_345_135 - mat1[5] * det3_345_134;
-            var det4_1345_2345 = mat1[2] * det3_345_345 - mat1[3] * det3_345_245 + mat1[4] * det3_345_235 - mat1[5] * det3_345_234;
+            var det4_1234_0123 = mat[1][0] * det3_234_123 - mat[1][1] * det3_234_023 + mat[1][2] * det3_234_013 - mat[1][3] * det3_234_012;
+            var det4_1234_0124 = mat[1][0] * det3_234_124 - mat[1][1] * det3_234_024 + mat[1][2] * det3_234_014 - mat[1][4] * det3_234_012;
+            var det4_1234_0125 = mat[1][0] * det3_234_125 - mat[1][1] * det3_234_025 + mat[1][2] * det3_234_015 - mat[1][5] * det3_234_012;
+            var det4_1234_0134 = mat[1][0] * det3_234_134 - mat[1][1] * det3_234_034 + mat[1][3] * det3_234_014 - mat[1][4] * det3_234_013;
+            var det4_1234_0135 = mat[1][0] * det3_234_135 - mat[1][1] * det3_234_035 + mat[1][3] * det3_234_015 - mat[1][5] * det3_234_013;
+            var det4_1234_0145 = mat[1][0] * det3_234_145 - mat[1][1] * det3_234_045 + mat[1][4] * det3_234_015 - mat[1][5] * det3_234_014;
+            var det4_1234_0234 = mat[1][0] * det3_234_234 - mat[1][2] * det3_234_034 + mat[1][3] * det3_234_024 - mat[1][4] * det3_234_023;
+            var det4_1234_0235 = mat[1][0] * det3_234_235 - mat[1][2] * det3_234_035 + mat[1][3] * det3_234_025 - mat[1][5] * det3_234_023;
+            var det4_1234_0245 = mat[1][0] * det3_234_245 - mat[1][2] * det3_234_045 + mat[1][4] * det3_234_025 - mat[1][5] * det3_234_024;
+            var det4_1234_0345 = mat[1][0] * det3_234_345 - mat[1][3] * det3_234_045 + mat[1][4] * det3_234_035 - mat[1][5] * det3_234_034;
+            var det4_1234_1234 = mat[1][1] * det3_234_234 - mat[1][2] * det3_234_134 + mat[1][3] * det3_234_124 - mat[1][4] * det3_234_123;
+            var det4_1234_1235 = mat[1][1] * det3_234_235 - mat[1][2] * det3_234_135 + mat[1][3] * det3_234_125 - mat[1][5] * det3_234_123;
+            var det4_1234_1245 = mat[1][1] * det3_234_245 - mat[1][2] * det3_234_145 + mat[1][4] * det3_234_125 - mat[1][5] * det3_234_124;
+            var det4_1234_1345 = mat[1][1] * det3_234_345 - mat[1][3] * det3_234_145 + mat[1][4] * det3_234_135 - mat[1][5] * det3_234_134;
+            var det4_1234_2345 = mat[1][2] * det3_234_345 - mat[1][3] * det3_234_245 + mat[1][4] * det3_234_235 - mat[1][5] * det3_234_234;
+            var det4_1235_0123 = mat[1][0] * det3_235_123 - mat[1][1] * det3_235_023 + mat[1][2] * det3_235_013 - mat[1][3] * det3_235_012;
+            var det4_1235_0124 = mat[1][0] * det3_235_124 - mat[1][1] * det3_235_024 + mat[1][2] * det3_235_014 - mat[1][4] * det3_235_012;
+            var det4_1235_0125 = mat[1][0] * det3_235_125 - mat[1][1] * det3_235_025 + mat[1][2] * det3_235_015 - mat[1][5] * det3_235_012;
+            var det4_1235_0134 = mat[1][0] * det3_235_134 - mat[1][1] * det3_235_034 + mat[1][3] * det3_235_014 - mat[1][4] * det3_235_013;
+            var det4_1235_0135 = mat[1][0] * det3_235_135 - mat[1][1] * det3_235_035 + mat[1][3] * det3_235_015 - mat[1][5] * det3_235_013;
+            var det4_1235_0145 = mat[1][0] * det3_235_145 - mat[1][1] * det3_235_045 + mat[1][4] * det3_235_015 - mat[1][5] * det3_235_014;
+            var det4_1235_0234 = mat[1][0] * det3_235_234 - mat[1][2] * det3_235_034 + mat[1][3] * det3_235_024 - mat[1][4] * det3_235_023;
+            var det4_1235_0235 = mat[1][0] * det3_235_235 - mat[1][2] * det3_235_035 + mat[1][3] * det3_235_025 - mat[1][5] * det3_235_023;
+            var det4_1235_0245 = mat[1][0] * det3_235_245 - mat[1][2] * det3_235_045 + mat[1][4] * det3_235_025 - mat[1][5] * det3_235_024;
+            var det4_1235_0345 = mat[1][0] * det3_235_345 - mat[1][3] * det3_235_045 + mat[1][4] * det3_235_035 - mat[1][5] * det3_235_034;
+            var det4_1235_1234 = mat[1][1] * det3_235_234 - mat[1][2] * det3_235_134 + mat[1][3] * det3_235_124 - mat[1][4] * det3_235_123;
+            var det4_1235_1235 = mat[1][1] * det3_235_235 - mat[1][2] * det3_235_135 + mat[1][3] * det3_235_125 - mat[1][5] * det3_235_123;
+            var det4_1235_1245 = mat[1][1] * det3_235_245 - mat[1][2] * det3_235_145 + mat[1][4] * det3_235_125 - mat[1][5] * det3_235_124;
+            var det4_1235_1345 = mat[1][1] * det3_235_345 - mat[1][3] * det3_235_145 + mat[1][4] * det3_235_135 - mat[1][5] * det3_235_134;
+            var det4_1235_2345 = mat[1][2] * det3_235_345 - mat[1][3] * det3_235_245 + mat[1][4] * det3_235_235 - mat[1][5] * det3_235_234;
+            var det4_1245_0123 = mat[1][0] * det3_245_123 - mat[1][1] * det3_245_023 + mat[1][2] * det3_245_013 - mat[1][3] * det3_245_012;
+            var det4_1245_0124 = mat[1][0] * det3_245_124 - mat[1][1] * det3_245_024 + mat[1][2] * det3_245_014 - mat[1][4] * det3_245_012;
+            var det4_1245_0125 = mat[1][0] * det3_245_125 - mat[1][1] * det3_245_025 + mat[1][2] * det3_245_015 - mat[1][5] * det3_245_012;
+            var det4_1245_0134 = mat[1][0] * det3_245_134 - mat[1][1] * det3_245_034 + mat[1][3] * det3_245_014 - mat[1][4] * det3_245_013;
+            var det4_1245_0135 = mat[1][0] * det3_245_135 - mat[1][1] * det3_245_035 + mat[1][3] * det3_245_015 - mat[1][5] * det3_245_013;
+            var det4_1245_0145 = mat[1][0] * det3_245_145 - mat[1][1] * det3_245_045 + mat[1][4] * det3_245_015 - mat[1][5] * det3_245_014;
+            var det4_1245_0234 = mat[1][0] * det3_245_234 - mat[1][2] * det3_245_034 + mat[1][3] * det3_245_024 - mat[1][4] * det3_245_023;
+            var det4_1245_0235 = mat[1][0] * det3_245_235 - mat[1][2] * det3_245_035 + mat[1][3] * det3_245_025 - mat[1][5] * det3_245_023;
+            var det4_1245_0245 = mat[1][0] * det3_245_245 - mat[1][2] * det3_245_045 + mat[1][4] * det3_245_025 - mat[1][5] * det3_245_024;
+            var det4_1245_0345 = mat[1][0] * det3_245_345 - mat[1][3] * det3_245_045 + mat[1][4] * det3_245_035 - mat[1][5] * det3_245_034;
+            var det4_1245_1234 = mat[1][1] * det3_245_234 - mat[1][2] * det3_245_134 + mat[1][3] * det3_245_124 - mat[1][4] * det3_245_123;
+            var det4_1245_1235 = mat[1][1] * det3_245_235 - mat[1][2] * det3_245_135 + mat[1][3] * det3_245_125 - mat[1][5] * det3_245_123;
+            var det4_1245_1245 = mat[1][1] * det3_245_245 - mat[1][2] * det3_245_145 + mat[1][4] * det3_245_125 - mat[1][5] * det3_245_124;
+            var det4_1245_1345 = mat[1][1] * det3_245_345 - mat[1][3] * det3_245_145 + mat[1][4] * det3_245_135 - mat[1][5] * det3_245_134;
+            var det4_1245_2345 = mat[1][2] * det3_245_345 - mat[1][3] * det3_245_245 + mat[1][4] * det3_245_235 - mat[1][5] * det3_245_234;
+            var det4_1345_0123 = mat[1][0] * det3_345_123 - mat[1][1] * det3_345_023 + mat[1][2] * det3_345_013 - mat[1][3] * det3_345_012;
+            var det4_1345_0124 = mat[1][0] * det3_345_124 - mat[1][1] * det3_345_024 + mat[1][2] * det3_345_014 - mat[1][4] * det3_345_012;
+            var det4_1345_0125 = mat[1][0] * det3_345_125 - mat[1][1] * det3_345_025 + mat[1][2] * det3_345_015 - mat[1][5] * det3_345_012;
+            var det4_1345_0134 = mat[1][0] * det3_345_134 - mat[1][1] * det3_345_034 + mat[1][3] * det3_345_014 - mat[1][4] * det3_345_013;
+            var det4_1345_0135 = mat[1][0] * det3_345_135 - mat[1][1] * det3_345_035 + mat[1][3] * det3_345_015 - mat[1][5] * det3_345_013;
+            var det4_1345_0145 = mat[1][0] * det3_345_145 - mat[1][1] * det3_345_045 + mat[1][4] * det3_345_015 - mat[1][5] * det3_345_014;
+            var det4_1345_0234 = mat[1][0] * det3_345_234 - mat[1][2] * det3_345_034 + mat[1][3] * det3_345_024 - mat[1][4] * det3_345_023;
+            var det4_1345_0235 = mat[1][0] * det3_345_235 - mat[1][2] * det3_345_035 + mat[1][3] * det3_345_025 - mat[1][5] * det3_345_023;
+            var det4_1345_0245 = mat[1][0] * det3_345_245 - mat[1][2] * det3_345_045 + mat[1][4] * det3_345_025 - mat[1][5] * det3_345_024;
+            var det4_1345_0345 = mat[1][0] * det3_345_345 - mat[1][3] * det3_345_045 + mat[1][4] * det3_345_035 - mat[1][5] * det3_345_034;
+            var det4_1345_1234 = mat[1][1] * det3_345_234 - mat[1][2] * det3_345_134 + mat[1][3] * det3_345_124 - mat[1][4] * det3_345_123;
+            var det4_1345_1235 = mat[1][1] * det3_345_235 - mat[1][2] * det3_345_135 + mat[1][3] * det3_345_125 - mat[1][5] * det3_345_123;
+            var det4_1345_1245 = mat[1][1] * det3_345_245 - mat[1][2] * det3_345_145 + mat[1][4] * det3_345_125 - mat[1][5] * det3_345_124;
+            var det4_1345_1345 = mat[1][1] * det3_345_345 - mat[1][3] * det3_345_145 + mat[1][4] * det3_345_135 - mat[1][5] * det3_345_134;
+            var det4_1345_2345 = mat[1][2] * det3_345_345 - mat[1][3] * det3_345_245 + mat[1][4] * det3_345_235 - mat[1][5] * det3_345_234;
 
             // remaining 5x5 sub-determinants
-            var det5_01234_01234 = mat0[0] * det4_1234_1234 - mat0[1] * det4_1234_0234 + mat0[2] * det4_1234_0134 - mat0[3] * det4_1234_0124 + mat0[4] * det4_1234_0123;
-            var det5_01234_01235 = mat0[0] * det4_1234_1235 - mat0[1] * det4_1234_0235 + mat0[2] * det4_1234_0135 - mat0[3] * det4_1234_0125 + mat0[5] * det4_1234_0123;
-            var det5_01234_01245 = mat0[0] * det4_1234_1245 - mat0[1] * det4_1234_0245 + mat0[2] * det4_1234_0145 - mat0[4] * det4_1234_0125 + mat0[5] * det4_1234_0124;
-            var det5_01234_01345 = mat0[0] * det4_1234_1345 - mat0[1] * det4_1234_0345 + mat0[3] * det4_1234_0145 - mat0[4] * det4_1234_0135 + mat0[5] * det4_1234_0134;
-            var det5_01234_02345 = mat0[0] * det4_1234_2345 - mat0[2] * det4_1234_0345 + mat0[3] * det4_1234_0245 - mat0[4] * det4_1234_0235 + mat0[5] * det4_1234_0234;
-            var det5_01234_12345 = mat0[1] * det4_1234_2345 - mat0[2] * det4_1234_1345 + mat0[3] * det4_1234_1245 - mat0[4] * det4_1234_1235 + mat0[5] * det4_1234_1234;
-            var det5_01235_01234 = mat0[0] * det4_1235_1234 - mat0[1] * det4_1235_0234 + mat0[2] * det4_1235_0134 - mat0[3] * det4_1235_0124 + mat0[4] * det4_1235_0123;
-            var det5_01235_01235 = mat0[0] * det4_1235_1235 - mat0[1] * det4_1235_0235 + mat0[2] * det4_1235_0135 - mat0[3] * det4_1235_0125 + mat0[5] * det4_1235_0123;
-            var det5_01235_01245 = mat0[0] * det4_1235_1245 - mat0[1] * det4_1235_0245 + mat0[2] * det4_1235_0145 - mat0[4] * det4_1235_0125 + mat0[5] * det4_1235_0124;
-            var det5_01235_01345 = mat0[0] * det4_1235_1345 - mat0[1] * det4_1235_0345 + mat0[3] * det4_1235_0145 - mat0[4] * det4_1235_0135 + mat0[5] * det4_1235_0134;
-            var det5_01235_02345 = mat0[0] * det4_1235_2345 - mat0[2] * det4_1235_0345 + mat0[3] * det4_1235_0245 - mat0[4] * det4_1235_0235 + mat0[5] * det4_1235_0234;
-            var det5_01235_12345 = mat0[1] * det4_1235_2345 - mat0[2] * det4_1235_1345 + mat0[3] * det4_1235_1245 - mat0[4] * det4_1235_1235 + mat0[5] * det4_1235_1234;
-            var det5_01245_01234 = mat0[0] * det4_1245_1234 - mat0[1] * det4_1245_0234 + mat0[2] * det4_1245_0134 - mat0[3] * det4_1245_0124 + mat0[4] * det4_1245_0123;
-            var det5_01245_01235 = mat0[0] * det4_1245_1235 - mat0[1] * det4_1245_0235 + mat0[2] * det4_1245_0135 - mat0[3] * det4_1245_0125 + mat0[5] * det4_1245_0123;
-            var det5_01245_01245 = mat0[0] * det4_1245_1245 - mat0[1] * det4_1245_0245 + mat0[2] * det4_1245_0145 - mat0[4] * det4_1245_0125 + mat0[5] * det4_1245_0124;
-            var det5_01245_01345 = mat0[0] * det4_1245_1345 - mat0[1] * det4_1245_0345 + mat0[3] * det4_1245_0145 - mat0[4] * det4_1245_0135 + mat0[5] * det4_1245_0134;
-            var det5_01245_02345 = mat0[0] * det4_1245_2345 - mat0[2] * det4_1245_0345 + mat0[3] * det4_1245_0245 - mat0[4] * det4_1245_0235 + mat0[5] * det4_1245_0234;
-            var det5_01245_12345 = mat0[1] * det4_1245_2345 - mat0[2] * det4_1245_1345 + mat0[3] * det4_1245_1245 - mat0[4] * det4_1245_1235 + mat0[5] * det4_1245_1234;
-            var det5_01345_01234 = mat0[0] * det4_1345_1234 - mat0[1] * det4_1345_0234 + mat0[2] * det4_1345_0134 - mat0[3] * det4_1345_0124 + mat0[4] * det4_1345_0123;
-            var det5_01345_01235 = mat0[0] * det4_1345_1235 - mat0[1] * det4_1345_0235 + mat0[2] * det4_1345_0135 - mat0[3] * det4_1345_0125 + mat0[5] * det4_1345_0123;
-            var det5_01345_01245 = mat0[0] * det4_1345_1245 - mat0[1] * det4_1345_0245 + mat0[2] * det4_1345_0145 - mat0[4] * det4_1345_0125 + mat0[5] * det4_1345_0124;
-            var det5_01345_01345 = mat0[0] * det4_1345_1345 - mat0[1] * det4_1345_0345 + mat0[3] * det4_1345_0145 - mat0[4] * det4_1345_0135 + mat0[5] * det4_1345_0134;
-            var det5_01345_02345 = mat0[0] * det4_1345_2345 - mat0[2] * det4_1345_0345 + mat0[3] * det4_1345_0245 - mat0[4] * det4_1345_0235 + mat0[5] * det4_1345_0234;
-            var det5_01345_12345 = mat0[1] * det4_1345_2345 - mat0[2] * det4_1345_1345 + mat0[3] * det4_1345_1245 - mat0[4] * det4_1345_1235 + mat0[5] * det4_1345_1234;
-            var det5_02345_01234 = mat0[0] * det4_2345_1234 - mat0[1] * det4_2345_0234 + mat0[2] * det4_2345_0134 - mat0[3] * det4_2345_0124 + mat0[4] * det4_2345_0123;
-            var det5_02345_01235 = mat0[0] * det4_2345_1235 - mat0[1] * det4_2345_0235 + mat0[2] * det4_2345_0135 - mat0[3] * det4_2345_0125 + mat0[5] * det4_2345_0123;
-            var det5_02345_01245 = mat0[0] * det4_2345_1245 - mat0[1] * det4_2345_0245 + mat0[2] * det4_2345_0145 - mat0[4] * det4_2345_0125 + mat0[5] * det4_2345_0124;
-            var det5_02345_01345 = mat0[0] * det4_2345_1345 - mat0[1] * det4_2345_0345 + mat0[3] * det4_2345_0145 - mat0[4] * det4_2345_0135 + mat0[5] * det4_2345_0134;
-            var det5_02345_02345 = mat0[0] * det4_2345_2345 - mat0[2] * det4_2345_0345 + mat0[3] * det4_2345_0245 - mat0[4] * det4_2345_0235 + mat0[5] * det4_2345_0234;
-            var det5_02345_12345 = mat0[1] * det4_2345_2345 - mat0[2] * det4_2345_1345 + mat0[3] * det4_2345_1245 - mat0[4] * det4_2345_1235 + mat0[5] * det4_2345_1234;
+            var det5_01234_01234 = mat[0][0] * det4_1234_1234 - mat[0][1] * det4_1234_0234 + mat[0][2] * det4_1234_0134 - mat[0][3] * det4_1234_0124 + mat[0][4] * det4_1234_0123;
+            var det5_01234_01235 = mat[0][0] * det4_1234_1235 - mat[0][1] * det4_1234_0235 + mat[0][2] * det4_1234_0135 - mat[0][3] * det4_1234_0125 + mat[0][5] * det4_1234_0123;
+            var det5_01234_01245 = mat[0][0] * det4_1234_1245 - mat[0][1] * det4_1234_0245 + mat[0][2] * det4_1234_0145 - mat[0][4] * det4_1234_0125 + mat[0][5] * det4_1234_0124;
+            var det5_01234_01345 = mat[0][0] * det4_1234_1345 - mat[0][1] * det4_1234_0345 + mat[0][3] * det4_1234_0145 - mat[0][4] * det4_1234_0135 + mat[0][5] * det4_1234_0134;
+            var det5_01234_02345 = mat[0][0] * det4_1234_2345 - mat[0][2] * det4_1234_0345 + mat[0][3] * det4_1234_0245 - mat[0][4] * det4_1234_0235 + mat[0][5] * det4_1234_0234;
+            var det5_01234_12345 = mat[0][1] * det4_1234_2345 - mat[0][2] * det4_1234_1345 + mat[0][3] * det4_1234_1245 - mat[0][4] * det4_1234_1235 + mat[0][5] * det4_1234_1234;
+            var det5_01235_01234 = mat[0][0] * det4_1235_1234 - mat[0][1] * det4_1235_0234 + mat[0][2] * det4_1235_0134 - mat[0][3] * det4_1235_0124 + mat[0][4] * det4_1235_0123;
+            var det5_01235_01235 = mat[0][0] * det4_1235_1235 - mat[0][1] * det4_1235_0235 + mat[0][2] * det4_1235_0135 - mat[0][3] * det4_1235_0125 + mat[0][5] * det4_1235_0123;
+            var det5_01235_01245 = mat[0][0] * det4_1235_1245 - mat[0][1] * det4_1235_0245 + mat[0][2] * det4_1235_0145 - mat[0][4] * det4_1235_0125 + mat[0][5] * det4_1235_0124;
+            var det5_01235_01345 = mat[0][0] * det4_1235_1345 - mat[0][1] * det4_1235_0345 + mat[0][3] * det4_1235_0145 - mat[0][4] * det4_1235_0135 + mat[0][5] * det4_1235_0134;
+            var det5_01235_02345 = mat[0][0] * det4_1235_2345 - mat[0][2] * det4_1235_0345 + mat[0][3] * det4_1235_0245 - mat[0][4] * det4_1235_0235 + mat[0][5] * det4_1235_0234;
+            var det5_01235_12345 = mat[0][1] * det4_1235_2345 - mat[0][2] * det4_1235_1345 + mat[0][3] * det4_1235_1245 - mat[0][4] * det4_1235_1235 + mat[0][5] * det4_1235_1234;
+            var det5_01245_01234 = mat[0][0] * det4_1245_1234 - mat[0][1] * det4_1245_0234 + mat[0][2] * det4_1245_0134 - mat[0][3] * det4_1245_0124 + mat[0][4] * det4_1245_0123;
+            var det5_01245_01235 = mat[0][0] * det4_1245_1235 - mat[0][1] * det4_1245_0235 + mat[0][2] * det4_1245_0135 - mat[0][3] * det4_1245_0125 + mat[0][5] * det4_1245_0123;
+            var det5_01245_01245 = mat[0][0] * det4_1245_1245 - mat[0][1] * det4_1245_0245 + mat[0][2] * det4_1245_0145 - mat[0][4] * det4_1245_0125 + mat[0][5] * det4_1245_0124;
+            var det5_01245_01345 = mat[0][0] * det4_1245_1345 - mat[0][1] * det4_1245_0345 + mat[0][3] * det4_1245_0145 - mat[0][4] * det4_1245_0135 + mat[0][5] * det4_1245_0134;
+            var det5_01245_02345 = mat[0][0] * det4_1245_2345 - mat[0][2] * det4_1245_0345 + mat[0][3] * det4_1245_0245 - mat[0][4] * det4_1245_0235 + mat[0][5] * det4_1245_0234;
+            var det5_01245_12345 = mat[0][1] * det4_1245_2345 - mat[0][2] * det4_1245_1345 + mat[0][3] * det4_1245_1245 - mat[0][4] * det4_1245_1235 + mat[0][5] * det4_1245_1234;
+            var det5_01345_01234 = mat[0][0] * det4_1345_1234 - mat[0][1] * det4_1345_0234 + mat[0][2] * det4_1345_0134 - mat[0][3] * det4_1345_0124 + mat[0][4] * det4_1345_0123;
+            var det5_01345_01235 = mat[0][0] * det4_1345_1235 - mat[0][1] * det4_1345_0235 + mat[0][2] * det4_1345_0135 - mat[0][3] * det4_1345_0125 + mat[0][5] * det4_1345_0123;
+            var det5_01345_01245 = mat[0][0] * det4_1345_1245 - mat[0][1] * det4_1345_0245 + mat[0][2] * det4_1345_0145 - mat[0][4] * det4_1345_0125 + mat[0][5] * det4_1345_0124;
+            var det5_01345_01345 = mat[0][0] * det4_1345_1345 - mat[0][1] * det4_1345_0345 + mat[0][3] * det4_1345_0145 - mat[0][4] * det4_1345_0135 + mat[0][5] * det4_1345_0134;
+            var det5_01345_02345 = mat[0][0] * det4_1345_2345 - mat[0][2] * det4_1345_0345 + mat[0][3] * det4_1345_0245 - mat[0][4] * det4_1345_0235 + mat[0][5] * det4_1345_0234;
+            var det5_01345_12345 = mat[0][1] * det4_1345_2345 - mat[0][2] * det4_1345_1345 + mat[0][3] * det4_1345_1245 - mat[0][4] * det4_1345_1235 + mat[0][5] * det4_1345_1234;
+            var det5_02345_01234 = mat[0][0] * det4_2345_1234 - mat[0][1] * det4_2345_0234 + mat[0][2] * det4_2345_0134 - mat[0][3] * det4_2345_0124 + mat[0][4] * det4_2345_0123;
+            var det5_02345_01235 = mat[0][0] * det4_2345_1235 - mat[0][1] * det4_2345_0235 + mat[0][2] * det4_2345_0135 - mat[0][3] * det4_2345_0125 + mat[0][5] * det4_2345_0123;
+            var det5_02345_01245 = mat[0][0] * det4_2345_1245 - mat[0][1] * det4_2345_0245 + mat[0][2] * det4_2345_0145 - mat[0][4] * det4_2345_0125 + mat[0][5] * det4_2345_0124;
+            var det5_02345_01345 = mat[0][0] * det4_2345_1345 - mat[0][1] * det4_2345_0345 + mat[0][3] * det4_2345_0145 - mat[0][4] * det4_2345_0135 + mat[0][5] * det4_2345_0134;
+            var det5_02345_02345 = mat[0][0] * det4_2345_2345 - mat[0][2] * det4_2345_0345 + mat[0][3] * det4_2345_0245 - mat[0][4] * det4_2345_0235 + mat[0][5] * det4_2345_0234;
+            var det5_02345_12345 = mat[0][1] * det4_2345_2345 - mat[0][2] * det4_2345_1345 + mat[0][3] * det4_2345_1245 - mat[0][4] * det4_2345_1235 + mat[0][5] * det4_2345_1234;
 
-            mat0[0] = det5_12345_12345 * invDet; mat0[1] = -det5_02345_12345 * invDet; mat0[2] = det5_01345_12345 * invDet; mat0[3] = -det5_01245_12345 * invDet; mat0[4] = det5_01235_12345 * invDet; mat0[5] = -det5_01234_12345 * invDet;
-            mat1[0] = -det5_12345_02345 * invDet; mat1[1] = det5_02345_02345 * invDet; mat1[2] = -det5_01345_02345 * invDet; mat1[3] = det5_01245_02345 * invDet; mat1[4] = -det5_01235_02345 * invDet; mat1[5] = det5_01234_02345 * invDet;
-            mat2[0] = det5_12345_01345 * invDet; mat2[1] = -det5_02345_01345 * invDet; mat2[2] = det5_01345_01345 * invDet; mat2[3] = -det5_01245_01345 * invDet; mat2[4] = det5_01235_01345 * invDet; mat2[5] = -det5_01234_01345 * invDet;
-            mat3[0] = -det5_12345_01245 * invDet; mat3[1] = det5_02345_01245 * invDet; mat3[2] = -det5_01345_01245 * invDet; mat3[3] = det5_01245_01245 * invDet; mat3[4] = -det5_01235_01245 * invDet; mat3[5] = det5_01234_01245 * invDet;
-            mat4[0] = det5_12345_01235 * invDet; mat4[1] = -det5_02345_01235 * invDet; mat4[2] = det5_01345_01235 * invDet; mat4[3] = -det5_01245_01235 * invDet; mat4[4] = det5_01235_01235 * invDet; mat4[5] = -det5_01234_01235 * invDet;
-            mat5[0] = -det5_12345_01234 * invDet; mat5[1] = det5_02345_01234 * invDet; mat5[2] = -det5_01345_01234 * invDet; mat5[3] = det5_01245_01234 * invDet; mat5[4] = -det5_01235_01234 * invDet; mat5[5] = det5_01234_01234 * invDet;
+            mat[0][0] = det5_12345_12345 * invDet; mat[0][1] = -det5_02345_12345 * invDet; mat[0][2] = det5_01345_12345 * invDet; mat[0][3] = -det5_01245_12345 * invDet; mat[0][4] = det5_01235_12345 * invDet; mat[0][5] = -det5_01234_12345 * invDet;
+            mat[1][0] = -det5_12345_02345 * invDet; mat[1][1] = det5_02345_02345 * invDet; mat[1][2] = -det5_01345_02345 * invDet; mat[1][3] = det5_01245_02345 * invDet; mat[1][4] = -det5_01235_02345 * invDet; mat[1][5] = det5_01234_02345 * invDet;
+            mat[2][0] = det5_12345_01345 * invDet; mat[2][1] = -det5_02345_01345 * invDet; mat[2][2] = det5_01345_01345 * invDet; mat[2][3] = -det5_01245_01345 * invDet; mat[2][4] = det5_01235_01345 * invDet; mat[2][5] = -det5_01234_01345 * invDet;
+            mat[3][0] = -det5_12345_01245 * invDet; mat[3][1] = det5_02345_01245 * invDet; mat[3][2] = -det5_01345_01245 * invDet; mat[3][3] = det5_01245_01245 * invDet; mat[3][4] = -det5_01235_01245 * invDet; mat[3][5] = det5_01234_01245 * invDet;
+            mat[4][0] = det5_12345_01235 * invDet; mat[4][1] = -det5_02345_01235 * invDet; mat[4][2] = det5_01345_01235 * invDet; mat[4][3] = -det5_01245_01235 * invDet; mat[4][4] = det5_01235_01235 * invDet; mat[4][5] = -det5_01234_01235 * invDet;
+            mat[5][0] = -det5_12345_01234 * invDet; mat[5][1] = det5_02345_01234 * invDet; mat[5][2] = -det5_01345_01234 * invDet; mat[5][3] = det5_01245_01234 * invDet; mat[5][4] = -det5_01235_01234 * invDet; mat[5][5] = det5_01234_01234 * invDet;
 
             return true;
         }
@@ -2095,148 +2081,148 @@ namespace Droid.Core
             // 6*27+2*30 = 222 multiplications
             //		2*1  =	 2 divisions
 
-            fixed (float* matp = &mat0.p[0])
+            fixed (float* mat = &this.mat[0].p[0])
             {
                 // r0 = m0.Inverse();
-                var c0 = matp[1 * 6 + 1] * matp[2 * 6 + 2] - matp[1 * 6 + 2] * matp[2 * 6 + 1];
-                var c1 = matp[1 * 6 + 2] * matp[2 * 6 + 0] - matp[1 * 6 + 0] * matp[2 * 6 + 2];
-                var c2 = matp[1 * 6 + 0] * matp[2 * 6 + 1] - matp[1 * 6 + 1] * matp[2 * 6 + 0];
+                var c0 = mat[1 * 6 + 1] * mat[2 * 6 + 2] - mat[1 * 6 + 2] * mat[2 * 6 + 1];
+                var c1 = mat[1 * 6 + 2] * mat[2 * 6 + 0] - mat[1 * 6 + 0] * mat[2 * 6 + 2];
+                var c2 = mat[1 * 6 + 0] * mat[2 * 6 + 1] - mat[1 * 6 + 1] * mat[2 * 6 + 0];
 
-                var det = matp[0 * 6 + 0] * c0 + matp[0 * 6 + 1] * c1 + matp[0 * 6 + 2] * c2;
+                var det = mat[0 * 6 + 0] * c0 + mat[0 * 6 + 1] * c1 + mat[0 * 6 + 2] * c2;
                 if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
                     return false;
 
                 var invDet = 1.0f / det;
 
-                Matrix3x3 r0;
-                r0.mat0.x = c0 * invDet;
-                r0.mat0.y = (matp[0 * 6 + 2] * matp[2 * 6 + 1] - matp[0 * 6 + 1] * matp[2 * 6 + 2]) * invDet;
-                r0.mat0.z = (matp[0 * 6 + 1] * matp[1 * 6 + 2] - matp[0 * 6 + 2] * matp[1 * 6 + 1]) * invDet;
-                r0.mat1.x = c1 * invDet;
-                r0.mat1.y = (matp[0 * 6 + 0] * matp[2 * 6 + 2] - matp[0 * 6 + 2] * matp[2 * 6 + 0]) * invDet;
-                r0.mat1.z = (matp[0 * 6 + 2] * matp[1 * 6 + 0] - matp[0 * 6 + 0] * matp[1 * 6 + 2]) * invDet;
-                r0.mat2.x = c2 * invDet;
-                r0.mat2.y = (matp[0 * 6 + 1] * matp[2 * 6 + 0] - matp[0 * 6 + 0] * matp[2 * 6 + 1]) * invDet;
-                r0.mat2.z = (matp[0 * 6 + 0] * matp[1 * 6 + 1] - matp[0 * 6 + 1] * matp[1 * 6 + 0]) * invDet;
+                Matrix3x3 r0 = new();
+                r0.mat[0].x = c0 * invDet;
+                r0.mat[0].y = (mat[0 * 6 + 2] * mat[2 * 6 + 1] - mat[0 * 6 + 1] * mat[2 * 6 + 2]) * invDet;
+                r0.mat[0].z = (mat[0 * 6 + 1] * mat[1 * 6 + 2] - mat[0 * 6 + 2] * mat[1 * 6 + 1]) * invDet;
+                r0.mat[1].x = c1 * invDet;
+                r0.mat[1].y = (mat[0 * 6 + 0] * mat[2 * 6 + 2] - mat[0 * 6 + 2] * mat[2 * 6 + 0]) * invDet;
+                r0.mat[1].z = (mat[0 * 6 + 2] * mat[1 * 6 + 0] - mat[0 * 6 + 0] * mat[1 * 6 + 2]) * invDet;
+                r0.mat[2].x = c2 * invDet;
+                r0.mat[2].y = (mat[0 * 6 + 1] * mat[2 * 6 + 0] - mat[0 * 6 + 0] * mat[2 * 6 + 1]) * invDet;
+                r0.mat[2].z = (mat[0 * 6 + 0] * mat[1 * 6 + 1] - mat[0 * 6 + 1] * mat[1 * 6 + 0]) * invDet;
 
                 // r1 = r0 * m1;
-                Matrix3x3 r1;
-                r1.mat0.x = r0.mat0.x * matp[0 * 6 + 3] + r0.mat0.y * matp[1 * 6 + 3] + r0.mat0.z * matp[2 * 6 + 3];
-                r1.mat0.y = r0.mat0.x * matp[0 * 6 + 4] + r0.mat0.y * matp[1 * 6 + 4] + r0.mat0.z * matp[2 * 6 + 4];
-                r1.mat0.z = r0.mat0.x * matp[0 * 6 + 5] + r0.mat0.y * matp[1 * 6 + 5] + r0.mat0.z * matp[2 * 6 + 5];
-                r1.mat1.x = r0.mat1.x * matp[0 * 6 + 3] + r0.mat1.y * matp[1 * 6 + 3] + r0.mat1.z * matp[2 * 6 + 3];
-                r1.mat1.y = r0.mat1.x * matp[0 * 6 + 4] + r0.mat1.y * matp[1 * 6 + 4] + r0.mat1.z * matp[2 * 6 + 4];
-                r1.mat1.z = r0.mat1.x * matp[0 * 6 + 5] + r0.mat1.y * matp[1 * 6 + 5] + r0.mat1.z * matp[2 * 6 + 5];
-                r1.mat2.x = r0.mat2.x * matp[0 * 6 + 3] + r0.mat2.y * matp[1 * 6 + 3] + r0.mat2.z * matp[2 * 6 + 3];
-                r1.mat2.y = r0.mat2.x * matp[0 * 6 + 4] + r0.mat2.y * matp[1 * 6 + 4] + r0.mat2.z * matp[2 * 6 + 4];
-                r1.mat2.z = r0.mat2.x * matp[0 * 6 + 5] + r0.mat2.y * matp[1 * 6 + 5] + r0.mat2.z * matp[2 * 6 + 5];
+                Matrix3x3 r1 = new();
+                r1.mat[0].x = r0.mat[0].x * mat[0 * 6 + 3] + r0.mat[0].y * mat[1 * 6 + 3] + r0.mat[0].z * mat[2 * 6 + 3];
+                r1.mat[0].y = r0.mat[0].x * mat[0 * 6 + 4] + r0.mat[0].y * mat[1 * 6 + 4] + r0.mat[0].z * mat[2 * 6 + 4];
+                r1.mat[0].z = r0.mat[0].x * mat[0 * 6 + 5] + r0.mat[0].y * mat[1 * 6 + 5] + r0.mat[0].z * mat[2 * 6 + 5];
+                r1.mat[1].x = r0.mat[1].x * mat[0 * 6 + 3] + r0.mat[1].y * mat[1 * 6 + 3] + r0.mat[1].z * mat[2 * 6 + 3];
+                r1.mat[1].y = r0.mat[1].x * mat[0 * 6 + 4] + r0.mat[1].y * mat[1 * 6 + 4] + r0.mat[1].z * mat[2 * 6 + 4];
+                r1.mat[1].z = r0.mat[1].x * mat[0 * 6 + 5] + r0.mat[1].y * mat[1 * 6 + 5] + r0.mat[1].z * mat[2 * 6 + 5];
+                r1.mat[2].x = r0.mat[2].x * mat[0 * 6 + 3] + r0.mat[2].y * mat[1 * 6 + 3] + r0.mat[2].z * mat[2 * 6 + 3];
+                r1.mat[2].y = r0.mat[2].x * mat[0 * 6 + 4] + r0.mat[2].y * mat[1 * 6 + 4] + r0.mat[2].z * mat[2 * 6 + 4];
+                r1.mat[2].z = r0.mat[2].x * mat[0 * 6 + 5] + r0.mat[2].y * mat[1 * 6 + 5] + r0.mat[2].z * mat[2 * 6 + 5];
 
                 // r2 = m2 * r1;
-                Matrix3x3 r2;
-                r2.mat0.x = matp[3 * 6 + 0] * r1.mat0.x + matp[3 * 6 + 1] * r1.mat1.x + matp[3 * 6 + 2] * r1.mat2.x;
-                r2.mat0.y = matp[3 * 6 + 0] * r1.mat0.y + matp[3 * 6 + 1] * r1.mat1.y + matp[3 * 6 + 2] * r1.mat2.y;
-                r2.mat0.z = matp[3 * 6 + 0] * r1.mat0.z + matp[3 * 6 + 1] * r1.mat1.z + matp[3 * 6 + 2] * r1.mat2.z;
-                r2.mat1.x = matp[4 * 6 + 0] * r1.mat0.x + matp[4 * 6 + 1] * r1.mat1.x + matp[4 * 6 + 2] * r1.mat2.x;
-                r2.mat1.y = matp[4 * 6 + 0] * r1.mat0.y + matp[4 * 6 + 1] * r1.mat1.y + matp[4 * 6 + 2] * r1.mat2.y;
-                r2.mat1.z = matp[4 * 6 + 0] * r1.mat0.z + matp[4 * 6 + 1] * r1.mat1.z + matp[4 * 6 + 2] * r1.mat2.z;
-                r2.mat2.x = matp[5 * 6 + 0] * r1.mat0.x + matp[5 * 6 + 1] * r1.mat1.x + matp[5 * 6 + 2] * r1.mat2.x;
-                r2.mat2.y = matp[5 * 6 + 0] * r1.mat0.y + matp[5 * 6 + 1] * r1.mat1.y + matp[5 * 6 + 2] * r1.mat2.y;
-                r2.mat2.z = matp[5 * 6 + 0] * r1.mat0.z + matp[5 * 6 + 1] * r1.mat1.z + matp[5 * 6 + 2] * r1.mat2.z;
+                Matrix3x3 r2 = new();
+                r2.mat[0].x = mat[3 * 6 + 0] * r1.mat[0].x + mat[3 * 6 + 1] * r1.mat[1].x + mat[3 * 6 + 2] * r1.mat[2].x;
+                r2.mat[0].y = mat[3 * 6 + 0] * r1.mat[0].y + mat[3 * 6 + 1] * r1.mat[1].y + mat[3 * 6 + 2] * r1.mat[2].y;
+                r2.mat[0].z = mat[3 * 6 + 0] * r1.mat[0].z + mat[3 * 6 + 1] * r1.mat[1].z + mat[3 * 6 + 2] * r1.mat[2].z;
+                r2.mat[1].x = mat[4 * 6 + 0] * r1.mat[0].x + mat[4 * 6 + 1] * r1.mat[1].x + mat[4 * 6 + 2] * r1.mat[2].x;
+                r2.mat[1].y = mat[4 * 6 + 0] * r1.mat[0].y + mat[4 * 6 + 1] * r1.mat[1].y + mat[4 * 6 + 2] * r1.mat[2].y;
+                r2.mat[1].z = mat[4 * 6 + 0] * r1.mat[0].z + mat[4 * 6 + 1] * r1.mat[1].z + mat[4 * 6 + 2] * r1.mat[2].z;
+                r2.mat[2].x = mat[5 * 6 + 0] * r1.mat[0].x + mat[5 * 6 + 1] * r1.mat[1].x + mat[5 * 6 + 2] * r1.mat[2].x;
+                r2.mat[2].y = mat[5 * 6 + 0] * r1.mat[0].y + mat[5 * 6 + 1] * r1.mat[1].y + mat[5 * 6 + 2] * r1.mat[2].y;
+                r2.mat[2].z = mat[5 * 6 + 0] * r1.mat[0].z + mat[5 * 6 + 1] * r1.mat[1].z + mat[5 * 6 + 2] * r1.mat[2].z;
 
                 // r3 = r2 - m3;
-                Matrix3x3 r3;
-                r3.mat0.x = r2.mat0.x - matp[3 * 6 + 3];
-                r3.mat0.y = r2.mat0.y - matp[3 * 6 + 4];
-                r3.mat0.z = r2.mat0.z - matp[3 * 6 + 5];
-                r3.mat1.x = r2.mat1.x - matp[4 * 6 + 3];
-                r3.mat1.y = r2.mat1.y - matp[4 * 6 + 4];
-                r3.mat1.z = r2.mat1.z - matp[4 * 6 + 5];
-                r3.mat2.x = r2.mat2.x - matp[5 * 6 + 3];
-                r3.mat2.y = r2.mat2.y - matp[5 * 6 + 4];
-                r3.mat2.z = r2.mat2.z - matp[5 * 6 + 5];
+                Matrix3x3 r3 = new();
+                r3.mat[0].x = r2.mat[0].x - mat[3 * 6 + 3];
+                r3.mat[0].y = r2.mat[0].y - mat[3 * 6 + 4];
+                r3.mat[0].z = r2.mat[0].z - mat[3 * 6 + 5];
+                r3.mat[1].x = r2.mat[1].x - mat[4 * 6 + 3];
+                r3.mat[1].y = r2.mat[1].y - mat[4 * 6 + 4];
+                r3.mat[1].z = r2.mat[1].z - mat[4 * 6 + 5];
+                r3.mat[2].x = r2.mat[2].x - mat[5 * 6 + 3];
+                r3.mat[2].y = r2.mat[2].y - mat[5 * 6 + 4];
+                r3.mat[2].z = r2.mat[2].z - mat[5 * 6 + 5];
 
                 // r3.InverseSelf();
-                r2.mat0.x = r3.mat1.y * r3.mat2.z - r3.mat1.z * r3.mat2.y;
-                r2.mat1.x = r3.mat1.z * r3.mat2.x - r3.mat1.x * r3.mat2.z;
-                r2.mat2.x = r3.mat1.x * r3.mat2.y - r3.mat1.y * r3.mat2.x;
+                r2.mat[0].x = r3.mat[1].y * r3.mat[2].z - r3.mat[1].z * r3.mat[2].y;
+                r2.mat[1].x = r3.mat[1].z * r3.mat[2].x - r3.mat[1].x * r3.mat[2].z;
+                r2.mat[2].x = r3.mat[1].x * r3.mat[2].y - r3.mat[1].y * r3.mat[2].x;
 
-                det = r3.mat0.x * r2.mat0.x + r3.mat0.y * r2.mat1.x + r3.mat0.z * r2.mat2.x;
+                det = r3.mat[0].x * r2.mat[0].x + r3.mat[0].y * r2.mat[1].x + r3.mat[0].z * r2.mat[2].x;
                 if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
                     return false;
 
                 invDet = 1.0f / det;
 
-                r2.mat0.y = r3.mat0.z * r3.mat2.y - r3.mat0.y * r3.mat2.z;
-                r2.mat0.z = r3.mat0.y * r3.mat1.z - r3.mat0.z * r3.mat1.y;
-                r2.mat1.y = r3.mat0.x * r3.mat2.z - r3.mat0.z * r3.mat2.x;
-                r2.mat1.z = r3.mat0.z * r3.mat1.x - r3.mat0.x * r3.mat1.z;
-                r2.mat2.y = r3.mat0.y * r3.mat2.x - r3.mat0.x * r3.mat2.y;
-                r2.mat2.z = r3.mat0.x * r3.mat1.y - r3.mat0.y * r3.mat1.x;
+                r2.mat[0].y = r3.mat[0].z * r3.mat[2].y - r3.mat[0].y * r3.mat[2].z;
+                r2.mat[0].z = r3.mat[0].y * r3.mat[1].z - r3.mat[0].z * r3.mat[1].y;
+                r2.mat[1].y = r3.mat[0].x * r3.mat[2].z - r3.mat[0].z * r3.mat[2].x;
+                r2.mat[1].z = r3.mat[0].z * r3.mat[1].x - r3.mat[0].x * r3.mat[1].z;
+                r2.mat[2].y = r3.mat[0].y * r3.mat[2].x - r3.mat[0].x * r3.mat[2].y;
+                r2.mat[2].z = r3.mat[0].x * r3.mat[1].y - r3.mat[0].y * r3.mat[1].x;
 
-                r3.mat0.x = r2.mat0.x * invDet;
-                r3.mat0.y = r2.mat0.y * invDet;
-                r3.mat0.z = r2.mat0.z * invDet;
-                r3.mat1.x = r2.mat1.x * invDet;
-                r3.mat1.y = r2.mat1.y * invDet;
-                r3.mat1.z = r2.mat1.z * invDet;
-                r3.mat2.x = r2.mat2.x * invDet;
-                r3.mat2.y = r2.mat2.y * invDet;
-                r3.mat2.z = r2.mat2.z * invDet;
+                r3.mat[0].x = r2.mat[0].x * invDet;
+                r3.mat[0].y = r2.mat[0].y * invDet;
+                r3.mat[0].z = r2.mat[0].z * invDet;
+                r3.mat[1].x = r2.mat[1].x * invDet;
+                r3.mat[1].y = r2.mat[1].y * invDet;
+                r3.mat[1].z = r2.mat[1].z * invDet;
+                r3.mat[2].x = r2.mat[2].x * invDet;
+                r3.mat[2].y = r2.mat[2].y * invDet;
+                r3.mat[2].z = r2.mat[2].z * invDet;
 
                 // r2 = m2 * r0;
-                r2.mat0.x = matp[3 * 6 + 0] * r0.mat0.x + matp[3 * 6 + 1] * r0.mat1.x + matp[3 * 6 + 2] * r0.mat2.x;
-                r2.mat0.y = matp[3 * 6 + 0] * r0.mat0.y + matp[3 * 6 + 1] * r0.mat1.y + matp[3 * 6 + 2] * r0.mat2.y;
-                r2.mat0.z = matp[3 * 6 + 0] * r0.mat0.z + matp[3 * 6 + 1] * r0.mat1.z + matp[3 * 6 + 2] * r0.mat2.z;
-                r2.mat1.x = matp[4 * 6 + 0] * r0.mat0.x + matp[4 * 6 + 1] * r0.mat1.x + matp[4 * 6 + 2] * r0.mat2.x;
-                r2.mat1.y = matp[4 * 6 + 0] * r0.mat0.y + matp[4 * 6 + 1] * r0.mat1.y + matp[4 * 6 + 2] * r0.mat2.y;
-                r2.mat1.z = matp[4 * 6 + 0] * r0.mat0.z + matp[4 * 6 + 1] * r0.mat1.z + matp[4 * 6 + 2] * r0.mat2.z;
-                r2.mat2.x = matp[5 * 6 + 0] * r0.mat0.x + matp[5 * 6 + 1] * r0.mat1.x + matp[5 * 6 + 2] * r0.mat2.x;
-                r2.mat2.y = matp[5 * 6 + 0] * r0.mat0.y + matp[5 * 6 + 1] * r0.mat1.y + matp[5 * 6 + 2] * r0.mat2.y;
-                r2.mat2.z = matp[5 * 6 + 0] * r0.mat0.z + matp[5 * 6 + 1] * r0.mat1.z + matp[5 * 6 + 2] * r0.mat2.z;
+                r2.mat[0].x = mat[3 * 6 + 0] * r0.mat[0].x + mat[3 * 6 + 1] * r0.mat[1].x + mat[3 * 6 + 2] * r0.mat[2].x;
+                r2.mat[0].y = mat[3 * 6 + 0] * r0.mat[0].y + mat[3 * 6 + 1] * r0.mat[1].y + mat[3 * 6 + 2] * r0.mat[2].y;
+                r2.mat[0].z = mat[3 * 6 + 0] * r0.mat[0].z + mat[3 * 6 + 1] * r0.mat[1].z + mat[3 * 6 + 2] * r0.mat[2].z;
+                r2.mat[1].x = mat[4 * 6 + 0] * r0.mat[0].x + mat[4 * 6 + 1] * r0.mat[1].x + mat[4 * 6 + 2] * r0.mat[2].x;
+                r2.mat[1].y = mat[4 * 6 + 0] * r0.mat[0].y + mat[4 * 6 + 1] * r0.mat[1].y + mat[4 * 6 + 2] * r0.mat[2].y;
+                r2.mat[1].z = mat[4 * 6 + 0] * r0.mat[0].z + mat[4 * 6 + 1] * r0.mat[1].z + mat[4 * 6 + 2] * r0.mat[2].z;
+                r2.mat[2].x = mat[5 * 6 + 0] * r0.mat[0].x + mat[5 * 6 + 1] * r0.mat[1].x + mat[5 * 6 + 2] * r0.mat[2].x;
+                r2.mat[2].y = mat[5 * 6 + 0] * r0.mat[0].y + mat[5 * 6 + 1] * r0.mat[1].y + mat[5 * 6 + 2] * r0.mat[2].y;
+                r2.mat[2].z = mat[5 * 6 + 0] * r0.mat[0].z + mat[5 * 6 + 1] * r0.mat[1].z + mat[5 * 6 + 2] * r0.mat[2].z;
 
                 // m2 = r3 * r2;
-                matp[3 * 6 + 0] = r3.mat0.x * r2.mat0.x + r3.mat0.y * r2.mat1.x + r3.mat0.z * r2.mat2.x;
-                matp[3 * 6 + 1] = r3.mat0.x * r2.mat0.y + r3.mat0.y * r2.mat1.y + r3.mat0.z * r2.mat2.y;
-                matp[3 * 6 + 2] = r3.mat0.x * r2.mat0.z + r3.mat0.y * r2.mat1.z + r3.mat0.z * r2.mat2.z;
-                matp[4 * 6 + 0] = r3.mat1.x * r2.mat0.x + r3.mat1.y * r2.mat1.x + r3.mat1.z * r2.mat2.x;
-                matp[4 * 6 + 1] = r3.mat1.x * r2.mat0.y + r3.mat1.y * r2.mat1.y + r3.mat1.z * r2.mat2.y;
-                matp[4 * 6 + 2] = r3.mat1.x * r2.mat0.z + r3.mat1.y * r2.mat1.z + r3.mat1.z * r2.mat2.z;
-                matp[5 * 6 + 0] = r3.mat2.x * r2.mat0.x + r3.mat2.y * r2.mat1.x + r3.mat2.z * r2.mat2.x;
-                matp[5 * 6 + 1] = r3.mat2.x * r2.mat0.y + r3.mat2.y * r2.mat1.y + r3.mat2.z * r2.mat2.y;
-                matp[5 * 6 + 2] = r3.mat2.x * r2.mat0.z + r3.mat2.y * r2.mat1.z + r3.mat2.z * r2.mat2.z;
+                mat[3 * 6 + 0] = r3.mat[0].x * r2.mat[0].x + r3.mat[0].y * r2.mat[1].x + r3.mat[0].z * r2.mat[2].x;
+                mat[3 * 6 + 1] = r3.mat[0].x * r2.mat[0].y + r3.mat[0].y * r2.mat[1].y + r3.mat[0].z * r2.mat[2].y;
+                mat[3 * 6 + 2] = r3.mat[0].x * r2.mat[0].z + r3.mat[0].y * r2.mat[1].z + r3.mat[0].z * r2.mat[2].z;
+                mat[4 * 6 + 0] = r3.mat[1].x * r2.mat[0].x + r3.mat[1].y * r2.mat[1].x + r3.mat[1].z * r2.mat[2].x;
+                mat[4 * 6 + 1] = r3.mat[1].x * r2.mat[0].y + r3.mat[1].y * r2.mat[1].y + r3.mat[1].z * r2.mat[2].y;
+                mat[4 * 6 + 2] = r3.mat[1].x * r2.mat[0].z + r3.mat[1].y * r2.mat[1].z + r3.mat[1].z * r2.mat[2].z;
+                mat[5 * 6 + 0] = r3.mat[2].x * r2.mat[0].x + r3.mat[2].y * r2.mat[1].x + r3.mat[2].z * r2.mat[2].x;
+                mat[5 * 6 + 1] = r3.mat[2].x * r2.mat[0].y + r3.mat[2].y * r2.mat[1].y + r3.mat[2].z * r2.mat[2].y;
+                mat[5 * 6 + 2] = r3.mat[2].x * r2.mat[0].z + r3.mat[2].y * r2.mat[1].z + r3.mat[2].z * r2.mat[2].z;
 
                 // m0 = r0 - r1 * m2;
-                matp[0 * 6 + 0] = r0.mat0.x - r1.mat0.x * matp[3 * 6 + 0] - r1.mat0.y * matp[4 * 6 + 0] - r1.mat0.z * matp[5 * 6 + 0];
-                matp[0 * 6 + 1] = r0.mat0.y - r1.mat0.x * matp[3 * 6 + 1] - r1.mat0.y * matp[4 * 6 + 1] - r1.mat0.z * matp[5 * 6 + 1];
-                matp[0 * 6 + 2] = r0.mat0.z - r1.mat0.x * matp[3 * 6 + 2] - r1.mat0.y * matp[4 * 6 + 2] - r1.mat0.z * matp[5 * 6 + 2];
-                matp[1 * 6 + 0] = r0.mat1.x - r1.mat1.x * matp[3 * 6 + 0] - r1.mat1.y * matp[4 * 6 + 0] - r1.mat1.z * matp[5 * 6 + 0];
-                matp[1 * 6 + 1] = r0.mat1.y - r1.mat1.x * matp[3 * 6 + 1] - r1.mat1.y * matp[4 * 6 + 1] - r1.mat1.z * matp[5 * 6 + 1];
-                matp[1 * 6 + 2] = r0.mat1.z - r1.mat1.x * matp[3 * 6 + 2] - r1.mat1.y * matp[4 * 6 + 2] - r1.mat1.z * matp[5 * 6 + 2];
-                matp[2 * 6 + 0] = r0.mat2.x - r1.mat2.x * matp[3 * 6 + 0] - r1.mat2.y * matp[4 * 6 + 0] - r1.mat2.z * matp[5 * 6 + 0];
-                matp[2 * 6 + 1] = r0.mat2.y - r1.mat2.x * matp[3 * 6 + 1] - r1.mat2.y * matp[4 * 6 + 1] - r1.mat2.z * matp[5 * 6 + 1];
-                matp[2 * 6 + 2] = r0.mat2.z - r1.mat2.x * matp[3 * 6 + 2] - r1.mat2.y * matp[4 * 6 + 2] - r1.mat2.z * matp[5 * 6 + 2];
+                mat[0 * 6 + 0] = r0.mat[0].x - r1.mat[0].x * mat[3 * 6 + 0] - r1.mat[0].y * mat[4 * 6 + 0] - r1.mat[0].z * mat[5 * 6 + 0];
+                mat[0 * 6 + 1] = r0.mat[0].y - r1.mat[0].x * mat[3 * 6 + 1] - r1.mat[0].y * mat[4 * 6 + 1] - r1.mat[0].z * mat[5 * 6 + 1];
+                mat[0 * 6 + 2] = r0.mat[0].z - r1.mat[0].x * mat[3 * 6 + 2] - r1.mat[0].y * mat[4 * 6 + 2] - r1.mat[0].z * mat[5 * 6 + 2];
+                mat[1 * 6 + 0] = r0.mat[1].x - r1.mat[1].x * mat[3 * 6 + 0] - r1.mat[1].y * mat[4 * 6 + 0] - r1.mat[1].z * mat[5 * 6 + 0];
+                mat[1 * 6 + 1] = r0.mat[1].y - r1.mat[1].x * mat[3 * 6 + 1] - r1.mat[1].y * mat[4 * 6 + 1] - r1.mat[1].z * mat[5 * 6 + 1];
+                mat[1 * 6 + 2] = r0.mat[1].z - r1.mat[1].x * mat[3 * 6 + 2] - r1.mat[1].y * mat[4 * 6 + 2] - r1.mat[1].z * mat[5 * 6 + 2];
+                mat[2 * 6 + 0] = r0.mat[2].x - r1.mat[2].x * mat[3 * 6 + 0] - r1.mat[2].y * mat[4 * 6 + 0] - r1.mat[2].z * mat[5 * 6 + 0];
+                mat[2 * 6 + 1] = r0.mat[2].y - r1.mat[2].x * mat[3 * 6 + 1] - r1.mat[2].y * mat[4 * 6 + 1] - r1.mat[2].z * mat[5 * 6 + 1];
+                mat[2 * 6 + 2] = r0.mat[2].z - r1.mat[2].x * mat[3 * 6 + 2] - r1.mat[2].y * mat[4 * 6 + 2] - r1.mat[2].z * mat[5 * 6 + 2];
 
                 // m1 = r1 * r3;
-                matp[0 * 6 + 3] = r1.mat0.x * r3.mat0.x + r1.mat0.y * r3.mat1.x + r1.mat0.z * r3.mat2.x;
-                matp[0 * 6 + 4] = r1.mat0.x * r3.mat0.y + r1.mat0.y * r3.mat1.y + r1.mat0.z * r3.mat2.y;
-                matp[0 * 6 + 5] = r1.mat0.x * r3.mat0.z + r1.mat0.y * r3.mat1.z + r1.mat0.z * r3.mat2.z;
-                matp[1 * 6 + 3] = r1.mat1.x * r3.mat0.x + r1.mat1.y * r3.mat1.x + r1.mat1.z * r3.mat2.x;
-                matp[1 * 6 + 4] = r1.mat1.x * r3.mat0.y + r1.mat1.y * r3.mat1.y + r1.mat1.z * r3.mat2.y;
-                matp[1 * 6 + 5] = r1.mat1.x * r3.mat0.z + r1.mat1.y * r3.mat1.z + r1.mat1.z * r3.mat2.z;
-                matp[2 * 6 + 3] = r1.mat2.x * r3.mat0.x + r1.mat2.y * r3.mat1.x + r1.mat2.z * r3.mat2.x;
-                matp[2 * 6 + 4] = r1.mat2.x * r3.mat0.y + r1.mat2.y * r3.mat1.y + r1.mat2.z * r3.mat2.y;
-                matp[2 * 6 + 5] = r1.mat2.x * r3.mat0.z + r1.mat2.y * r3.mat1.z + r1.mat2.z * r3.mat2.z;
+                mat[0 * 6 + 3] = r1.mat[0].x * r3.mat[0].x + r1.mat[0].y * r3.mat[1].x + r1.mat[0].z * r3.mat[2].x;
+                mat[0 * 6 + 4] = r1.mat[0].x * r3.mat[0].y + r1.mat[0].y * r3.mat[1].y + r1.mat[0].z * r3.mat[2].y;
+                mat[0 * 6 + 5] = r1.mat[0].x * r3.mat[0].z + r1.mat[0].y * r3.mat[1].z + r1.mat[0].z * r3.mat[2].z;
+                mat[1 * 6 + 3] = r1.mat[1].x * r3.mat[0].x + r1.mat[1].y * r3.mat[1].x + r1.mat[1].z * r3.mat[2].x;
+                mat[1 * 6 + 4] = r1.mat[1].x * r3.mat[0].y + r1.mat[1].y * r3.mat[1].y + r1.mat[1].z * r3.mat[2].y;
+                mat[1 * 6 + 5] = r1.mat[1].x * r3.mat[0].z + r1.mat[1].y * r3.mat[1].z + r1.mat[1].z * r3.mat[2].z;
+                mat[2 * 6 + 3] = r1.mat[2].x * r3.mat[0].x + r1.mat[2].y * r3.mat[1].x + r1.mat[2].z * r3.mat[2].x;
+                mat[2 * 6 + 4] = r1.mat[2].x * r3.mat[0].y + r1.mat[2].y * r3.mat[1].y + r1.mat[2].z * r3.mat[2].y;
+                mat[2 * 6 + 5] = r1.mat[2].x * r3.mat[0].z + r1.mat[2].y * r3.mat[1].z + r1.mat[2].z * r3.mat[2].z;
 
                 // m3 = -r3;
-                matp[3 * 6 + 3] = -r3.mat0.x;
-                matp[3 * 6 + 4] = -r3.mat0.y;
-                matp[3 * 6 + 5] = -r3.mat0.z;
-                matp[4 * 6 + 3] = -r3.mat1.x;
-                matp[4 * 6 + 4] = -r3.mat1.y;
-                matp[4 * 6 + 5] = -r3.mat1.z;
-                matp[5 * 6 + 3] = -r3.mat2.x;
-                matp[5 * 6 + 4] = -r3.mat2.y;
-                matp[5 * 6 + 5] = -r3.mat2.z;
+                mat[3 * 6 + 3] = -r3.mat[0].x;
+                mat[3 * 6 + 4] = -r3.mat[0].y;
+                mat[3 * 6 + 5] = -r3.mat[0].z;
+                mat[4 * 6 + 3] = -r3.mat[1].x;
+                mat[4 * 6 + 4] = -r3.mat[1].y;
+                mat[4 * 6 + 5] = -r3.mat[1].z;
+                mat[5 * 6 + 3] = -r3.mat[2].x;
+                mat[5 * 6 + 4] = -r3.mat[2].y;
+                mat[5 * 6 + 5] = -r3.mat[2].z;
             }
 
             return true;
@@ -2246,16 +2232,11 @@ namespace Droid.Core
             => 36;
 
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
-            => mat0.ToFloatPtr(callback);
+            => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
 
-        internal Vector6 mat0;
-        internal Vector6 mat1;
-        internal Vector6 mat2;
-        internal Vector6 mat3;
-        internal Vector6 mat4;
-        internal Vector6 mat5;
+        internal Vector6[] mat;
 
         public static Matrix6x6 zero = new(new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0));
         public static Matrix6x6 identity = new(new Vector6(1, 0, 0, 0, 0, 0), new Vector6(0, 1, 0, 0, 0, 0), new Vector6(0, 0, 1, 0, 0, 0), new Vector6(0, 0, 0, 1, 0, 0), new Vector6(0, 0, 0, 0, 1, 0), new Vector6(0, 0, 0, 0, 0, 1));
@@ -2268,6 +2249,28 @@ namespace Droid.Core
         static int MATX_QUAD(int x) => ((x) + 3) & ~3;
         void MATX_CLEAREND() { int s = numRows * numColumns; while (s < ((s + 3) & ~3)) { mat[s++] = 0.0f; } }
         static float[] MATX_ALLOCA(int n) => new float[MATX_QUAD(n)];
+        static float[] temp; // = new float[MATX_MAX_TEMP + 4];   // used to store intermediate results
+                             // static float[] tempPtr = temp; //(float*)(((intptr_t)idMatX::temp + 15) & ~15);              // pointer to 16 byte aligned temporary memory
+        static int tempIndex = 0;               // index into memory pool, wraps around
+
+        int numRows;                // number of rows
+        int numColumns;             // number of columns
+        int alloced;                // floats allocated, if -1 then mat points to data set with SetData
+        float[] mat;                // memory the matrix is stored
+
+        void SetTempSize(int rows, int columns)
+        {
+            var newSize = (rows * columns + 3) & ~3;
+            Debug.Assert(newSize < MATX_MAX_TEMP);
+            if (tempIndex + newSize > MATX_MAX_TEMP)
+                tempIndex = 0;
+            mat = new float[newSize]; // tempPtr + tempIndex;
+            tempIndex += newSize;
+            alloced = newSize;
+            numRows = rows;
+            numColumns = columns;
+            MATX_CLEAREND();
+        }
 
         //public MatrixX()
         //{
@@ -2285,6 +2288,18 @@ namespace Droid.Core
             numRows = numColumns = alloced = 0;
             mat = null;
             SetData(rows, columns, src);
+        }
+        public MatrixX(MatrixX a)
+        {
+            numRows = numColumns = alloced = 0;
+            mat = null;
+            SetSize(a.numRows, a.numColumns);
+#if MATX_SIMD
+            SIMDProcessor.Copy16(mat, a.mat, a.numRows * a.numColumns);
+#else
+            Array.Copy(a.mat, mat, a.numRows * a.numColumns);
+#endif
+            tempIndex = 0;
         }
 
         public void Set(int rows, int columns, float[] src)
@@ -2324,17 +2339,17 @@ namespace Droid.Core
             }
         }
 
-//        public static implicit operator MatrixX(MatrixX a)
-//        {
-//            SetSize(a.numRows, a.numColumns);
-//#if         MATX_SIMD
-//            SIMDProcessor->Copy16(mat, a.mat, a.numRows * a.numColumns);
-//#else
-//            memcpy(mat, a.mat, a.numRows * a.numColumns * sizeof(float));
-//#endif
-//            tempIndex = 0;
-//            return this;
-//        }
+        //        public static implicit operator MatrixX(MatrixX a)
+        //        {
+        //            SetSize(a.numRows, a.numColumns);
+        //#if         MATX_SIMD
+        //            SIMDProcessor->Copy16(mat, a.mat, a.numRows * a.numColumns);
+        //#else
+        //            memcpy(mat, a.mat, a.numRows * a.numColumns * sizeof(float));
+        //#endif
+        //            tempIndex = 0;
+        //            return this;
+        //        }
 
         public static MatrixX operator *(MatrixX _, float a)
         {
@@ -3406,31 +3421,6 @@ namespace Droid.Core
             return ToFloatPtr(array => StringX.FloatArrayToString(array, dimension, precision));
         }
 
-        // UPDATES
-
-
-        int numRows;                // number of rows
-        int numColumns;             // number of columns
-        int alloced;                // floats allocated, if -1 then mat points to data set with SetData
-        float[] mat;                 // memory the matrix is stored
-
-        static float[] temp;// = new float[MATX_MAX_TEMP + 4];   // used to store intermediate results
-                            //static float[] tempPtr = temp; //(float*)(((intptr_t)idMatX::temp + 15) & ~15);              // pointer to 16 byte aligned temporary memory
-        static int tempIndex = 0;               // index into memory pool, wraps around
-
-        void SetTempSize(int rows, int columns)
-        {
-            var newSize = (rows * columns + 3) & ~3;
-            Debug.Assert(newSize < MATX_MAX_TEMP);
-            if (tempIndex + newSize > MATX_MAX_TEMP)
-                tempIndex = 0;
-            mat = new float[newSize]; // tempPtr + tempIndex;
-            tempIndex += newSize;
-            alloced = newSize;
-            numRows = rows;
-            numColumns = columns;
-            MATX_CLEAREND();
-        }
         float DeterminantGeneric()
         {
             var index = new int[numRows];
@@ -3450,7 +3440,7 @@ namespace Droid.Core
             tmp.SetData(numRows, numColumns, MATX_ALLOCA(numRows * numColumns));
             tmp = this;
 
-            if (!tmp.LU_Factor(index, out var _))
+            if (!tmp.LU_Factor(index))
                 return false;
             VectorX x = new(), b = new();
             x.SetData(numRows, VectorX.VECX_ALLOCA(numRows));

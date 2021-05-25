@@ -21,9 +21,9 @@ namespace Droid.Core
 
             //  MatrixX::LowerTriangularInverse
 
-            m1 = original;
+            m1 = new MatrixX(original);
             m1.ClearUpperTriangle();
-            m2 = m1;
+            m2 = new MatrixX(m1);
 
             m2.InverseSelf();
             m1.LowerTriangularInverse();
@@ -33,9 +33,9 @@ namespace Droid.Core
 
             //  MatrixX::UpperTriangularInverse
 
-            m1 = original;
+            m1 = new MatrixX(original);
             m1.ClearLowerTriangle();
-            m2 = m1;
+            m2 = new MatrixX(m1);
 
             m2.InverseSelf();
             m1.UpperTriangularInverse();
@@ -45,7 +45,7 @@ namespace Droid.Core
 
             //    MatrixX::Inverse_GaussJordan
 
-            m1 = original;
+            m1 = new MatrixX(original);
 
             m1.Inverse_GaussJordan();
             m1 *= original;
@@ -55,8 +55,8 @@ namespace Droid.Core
 
             //    MatrixX::Inverse_UpdateRankOne
 
-            m1 = original;
-            m2 = original;
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             w.Random(size, 1);
             v.Random(size, 2);
@@ -79,8 +79,8 @@ namespace Droid.Core
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = original;
-                m2 = original;
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.Random(size, 1);
                 w.Random(size, 2);
@@ -103,8 +103,8 @@ namespace Droid.Core
 
             //    MatrixX::Inverse_UpdateIncrement
 
-            m1 = original;
-            m2 = original;
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             v.Random(size + 1, 1);
             w.Random(size + 1, 2);
@@ -128,8 +128,8 @@ namespace Droid.Core
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = original;
-                m2 = original;
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.SetSize(6);
                 w.SetSize(6);
@@ -156,9 +156,9 @@ namespace Droid.Core
 
             //    MatrixX::LU_Factor
 
-            m1 = original;
+            m1 = new MatrixX(original);
 
-            m1.LU_Factor(null, out var _); // no pivoting
+            m1.LU_Factor(null); // no pivoting
             m1.LU_UnpackFactors(m2, m3);
             m1 = m2 * m3;
 
@@ -167,26 +167,26 @@ namespace Droid.Core
 
             //    MatrixX::LU_UpdateRankOne
 
-            m1 = original;
-            m2 = original;
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             w.Random(size, 1);
             v.Random(size, 2);
 
             // factor m1
-            m1.LU_Factor(index1, out var _);
+            m1.LU_Factor(index1);
 
             // modify and factor m2
             m2.Update_RankOne(v, w, 1.0f);
-            if (!m2.LU_Factor(index2, out var _))
+            if (!m2.LU_Factor(index2))
                 Debug.Assert(false);
             m2.LU_MultiplyFactors(m3, index2);
-            m2 = m3;
+            m2 = new MatrixX(m3);
 
             // update factored m1
             m1.LU_UpdateRankOne(v, w, 1.0f, index1);
             m1.LU_MultiplyFactors(m3, index1);
-            m1 = m3;
+            m1 = new MatrixX(m1);
 
             if (!m1.Compare(m2, 1e-4f))
                 throw new InvalidOperationException("MatrixX::LU_UpdateRankOne failed");
@@ -195,27 +195,27 @@ namespace Droid.Core
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = original;
-                m2 = original;
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.Random(size, 1);
                 w.Random(size, 2);
                 w[offset] = 0.0f;
 
                 // factor m1
-                m1.LU_Factor(index1, out var _);
+                m1.LU_Factor(index1);
 
                 // modify and factor m2
                 m2.Update_RowColumn(v, w, offset);
-                if (!m2.LU_Factor(index2, out var _))
+                if (!m2.LU_Factor(index2))
                     Debug.Assert(false);
                 m2.LU_MultiplyFactors(m3, index2);
-                m2 = m3;
+                m2 = new MatrixX(m3);
 
                 // update m1
                 m1.LU_UpdateRowColumn(v, w, offset, index1);
                 m1.LU_MultiplyFactors(m3, index1);
-                m1 = m3;
+                m1 = new MatrixX(m1);
 
                 if (!m1.Compare(m2, 1e-3f))
                     throw new InvalidOperationException("MatrixX::LU_UpdateRowColumn failed");
@@ -223,27 +223,27 @@ namespace Droid.Core
 
             //    MatrixX::LU_UpdateIncrement
 
-            m1 = original;
-            m2 = original;
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             v.Random(size + 1, 1);
             w.Random(size + 1, 2);
             w[size] = 0.0f;
 
             // factor m1
-            m1.LU_Factor(index1, out var _);
+            m1.LU_Factor(index1);
 
             // modify and factor m2
             m2.Update_Increment(v, w);
-            if (!m2.LU_Factor(index2, out var _))
+            if (!m2.LU_Factor(index2))
                 Debug.Assert(false);
             m2.LU_MultiplyFactors(m3, index2);
-            m2 = m3;
+            m2 = new MatrixX(m3);
 
             // update factored m1
             m1.LU_UpdateIncrement(v, w, index1);
             m1.LU_MultiplyFactors(m3, index1);
-            m1 = m3;
+            m1 = new MatrixX(m1);
 
             if (!m1.Compare(m2, 1e-4f))
                 throw new InvalidOperationException("MatrixX::LU_UpdateIncrement failed");
@@ -252,35 +252,35 @@ namespace Droid.Core
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = original;
-                m2 = original;
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.SetSize(6);
                 w.SetSize(6);
-                for (int i = 0; i < size; i++)
+                for (var i = 0; i < size; i++)
                 {
                     v[i] = original[i][offset];
                     w[i] = original[offset][i];
                 }
 
                 // factor m1
-                m1.LU_Factor(index1, out var _);
+                m1.LU_Factor(index1);
 
                 // modify and factor m2
                 m2.Update_Decrement(offset);
-                if (!m2.LU_Factor(index2, out var _))
+                if (!m2.LU_Factor(index2))
                     Debug.Assert(false);
                 m2.LU_MultiplyFactors(m3, index2);
-                m2 = m3;
+                m2 = new MatrixX(m3);
 
                 u.SetSize(6);
-                for (int i = 0; i < size; i++)
+                for (var i = 0; i < size; i++)
                     u[i] = original[index1[offset]][i];
 
                 // update factors of m1
                 m1.LU_UpdateDecrement(v, w, u, offset, index1);
                 m1.LU_MultiplyFactors(m3, index1);
-                m1 = m3;
+                m1 = new MatrixX(m1);
 
                 if (!m1.Compare(m2, 1e-3f))
                     throw new InvalidOperationException("MatrixX::LU_UpdateDecrement failed");
@@ -288,9 +288,9 @@ namespace Droid.Core
 
             //    MatrixX::LU_Inverse
 
-            m2 = original;
+            m2 = new MatrixX(original);
 
-            m2.LU_Factor(null, out var _);
+            m2.LU_Factor(null);
             m2.LU_Inverse(m1, null);
             m1 *= original;
 
@@ -302,7 +302,7 @@ namespace Droid.Core
             c.SetSize(size);
             d.SetSize(size);
 
-            m1 = original;
+            m1 = new MatrixX(original);
 
             m1.QR_Factor(c, d);
             m1.QR_UnpackFactors(q1, r1, c, d);
@@ -316,11 +316,11 @@ namespace Droid.Core
             c.SetSize(size);
             d.SetSize(size);
 
-            m1 = original;
-            m2 = original;
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             w.Random(size, 0);
-            v = w;
+            v = new VectorX(w);
 
             // factor m1
             m1.QR_Factor(c, d);
@@ -347,8 +347,8 @@ namespace Droid.Core
                 c.SetSize(size);
                 d.SetSize(size);
 
-                m1 = original;
-                m2 = original;
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.Random(size, 1);
                 w.Random(size, 2);
@@ -378,8 +378,8 @@ namespace Droid.Core
             c.SetSize(size + 1);
             d.SetSize(size + 1);
 
-            m1 = original;
-            m2 = original;
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             v.Random(size + 1, 1);
             w.Random(size + 1, 2);
@@ -410,12 +410,12 @@ namespace Droid.Core
                 c.SetSize(size + 1);
                 d.SetSize(size + 1);
 
-                m1 = original;
-                m2 = original;
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.SetSize(6);
                 w.SetSize(6);
-                for (int i = 0; i < size; i++)
+                for (var i = 0; i < size; i++)
                 {
                     v[i] = original[i][offset];
                     w[i] = original[offset][i];
@@ -442,7 +442,7 @@ namespace Droid.Core
 
             //    MatrixX::QR_Inverse
 
-            m2 = original;
+            m2 = new MatrixX(original);
 
             m2.QR_Factor(c, d);
             m2.QR_Inverse(m1, c, d);
@@ -453,7 +453,7 @@ namespace Droid.Core
 
             //    MatrixX::SVD_Factor
 
-            m1 = original;
+            m1 = new MatrixX(original);
             m3.Zero(size, size);
             w.Zero(size);
 
@@ -467,7 +467,7 @@ namespace Droid.Core
 
             //    MatrixX::SVD_Inverse
 
-            m2 = original;
+            m2 = new MatrixX(original);
 
             m2.SVD_Factor(w, m3);
             m2.SVD_Inverse(m1, w, m3);
@@ -478,7 +478,7 @@ namespace Droid.Core
 
             //    MatrixX::Cholesky_Factor
 
-            m1 = original;
+            m1 = new MatrixX(original);
 
             m1.Cholesky_Factor();
             m1.Cholesky_MultiplyFactors(m2);
@@ -488,8 +488,8 @@ namespace Droid.Core
 
             //    MatrixX::Cholesky_UpdateRankOne
 
-            m1 = original;
-            m2 = original;
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             w.Random(size, 0);
 
@@ -513,8 +513,8 @@ namespace Droid.Core
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = original;
-                m2 = original;
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 // factor m1
                 m1.Cholesky_Factor();
@@ -543,7 +543,7 @@ namespace Droid.Core
             m3 = m1 * m1.Transpose();
 
             m1.SquareSubMatrix(m3, size);
-            m2 = m1;
+            m2 = new MatrixX(m1);
 
             w.SetSize(size + 1);
             for (var i = 0; i < size + 1; i++)
@@ -570,8 +570,8 @@ namespace Droid.Core
 
             for (offset = 0; offset < size; offset += size - 1)
             {
-                m1 = original;
-                m2 = original;
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.SetSize(6);
                 for (var i = 0; i < size; i++)
@@ -594,7 +594,7 @@ namespace Droid.Core
 
             //    MatrixX::Cholesky_Inverse
 
-            m2 = original;
+            m2 = new MatrixX(original);
 
             m2.Cholesky_Factor();
             m2.Cholesky_Inverse(m1);
@@ -605,7 +605,7 @@ namespace Droid.Core
 
             //    MatrixX::LDLT_Factor
 
-            m1 = original;
+            m1 = new MatrixX(original);
 
             m1.LDLT_Factor();
             m1.LDLT_MultiplyFactors(m2);
@@ -621,8 +621,8 @@ namespace Droid.Core
 
             //    MatrixX::LDLT_UpdateRankOne
 
-            m1 = original;
-            m2 = original;
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             w.Random(size, 0);
 
@@ -633,9 +633,7 @@ namespace Droid.Core
             // modify and factor m2
             m2.Update_RankOneSymmetric(w, 1.0f);
             if (!m2.LDLT_Factor())
-            {
                 Debug.Assert(false);
-            }
             m2.ClearUpperTriangle();
 
             // update factored m1
@@ -648,8 +646,8 @@ namespace Droid.Core
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = original;
-                m2 = original;
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 w.Random(size, 0);
 
@@ -660,9 +658,7 @@ namespace Droid.Core
                 // modify and factor m2
                 m2.Update_RowColumnSymmetric(w, offset);
                 if (!m2.LDLT_Factor())
-                {
                     Debug.Assert(false);
-                }
                 m2.ClearUpperTriangle();
 
                 // update m1
@@ -678,7 +674,7 @@ namespace Droid.Core
             m3 = m1 * m1.Transpose();
 
             m1.SquareSubMatrix(m3, size);
-            m2 = m1;
+            m2 = new MatrixX(m1);
 
             w.SetSize(size + 1);
             for (var i = 0; i < size + 1; i++)
@@ -705,8 +701,8 @@ namespace Droid.Core
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = original;
-                m2 = original;
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.SetSize(6);
                 for (var i = 0; i < size; i++)
@@ -729,7 +725,7 @@ namespace Droid.Core
 
             //    MatrixX::LDLT_Inverse
 
-            m2 = original;
+            m2 = new MatrixX(original);
 
             m2.LDLT_Factor();
             m2.LDLT_Inverse(m1);
@@ -742,7 +738,7 @@ namespace Droid.Core
 
             m3 = original;
             m3.TriDiagonal_ClearTriangles();
-            m1 = m3;
+            m1 = new MatrixX(m1);
 
             v.SetSize(size);
 
@@ -760,7 +756,7 @@ namespace Droid.Core
             //    MatrixX::Eigen_SolveSymmetric
 
             m3 = original;
-            m1 = m3;
+            m1 = new MatrixX(m1);
 
             v.SetSize(size);
 
@@ -778,7 +774,7 @@ namespace Droid.Core
             //    MatrixX::Eigen_Solve
 
             m3 = original;
-            m1 = m3;
+            m1 = new MatrixX(m1);
 
             v.SetSize(size);
             w.SetSize(size);

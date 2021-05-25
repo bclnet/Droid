@@ -149,24 +149,23 @@ namespace Droid.Core
         }
         public Matrix3x3 ToMat3()
         {
-            Matrix3x3 mat;
-
             float x2 = x + x, y2 = y + y, z2 = z + z;
             float xx = x * x2, xy = x * y2, xz = x * z2;
             float yy = y * y2, yz = y * z2, zz = z * z2;
             float wx = w * x2, wy = w * y2, wz = w * z2;
 
-            mat.mat0.x = 1.0f - (yy + zz);
-            mat.mat0.y = xy - wz;
-            mat.mat0.z = xz + wy;
+            var mat = new Matrix3x3();
+            mat.mat[0].x = 1.0f - (yy + zz);
+            mat.mat[0].y = xy - wz;
+            mat.mat[0].z = xz + wy;
 
-            mat.mat1.x = xy + wz;
-            mat.mat1.y = 1.0f - (xx + zz);
-            mat.mat1.z = yz - wx;
+            mat.mat[1].x = xy + wz;
+            mat.mat[1].y = 1.0f - (xx + zz);
+            mat.mat[1].z = yz - wx;
 
-            mat.mat2.x = xz - wy;
-            mat.mat2.y = yz + wx;
-            mat.mat2.z = 1.0f - (xx + yy);
+            mat.mat[2].x = xz - wy;
+            mat.mat[2].y = yz + wx;
+            mat.mat[2].z = 1.0f - (xx + yy);
 
             return mat;
         }
