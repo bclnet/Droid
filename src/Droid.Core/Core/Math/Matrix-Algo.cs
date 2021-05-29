@@ -17,17 +17,18 @@ namespace Droid.Core
         /// <returns></returns>
         float Pythag(float a, float b)
         {
-            var at = MathX.Fabs(a);
-            var bt = MathX.Fabs(b);
-            float ct;
+            double at, bt, ct;
+
+            at = MathX.Fabs(a);
+            bt = MathX.Fabs(b);
             if (at > bt)
             {
                 ct = bt / at;
-                return at * MathX.Sqrt(1f + ct * ct);
+                return (float)(at * MathX.Sqrt((float)(1f + ct * ct)));
             }
             else
             {
-                if (bt != 0) { ct = at / bt; return bt * MathX.Sqrt(1f + ct * ct); }
+                if (bt != 0.0) { ct = at / bt; return (float)(bt * MathX.Sqrt((float)(1f + ct * ct))); }
                 else return 0f;
             }
         }
@@ -899,7 +900,7 @@ namespace Droid.Core
             var rowIndex = stackalloc int[numRows];
             var pivot = stackalloc bool[numRows];
 
-            Unsafe.InitBlock(pivot, 0, (uint)numRows * sizeof(float)); //U.memset(pivot, 0, numRows * sizeof(float));
+            Unsafe.InitBlock(pivot, 0, (uint)numRows * sizeof(float));
 
             // elimination with full pivoting
             for (i = 0; i < numRows; i++)
@@ -1107,13 +1108,7 @@ namespace Droid.Core
 
         #region LU
 
-        public bool LU_Factor(int[] index, out float det)      // factor in-place: L * U
-        {
-            var w = 0f;
-            var r = LU_Factor(index, x => w = x);
-            det = w;
-            return r;
-        }
+        public bool LU_Factor(int[] index, out float det) { var w = 0f; var r = LU_Factor(index, x => w = x); det = w; return r; }
 
         /// <summary>
         /// in-place factorization: LU
@@ -1129,7 +1124,7 @@ namespace Droid.Core
         /// <returns></returns>
         public bool LU_Factor(int[] index, Action<float> det = null)      // factor in-place: L * U
         {
-            int i, j, k, newi, min; float s, t, d, w;
+            int i, j, k, newi, min; double s, t, d, w;
 
             // if partial pivoting should be used
             if (index != null)
@@ -1172,7 +1167,7 @@ namespace Droid.Core
                     {
                         t = this[newi][j];
                         this[newi][j] = this[i][j];
-                        this[i][j] = t;
+                        this[i][j] = (float)t;
                     }
                 }
 
@@ -1180,7 +1175,7 @@ namespace Droid.Core
                 {
                     d = 1f / this[i][i];
                     for (j = i + 1; j < numRows; j++)
-                        this[j][i] *= d;
+                        this[j][i] *= (float)d;
                 }
 
                 if (i < min - 1)
@@ -1188,14 +1183,14 @@ namespace Droid.Core
                     {
                         d = this[j][i];
                         for (k = i + 1; k < numColumns; k++)
-                            this[j][k] -= d * this[i][k];
+                            this[j][k] -= (float)(d * this[i][k]);
                     }
             }
             if (det != null)
             {
                 for (i = 0; i < numRows; i++)
                     w *= this[i][i];
-                det(w);
+                det((float)w);
             }
 
             return true;
@@ -1211,7 +1206,7 @@ namespace Droid.Core
         /// <returns></returns>
         public unsafe bool LU_UpdateRankOne(VectorX v, VectorX w, float alpha, int[] index)
         {
-            int i, j, max; float diag, beta, p0, p1, d;
+            int i, j, max; double diag, beta, p0, p1, d;
             Debug.Assert(v.Size >= numColumns);
             Debug.Assert(w.Size >= numRows);
 
@@ -1225,8 +1220,8 @@ namespace Droid.Core
                 for (i = 0; i < numRows; i++)
                     y[i] = alpha * v[i];
 
-            fixed (float* w_ = w.p)
-                Unsafe.CopyBlock(z, w_ + w.pi, (uint)w.Size * sizeof(float)); //U.memcpy(z, w_ + w.pi, w.Size * sizeof(float));
+            fixed (float* w_p = w.p)
+                Unsafe.CopyBlock(z, w_p + w.pi, (uint)w.Size * sizeof(float));
 
             max = Math.Min(numRows, numColumns);
             for (i = 0; i < max; i++)
@@ -1242,26 +1237,26 @@ namespace Droid.Core
 
                 beta = p1 / diag;
 
-                this[i][i] = diag;
+                this[i][i] = (float)diag;
 
                 for (j = i + 1; j < numColumns; j++)
                 {
                     d = this[i][j];
 
                     d += p0 * z[j];
-                    z[j] -= beta * d;
+                    z[j] -= (float)(beta * d);
 
-                    this[i][j] = d;
+                    this[i][j] = (float)d;
                 }
 
                 for (j = i + 1; j < numRows; j++)
                 {
                     d = this[j][i];
 
-                    y[j] -= p0 * d;
+                    y[j] -= (float)(p0 * d);
                     d += beta * y[j];
 
-                    this[j][i] = d;
+                    this[j][i] = (float)d;
                 }
             }
             return true;
@@ -1283,7 +1278,7 @@ namespace Droid.Core
         /// <returns></returns>
         public unsafe bool LU_UpdateRowColumn(VectorX v, VectorX w, int r, int[] index)
         {
-            int i, j, min, max, rp; float diag, beta0, beta1, p0, p1, q0, q1, d;
+            int i, j, min, max, rp; double diag, beta0, beta1, p0, p1, q0, q1, d;
             Debug.Assert(v.Size >= numColumns);
             Debug.Assert(w.Size >= numRows);
             Debug.Assert(r >= 0 && r < numColumns && r < numRows);
@@ -1308,20 +1303,20 @@ namespace Droid.Core
             }
             else
             {
-                fixed (float* v_ = v.p)
-                    Unsafe.CopyBlock(y0, v_ + v.pi, (uint)v.Size * sizeof(float)); //U.memcpy(y0, v_ + v.pi, v.Size * sizeof(float));
+                fixed (float* v_p = v.p)
+                    Unsafe.CopyBlock(y0, v_p + v.pi, (uint)v.Size * sizeof(float));
                 rp = r;
             }
 
-            Unsafe.InitBlock(y1, 0, (uint)v.Size * sizeof(float)); //U.memset(y1, 0, v.Size * sizeof(float));
+            Unsafe.InitBlock(y1, 0, (uint)v.Size * sizeof(float));
             y1[rp] = 1f;
 
-            Unsafe.InitBlock(z0, 0, (uint)w.Size * sizeof(float)); //U.memset(z0, 0, w.Size * sizeof(float));
+            Unsafe.InitBlock(z0, 0, (uint)w.Size * sizeof(float));
 
             z0[r] = 1f;
 
-            fixed (float* w_ = w.p)
-                Unsafe.CopyBlock(z1, w_ + w.pi, (uint)w.Size * sizeof(float)); //U.memcpy(z1, w_ + w.pi, w.Size * sizeof(float));
+            fixed (float* w_p = w.p)
+                Unsafe.CopyBlock(z1, w_p + w.pi, (uint)w.Size * sizeof(float));
 
             // update the beginning of the to be updated row and column
             min = Math.Min(r, rp);
@@ -1330,12 +1325,12 @@ namespace Droid.Core
                 p0 = y0[i];
                 beta1 = z1[i] / this[i][i];
 
-                this[i][r] += p0;
+                this[i][r] += (float)p0;
                 for (j = i + 1; j < numColumns; j++)
-                    z1[j] -= beta1 * this[i][j];
+                    z1[j] -= (float)(beta1 * this[i][j]);
                 for (j = i + 1; j < numRows; j++)
-                    y0[j] -= p0 * this[j][i];
-                this[rp][i] += beta1;
+                    y0[j] -= (float)(p0 * this[j][i]);
+                this[rp][i] += (float)beta1;
             }
 
             // update the lower right corner starting at r,r
@@ -1362,33 +1357,32 @@ namespace Droid.Core
 
                 beta1 = q1 / diag;
 
-                this[i][i] = diag;
+                this[i][i] = (float)diag;
 
                 for (j = i + 1; j < numColumns; j++)
                 {
                     d = this[i][j];
 
                     d += p0 * z0[j];
-                    z0[j] -= beta0 * d;
+                    z0[j] -= (float)(beta0 * d);
 
                     d += q0 * z1[j];
-                    z1[j] -= beta1 * d;
+                    z1[j] -= (float)(beta1 * d);
 
-                    this[i][j] = d;
+                    this[i][j] = (float)d;
                 }
 
                 for (j = i + 1; j < numRows; j++)
                 {
-
                     d = this[j][i];
 
-                    y0[j] -= p0 * d;
+                    y0[j] -= (float)(p0 * d);
                     d += beta0 * y0[j];
 
-                    y1[j] -= q0 * d;
+                    y1[j] -= (float)(q0 * d);
                     d += beta1 * y1[j];
 
-                    this[j][i] = d;
+                    this[j][i] = (float)d;
                 }
             }
             return true;
@@ -1545,7 +1539,7 @@ namespace Droid.Core
         /// <returns></returns>
         public void LU_Solve(VectorX x, VectorX b, int[] index)
         {
-            int i, j; float sum;
+            int i, j; double sum;
 
             Debug.Assert(x.Size == numColumns && b.Size == numRows);
 
@@ -1558,7 +1552,7 @@ namespace Droid.Core
                     sum = b[i];
                 for (j = 0; j < i; j++)
                     sum -= this[i][j] * x[j];
-                x[i] = sum;
+                x[i] = (float)sum;
             }
 
             // solve U
@@ -1567,7 +1561,7 @@ namespace Droid.Core
                 sum = x[i];
                 for (j = i + 1; j < numRows; j++)
                     sum -= this[i][j] * x[j];
-                x[i] = sum / this[i][i];
+                x[i] = (float)(sum / this[i][i]);
             }
         }
         /// <summary>
@@ -1602,9 +1596,9 @@ namespace Droid.Core
         /// <param name="L">The l.</param>
         /// <param name="U">The u.</param>
         /// <returns></returns>
-        public void LU_UnpackFactors(MatrixX L, MatrixX U)
+        public void LU_UnpackFactors(out MatrixX L, out MatrixX U)
         {
-            int i, j;
+            int i, j; L = new(); U = new();
 
             L.Zero(numRows, numColumns);
             U.Zero(numRows, numColumns);
@@ -1626,7 +1620,7 @@ namespace Droid.Core
         /// <returns></returns>
         public void LU_MultiplyFactors(MatrixX m, int[] index)
         {
-            int r, rp, i, j; float sum;
+            int r, rp, i, j; double sum;
 
             m.SetSize(numRows, numColumns);
 
@@ -1646,7 +1640,7 @@ namespace Droid.Core
                         sum = 0f;
                     for (j = 0; j <= i && j < r; j++)
                         sum += this[r][j] * this[j][i];
-                    m[rp][i] = sum;
+                    m[rp][i] = (float)sum;
                 }
             }
         }
@@ -1666,7 +1660,7 @@ namespace Droid.Core
         /// <returns></returns>
         public bool QR_Factor(VectorX c, VectorX d)                // factor in-place: Q * R
         {
-            int i, j, k; float scale, s, t, sum; bool singular = false;
+            int i, j, k; double scale, s, t, sum; bool singular = false;
             Debug.Assert(numRows == numColumns);
             Debug.Assert(c.Size >= numRows && d.Size >= numRows);
 
@@ -1688,7 +1682,7 @@ namespace Droid.Core
                 {
                     s = 1f / scale;
                     for (i = k; i < numRows; i++)
-                        this[i][k] *= s;
+                        this[i][k] *= (float)s;
 
                     sum = 0f;
                     for (i = k; i < numRows; i++)
@@ -1697,12 +1691,12 @@ namespace Droid.Core
                         sum += s * s;
                     }
 
-                    s = MathX.Sqrt(sum);
+                    s = MathX.Sqrt((float)sum);
                     if (this[k][k] < 0f)
                         s = -s;
-                    this[k][k] += s;
-                    c[k] = s * this[k][k];
-                    d[k] = -scale * s;
+                    this[k][k] += (float)s;
+                    c[k] = (float)(s * this[k][k]);
+                    d[k] = (float)(-scale * s);
 
                     for (j = k + 1; j < numRows; j++)
                     {
@@ -1711,7 +1705,7 @@ namespace Droid.Core
                             sum += this[i][k] * this[i][j];
                         t = sum / c[k];
                         for (i = k; i < numRows; i++)
-                            this[i][j] -= t * this[i][k];
+                            this[i][j] -= (float)(t * this[i][k]);
                     }
                 }
             }
@@ -1925,7 +1919,7 @@ namespace Droid.Core
         /// <returns></returns>
         public void QR_Solve(VectorX x, VectorX b, VectorX c, VectorX d)
         {
-            int i, j; float sum, t;
+            int i, j; double sum, t;
             Debug.Assert(numRows == numColumns);
             Debug.Assert(x.Size >= numRows && b.Size >= numRows);
             Debug.Assert(c.Size >= numRows && d.Size >= numRows);
@@ -1941,7 +1935,7 @@ namespace Droid.Core
                     sum += this[j][i] * x[j];
                 t = sum / c[i];
                 for (j = i; j < numRows; j++)
-                    x[j] -= t * this[j][i];
+                    x[j] -= (float)(t * this[j][i]);
             }
 
             // backsubstitution with R
@@ -1950,7 +1944,7 @@ namespace Droid.Core
                 sum = x[i];
                 for (j = i + 1; j < numRows; j++)
                     sum -= this[i][j] * x[j];
-                x[i] = sum / d[i];
+                x[i] = (float)(sum / d[i]);
             }
         }
 
@@ -1963,7 +1957,7 @@ namespace Droid.Core
         /// <returns></returns>
         public void QR_Solve(VectorX x, VectorX b, MatrixX R)
         {
-            int i, j; float sum;
+            int i, j; double sum;
             Debug.Assert(numRows == numColumns);
 
             // multiply b with transpose of Q
@@ -1975,7 +1969,7 @@ namespace Droid.Core
                 sum = x[i];
                 for (j = i + 1; j < numRows; j++)
                     sum -= R[i][j] * x[j];
-                x[i] = sum / R[i][i];
+                x[i] = (float)(sum / R[i][i]);
             }
         }
 
@@ -2014,10 +2008,11 @@ namespace Droid.Core
         /// <param name="c">The c.</param>
         /// <param name="d">The d.</param>
         /// <returns></returns>
-        public void QR_UnpackFactors(MatrixX Q, MatrixX R, VectorX c, VectorX d)
+        public void QR_UnpackFactors(out MatrixX Q, out MatrixX R, VectorX c, VectorX d)
         {
-            int i, j, k; float sum;
+            int i, j, k; double sum;
 
+            Q = new(); R = new();
             Q.Identity(numRows, numColumns);
             for (i = 0; i < numColumns - 1; i++)
             {
@@ -2030,7 +2025,7 @@ namespace Droid.Core
                         sum += this[k][i] * Q[j][k];
                     sum /= c[i];
                     for (k = i; k < numColumns; k++)
-                        Q[j][k] -= sum * this[k][i];
+                        Q[j][k] -= (float)(sum * this[k][i]);
                 }
             }
 
@@ -2052,7 +2047,7 @@ namespace Droid.Core
         /// <returns></returns>
         public void QR_MultiplyFactors(MatrixX m, VectorX c, VectorX d)
         {
-            int i, j, k; float sum; MatrixX Q = new();
+            int i, j, k; double sum; MatrixX Q = new();
 
             Q.Identity(numRows, numColumns);
             for (i = 0; i < numColumns - 1; i++)
@@ -2066,7 +2061,7 @@ namespace Droid.Core
                         sum += this[k][i] * Q[j][k];
                     sum /= c[i];
                     for (k = i; k < numColumns; k++)
-                        Q[j][k] -= sum * this[k][i];
+                        Q[j][k] -= (float)(sum * this[k][i]);
                 }
             }
 
@@ -2076,7 +2071,7 @@ namespace Droid.Core
                     sum = Q[i][j] * d[i];
                     for (k = 0; k < i; k++)
                         sum += Q[i][k] * this[j][k];
-                    m[i][j] = sum;
+                    m[i][j] = (float)sum;
                 }
         }
 
@@ -2086,14 +2081,14 @@ namespace Droid.Core
 
         void SVD_BiDiag(VectorX w, VectorX rv1, float anorm)
         {
-            int i, j, k, l; float f, h, r, g, s, scale;
+            int i, j, k, l; double f, h, r, g, s, scale;
 
             anorm = 0f;
             g = s = scale = 0f;
             for (i = 0; i < numColumns; i++)
             {
                 l = i + 1;
-                rv1[i] = scale * g;
+                rv1[i] = (float)(scale * g);
                 g = s = scale = 0f;
                 if (i < numRows)
                 {
@@ -2103,15 +2098,15 @@ namespace Droid.Core
                     {
                         for (k = i; k < numRows; k++)
                         {
-                            this[k][i] /= scale;
+                            this[k][i] /= (float)scale;
                             s += this[k][i] * this[k][i];
                         }
                         f = this[i][i];
-                        g = MathX.Sqrt(s);
+                        g = MathX.Sqrt((float)s);
                         if (f >= 0f)
                             g = -g;
                         h = f * g - s;
-                        this[i][i] = f - g;
+                        this[i][i] = (float)(f - g);
                         if (i != (numColumns - 1))
                             for (j = l; j < numColumns; j++)
                             {
@@ -2119,13 +2114,13 @@ namespace Droid.Core
                                     s += this[k][i] * this[k][j];
                                 f = s / h;
                                 for (k = i; k < numRows; k++)
-                                    this[k][j] += f * this[k][i];
+                                    this[k][j] += (float)(f * this[k][i]);
                             }
                         for (k = i; k < numRows; k++)
-                            this[k][i] *= scale;
+                            this[k][i] *= (float)scale;
                     }
                 }
-                w[i] = scale * g;
+                w[i] = (float)(scale * g);
                 g = s = scale = 0f;
                 if (i < numRows && i != (numColumns - 1))
                 {
@@ -2135,38 +2130,38 @@ namespace Droid.Core
                     {
                         for (k = l; k < numColumns; k++)
                         {
-                            this[i][k] /= scale;
+                            this[i][k] /= (float)scale;
                             s += this[i][k] * this[i][k];
                         }
                         f = this[i][l];
-                        g = MathX.Sqrt(s);
+                        g = MathX.Sqrt((float)s);
                         if (f >= 0f)
                             g = -g;
                         h = 1f / (f * g - s);
-                        this[i][l] = f - g;
+                        this[i][l] = (float)(f - g);
                         for (k = l; k < numColumns; k++)
-                            rv1[k] = this[i][k] * h;
+                            rv1[k] = (float)(this[i][k] * h);
                         if (i != (numRows - 1))
                             for (j = l; j < numRows; j++)
                             {
                                 for (s = 0f, k = l; k < numColumns; k++)
                                     s += this[j][k] * this[i][k];
                                 for (k = l; k < numColumns; k++)
-                                    this[j][k] += s * rv1[k];
+                                    this[j][k] += (float)(s * rv1[k]);
                             }
                         for (k = l; k < numColumns; k++)
-                            this[i][k] *= scale;
+                            this[i][k] *= (float)scale;
                     }
                 }
                 r = MathX.Fabs(w[i]) + MathX.Fabs(rv1[i]);
                 if (r > anorm)
-                    anorm = r;
+                    anorm = (float)r;
             }
         }
 
         void SVD_InitialWV(VectorX w, MatrixX V, VectorX rv1)
         {
-            int i, j, k, l; float f, g, s;
+            int i, j, k, l; double f, g, s;
 
             g = 0f;
             for (i = (numColumns - 1); i >= 0; i--)
@@ -2177,14 +2172,14 @@ namespace Droid.Core
                     if (g != 0f)
                     {
                         for (j = l; j < numColumns; j++)
-                            V[j][i] = (this[i][j] / this[i][l]) / g;
+                            V[j][i] = (float)((this[i][j] / this[i][l]) / g);
                         // double division to reduce underflow
                         for (j = l; j < numColumns; j++)
                         {
                             for (s = 0f, k = l; k < numColumns; k++)
                                 s += this[i][k] * V[k][j];
                             for (k = l; k < numColumns; k++)
-                                V[k][j] += s * V[k][i];
+                                V[k][j] += (float)(s * V[k][i]);
                         }
                     }
                     for (j = l; j < numColumns; j++)
@@ -2210,10 +2205,10 @@ namespace Droid.Core
                                 s += this[k][i] * this[k][j];
                             f = (s / this[i][i]) * g;
                             for (k = i; k < numRows; k++)
-                                this[k][j] += f * this[k][i];
+                                this[k][j] += (float)(f * this[k][i]);
                         }
                     for (j = i; j < numRows; j++)
-                        this[j][i] *= g;
+                        this[j][i] *= (float)g;
                 }
                 else
                     for (j = i; j < numRows; j++)
@@ -2234,7 +2229,7 @@ namespace Droid.Core
         /// <returns></returns>
         public bool SVD_Factor(VectorX w, MatrixX V)               // factor in-place: U * Diag(w) * V.Transpose()
         {
-            int flag, i, its, j, jj, k, l, nm; float c, f, h, s, x, y, z, r, g = 0f; float anorm = 0f; VectorX rv1 = new();
+            int flag, i, its, j, jj, k, l, nm; double c, f, h, s, x, y, z, r, g = 0f; float anorm = 0f; VectorX rv1 = new();
 
             if (numRows < numColumns)
                 return false;
@@ -2274,8 +2269,8 @@ namespace Droid.Core
                             if ((MathX.Fabs(f) + anorm) != anorm) //: MathX.Fabs( f ) > MathX.FLT_EPSILON
                             {
                                 g = w[i];
-                                h = Pythag(f, g);
-                                w[i] = h;
+                                h = Pythag((float)f, (float)g);
+                                w[i] = (float)h;
                                 h = 1f / h;
                                 c = g * h;
                                 s = -f * h;
@@ -2283,8 +2278,8 @@ namespace Droid.Core
                                 {
                                     y = this[j][nm];
                                     z = this[j][i];
-                                    this[j][nm] = y * c + z * s;
-                                    this[j][i] = z * c - y * s;
+                                    this[j][nm] = (float)(y * c + z * s);
+                                    this[j][i] = (float)(z * c - y * s);
                                 }
                             }
                         }
@@ -2294,7 +2289,7 @@ namespace Droid.Core
                     {
                         if (z < 0f)
                         {
-                            w[k] = -z;
+                            w[k] = (float)-z;
                             for (j = 0; j < numColumns; j++)
                                 V[j][k] = -V[j][k];
                         }
@@ -2308,7 +2303,7 @@ namespace Droid.Core
                     g = rv1[nm];
                     h = rv1[k];
                     f = ((y - z) * (y + z) + (g - h) * (g + h)) / (2f * h * y);
-                    g = Pythag(f, 1f);
+                    g = Pythag((float)f, 1f);
                     r = f >= 0f ? g : -g;
                     f = ((x - z) * (x + z) + h * ((y / (f + r)) - h)) / x;
                     c = s = 1f;
@@ -2319,8 +2314,8 @@ namespace Droid.Core
                         y = w[i];
                         h = s * g;
                         g = c * g;
-                        z = Pythag(f, h);
-                        rv1[j] = z;
+                        z = Pythag((float)f, (float)h);
+                        rv1[j] = (float)z;
                         c = f / z;
                         s = h / z;
                         f = x * c + g * s;
@@ -2331,11 +2326,11 @@ namespace Droid.Core
                         {
                             x = V[jj][j];
                             z = V[jj][i];
-                            V[jj][j] = x * c + z * s;
-                            V[jj][i] = z * c - x * s;
+                            V[jj][j] = (float)(x * c + z * s);
+                            V[jj][i] = (float)(z * c - x * s);
                         }
-                        z = Pythag(f, h);
-                        w[j] = z;
+                        z = Pythag((float)f, (float)h);
+                        w[j] = (float)z;
                         if (z != 0f)
                         {
                             z = 1f / z;
@@ -2348,13 +2343,13 @@ namespace Droid.Core
                         {
                             y = this[jj][j];
                             z = this[jj][i];
-                            this[jj][j] = y * c + z * s;
-                            this[jj][i] = z * c - y * s;
+                            this[jj][j] = (float)(y * c + z * s);
+                            this[jj][i] = (float)(z * c - y * s);
                         }
                     }
                     rv1[l] = 0f;
-                    rv1[k] = f;
-                    w[k] = x;
+                    rv1[k] = (float)f;
+                    w[k] = (float)x;
                 }
             return true;
         }
@@ -2369,7 +2364,7 @@ namespace Droid.Core
         /// <returns></returns>
         public void SVD_Solve(VectorX x, VectorX b, VectorX w, MatrixX V)
         {
-            int i, j; float sum; VectorX tmp = new();
+            int i, j; double sum; VectorX tmp = new();
             Debug.Assert(x.Size >= numColumns);
             Debug.Assert(b.Size >= numColumns);
             Debug.Assert(w.Size == numColumns);
@@ -2386,14 +2381,14 @@ namespace Droid.Core
                         sum += this[j][i] * b[j];
                     sum /= w[i];
                 }
-                tmp[i] = sum;
+                tmp[i] = (float)sum;
             }
             for (i = 0; i < numColumns; i++)
             {
                 sum = 0f;
                 for (j = 0; j < numColumns; j++)
                     sum += V[i][j] * tmp[j];
-                x[i] = sum;
+                x[i] = (float)sum;
             }
         }
 
@@ -2406,7 +2401,7 @@ namespace Droid.Core
         /// <returns></returns>
         public void SVD_Inverse(MatrixX inv, VectorX w, MatrixX V)
         {
-            int i, j, k; float wi, sum; MatrixX V2 = new();
+            int i, j, k; double wi, sum; MatrixX V2 = new();
             Debug.Assert(numRows == numColumns);
 
             V2 = V;
@@ -2417,7 +2412,7 @@ namespace Droid.Core
                 wi = w[i];
                 wi = (wi < MathX.FLT_EPSILON) ? 0f : 1f / wi;
                 for (j = 0; j < numColumns; j++)
-                    V2[j][i] *= wi;
+                    V2[j][i] *= (float)wi;
             }
 
             // V * [diag(1/w[i])] * Ut
@@ -2427,7 +2422,7 @@ namespace Droid.Core
                     sum = V2[i][0] * this[j][0];
                     for (k = 1; k < numColumns; k++)
                         sum += V2[i][k] * this[j][k];
-                    inv[i][j] = sum;
+                    inv[i][j] = (float)sum;
                 }
         }
 
@@ -2440,7 +2435,7 @@ namespace Droid.Core
         /// <returns></returns>
         public void SVD_MultiplyFactors(MatrixX m, VectorX w, MatrixX V)
         {
-            int r, i, j; float sum;
+            int r, i, j; double sum;
 
             m.SetSize(numRows, V.NumRows);
 
@@ -2453,7 +2448,7 @@ namespace Droid.Core
                         sum = 0f;
                         for (j = 0; j < numColumns; j++)
                             sum += this[r][j] * V[i][j];
-                        m[r][i] = sum * w[r];
+                        m[r][i] = (float)(sum * w[r]);
                     }
                 else
                     for (i = 0; i < V.NumRows; i++)
@@ -2474,7 +2469,7 @@ namespace Droid.Core
         /// <returns></returns>
         public unsafe bool Cholesky_Factor()                        // factor in-place: L * L.Transpose()
         {
-            int i, j, k; float sum;
+            int i, j, k; double sum;
             Debug.Assert(numRows == numColumns);
 
             var invSqrt = stackalloc float[numRows];
@@ -2486,7 +2481,7 @@ namespace Droid.Core
                     sum = this[i][j];
                     for (k = 0; k < j; k++)
                         sum -= this[i][k] * this[j][k];
-                    this[i][j] = sum * invSqrt[j];
+                    this[i][j] = (float)(sum * invSqrt[j]);
                 }
 
                 sum = this[i][i];
@@ -2496,8 +2491,8 @@ namespace Droid.Core
                 if (sum <= 0f)
                     return false;
 
-                invSqrt[i] = MathX.InvSqrt(sum);
-                this[i][i] = invSqrt[i] * sum;
+                invSqrt[i] = MathX.InvSqrt((float)sum);
+                this[i][i] = (float)(invSqrt[i] * sum);
             }
             return true;
         }
@@ -2512,14 +2507,14 @@ namespace Droid.Core
         /// <returns></returns>
         public unsafe bool Cholesky_UpdateRankOne(VectorX v, float alpha, int offset = 0)
         {
-            int i, j; float diag, invDiag, diagSqr, newDiag, newDiagSqr, beta, p, d;
+            int i, j; double diag, invDiag, diagSqr, newDiag, newDiagSqr, beta, p, d;
             Debug.Assert(numRows == numColumns);
             Debug.Assert(v.Size >= numRows);
             Debug.Assert(offset >= 0 && offset < numRows);
 
             var y = stackalloc float[v.Size];
-            fixed (float* v_ = v.p)
-                Unsafe.CopyBlock(y, v_ + v.pi, (uint)v.Size * sizeof(float)); //U.memcpy(y, v_ + v.pi, v.Size * sizeof(float));
+            fixed (float* v_p = v.p)
+                Unsafe.CopyBlock(y, v_p + v.pi, (uint)v.Size * sizeof(float));
 
             for (i = offset; i < numColumns; i++)
             {
@@ -2532,20 +2527,20 @@ namespace Droid.Core
                 if (newDiagSqr <= 0f)
                     return false;
 
-                this[i][i] = newDiag = MathX.Sqrt(newDiagSqr);
+                this[i][i] = (float)(newDiag = MathX.Sqrt((float)newDiagSqr));
 
-                alpha /= newDiagSqr;
+                alpha /= (float)newDiagSqr;
                 beta = p * alpha;
-                alpha *= diagSqr;
+                alpha *= (float)diagSqr;
 
                 for (j = i + 1; j < numRows; j++)
                 {
                     d = this[j][i] * invDiag;
 
-                    y[j] -= p * d;
+                    y[j] -= (float)(p * d);
                     d += beta * y[j];
 
-                    this[j][i] = d * newDiag;
+                    this[j][i] = (float)(d * newDiag);
                 }
             }
             return true;
@@ -2565,7 +2560,7 @@ namespace Droid.Core
         /// <returns></returns>
         public unsafe bool Cholesky_UpdateRowColumn(VectorX v, int r)
         {
-            int i, j; float sum; VectorX addSub = new();
+            int i, j; double sum; VectorX addSub = new();
             Debug.Assert(numRows == numColumns);
             Debug.Assert(v.Size >= numRows);
             Debug.Assert(r >= 0 && r < numRows);
@@ -2576,13 +2571,13 @@ namespace Droid.Core
             {
                 if (numColumns == 1)
                 {
-                    var v0 = v[0];
+                    double v0 = v[0];
                     sum = this[0][0];
                     sum *= sum;
                     sum += v0;
                     if (sum <= 0f)
                         return false;
-                    this[0][0] = MathX.Sqrt(sum);
+                    this[0][0] = MathX.Sqrt((float)sum);
                     return true;
                 }
                 for (i = 0; i < numColumns; i++)
@@ -2598,7 +2593,7 @@ namespace Droid.Core
                     sum = 0f;
                     for (j = 0; j <= i; j++)
                         sum += this[r][j] * this[i][j];
-                    original[i] = sum;
+                    original[i] = (float)sum;
                 }
 
                 // solve for y in L * y = original + v
@@ -2607,7 +2602,7 @@ namespace Droid.Core
                     sum = original[i] + v[i];
                     for (j = 0; j < i; j++)
                         sum -= this[r][j] * this[i][j];
-                    this[r][i] = sum / this[i][i];
+                    this[r][i] = (float)(sum / this[i][i]);
                 }
 
                 // if the last row/column of the matrix is updated
@@ -2619,7 +2614,7 @@ namespace Droid.Core
                         sum -= this[r][j] * this[r][j];
                     if (sum <= 0f)
                         return false;
-                    this[r][r] = MathX.Sqrt(sum);
+                    this[r][r] = MathX.Sqrt((float)sum);
                     return true;
                 }
 
@@ -2629,23 +2624,23 @@ namespace Droid.Core
                     sum = 0f;
                     for (j = 0; j <= r; j++)
                         sum += this[r][j] * this[i][j];
-                    addSub[i] = v[i] - (sum - original[i]);
+                    addSub[i] = (float)(v[i] - (sum - original[i]));
                 }
             }
 
             // add row/column to the lower right sub matrix starting at (r, r)
 
-            float diag, invDiag, diagSqr, newDiag, newDiagSqr;
-            float alpha1, alpha2, beta1, beta2, p1, p2, d;
+            double diag, invDiag, diagSqr, newDiag, newDiagSqr;
+            double alpha1, alpha2, beta1, beta2, p1, p2, d;
 
             var v1 = stackalloc float[numColumns];
             var v2 = stackalloc float[numColumns];
 
             d = MathX.SQRT_1OVER2;
-            v1[r] = (0.5f * addSub[r] + 1f) * d;
-            v2[r] = (0.5f * addSub[r] - 1f) * d;
+            v1[r] = (float)((0.5f * addSub[r] + 1f) * d);
+            v2[r] = (float)((0.5f * addSub[r] - 1f) * d);
             for (i = r + 1; i < numColumns; i++)
-                v1[i] = v2[i] = addSub[i] * d;
+                v1[i] = v2[i] = (float)(addSub[i] * d);
 
             alpha1 = 1f;
             alpha2 = -1f;
@@ -2673,7 +2668,7 @@ namespace Droid.Core
                 if (newDiagSqr <= 0f)
                     return false;
 
-                this[i][i] = newDiag = MathX.Sqrt(newDiagSqr);
+                this[i][i] = (float)(newDiag = MathX.Sqrt((float)newDiagSqr));
 
                 alpha2 /= newDiagSqr;
                 beta2 = p2 * alpha2;
@@ -2683,13 +2678,13 @@ namespace Droid.Core
                 {
                     d = this[j][i] * invDiag;
 
-                    v1[j] -= p1 * d;
+                    v1[j] -= (float)(p1 * d);
                     d += beta1 * v1[j];
 
-                    v2[j] -= p2 * d;
+                    v2[j] -= (float)(p2 * d);
                     d += beta2 * v2[j];
 
-                    this[j][i] = d * newDiag;
+                    this[j][i] = (float)(d * newDiag);
                 }
             }
 
@@ -2708,7 +2703,7 @@ namespace Droid.Core
         /// <returns></returns>
         public unsafe bool Cholesky_UpdateIncrement(VectorX v)
         {
-            int i, j; float sum;
+            int i, j; double sum;
             Debug.Assert(numRows == numColumns);
             Debug.Assert(v.Size >= numRows + 1);
 
@@ -2722,7 +2717,7 @@ namespace Droid.Core
                 sum = v[i];
                 for (j = 0; j < i; j++)
                     sum -= this[i][j] * x[j];
-                x[i] = sum / this[i][i];
+                x[i] = (float)(sum / this[i][i]);
             }
 
             // calculate new row of L and calculate the square of the diagonal entry
@@ -2737,7 +2732,7 @@ namespace Droid.Core
                 return false;
 
             // store the diagonal entry
-            this[numRows - 1][numRows - 1] = MathX.Sqrt(sum);
+            this[numRows - 1][numRows - 1] = MathX.Sqrt((float)sum);
 
             return true;
         }
@@ -2782,7 +2777,7 @@ namespace Droid.Core
         /// <returns></returns>
         public void Cholesky_Solve(VectorX x, VectorX b)
         {
-            int i, j; float sum;
+            int i, j; double sum;
             Debug.Assert(numRows == numColumns);
             Debug.Assert(x.Size >= numRows && b.Size >= numRows);
 
@@ -2792,7 +2787,7 @@ namespace Droid.Core
                 sum = b[i];
                 for (j = 0; j < i; j++)
                     sum -= this[i][j] * x[j];
-                x[i] = sum / this[i][i];
+                x[i] = (float)(sum / this[i][i]);
             }
 
             // solve Lt
@@ -2801,7 +2796,7 @@ namespace Droid.Core
                 sum = x[i];
                 for (j = i + 1; j < numRows; j++)
                     sum -= this[j][i] * x[j];
-                x[i] = sum / this[i][i];
+                x[i] = (float)(sum / this[i][i]);
             }
         }
 
@@ -2837,7 +2832,7 @@ namespace Droid.Core
         /// <returns></returns>
         public void Cholesky_MultiplyFactors(MatrixX m)
         {
-            int r, i, j; float sum;
+            int r, i, j; double sum;
 
             m.SetSize(numRows, numColumns);
 
@@ -2849,7 +2844,7 @@ namespace Droid.Core
                     sum = 0f;
                     for (j = 0; j <= i && j <= r; j++)
                         sum += this[r][j] * this[i][j];
-                    m[r][i] = sum;
+                    m[r][i] = (float)sum;
                 }
             }
         }
@@ -2869,7 +2864,7 @@ namespace Droid.Core
         /// <returns></returns>
         public unsafe bool LDLT_Factor()                            // factor in-place: L * D * L.Transpose()
         {
-            int i, j, k; float d, sum;
+            int i, j, k; double d, sum;
             Debug.Assert(numRows == numColumns);
 
             var v = stackalloc float[numRows];
@@ -2880,14 +2875,14 @@ namespace Droid.Core
                 for (j = 0; j < i; j++)
                 {
                     d = this[i][j];
-                    v[j] = this[j][j] * d;
+                    v[j] = (float)(this[j][j] * d);
                     sum -= v[j] * d;
                 }
 
                 if (sum == 0f)
                     return false;
 
-                this[i][i] = sum;
+                this[i][i] = (float)sum;
                 d = 1f / sum;
 
                 for (j = i + 1; j < numRows; j++)
@@ -2895,7 +2890,7 @@ namespace Droid.Core
                     sum = this[j][i];
                     for (k = 0; k < i; k++)
                         sum -= this[j][k] * v[k];
-                    this[j][i] = sum * d;
+                    this[j][i] = (float)(sum * d);
                 }
             }
 
@@ -2912,36 +2907,36 @@ namespace Droid.Core
         /// <returns></returns>
         public unsafe bool LDLT_UpdateRankOne(VectorX v, float alpha, int offset = 0)
         {
-            int i, j; float diag, newDiag, beta, p, d;
+            int i, j; double diag, newDiag, beta, p, d;
             Debug.Assert(numRows == numColumns);
             Debug.Assert(v.Size >= numRows);
             Debug.Assert(offset >= 0 && offset < numRows);
 
             var y = stackalloc float[v.Size];
-            fixed (float* v_ = v.p)
-                Unsafe.CopyBlock(y, v_ + v.pi, (uint)v.Size * sizeof(float)); //U.memcpy(y, v_ + v.pi, v.Size * sizeof(float));
+            fixed (float* v_p = v.p)
+                Unsafe.CopyBlock(y, v_p + v.pi, (uint)v.Size * sizeof(float));
 
             for (i = offset; i < numColumns; i++)
             {
                 p = y[i];
                 diag = this[i][i];
-                this[i][i] = newDiag = diag + alpha * p * p;
+                this[i][i] = (float)(newDiag = diag + alpha * p * p);
 
                 if (newDiag == 0f)
                     return false;
 
-                alpha /= newDiag;
+                alpha /= (float)newDiag;
                 beta = p * alpha;
-                alpha *= diag;
+                alpha *= (float)diag;
 
                 for (j = i + 1; j < numRows; j++)
                 {
                     d = this[j][i];
 
-                    y[j] -= p * d;
+                    y[j] -= (float)(p * d);
                     d += beta * y[j];
 
-                    this[j][i] = d;
+                    this[j][i] = (float)d;
                 }
             }
 
@@ -2962,7 +2957,7 @@ namespace Droid.Core
         /// <returns></returns>
         public unsafe bool LDLT_UpdateRowColumn(VectorX v, int r)
         {
-            int i, j; float sum; VectorX addSub = new();
+            int i, j; double sum; VectorX addSub = new();
             Debug.Assert(numRows == numColumns);
             Debug.Assert(v.Size >= numRows);
             Debug.Assert(r >= 0 && r < numRows);
@@ -2997,7 +2992,7 @@ namespace Droid.Core
                         sum = this[r][r] * this[i][r];
                     for (j = 0; j < i && j < r; j++)
                         sum += this[i][j] * y[j];
-                    original[i] = sum;
+                    original[i] = (float)sum;
                 }
 
                 // solve for y in L * y = original + v
@@ -3006,7 +3001,7 @@ namespace Droid.Core
                     sum = original[i] + v[i];
                     for (j = 0; j < i; j++)
                         sum -= this[i][j] * y[j];
-                    y[i] = sum;
+                    y[i] = (float)sum;
                 }
 
                 // calculate new row of L
@@ -3022,7 +3017,7 @@ namespace Droid.Core
                         sum -= this[r][j] * y[j];
                     if (sum == 0f)
                         return false;
-                    this[r][r] = sum;
+                    this[r][r] = (float)sum;
                     return true;
                 }
 
@@ -3037,7 +3032,7 @@ namespace Droid.Core
                         sum = this[r][r] * this[i][r];
                     for (j = 0; j < r; j++)
                         sum += this[i][j] * y[j];
-                    addSub[i] = v[i] - (sum - original[i]);
+                    addSub[i] = (float)(v[i] - (sum - original[i]));
                 }
             }
 
@@ -3112,7 +3107,7 @@ namespace Droid.Core
         /// <returns></returns>
         public unsafe bool LDLT_UpdateIncrement(VectorX v)
         {
-            int i, j; float sum, d;
+            int i, j; double sum, d;
             Debug.Assert(numRows == numColumns);
             Debug.Assert(v.Size >= numRows + 1);
 
@@ -3126,14 +3121,14 @@ namespace Droid.Core
                 sum = v[i];
                 for (j = 0; j < i; j++)
                     sum -= this[i][j] * x[j];
-                x[i] = sum;
+                x[i] = (float)sum;
             }
 
             // calculate new row of L and calculate the diagonal entry
             sum = v[numRows - 1];
             for (i = 0; i < numRows - 1; i++)
             {
-                this[numRows - 1][i] = d = x[i] / this[i][i];
+                this[numRows - 1][i] = (float)(d = x[i] / this[i][i]);
                 sum -= d * x[i];
             }
 
@@ -3141,7 +3136,7 @@ namespace Droid.Core
                 return false;
 
             // store the diagonal entry
-            this[numRows - 1][numRows - 1] = sum;
+            this[numRows - 1][numRows - 1] = (float)sum;
 
             return true;
         }
@@ -3186,7 +3181,7 @@ namespace Droid.Core
         /// <returns></returns>
         public void LDLT_Solve(VectorX x, VectorX b)
         {
-            int i, j; float sum;
+            int i, j; double sum;
             Debug.Assert(numRows == numColumns);
             Debug.Assert(x.Size >= numRows && b.Size >= numRows);
 
@@ -3196,7 +3191,7 @@ namespace Droid.Core
                 sum = b[i];
                 for (j = 0; j < i; j++)
                     sum -= this[i][j] * x[j];
-                x[i] = sum;
+                x[i] = (float)sum;
             }
 
             // solve D
@@ -3209,7 +3204,7 @@ namespace Droid.Core
                 sum = x[i];
                 for (j = i + 1; j < numRows; j++)
                     sum -= this[j][i] * x[j];
-                x[i] = sum;
+                x[i] = (float)sum;
             }
         }
 
@@ -3266,7 +3261,7 @@ namespace Droid.Core
         /// <returns></returns>
         public unsafe void LDLT_MultiplyFactors(MatrixX m)
         {
-            int r, i, j; float sum;
+            int r, i, j; double sum;
 
             var v = stackalloc float[numRows];
             m.SetSize(numRows, numColumns);
@@ -3286,7 +3281,7 @@ namespace Droid.Core
                         sum = this[r][r] * this[i][r];
                     for (j = 0; j < i && j < r; j++)
                         sum += this[i][j] * v[j];
-                    m[r][i] = sum;
+                    m[r][i] = (float)sum;
                 }
             }
         }

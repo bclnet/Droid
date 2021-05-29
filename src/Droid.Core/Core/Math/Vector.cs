@@ -1,6 +1,7 @@
 //#define VECX_SIMD
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Droid.Core
@@ -481,7 +482,7 @@ namespace Droid.Core
                 yaw = 0f;
             else
             {
-                yaw = MathX.RAD2DEG((float)Math.Atan2(y, x));
+                yaw = (float)MathX.RAD2DEG(Math.Atan2(y, x));
                 if (yaw < 0f)
                     yaw += 360f;
             }
@@ -495,7 +496,7 @@ namespace Droid.Core
             else
             {
                 forward = (float)MathX.Sqrt(x * x + y * y);
-                pitch = MathX.RAD2DEG((float)Math.Atan2(z, forward));
+                pitch = (float)MathX.RAD2DEG(Math.Atan2(z, forward));
                 if (pitch < 0f)
                     pitch += 360f;
             }
@@ -512,12 +513,12 @@ namespace Droid.Core
             }
             else
             {
-                yaw = MathX.RAD2DEG((float)Math.Atan2(y, x));
+                yaw = (float)MathX.RAD2DEG(Math.Atan2(y, x));
                 if (yaw < 0f)
                     yaw += 360f;
 
                 forward = (float)MathX.Sqrt(x * x + y * y);
-                pitch = MathX.RAD2DEG((float)Math.Atan2(z, forward));
+                pitch = (float)MathX.RAD2DEG(Math.Atan2(z, forward));
                 if (pitch < 0f)
                     pitch += 360f;
             }
@@ -535,12 +536,12 @@ namespace Droid.Core
             }
             else
             {
-                yaw = MathX.RAD2DEG((float)Math.Atan2(y, x));
+                yaw = (float)MathX.RAD2DEG(Math.Atan2(y, x));
                 if (yaw < 0f)
                     yaw += 360f;
 
                 forward = (float)MathX.Sqrt(x * x + y * y);
-                pitch = MathX.RAD2DEG((float)Math.Atan2(z, forward));
+                pitch = (float)MathX.RAD2DEG(Math.Atan2(z, forward));
                 if (pitch < 0f)
                     pitch += 360f;
             }
@@ -1154,13 +1155,26 @@ namespace Droid.Core
             if (tempIndex + alloced > VECX_MAX_TEMP)
                 tempIndex = 0;
             p = temp;
-            fixed (float* p = &temp[0])
-                tempPtr = (int)((ulong)p + 15) & ~15;
-            pi = tempPtr + tempIndex;
+            //fixed (float* p = &temp[0])
+            //    tempPtr = (int)((ulong)p + 15) & ~15;
+            pi = tempIndex;
             tempIndex += alloced;
             VECX_CLEAREND();
         }
 
+        public unsafe VectorX(VectorX a)
+        {
+            size = alloced = 0;
+            p = null; pi = 0;
+            SetSize(a.size);
+#if VECX_SIMD
+            SIMDProcessor.Copy16(p, a.p, a.size);
+#else
+            fixed (float* p = this.p, a_p = a.p)
+                Unsafe.CopyBlock(p, a_p, (uint)a.size * sizeof(float));
+#endif
+            tempIndex = 0;
+        }
         //public VectorX()
         //{
         //    size = alloced = 0;
@@ -1178,18 +1192,7 @@ namespace Droid.Core
             p = null; pi = 0;
             SetData(length, data);
         }
-        public VectorX(VectorX a)
-        {
-            size = alloced = 0;
-            p = null; pi = 0;
-            SetSize(a.size);
-#if VECX_SIMD
-            SIMDProcessor.Copy16(p, a.p, a.size);
-#else
-            Array.Copy(a.p, p, a.size);
-#endif
-            tempIndex = 0;
-        }
+
 
         public float this[int index]
         {

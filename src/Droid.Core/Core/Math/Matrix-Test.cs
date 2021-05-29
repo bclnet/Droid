@@ -8,7 +8,7 @@ namespace Droid.Core
     {
         public static void Test()
         {
-            MatrixX original = new(), m1, m2, m3 = new(), q1 = new(), q2 = new(), r1 = new(), r2 = new();
+            MatrixX original = new(), m1, m2, m3, q1 = new(), q2 = new(), r1 = new(), r2 = new();
             VectorX v = new(), w = new(), u = new(), c = new(), d = new();
             int offset, size;
 
@@ -159,7 +159,7 @@ namespace Droid.Core
             m1 = new MatrixX(original);
 
             m1.LU_Factor(null); // no pivoting
-            m1.LU_UnpackFactors(m2, m3);
+            m1.LU_UnpackFactors(out m2, out m3);
             m1 = m2 * m3;
 
             if (!original.Compare(m1, 1e-4f))
@@ -305,7 +305,7 @@ namespace Droid.Core
             m1 = new MatrixX(original);
 
             m1.QR_Factor(c, d);
-            m1.QR_UnpackFactors(q1, r1, c, d);
+            m1.QR_UnpackFactors(out q1, out r1, c, d);
             m1 = q1 * r1;
 
             if (!original.Compare(m1, 1e-4f))
@@ -324,13 +324,13 @@ namespace Droid.Core
 
             // factor m1
             m1.QR_Factor(c, d);
-            m1.QR_UnpackFactors(q1, r1, c, d);
+            m1.QR_UnpackFactors(out q1, out r1, c, d);
 
             // modify and factor m2
             m2.Update_RankOne(v, w, 1f);
             if (!m2.QR_Factor(c, d))
                 Debug.Assert(false);
-            m2.QR_UnpackFactors(q2, r2, c, d);
+            m2.QR_UnpackFactors(out q2, out r2, c, d);
             m2 = q2 * r2;
 
             // update factored m1
@@ -356,13 +356,13 @@ namespace Droid.Core
 
                 // factor m1
                 m1.QR_Factor(c, d);
-                m1.QR_UnpackFactors(q1, r1, c, d);
+                m1.QR_UnpackFactors(out q1, out r1, c, d);
 
                 // modify and factor m2
                 m2.Update_RowColumn(v, w, offset);
                 if (!m2.QR_Factor(c, d))
                     Debug.Assert(false);
-                m2.QR_UnpackFactors(q2, r2, c, d);
+                m2.QR_UnpackFactors(out q2, out r2, c, d);
                 m2 = q2 * r2;
 
                 // update m1
@@ -387,13 +387,13 @@ namespace Droid.Core
 
             // factor m1
             m1.QR_Factor(c, d);
-            m1.QR_UnpackFactors(q1, r1, c, d);
+            m1.QR_UnpackFactors(out q1, out r1, c, d);
 
             // modify and factor m2
             m2.Update_Increment(v, w);
             if (!m2.QR_Factor(c, d))
                 Debug.Assert(false);
-            m2.QR_UnpackFactors(q2, r2, c, d);
+            m2.QR_UnpackFactors(out q2, out r2, c, d);
             m2 = q2 * r2;
 
             // update factored m1
@@ -423,13 +423,13 @@ namespace Droid.Core
 
                 // factor m1
                 m1.QR_Factor(c, d);
-                m1.QR_UnpackFactors(q1, r1, c, d);
+                m1.QR_UnpackFactors(out q1, out r1, c, d);
 
                 // modify and factor m2
                 m2.Update_Decrement(offset);
                 if (!m2.QR_Factor(c, d))
                     Debug.Assert(false);
-                m2.QR_UnpackFactors(q2, r2, c, d);
+                m2.QR_UnpackFactors(out q2, out r2, c, d);
                 m2 = q2 * r2;
 
                 // update factors of m1

@@ -7,7 +7,8 @@ namespace Droid.Core
     public static class MathX
     {
         public static float DEG2RAD(float a) => a * M_DEG2RAD;
-        public static float RAD2DEG(float a) => a * M_RAD2DEG;
+        //public static float RAD2DEG(float a) => a * M_RAD2DEG;
+        public static double RAD2DEG(double a) => a * M_RAD2DEG;
 
         public static int SEC2MS(float t) => FtoiFast(t * M_SEC2MS);
         public static float MS2SEC(int t) => t * M_MS2SEC;

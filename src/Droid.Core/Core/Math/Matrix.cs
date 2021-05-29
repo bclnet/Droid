@@ -2,9 +2,11 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Droid.Core
 {
+    [StructLayout(LayoutKind.Explicit)]
     public struct Matrix2x2
     {
         public Matrix2x2(Matrix2x2 a)
@@ -24,8 +26,8 @@ namespace Droid.Core
         public unsafe Matrix2x2(float[,] src)
         {
             mat = new Vector2[2];
-            fixed (void* matp = mat, srcp = &src[0, 0])
-                Unsafe.CopyBlock(matp, srcp, 2U * 2U * sizeof(float));
+            fixed (void* mat_ = mat, src_ = &src[0, 0])
+                Unsafe.CopyBlock(mat_, src_, 2U * 2U * sizeof(float));
             //mat[0] = new Vector2(src[0, 0], src[0, 1]);
             //mat[1] = new Vector2(src[1, 0], src[1, 1]);
         }
@@ -189,12 +191,13 @@ namespace Droid.Core
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
 
-        internal Vector2[] mat;
+        [FieldOffset(0)] internal Vector2[] mat;
 
         public static Matrix2x2 zero = new(new Vector2(0f, 0f), new Vector2(0f, 0f));
         public static Matrix2x2 identity = new(new Vector2(1f, 0f), new Vector2(0f, 1f));
     }
 
+    [StructLayout(LayoutKind.Explicit)]
     public struct Matrix3x3
     {
         public Matrix3x3(Matrix3x3 a)
@@ -216,8 +219,8 @@ namespace Droid.Core
         public unsafe Matrix3x3(float[,] src)
         {
             mat = new Vector3[3];
-            fixed (void* matp = mat, srcp = &src[0, 0])
-                Unsafe.CopyBlock(matp, srcp, 2U * 2U * sizeof(float));
+            fixed (void* mat_ = mat, src_ = &src[0, 0])
+                Unsafe.CopyBlock(mat_, src_, 2U * 2U * sizeof(float));
             //mat[0] = new Vector3(src[0, 0], src[0, 1], src[0, 2]);
             //mat[1] = new Vector3(src[1, 0], src[1, 1], src[1, 2]);
             //mat[2] = new Vector3(src[2, 0], src[2, 1], src[2, 2]);
@@ -306,7 +309,10 @@ namespace Droid.Core
             => mat[0].GetHashCode();
 
         public unsafe void Zero()
-            => Array.Clear(mat, 0, 3);
+        {
+            fixed (void* mat = this.mat)
+                Unsafe.InitBlock(mat, 0, 3U * (uint)sizeof(Vector3));
+        }
 
         public void Identity()
             => this = new(identity);
@@ -544,20 +550,20 @@ namespace Droid.Core
             if (sp > 1f) sp = 1f;
             else if (sp < -1f) sp = -1f;
 
-            theta = -(float)Math.Asin(sp);
-            cp = (float)Math.Cos(theta);
+            theta = -Math.Asin(sp);
+            cp = Math.Cos(theta);
 
             if (cp > 8192f * MathX.FLT_EPSILON)
             {
-                angles.pitch = MathX.RAD2DEG((float)theta);
-                angles.yaw = MathX.RAD2DEG((float)Math.Atan2(mat[0].y, mat[0].x));
-                angles.roll = MathX.RAD2DEG((float)Math.Atan2(mat[1].z, mat[2].z));
+                angles.pitch = (float)MathX.RAD2DEG(theta);
+                angles.yaw = (float)MathX.RAD2DEG(Math.Atan2(mat[0].y, mat[0].x));
+                angles.roll = (float)MathX.RAD2DEG(Math.Atan2(mat[1].z, mat[2].z));
             }
             else
             {
-                angles.pitch = MathX.RAD2DEG((float)theta);
-                angles.yaw = MathX.RAD2DEG(-(float)Math.Atan2(mat[1].x, mat[1].y));
-                angles.roll = 0;
+                angles.pitch = (float)MathX.RAD2DEG(theta);
+                angles.yaw = (float)MathX.RAD2DEG(-Math.Atan2(mat[1].x, mat[1].y));
+                angles.roll = 0f;
             }
             return angles;
         }
@@ -691,12 +697,13 @@ namespace Droid.Core
         public Matrix3x3 SkewSymmetric(Vector3 src)
             => new(0f, -src.z, src.y, src.z, 0f, -src.x, -src.y, src.x, 0f);
 
-        internal Vector3[] mat;
+        [FieldOffset(0)] internal Vector3[] mat;
 
         public static Matrix3x3 zero = new(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0));
         public static Matrix3x3 identity = new(new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1));
     }
 
+    [StructLayout(LayoutKind.Explicit)]
     public struct Matrix4x4
     {
         public Matrix4x4(Matrix4x4 a)
@@ -744,8 +751,8 @@ namespace Droid.Core
         public unsafe Matrix4x4(float[,] src)
         {
             mat = new Vector4[4];
-            fixed (void* matp = mat, srcp = &src[0, 0])
-                Unsafe.CopyBlock(matp, srcp, 4U * 4U * sizeof(float));
+            fixed (void* mat_ = mat, src_ = &src[0, 0])
+                Unsafe.CopyBlock(mat_, src_, 4U * 4U * sizeof(float));
             //mat[0] = new Vector4(src[0, 0], src[0, 1], src[0, 2], src[0, 3]);
             //mat[1] = new Vector4(src[1, 0], src[1, 1], src[1, 2], src[1, 3]);
             //mat[2] = new Vector4(src[2, 0], src[2, 1], src[2, 2], src[2, 3]);
@@ -864,7 +871,10 @@ namespace Droid.Core
             => mat[0].GetHashCode();
 
         public unsafe void Zero()
-            => Array.Clear(mat, 0, 4);
+        {
+            fixed (void* mat = this.mat)
+                Unsafe.InitBlock(mat, 0, 4U * (uint)sizeof(Vector4));
+        }
 
         public void Identity()
             => this = new(identity);
@@ -1190,12 +1200,13 @@ namespace Droid.Core
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
 
-        internal Vector4[] mat;
+        [FieldOffset(0)] internal Vector4[] mat;
 
         public static Matrix4x4 zero = new(new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0));
         public static Matrix4x4 identity = new(new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), new Vector4(0, 0, 1, 0), new Vector4(0, 0, 0, 1));
     }
 
+    [StructLayout(LayoutKind.Explicit)]
     public struct Matrix5x5
     {
         public Matrix5x5(Matrix5x5 a)
@@ -1212,8 +1223,8 @@ namespace Droid.Core
         public unsafe Matrix5x5(float[,] src)
         {
             mat = new Vector5[5];
-            fixed (void* matp = mat, srcp = &src[0, 0])
-                Unsafe.CopyBlock(matp, srcp, 5U * 5U * sizeof(float));
+            fixed (void* mat_ = mat, src_ = &src[0, 0])
+                Unsafe.CopyBlock(mat_, src_, 5U * 5U * sizeof(float));
             //mat[0] = new Vector5(src[0, 0], src[0, 1], src[0, 2], src[0, 3], src[0, 4]);
             //mat[1] = new Vector5(src[1, 0], src[1, 1], src[1, 2], src[1, 3], src[1, 4]);
             //mat[2] = new Vector5(src[2, 0], src[2, 1], src[2, 2], src[2, 3], src[2, 4]);
@@ -1316,7 +1327,10 @@ namespace Droid.Core
             => mat[0].GetHashCode();
 
         public unsafe void Zero()
-            => Array.Clear(mat, 0, 5);
+        {
+            fixed (void* mat = this.mat)
+                Unsafe.InitBlock(mat, 0, 5U * (uint)sizeof(Vector5));
+        }
 
         public void Identity()
             => this = new(identity);
@@ -1660,12 +1674,13 @@ namespace Droid.Core
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
 
-        internal Vector5[] mat;
+        [FieldOffset(0)] internal Vector5[] mat;
 
         public static Matrix5x5 zero = new(new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0));
         public static Matrix5x5 identity = new(new Vector5(1, 0, 0, 0, 0), new Vector5(0, 1, 0, 0, 0), new Vector5(0, 0, 1, 0, 0), new Vector5(0, 0, 0, 1, 0), new Vector5(0, 0, 0, 0, 1));
     }
 
+    [StructLayout(LayoutKind.Explicit)]
     public struct Matrix6x6
     {
         public Matrix6x6(Matrix6x6 a)
@@ -1693,8 +1708,8 @@ namespace Droid.Core
         public unsafe Matrix6x6(float[,] src)
         {
             mat = new Vector6[6];
-            fixed (void* matp = mat, srcp = &src[0, 0])
-                Unsafe.CopyBlock(matp, srcp, 6U * 6U * sizeof(float));
+            fixed (void* mat_ = mat, src_ = &src[0, 0])
+                Unsafe.CopyBlock(mat_, src_, 6U * 6U * sizeof(float));
             //mat[0] = new Vector6(src[0, 0], src[0, 1], src[0, 2], src[0, 3], src[0, 4], src[0, 5]);
             //mat[1] = new Vector6(src[1, 0], src[1, 1], src[1, 2], src[1, 3], src[1, 4], src[1, 5]);
             //mat[2] = new Vector6(src[2, 0], src[2, 1], src[2, 2], src[2, 3], src[2, 4], src[2, 5]);
@@ -1805,8 +1820,8 @@ namespace Droid.Core
 
         public unsafe void Zero()
         {
-            fixed (void* matp = mat)
-                Unsafe.InitBlock(matp, 0, 6U * (uint)sizeof(Vector6));
+            fixed (void* mat = this.mat)
+                Unsafe.InitBlock(mat, 0, 6U * (uint)sizeof(Vector6));
         }
 
         public void Identity()
@@ -2384,12 +2399,13 @@ namespace Droid.Core
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
 
-        internal Vector6[] mat;
+        [FieldOffset(0)] internal Vector6[] mat;
 
         public static Matrix6x6 zero = new(new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0));
         public static Matrix6x6 identity = new(new Vector6(1, 0, 0, 0, 0, 0), new Vector6(0, 1, 0, 0, 0, 0), new Vector6(0, 0, 1, 0, 0, 0), new Vector6(0, 0, 0, 1, 0, 0), new Vector6(0, 0, 0, 0, 1, 0), new Vector6(0, 0, 0, 0, 0, 1));
     }
 
+    [StructLayout(LayoutKind.Explicit)]
     public partial struct MatrixX
     {
         public const float INVERSE_EPSILON = 1e-14F;
@@ -2401,12 +2417,12 @@ namespace Droid.Core
         static float[] MATX_ALLOCA(int n) => new float[MATX_QUAD(n)];
         static float[] temp; // = new float[MATX_MAX_TEMP + 4];   // used to store intermediate results
                              // static float[] tempPtr = temp; //(float*)(((intptr_t)idMatX::temp + 15) & ~15);              // pointer to 16 byte aligned temporary memory
-        static int tempIndex = 0;               // index into memory pool, wraps around
+        static int tempIndex = 0;                   // index into memory pool, wraps around
 
-        int numRows;                // number of rows
-        int numColumns;             // number of columns
-        int alloced;                // floats allocated, if -1 then mat points to data set with SetData
-        float[] mat;                // memory the matrix is stored
+        [FieldOffset(0)] float[] mat;               // memory the matrix is stored
+        [FieldOffset(8)] int numRows;               // number of rows
+        [FieldOffset(12)] int numColumns;           // number of columns
+        [FieldOffset(16)] int alloced;              // floats allocated, if -1 then mat points to data set with SetData
 
         void SetTempSize(int rows, int columns)
         {
@@ -2422,7 +2438,7 @@ namespace Droid.Core
             MATX_CLEAREND();
         }
 
-        public MatrixX(MatrixX a)
+        public unsafe MatrixX(MatrixX a)
         {
             numRows = numColumns = alloced = 0;
             mat = null;
@@ -2430,7 +2446,8 @@ namespace Droid.Core
 #if MATX_SIMD
             SIMDProcessor.Copy16(mat, a.mat, a.numRows * a.numColumns);
 #else
-            Array.Copy(a.mat, mat, a.numRows * a.numColumns);
+            fixed (float* mat = this.mat, a_mat = a.mat)
+                Unsafe.CopyBlock(mat, a_mat, (uint)(a.numRows * a.numColumns * sizeof(float)));
 #endif
             tempIndex = 0;
         }
@@ -2452,10 +2469,11 @@ namespace Droid.Core
             SetData(rows, columns, src);
         }
 
-        public void Set(int rows, int columns, float[] src)
+        public unsafe void Set(int rows, int columns, float[] src)
         {
             SetSize(rows, columns);
-            Array.Copy(src, mat, rows * columns);
+            fixed (void* mat = this.mat, src_ = src)
+                Unsafe.CopyBlock(mat, src_, (uint)(rows * columns * sizeof(float)));
         }
         public void Set(Matrix3x3 m1, Matrix3x3 m2)
         {
@@ -2488,18 +2506,6 @@ namespace Droid.Core
                 return mat.AsSpan(index * numColumns);
             }
         }
-
-        //        public static implicit operator MatrixX(MatrixX a)
-        //        {
-        //            SetSize(a.numRows, a.numColumns);
-        //#if         MATX_SIMD
-        //            SIMDProcessor->Copy16(mat, a.mat, a.numRows * a.numColumns);
-        //#else
-        //            memcpy(mat, a.mat, a.numRows * a.numColumns * sizeof(float));
-        //#endif
-        //            tempIndex = 0;
-        //            return this;
-        //        }
 
         public static MatrixX operator *(MatrixX _, float a)
         {
@@ -2652,8 +2658,10 @@ namespace Droid.Core
             numColumns = columns;
             MATX_CLEAREND();
         }
+
         public int NumRows => numRows;                    // get the number of rows
         public int NumColumns => numColumns;              // get the number of columns
+
         public void SetData(int rows, int columns, float[] data)                   // set float array pointer
         {
             //Debug.Assert(mat < tempPtr || mat > tempPtr + MATX_MAX_TEMP);
@@ -2664,30 +2672,35 @@ namespace Droid.Core
             numColumns = columns;
             MATX_CLEAREND();
         }
-        public void Zero()                                                   // clear matrix
+
+        public unsafe void Zero()                                                   // clear matrix
         {
 #if MATX_SIMD
             SIMDProcessor.Zero16(mat, numRows * numColumns);
 #else
-            Array.Clear(mat, 0, numRows * numColumns);
+            fixed (void* mat = this.mat)
+                Unsafe.InitBlock(mat, 0, (uint)(numRows * numColumns * sizeof(float)));
 #endif
         }
-        public void Zero(int rows, int columns)                                   // set size and clear matrix
+        public unsafe void Zero(int rows, int columns)                                   // set size and clear matrix
         {
             SetSize(rows, columns);
 #if MATX_SIMD
             SIMDProcessor.Zero16(mat, numRows * numColumns);
 #else
-            Array.Clear(mat, 0, rows * columns);
+            fixed (void* mat = this.mat)
+                Unsafe.InitBlock(mat, 0, (uint)(rows * columns * sizeof(float)));
 #endif
         }
-        public void Identity()                                               // clear to identity matrix
+
+        public unsafe void Identity()                                               // clear to identity matrix
         {
             Debug.Assert(numRows == numColumns);
 #if MATX_SIMD
             SIMDProcessor.Zero16(mat, numRows * numColumns);
 #else
-            Array.Clear(mat, 0, numRows * numColumns);
+            fixed (void* mat = this.mat)
+                Unsafe.InitBlock(mat, 0, (uint)(numRows * numColumns * sizeof(float)));
 #endif
             for (var i = 0; i < numRows; i++)
                 mat[i * numColumns + i] = 1f;
@@ -2698,12 +2711,14 @@ namespace Droid.Core
             SetSize(rows, columns);
             Identity();
         }
+
         public void Diag(VectorX v)                                      // create diagonal matrix from vector
         {
             Zero(v.Size, v.Size);
             for (var i = 0; i < v.Size; i++)
                 mat[i * numColumns + i] = v[i];
         }
+
         public void Random(int seed, float l = 0f, float u = 1f)              // fill matrix with random values
         {
             var rnd = new Random(seed);
@@ -2721,6 +2736,7 @@ namespace Droid.Core
             for (var i = 0; i < s; i++)
                 mat[i] = l + rnd.RandomFloat() * c;
         }
+
         public void Negate()                                                 // this = - this
         {
 #if MATX_SIMD
@@ -2731,6 +2747,7 @@ namespace Droid.Core
                 mat[i] = -mat[i];
 #endif
         }
+
         public void Clamp(float min, float max)                                   // clamp all values
         {
             var s = numRows * numColumns;
@@ -2740,17 +2757,22 @@ namespace Droid.Core
                 else if (mat[i] > max) mat[i] = max;
             }
         }
-        public MatrixX SwapRows(int r1, int r2)                                     // swap rows
+
+        public unsafe MatrixX SwapRows(int r1, int r2)                                     // swap rows
         {
             var ptr = new float[numColumns];
-            Array.Copy(mat, r1 * numColumns, ptr, 0, numColumns);
-            Array.Copy(mat, r2 * numColumns, mat, r1 * numColumns, numColumns);
-            Array.Copy(ptr, 0, mat, r2 * numColumns, numColumns);
+            fixed (float* ptr_ = ptr, mat = this.mat)
+            {
+                Unsafe.CopyBlock(ptr_, mat + r1 * numColumns, (uint)numColumns * sizeof(float));
+                Unsafe.CopyBlock(mat + r1 * numColumns, mat + r2 * numColumns, (uint)numColumns * sizeof(float));
+                Unsafe.CopyBlock(mat + r2 * numColumns, ptr_, (uint)numColumns * sizeof(float));
+            }
             return this;
         }
+
         public unsafe MatrixX SwapColumns(int r1, int r2)                                  // swap columns
         {
-            fixed (float* matp = &mat[0])
+            fixed (float* matp = mat)
                 for (var i = 0; i < numRows; i++)
                 {
                     var ptr = matp + i * numColumns;
@@ -2760,67 +2782,86 @@ namespace Droid.Core
                 }
             return this;
         }
+
         public MatrixX SwapRowsColumns(int r1, int r2)                              // swap rows and columns
         {
             SwapRows(r1, r2);
             SwapColumns(r1, r2);
             return this;
         }
-        public MatrixX RemoveRow(int r)                                             // remove a row
+
+        public unsafe MatrixX RemoveRow(int r)                                             // remove a row
         {
             Debug.Assert(r < numRows);
             numRows--;
-            for (var i = r; i < numRows; i++)
-                Array.Copy(mat, (i + 1) * numColumns, mat, i * numColumns, numColumns);
+            fixed (float* mat = this.mat)
+                for (var i = r; i < numRows; i++)
+                    Unsafe.CopyBlock(&mat[i * numColumns], &mat[(i + 1) * numColumns], (uint)numColumns * sizeof(float));
             return this;
         }
-        public MatrixX RemoveColumn(int r)                                          // remove a column
+        public unsafe MatrixX RemoveColumn(int r)                                          // remove a column
         {
             Debug.Assert(r < numColumns);
-            numColumns--;
             int i;
-            for (i = 0; i < numRows - 1; i++)
-                Array.ConstrainedCopy(mat, i * (numColumns + 1) + r + 1, mat, i * numColumns + r, numColumns);
-            Array.ConstrainedCopy(mat, i * (numColumns + 1) + r + 1, mat, i * numColumns + r, numColumns - r);
-            return this;
+            numColumns--;
+            fixed (float* mat = this.mat)
+            {
+                for (i = 0; i < numRows - 1; i++)
+                    UnsafeX.MoveBlock(&mat[i * numColumns + r], &mat[i * (numColumns + 1) + r + 1], (uint)numColumns * sizeof(float));
+                UnsafeX.MoveBlock(&mat[i * numColumns + r], &mat[i * (numColumns + 1) + r + 1], (uint)(numColumns - r) * sizeof(float));
+                return this;
+            }
         }
-        public MatrixX RemoveRowColumn(int r)                                       // remove a row and column
+
+        public unsafe MatrixX RemoveRowColumn(int r)                                       // remove a row and column
         {
             Debug.Assert(r < numRows && r < numColumns);
+            int i;
             numRows--;
             numColumns--;
-            int i;
-            if (r > 0)
+            fixed (float* mat = this.mat)
             {
-                for (i = 0; i < r - 1; i++)
-                    Array.ConstrainedCopy(mat, i * (numColumns + 1) + r + 1, mat, i * numColumns + r, numColumns);
-                Array.ConstrainedCopy(mat, i * (numColumns + 1) + r + 1, mat, i * numColumns + r, numColumns - r);
+                if (r > 0)
+                {
+                    for (i = 0; i < r - 1; i++)
+                        UnsafeX.MoveBlock(&mat[i * numColumns + r], &mat[i * (numColumns + 1) + r + 1], (uint)numColumns * sizeof(float));
+                    UnsafeX.MoveBlock(&mat[i * numColumns + r], &mat[i * (numColumns + 1) + r + 1], (uint)(numColumns - r) * sizeof(float));
+                }
+                Unsafe.CopyBlock(&mat[r * numColumns], &mat[(r + 1) * (numColumns + 1)], (uint)r * sizeof(float));
+                for (i = r; i < numRows - 1; i++)
+                    Unsafe.CopyBlock(&mat[i * numColumns + r], &mat[(i + 1) * (numColumns + 1) + r + 1], (uint)numColumns * sizeof(float));
+                Unsafe.CopyBlock(&mat[i * numColumns + r], &mat[(i + 1) * (numColumns + 1) + r + 1], (uint)(numColumns - r) * sizeof(float));
+                return this;
             }
-            Array.Copy(mat, (r + 1) * (numColumns + 1), mat, r * numColumns, r);
-            for (i = r; i < numRows - 1; i++)
-                Array.Copy(mat, (i + 1) * (numColumns + 1) + r + 1, mat, i * numColumns + r, numColumns);
-            Array.Copy(mat, (i + 1) * (numColumns + 1) + r + 1, mat, i * numColumns + r, numColumns - r);
-            return this;
         }
-        public void ClearUpperTriangle()                                     // clear the upper triangle
+
+        public unsafe void ClearUpperTriangle()                                     // clear the upper triangle
         {
             Debug.Assert(numRows == numColumns);
-            for (var i = numRows - 2; i >= 0; i--)
-                Array.Clear(mat, i * numColumns + i + 1, numColumns - 1 - i);
+            fixed (float* mat = this.mat)
+                for (var i = numRows - 2; i >= 0; i--)
+                    Unsafe.InitBlock(mat + i * numColumns + i + 1, 0, (uint)(numColumns - 1 - i) * sizeof(float));
         }
-        public void ClearLowerTriangle()                                     // clear the lower triangle
+
+        public unsafe void ClearLowerTriangle()                                     // clear the lower triangle
         {
             Debug.Assert(numRows == numColumns);
-            for (var i = 1; i < numRows; i++)
-                Array.Clear(mat, i * numColumns, i);
+            fixed (float* mat = this.mat)
+                for (var i = 1; i < numRows; i++)
+                    Unsafe.InitBlock(mat + i * numColumns, 0, (uint)i * sizeof(float));
         }
-        public void SquareSubMatrix(MatrixX m, int size)                  // get square sub-matrix from 0,0 to size,size
+
+        public unsafe void SquareSubMatrix(MatrixX m, int size)                  // get square sub-matrix from 0,0 to size,size
         {
             Debug.Assert(size <= m.numRows && size <= m.numColumns);
             SetSize(size, size);
-            for (var i = 0; i < size; i++)
-                Array.Copy(m.mat, i * m.numColumns, mat, i * numColumns, size);
+            fixed (float* mat = this.mat, m_mat = m.mat)
+            {
+                for (var i = 0; i < size; i++)
+                    Unsafe.CopyBlock(mat + i * numColumns, m_mat + i * m.numColumns, (uint)size * sizeof(float));
+            }
         }
+
         public float MaxDifference(MatrixX m)                          // return maximum element difference between this and m
         {
             Debug.Assert(numRows == m.numRows && numColumns == m.numColumns);
@@ -2836,6 +2877,7 @@ namespace Droid.Core
         }
 
         public bool IsSquare() => numRows == numColumns;
+
         public bool IsZero(float epsilon = MatrixX.EPSILON)
         {
             // returns true if this == Zero
@@ -2845,6 +2887,7 @@ namespace Droid.Core
                         return false;
             return true;
         }
+
         public bool IsIdentity(float epsilon = MatrixX.EPSILON)
         {
             // returns true if this == Identity
@@ -2855,6 +2898,7 @@ namespace Droid.Core
                         return false;
             return true;
         }
+
         public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
         {
             // returns true if all elements are zero except for the elements on the diagonal
@@ -2865,6 +2909,7 @@ namespace Droid.Core
                         return false;
             return true;
         }
+
         public bool IsTriDiagonal(float epsilon = MatrixX.EPSILON)
         {
             // returns true if all elements are zero except for the elements on the diagonal plus or minus one column
@@ -2880,6 +2925,7 @@ namespace Droid.Core
                 }
             return true;
         }
+
         public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
         {
             // this[i][j] == this[j][i]
@@ -2891,6 +2937,7 @@ namespace Droid.Core
                         return false;
             return true;
         }
+
         /// <summary>
         /// returns true if this * this.Transpose() == Identity
         /// </summary>
@@ -2966,6 +3013,7 @@ namespace Droid.Core
             }
             return true;
         }
+
         /// <summary>
         /// returns true if the matrix is a P-matrix
         /// A square matrix is a P-matrix if all its principal minors are positive.
@@ -3005,6 +3053,7 @@ namespace Droid.Core
 
             return m.IsPMatrix(epsilon);
         }
+
         /// <summary>
         /// returns true if the matrix is a Z-matrix
         /// A square matrix M is a Z-matrix if M[i][j] <= 0 for all i != j.
@@ -3067,6 +3116,7 @@ namespace Droid.Core
 
             return true;
         }
+
         /// <summary>
         /// returns true if the matrix is Symmetric Positive Definite (PD)
         /// A square matrix M of order n is said to be PSD if y'My >= 0 for all vectors y of dimension n, y != 0.
@@ -3089,6 +3139,7 @@ namespace Droid.Core
             // being able to obtain Cholesky factors is both a necessary and sufficient condition for positive definiteness
             return m.Cholesky_Factor();
         }
+
         /// <summary>
         /// returns true if the matrix is Positive Semi Definite (PSD)
         /// A square matrix M of order n is said to be PSD if y'My >= 0 for all vectors y of dimension n, y != 0.
@@ -3164,6 +3215,7 @@ namespace Droid.Core
                 trace += mat[i * numRows + i];
             return trace;
         }
+
         public unsafe float Determinant()                                     // returns determinant of matrix
         {
             Debug.Assert(numRows == numColumns);
@@ -3172,14 +3224,15 @@ namespace Droid.Core
             fixed (float* mat = &this.mat[0])
                 return numRows switch
                 {
-                    2 => reinterpret.cast_mat2(mat).Determinant(),
-                    3 => reinterpret.cast_mat3(mat).Determinant(),
-                    4 => reinterpret.cast_mat4(mat).Determinant(),
-                    5 => reinterpret.cast_mat5(mat).Determinant(),
-                    6 => reinterpret.cast_mat6(mat).Determinant(),
+                    2 => new reinterpret.MatrixX2 { x = this }.x2.Determinant(),
+                    3 => new reinterpret.MatrixX2 { x = this }.x3.Determinant(),
+                    4 => new reinterpret.MatrixX2 { x = this }.x4.Determinant(),
+                    5 => new reinterpret.MatrixX2 { x = this }.x5.Determinant(),
+                    6 => new reinterpret.MatrixX2 { x = this }.x6.Determinant(),
                     _ => DeterminantGeneric(),
                 };
         }
+
         public MatrixX Transpose()                                     // returns transpose
         {
             MatrixX m = new();
@@ -3194,14 +3247,16 @@ namespace Droid.Core
             this = new(Transpose());
             return this;
         }
-        public MatrixX Inverse()                                           // returns the inverse ( m * m.Inverse() = identity )
+
+        public unsafe MatrixX Inverse()                                           // returns the inverse ( m * m.Inverse() = identity )
         {
-            MatrixX m = new();
-            m.SetTempSize(numRows, numColumns);
-            Array.Copy(mat, m.mat, numRows * numColumns);
-            var r = m.InverseSelf();
+            MatrixX invMat = new();
+            invMat.SetTempSize(numRows, numColumns);
+            fixed (float* invMat_mat = invMat.mat, mat = this.mat)
+                Unsafe.CopyBlock(invMat_mat, mat, (uint)(numRows * numColumns * sizeof(float)));
+            var r = invMat.InverseSelf();
             Debug.Assert(r);
-            return m;
+            return invMat;
         }
         public unsafe bool InverseSelf()                                            // returns false if determinant is zero
         {
@@ -3216,22 +3271,24 @@ namespace Droid.Core
             fixed (float* mat = this.mat)
                 return numRows switch
                 {
-                    2 => reinterpret.cast_mat2(mat).InverseSelf(),
-                    3 => reinterpret.cast_mat3(mat).InverseSelf(),
-                    4 => reinterpret.cast_mat4(mat).InverseSelf(),
-                    5 => reinterpret.cast_mat5(mat).InverseSelf(),
-                    6 => reinterpret.cast_mat6(mat).InverseSelf(),
+                    2 => new reinterpret.MatrixX2 { x = this }.x2.InverseSelf(),
+                    3 => new reinterpret.MatrixX2 { x = this }.x3.InverseSelf(),
+                    4 => new reinterpret.MatrixX2 { x = this }.x4.InverseSelf(),
+                    5 => new reinterpret.MatrixX2 { x = this }.x5.InverseSelf(),
+                    6 => new reinterpret.MatrixX2 { x = this }.x6.InverseSelf(),
                     _ => InverseSelfGeneric(),
                 };
         }
-        public MatrixX InverseFast()                                       // returns the inverse ( m * m.Inverse() = identity )
+
+        public unsafe MatrixX InverseFast()                                       // returns the inverse ( m * m.Inverse() = identity )
         {
-            var m = new MatrixX();
-            m.SetTempSize(numRows, numColumns);
-            Array.Copy(mat, m.mat, numRows * numColumns);
-            var r = m.InverseFastSelf();
+            MatrixX invMat = new();
+            invMat.SetTempSize(numRows, numColumns);
+            fixed (float* invMat_mat = invMat.mat, mat = this.mat)
+                Unsafe.CopyBlock(invMat_mat, mat, (uint)(numRows * numColumns * sizeof(float)));
+            var r = invMat.InverseFastSelf();
             Debug.Assert(r);
-            return m;
+            return invMat;
         }
         public unsafe bool InverseFastSelf()                                        // returns false if determinant is zero
         {
@@ -3246,11 +3303,11 @@ namespace Droid.Core
             fixed (float* mat = &this.mat[0])
                 return numRows switch
                 {
-                    2 => reinterpret.cast_mat2(mat).InverseFastSelf(),
-                    3 => reinterpret.cast_mat3(mat).InverseFastSelf(),
-                    4 => reinterpret.cast_mat3(mat).InverseFastSelf(),
-                    5 => reinterpret.cast_mat5(mat).InverseFastSelf(),
-                    6 => reinterpret.cast_mat6(mat).InverseFastSelf(),
+                    2 => new reinterpret.MatrixX2 { x = this }.x2.InverseFastSelf(),
+                    3 => new reinterpret.MatrixX2 { x = this }.x3.InverseFastSelf(),
+                    4 => new reinterpret.MatrixX2 { x = this }.x4.InverseFastSelf(),
+                    5 => new reinterpret.MatrixX2 { x = this }.x5.InverseFastSelf(),
+                    6 => new reinterpret.MatrixX2 { x = this }.x6.InverseFastSelf(),
                     _ => InverseSelfGeneric(),
                 };
         }
@@ -3261,40 +3318,45 @@ namespace Droid.Core
         /// <returns>false if determinant is zero</returns>
         public bool LowerTriangularInverse()
         {
-            for (var i = 0; i < numRows; i++)
+            int i, j, k; double d, sum;
+
+            for (i = 0; i < numRows; i++)
             {
-                var d = this[i][i];
+                d = this[i][i];
                 if (d == 0f)
                     return false;
-                this[i][i] = d = 1f / d;
-                for (var j = 0; j < i; j++)
+                this[i][i] = (float)(d = 1f / d);
+                for (j = 0; j < i; j++)
                 {
-                    var sum = 0f;
-                    for (var k = j; k < i; k++)
+                    sum = 0f;
+                    for (k = j; k < i; k++)
                         sum -= this[i][k] * this[k][j];
-                    this[i][j] = sum * d;
+                    this[i][j] = (float)(sum * d);
                 }
             }
             return true;
         }
+
         /// <summary>
         /// in-place inversion of the upper triangular matrix
         /// </summary>
         /// <returns>false if determinant is zero</returns>
         public bool UpperTriangularInverse()
         {
-            for (var i = numRows - 1; i >= 0; i--)
+            int i, j, k; double d, sum;
+
+            for (i = numRows - 1; i >= 0; i--)
             {
-                var d = this[i][i];
+                d = this[i][i];
                 if (d == 0f)
                     return false;
-                this[i][i] = d = 1f / d;
-                for (var j = numRows - 1; j > i; j--)
+                this[i][i] = (float)(d = 1f / d);
+                for (j = numRows - 1; j > i; j--)
                 {
-                    var sum = 0f;
-                    for (var k = j; k > i; k--)
+                    sum = 0f;
+                    for (k = j; k > i; k--)
                         sum -= this[i][k] * this[k][j];
-                    this[i][j] = sum * d;
+                    this[i][j] = (float)(sum * d);
                 }
             }
             return true;
@@ -3324,7 +3386,6 @@ namespace Droid.Core
 #endif
             return dst;
         }
-
         public MatrixX Multiply(MatrixX a)                             // this * a
         {
             Debug.Assert(numColumns == a.numRows);
@@ -3349,7 +3410,6 @@ namespace Droid.Core
 #endif
             return dst;
         }
-
         public unsafe void Multiply(VectorX dst, VectorX vec)             // dst = this * vec
         {
 #if MATX_SIMD
@@ -3482,66 +3542,70 @@ namespace Droid.Core
             }
 #endif
         }
-
         public unsafe void Multiply(MatrixX dst, MatrixX a)                   // dst = this * a
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplyMatX(dst, *this, a);
 #else
             Debug.Assert(numColumns == a.numRows);
-            fixed (float* dstp = dst.mat, mat = this.mat, amat = a.mat)
+            int i, j, k, l, n; double sum;
+
+            fixed (float* dstp = dst.mat, mat = this.mat, a_mat = a.mat)
             {
                 var dstPtr = dstp;
                 var m1Ptr = mat;
-                var m2Ptr = amat;
-                var k = numRows;
-                var l = a.NumColumns;
+                var m2Ptr = a_mat;
+                k = numRows;
+                l = a.NumColumns;
 
-                for (var i = 0; i < k; i++)
+                for (i = 0; i < k; i++)
                 {
-                    for (var j = 0; j < l; j++)
+                    for (j = 0; j < l; j++)
                     {
-                        m2Ptr = amat + j;
-                        var sum = m1Ptr[0] * m2Ptr[0];
-                        for (var n = 1; n < numColumns; n++)
+                        m2Ptr = a_mat + j;
+                        sum = m1Ptr[0] * m2Ptr[0];
+                        for (n = 1; n < numColumns; n++)
                         {
                             m2Ptr += l;
                             sum += m1Ptr[n] * m2Ptr[0];
                         }
-                        *dstPtr++ = sum;
+                        *dstPtr++ = (float)sum;
                     }
                     m1Ptr += numColumns;
                 }
             }
 #endif
         }
+
         public unsafe void TransposeMultiply(MatrixX dst, MatrixX a)      // dst = this.Transpose() * a
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_TransposeMultiplyMatX(dst, *this, a);
 #else
             Debug.Assert(numRows == a.numRows);
-            fixed (float* dstp = dst.mat, mat = this.mat, amat = a.mat)
+            int i, j, k, l, n; double sum;
+
+            fixed (float* dstp = dst.mat, mat = this.mat, a_mat = a.mat)
             {
                 var dstPtr = dstp;
                 var m1Ptr = mat;
-                var k = numColumns;
-                var l = a.numColumns;
+                k = numColumns;
+                l = a.numColumns;
 
-                for (var i = 0; i < k; i++)
+                for (i = 0; i < k; i++)
                 {
-                    for (var j = 0; j < l; j++)
+                    for (j = 0; j < l; j++)
                     {
                         m1Ptr = mat + i;
-                        var m2Ptr = amat + j;
-                        var sum = m1Ptr[0] * m2Ptr[0];
-                        for (var n = 1; n < numRows; n++)
+                        var m2Ptr = a_mat + j;
+                        sum = m1Ptr[0] * m2Ptr[0];
+                        for (n = 1; n < numRows; n++)
                         {
                             m1Ptr += numColumns;
                             m2Ptr += a.numColumns;
                             sum += m1Ptr[0] * m2Ptr[0];
                         }
-                        *dstPtr++ = sum;
+                        *dstPtr++ = (float)sum;
                     }
                 }
             }
@@ -3564,6 +3628,7 @@ namespace Droid.Core
             v.SetData(numColumns, mat, row * numColumns);
             return v;
         }
+
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
             fixed (float* array = mat)
@@ -3587,6 +3652,7 @@ namespace Droid.Core
 
             return det;
         }
+
         bool InverseSelfGeneric()
         {
             var index = new int[numRows];
