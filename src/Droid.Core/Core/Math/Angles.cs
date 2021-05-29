@@ -35,7 +35,7 @@ namespace Droid.Core
         }
         public Angles Zero()
         {
-            pitch = yaw = roll = 0.0f;
+            pitch = yaw = roll = 0f;
             return this;
         }
 
@@ -74,7 +74,7 @@ namespace Droid.Core
 
         public static Angles operator /(Angles _, float a)
         {
-            var inva = 1.0f / a;
+            var inva = 1f / a;
             return new(_.pitch * inva, _.yaw * inva, _.roll * inva);
         }
 
@@ -133,11 +133,11 @@ namespace Droid.Core
         public Angles Normalize360()
         {
             for (var i = 0; i < 3; i++)
-                if ((this[i] >= 360.0f) || (this[i] < 0.0f))
+                if ((this[i] >= 360f) || (this[i] < 0f))
                 {
-                    this[i] -= (float)Math.Floor(this[i] / 360.0f) * 360.0f;
-                    if (this[i] >= 360.0f) this[i] -= 360.0f;
-                    if (this[i] < 0.0f) this[i] += 360.0f;
+                    this[i] -= (float)Math.Floor(this[i] / 360f) * 360f;
+                    if (this[i] >= 360f) this[i] -= 360f;
+                    if (this[i] < 0f) this[i] += 360f;
                 }
             return this;
         }
@@ -149,9 +149,9 @@ namespace Droid.Core
         public Angles Normalize180()
         {
             Normalize360();
-            if (pitch > 180.0f) pitch -= 360.0f;
-            if (yaw > 180.0f) yaw -= 360.0f;
-            if (roll > 180.0f) roll -= 360.0f;
+            if (pitch > 180f) pitch -= 360f;
+            if (yaw > 180f) yaw -= 360f;
+            if (roll > 180f) roll -= 360f;
             return this;
         }
 
@@ -199,12 +199,12 @@ namespace Droid.Core
         }
         public Rotation ToRotation()
         {
-            if (pitch == 0.0f)
+            if (pitch == 0f)
             {
-                if (yaw == 0.0f) return new(Vector3.origin, new Vector3(-1.0f, 0.0f, 0.0f), roll);
-                if (roll == 0.0f) return new(Vector3.origin, new Vector3(0.0f, 0.0f, -1.0f), yaw);
+                if (yaw == 0f) return new(Vector3.origin, new Vector3(-1f, 0f, 0f), roll);
+                if (roll == 0f) return new(Vector3.origin, new Vector3(0f, 0f, -1f), yaw);
             }
-            else if (yaw == 0.0f && roll == 0.0f) return new(Vector3.origin, new Vector3(0.0f, -1.0f, 0.0f), pitch);
+            else if (yaw == 0f && roll == 0f) return new(Vector3.origin, new Vector3(0f, -1f, 0f), pitch);
 
             MathX.SinCos(MathX.DEG2RAD(yaw) * 0.5f, out var sz, out var cz);
             MathX.SinCos(MathX.DEG2RAD(pitch) * 0.5f, out var sy, out var cy);
@@ -223,13 +223,13 @@ namespace Droid.Core
             };
             var w = cxcy * cz + sxsy * sz;
             var angle = MathX.ACos(w);
-            if (angle == 0.0f)
-                vec.Set(0.0f, 0.0f, 1.0f);
+            if (angle == 0f)
+                vec.Set(0f, 0f, 1f);
             else
             {
                 vec.Normalize();
                 vec.FixDegenerateNormal();
-                angle *= 2.0f * MathX.M_RAD2DEG;
+                angle *= 2f * MathX.M_RAD2DEG;
             }
             return new(Vector3.origin, vec, angle);
         }
@@ -261,6 +261,6 @@ namespace Droid.Core
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
 
-        public static Angles zero = new(0.0f, 0.0f, 0.0f);
+        public static Angles zero = new(0f, 0f, 0f);
     }
 }

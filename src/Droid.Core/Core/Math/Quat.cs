@@ -61,12 +61,12 @@ namespace Droid.Core
             var xxzz = _.x * _.x - _.z * _.z;
             var wwyy = _.w * _.w - _.y * _.y;
 
-            var xw2 = _.x * _.w * 2.0f;
-            var xy2 = _.x * _.y * 2.0f;
-            var xz2 = _.x * _.z * 2.0f;
-            var yw2 = _.y * _.w * 2.0f;
-            var yz2 = _.y * _.z * 2.0f;
-            var zw2 = _.z * _.w * 2.0f;
+            var xw2 = _.x * _.w * 2f;
+            var xy2 = _.x * _.y * 2f;
+            var xz2 = _.x * _.z * 2f;
+            var yw2 = _.y * _.w * 2f;
+            var yz2 = _.y * _.z * 2f;
+            var zw2 = _.z * _.w * 2f;
 
             return new(
                 (xxzz + wwyy) * a.x + (xy2 + zw2) * a.y + (xz2 - yw2) * a.z,
@@ -127,7 +127,7 @@ namespace Droid.Core
 
         public float CalcW()
             // take the absolute value because floating point rounding may cause the dot of x,y,z to be larger than 1
-            => (float)Math.Sqrt((float)Math.Abs(1.0f - (x * x + y * y + z * z)));
+            => (float)Math.Sqrt((float)Math.Abs(1f - (x * x + y * y + z * z)));
         public static int Dimension
             => 4;
 
@@ -137,13 +137,13 @@ namespace Droid.Core
         {
             var vec = new Vector3 { x = x, y = y, z = z };
             var angle = MathX.ACos(w);
-            if (angle == 0.0f)
-                vec.Set(0.0f, 0.0f, 1.0f);
+            if (angle == 0f)
+                vec.Set(0f, 0f, 1f);
             else
             {
                 vec.Normalize();
                 vec.FixDegenerateNormal();
-                angle *= 2.0f * MathX.M_RAD2DEG;
+                angle *= 2f * MathX.M_RAD2DEG;
             }
             return new(Vector3.origin, vec, angle);
         }
@@ -155,24 +155,24 @@ namespace Droid.Core
             float wx = w * x2, wy = w * y2, wz = w * z2;
 
             var mat = new Matrix3x3();
-            mat.mat[0].x = 1.0f - (yy + zz);
+            mat.mat[0].x = 1f - (yy + zz);
             mat.mat[0].y = xy - wz;
             mat.mat[0].z = xz + wy;
 
             mat.mat[1].x = xy + wz;
-            mat.mat[1].y = 1.0f - (xx + zz);
+            mat.mat[1].y = 1f - (xx + zz);
             mat.mat[1].z = yz - wx;
 
             mat.mat[2].x = xz - wy;
             mat.mat[2].y = yz + wx;
-            mat.mat[2].z = 1.0f - (xx + yy);
+            mat.mat[2].z = 1f - (xx + yy);
 
             return mat;
         }
         public Matrix4x4 ToMat4()
             => ToMat3().ToMat4();
         public CQuat ToCQuat()
-            => w < 0.0f ? new CQuat(-x, -y, -z) : new CQuat(x, y, z);
+            => w < 0f ? new CQuat(-x, -y, -z) : new CQuat(x, y, z);
         public Vector3 ToAngularVelocity()
         {
             var vec = new Vector3
@@ -203,29 +203,29 @@ namespace Droid.Core
         {
             Quat temp;
             float omega, cosom, sinom, scale0, scale1;
-            if (t <= 0.0f) { this = from; return this; }
-            if (t >= 1.0f) { this = to; return this; }
+            if (t <= 0f) { this = from; return this; }
+            if (t >= 1f) { this = to; return this; }
             if (from == to) { this = to; return this; }
             cosom = from.x * to.x + from.y * to.y + from.z * to.z + from.w * to.w;
-            if (cosom < 0.0f) { temp = -to; cosom = -cosom; }
+            if (cosom < 0f) { temp = -to; cosom = -cosom; }
             else temp = to;
 
-            if ((1.0f - cosom) > 1e-6f)
+            if ((1f - cosom) > 1e-6f)
             {
 #if false
                 omega = acos(cosom);
-                sinom = 1.0f / sin(omega);
-                scale0 = sin((1.0f - t) * omega) * sinom;
+                sinom = 1f / sin(omega);
+                scale0 = sin((1f - t) * omega) * sinom;
                 scale1 = sin(t * omega) * sinom;
 #else
-                scale0 = 1.0f - cosom * cosom;
+                scale0 = 1f - cosom * cosom;
                 sinom = MathX.InvSqrt(scale0);
                 omega = MathX.ATan16(scale0 * sinom, cosom);
-                scale0 = MathX.Sin16((1.0f - t) * omega) * sinom;
+                scale0 = MathX.Sin16((1f - t) * omega) * sinom;
                 scale1 = MathX.Sin16(t * omega) * sinom;
 #endif
             }
-            else { scale0 = 1.0f - t; scale1 = t; }
+            else { scale0 = 1f - t; scale1 = t; }
 
             this = (scale0 * from) + (scale1 * temp);
             return this;
@@ -297,7 +297,7 @@ namespace Droid.Core
             => ToQuat().ToMat4();
         public Quat ToQuat()
             // take the absolute value because floating point rounding may cause the dot of x,y,z to be larger than 1
-            => new(x, y, z, (float)Math.Sqrt((float)Math.Abs(1.0f - (x * x + y * y + z * z))));
+            => new(x, y, z, (float)Math.Sqrt((float)Math.Abs(1f - (x * x + y * y + z * z))));
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
             fixed (float* p = &x)

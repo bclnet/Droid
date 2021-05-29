@@ -12,11 +12,11 @@ namespace Droid.Core
         public static int SEC2MS(float t) => FtoiFast(t * M_SEC2MS);
         public static float MS2SEC(int t) => t * M_MS2SEC;
 
-        public static int ANGLE2SHORT(float x) => FtoiFast(x * 65536.0f / 360.0f) & 65535;
-        public static float SHORT2ANGLE(int x) => x * (360.0f / 65536.0f);
+        public static int ANGLE2SHORT(float x) => FtoiFast(x * 65536f / 360f) & 65535;
+        public static float SHORT2ANGLE(int x) => x * (360f / 65536f);
 
-        public static int ANGLE2BYTE(float x) => FtoiFast(x * 256.0f / 360.0f) & 255;
-        public static float BYTE2ANGLE(int x) => x * (360.0f / 256.0f);
+        public static int ANGLE2BYTE(float x) => FtoiFast(x * 256f / 360f) & 255;
+        public static float BYTE2ANGLE(int x) => x * (360f / 256f);
 
         public static unsafe bool FLOATSIGNBITSET(float f) => ((*(uint*)&f) >> 31) != 0;
         public static unsafe bool FLOATSIGNBITNOTSET(float f) => ((~*(uint*)&f) >> 31) != 0;
@@ -141,7 +141,7 @@ namespace Droid.Core
         {
             float s;
 
-            if ((a < 0.0f) || (a >= TWO_PI))
+            if ((a < 0f) || (a >= TWO_PI))
                 a -= (float)Math.Floor(a / TWO_PI) * TWO_PI;
 #if true
             if (a < PI)
@@ -156,10 +156,10 @@ namespace Droid.Core
 #else
             a = PI - a;
             if (Math.Fabs(a) >= HALF_PI)
-                a = ((a < 0.0f) ? -PI : PI) - a;
+                a = ((a < 0f) ? -PI : PI) - a;
 #endif
             s = a * a;
-            return a * (((((-2.39e-08f * s + 2.7526e-06f) * s - 1.98409e-04f) * s + 8.3333315e-03f) * s - 1.666666664e-01f) * s + 1.0f);
+            return a * (((((-2.39e-08f * s + 2.7526e-06f) * s - 1.98409e-04f) * s + 8.3333315e-03f) * s - 1.666666664e-01f) * s + 1f);
         }
         public static double Sin64(float a)          // sine with 64 bits precision
              => Math.Sin(a);
@@ -170,26 +170,26 @@ namespace Droid.Core
         {
             float s, d;
 
-            if ((a < 0.0f) || (a >= TWO_PI))
+            if ((a < 0f) || (a >= TWO_PI))
                 a -= (float)Math.Floor(a / TWO_PI) * TWO_PI;
 #if true
             if (a < PI)
             {
-                if (a > HALF_PI) { a = PI - a; d = -1.0f; }
-                else d = 1.0f;
+                if (a > HALF_PI) { a = PI - a; d = -1f; }
+                else d = 1f;
             }
             else
             {
-                if (a > PI + HALF_PI) { a -= TWO_PI; d = 1.0f; }
-                else { a = PI - a; d = -1.0f; }
+                if (a > PI + HALF_PI) { a -= TWO_PI; d = 1f; }
+                else { a = PI - a; d = -1f; }
             }
 #else
             a = PI - a;
-            if (fabs(a) >= HALF_PI) { a = ((a < 0.0f) ? -PI : PI) - a; d = 1.0f; }
-            else d = -1.0f;
+            if (fabs(a) >= HALF_PI) { a = ((a < 0f) ? -PI : PI) - a; d = 1f; }
+            else d = -1f;
 #endif
             s = a * a;
-            return d * (((((-2.605e-07f * s + 2.47609e-05f) * s - 1.3888397e-03f) * s + 4.16666418e-02f) * s - 4.999999963e-01f) * s + 1.0f);
+            return d * (((((-2.605e-07f * s + 2.47609e-05f) * s - 1.3888397e-03f) * s + 4.16666418e-02f) * s - 4.999999963e-01f) * s + 1f);
         }
         public static double Cos64(float a)           // cosine with 64 bits precision
              => Math.Cos(a);
@@ -214,27 +214,27 @@ namespace Droid.Core
         {
             float t, d;
 
-            if ((a < 0.0f) || (a >= TWO_PI))
+            if ((a < 0f) || (a >= TWO_PI))
                 a -= (float)Math.Floor(a / TWO_PI) * TWO_PI;
 #if true
             if (a < PI)
             {
-                if (a > HALF_PI) { a = PI - a; d = -1.0f; }
-                else d = 1.0f;
+                if (a > HALF_PI) { a = PI - a; d = -1f; }
+                else d = 1f;
             }
             else
             {
-                if (a > PI + HALF_PI) { a -= TWO_PI; d = 1.0f; }
-                else { a = PI - a; d = -1.0f; }
+                if (a > PI + HALF_PI) { a -= TWO_PI; d = 1f; }
+                else { a = PI - a; d = -1f; }
             }
 #else
             a = PI - a;
-            if (fabs(a) >= HALF_PI) { a = ((a < 0.0f) ? -PI : PI) - a; d = 1.0f; }
-            else d = -1.0f;
+            if (fabs(a) >= HALF_PI) { a = ((a < 0f) ? -PI : PI) - a; d = 1f; }
+            else d = -1f;
 #endif
             t = a * a;
-            s = a * (((((-2.39e-08f * t + 2.7526e-06f) * t - 1.98409e-04f) * t + 8.3333315e-03f) * t - 1.666666664e-01f) * t + 1.0f);
-            c = d * (((((-2.605e-07f * t + 2.47609e-05f) * t - 1.3888397e-03f) * t + 4.16666418e-02f) * t - 4.999999963e-01f) * t + 1.0f);
+            s = a * (((((-2.39e-08f * t + 2.7526e-06f) * t - 1.98409e-04f) * t + 8.3333315e-03f) * t - 1.666666664e-01f) * t + 1f);
+            c = d * (((((-2.605e-07f * t + 2.47609e-05f) * t - 1.3888397e-03f) * t + 4.16666418e-02f) * t - 4.999999963e-01f) * t + 1f);
         }
         public static void SinCos64(float a, out double s, out double c) // sine and cosine with 64 bits precision
         {
@@ -260,7 +260,7 @@ namespace Droid.Core
             float s;
             bool reciprocal;
 
-            if ((a < 0.0f) || (a >= PI))
+            if ((a < 0f) || (a >= PI))
                 a -= (float)Math.Floor(a / PI) * PI;
 #if true
             if (a < HALF_PI)
@@ -275,12 +275,12 @@ namespace Droid.Core
             }
 #else
             a = HALF_PI - a;
-            if (fabs(a) >= ONEFOURTH_PI) { a = ((a < 0.0f) ? -HALF_PI : HALF_PI) - a; reciprocal = false; }
+            if (fabs(a) >= ONEFOURTH_PI) { a = ((a < 0f) ? -HALF_PI : HALF_PI) - a; reciprocal = false; }
             else reciprocal = true;
 #endif
             s = a * a;
-            s = a * ((((((9.5168091e-03f * s + 2.900525e-03f) * s + 2.45650893e-02f) * s + 5.33740603e-02f) * s + 1.333923995e-01f) * s + 3.333314036e-01f) * s + 1.0f);
-            if (reciprocal) return 1.0f / s;
+            s = a * ((((((9.5168091e-03f * s + 2.900525e-03f) * s + 2.45650893e-02f) * s + 5.33740603e-02f) * s + 1.333923995e-01f) * s + 3.333314036e-01f) * s + 1f);
+            if (reciprocal) return 1f / s;
             else return s;
         }
         public static double Tan64(float a)            // tangent with 64 bits precision
@@ -288,57 +288,57 @@ namespace Droid.Core
 
         public static float ASin(float a)         // arc sine with 32 bits precision, input is clamped to [-1, 1] to avoid a silent NaN
         {
-            if (a <= -1.0f) return -HALF_PI;
-            if (a >= 1.0f) return HALF_PI;
+            if (a <= -1f) return -HALF_PI;
+            if (a >= 1f) return HALF_PI;
             return (float)Math.Asin(a);
         }
         public static float ASin16(float a)           // arc sine with 16 bits precision, maximum absolute error is 6.7626e-05
         {
             if (FLOATSIGNBITSET(a))
             {
-                if (a <= -1.0f) return -HALF_PI;
+                if (a <= -1f) return -HALF_PI;
                 a = Math.Abs(a);
-                return (((-0.0187293f * a + 0.0742610f) * a - 0.2121144f) * a + 1.5707288f) * (float)Math.Sqrt(1.0f - a) - HALF_PI;
+                return (((-0.0187293f * a + 0.0742610f) * a - 0.2121144f) * a + 1.5707288f) * (float)Math.Sqrt(1f - a) - HALF_PI;
             }
             else
             {
-                if (a >= 1.0f) return HALF_PI;
-                return HALF_PI - (((-0.0187293f * a + 0.0742610f) * a - 0.2121144f) * a + 1.5707288f) * (float)Math.Sqrt(1.0f - a);
+                if (a >= 1f) return HALF_PI;
+                return HALF_PI - (((-0.0187293f * a + 0.0742610f) * a - 0.2121144f) * a + 1.5707288f) * (float)Math.Sqrt(1f - a);
             }
         }
         public static double ASin64(float a)          // arc sine with 64 bits precision
         {
-            if (a <= -1.0f) return -HALF_PI;
-            if (a >= 1.0f) return HALF_PI;
+            if (a <= -1f) return -HALF_PI;
+            if (a >= 1f) return HALF_PI;
             return Math.Asin(a);
         }
 
         public static float ACos(float a)         // arc cosine with 32 bits precision, input is clamped to [-1, 1] to avoid a silent NaN
         {
-            if (a <= -1.0f) return PI;
-            if (a >= 1.0f) return 0.0f;
+            if (a <= -1f) return PI;
+            if (a >= 1f) return 0f;
             return (float)Math.Acos(a);
         }
         public static float ACos16(float a)           // arc cosine with 16 bits precision, maximum absolute error is 6.7626e-05
         {
             if (FLOATSIGNBITSET(a))
             {
-                if (a <= -1.0f) return PI;
+                if (a <= -1f) return PI;
                 a = Math.Abs(a);
-                return PI - (((-0.0187293f * a + 0.0742610f) * a - 0.2121144f) * a + 1.5707288f) * (float)Math.Sqrt(1.0f - a);
+                return PI - (((-0.0187293f * a + 0.0742610f) * a - 0.2121144f) * a + 1.5707288f) * (float)Math.Sqrt(1f - a);
             }
             else
             {
-                if (a >= 1.0f) return 0.0f;
-                return (((-0.0187293f * a + 0.0742610f) * a - 0.2121144f) * a + 1.5707288f) * (float)Math.Sqrt(1.0f - a);
+                if (a >= 1f) return 0f;
+                return (((-0.0187293f * a + 0.0742610f) * a - 0.2121144f) * a + 1.5707288f) * (float)Math.Sqrt(1f - a);
             }
         }
         public static double ACos64(float a)          // arc cosine with 64 bits precision
         {
-            if (a <= -1.0f)
+            if (a <= -1f)
                 return PI;
-            if (a >= 1.0f)
-                return 0.0f;
+            if (a >= 1f)
+                return 0f;
             return Math.Acos(a);
         }
 
@@ -348,12 +348,12 @@ namespace Droid.Core
         {
             float s;
 
-            if (Math.Abs(a) > 1.0f)
+            if (Math.Abs(a) > 1f)
             {
-                a = 1.0f / a;
+                a = 1f / a;
                 s = a * a;
                 s = -(((((((((0.0028662257f * s - 0.0161657367f) * s + 0.0429096138f) * s - 0.0752896400f)
-                        * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s) + 1.0f) * a;
+                        * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s) + 1f) * a;
                 if (FLOATSIGNBITSET(a)) return s - HALF_PI;
                 else return s + HALF_PI;
             }
@@ -361,7 +361,7 @@ namespace Droid.Core
             {
                 s = a * a;
                 return (((((((((0.0028662257f * s - 0.0161657367f) * s + 0.0429096138f) * s - 0.0752896400f)
-                    * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s) + 1.0f) * a;
+                    * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s) + 1f) * a;
             }
         }
         public static double ATan64(float a)           // arc tangent with 64 bits precision
@@ -378,7 +378,7 @@ namespace Droid.Core
                 a = x / y;
                 s = a * a;
                 s = -(((((((((0.0028662257f * s - 0.0161657367f) * s + 0.0429096138f) * s - 0.0752896400f)
-                        * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s) + 1.0f) * a;
+                        * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s) + 1f) * a;
                 if (FLOATSIGNBITSET(a)) return s - HALF_PI;
                 else return s + HALF_PI;
             }
@@ -387,7 +387,7 @@ namespace Droid.Core
                 a = y / x;
                 s = a * a;
                 return (((((((((0.0028662257f * s - 0.0161657367f) * s + 0.0429096138f) * s - 0.0752896400f)
-                    * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s) + 1.0f) * a;
+                    * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s) + 1f) * a;
             }
         }
         public static double ATan64(float y, float x) // arc tangent with 64 bits precision
@@ -416,7 +416,7 @@ namespace Droid.Core
             i = ((m >> (IEEE_FLT_MANTISSA_BITS - e)) & ~(e >> 31)) ^ s;
 #else
             i = (int)x;
-            if (x < 0.0f)
+            if (x < 0f)
                 i--;
 #endif
             exponent = (i + IEEE_FLT_EXPONENT_BIAS) << IEEE_FLT_MANTISSA_BITS;
@@ -448,7 +448,7 @@ namespace Droid.Core
             i -= (exponent + 1) << IEEE_FLT_MANTISSA_BITS;  // get value in the range [.5, 1>
             y = reinterpret.cast_float(i);
             y *= 1.4142135623730950488f;                        // multiply with sqrt( 2 )
-            y = (y - 1.0f) / (y + 1.0f);
+            y = (y - 1f) / (y + 1f);
             y2 = y * y;
             y *= (2.000000000046727f + y2 * (0.666666635059382f + y2 * (0.4000059794795f + y2 * (0.28525381498f + y2 * 0.2376245609f))));
             y += 0.693147180559945f * (exponent + 0.5f);
@@ -471,7 +471,7 @@ namespace Droid.Core
             => ILog2(f) + 1;
         public static int BitsForInteger(int i)   // minumum number of bits required to represent i
             => ILog2((float)i) + 1;
-        public static int MaskForFloatSign(float f)// returns 0x00000000 if x >= 0.0f and returns 0xFFFFFFFF if x <= -0.0f
+        public static int MaskForFloatSign(float f)// returns 0x00000000 if x >= 0f and returns 0xFFFFFFFF if x <= -0f
             => (reinterpret.cast_int(f) >> 31);
         public static int MaskForIntegerSign(int i)// returns 0x00000000 if x >= 0 and returns 0xFFFFFFFF if x < 0
             => (i >> 31);
@@ -515,6 +515,12 @@ namespace Droid.Core
         public static float Fabs(float f)         // returns the absolute value of the floating point value
         {
             int tmp = reinterpret.cast_int(f);
+            tmp &= 0x7FFFFFFF;
+            return reinterpret.cast_float(tmp);
+        }
+        public static float Fabs(double f)         // returns the absolute value of the floating point value
+        {
+            int tmp = reinterpret.cast_int((float)f);
             tmp &= 0x7FFFFFFF;
             return reinterpret.cast_float(tmp);
         }
@@ -614,15 +620,15 @@ namespace Droid.Core
 
         public static float AngleNormalize360(float angle)
         {
-            if ((angle >= 360.0f) || (angle < 0.0f))
-                angle -= (float)Math.Floor(angle / 360.0f) * 360.0f;
+            if ((angle >= 360f) || (angle < 0f))
+                angle -= (float)Math.Floor(angle / 360f) * 360f;
             return angle;
         }
         public static float AngleNormalize180(float angle)
         {
             angle = AngleNormalize360(angle);
-            if (angle > 180.0f)
-                angle -= 360.0f;
+            if (angle > 180f)
+                angle -= 360f;
             return angle;
         }
         public static float AngleDelta(float angle1, float angle2)
@@ -641,7 +647,7 @@ namespace Droid.Core
             float max = BitsToFloat(maxBits, exponentBits, mantissaBits);
             float min = BitsToFloat(minBits, exponentBits, mantissaBits);
 
-            if (f >= 0.0f)
+            if (f >= 0f)
             {
                 if (f >= max) return maxBits;
                 else if (f <= min) return minBits;
@@ -690,7 +696,7 @@ namespace Droid.Core
         }
 
         public const float PI = 3.14159265358979323846f;                          // pi
-        public const float TWO_PI = 2.0f * PI;                      // pi * 2
+        public const float TWO_PI = 2f * PI;                      // pi * 2
         public const float HALF_PI = 0.5f * PI;                 // pi / 2
         public const float ONEFOURTH_PI = 0.25f * PI;                // pi / 4
         public const float E = 2.71828182845904523536f;                           // e
@@ -698,9 +704,9 @@ namespace Droid.Core
         public const float SQRT_THREE = 1.73205080756887729352f;                  // sqrt( 3 )
         public const float SQRT_1OVER2 = 0.70710678118654752440f;             // sqrt( 1 / 2 )
         public const float SQRT_1OVER3 = 0.57735026918962576450f;             // sqrt( 1 / 3 )
-        public const float M_DEG2RAD = PI / 180.0f;                   // degrees to radians multiplier
-        public const float M_RAD2DEG = 180.0f / PI;                   // radians to degrees multiplier
-        public const float M_SEC2MS = 1000.0f;                    // seconds to milliseconds multiplier
+        public const float M_DEG2RAD = PI / 180f;                   // degrees to radians multiplier
+        public const float M_RAD2DEG = 180f / PI;                   // radians to degrees multiplier
+        public const float M_SEC2MS = 1000f;                    // seconds to milliseconds multiplier
         public const float M_MS2SEC = 0.001f;                   // milliseconds to seconds multiplier
         public const float INFINITY = 1e30f;                    // huge number which should be larger than any valid number used
         public const float FLT_EPSILON = 1.192092896e-07f;             // smallest positive number such that 1.0+FLT_EPSILON != 1.0

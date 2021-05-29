@@ -17,7 +17,7 @@ namespace Droid.Core
             this.i = i;
         }
         public void Zero()
-            => r = i = 0.0f;
+            => r = i = 0f;
 
         public unsafe float this[int index]
         {
@@ -44,13 +44,13 @@ namespace Droid.Core
             if (MathX.Fabs(a.r) >= MathX.Fabs(a.i))
             {
                 s = a.i / a.r;
-                t = 1.0f / (a.r + s * a.i);
+                t = 1f / (a.r + s * a.i);
                 return new((_.r + s * _.i) * t, (_.i - s * _.r) * t);
             }
             else
             {
                 s = a.r / a.i;
-                t = 1.0f / (s * a.r + a.i);
+                t = 1f / (s * a.r + a.i);
                 return new((_.r * s + _.i) * t, (_.i * s - _.r) * t);
             }
         }
@@ -63,7 +63,7 @@ namespace Droid.Core
             => new(_.r * a, _.i * a);
         public static Complex operator /(Complex _, float a)
         {
-            var s = 1.0f / a;
+            var s = 1f / a;
             return new(_.r * s, _.i * s);
         }
         public static Complex operator +(Complex _, float a)
@@ -144,46 +144,46 @@ namespace Droid.Core
             if (MathX.Fabs(r) >= MathX.Fabs(i))
             {
                 s = i / r;
-                t = 1.0f / (r + s * i);
+                t = 1f / (r + s * i);
                 return new(t, -s * t);
             }
             else
             {
                 s = r / i;
-                t = 1.0f / (s * r + i);
+                t = 1f / (s * r + i);
                 return new(s * t, -t);
             }
         }
         public Complex Sqrt()
         {
-            if (r == 0.0f && i == 0.0f)
-                return new(0.0f, 0.0f);
+            if (r == 0f && i == 0f)
+                return new(0f, 0f);
             float w;
             var x = MathX.Fabs(r);
             var y = MathX.Fabs(i);
             if (x >= y)
             {
                 w = y / x;
-                w = MathX.Sqrt(x) * MathX.Sqrt(0.5f * (1.0f + MathX.Sqrt(1.0f + w * w)));
+                w = MathX.Sqrt(x) * MathX.Sqrt(0.5f * (1f + MathX.Sqrt(1f + w * w)));
             }
             else
             {
                 w = x / y;
-                w = MathX.Sqrt(y) * MathX.Sqrt(0.5f * (w + MathX.Sqrt(1.0f + w * w)));
+                w = MathX.Sqrt(y) * MathX.Sqrt(0.5f * (w + MathX.Sqrt(1f + w * w)));
             }
-            if (w == 0.0f) return new(0.0f, 0.0f);
-            if (r >= 0.0f) return new(w, 0.5f * i / w);
-            else return new(0.5f * y / w, (i >= 0.0f) ? w : -w);
+            if (w == 0f) return new(0f, 0f);
+            if (r >= 0f) return new(w, 0.5f * i / w);
+            else return new(0.5f * y / w, (i >= 0f) ? w : -w);
         }
         public float Abs()
         {
             float t;
             var x = MathX.Fabs(r);
             var y = MathX.Fabs(i);
-            if (x == 0.0f) return y;
-            else if (y == 0.0f) return x;
-            else if (x > y) { t = y / x; return x * MathX.Sqrt(1.0f + t * t); }
-            else { t = x / y; return y * MathX.Sqrt(1.0f + t * t); }
+            if (x == 0f) return y;
+            else if (y == 0f) return x;
+            else if (x > y) { t = y / x; return x * MathX.Sqrt(1f + t * t); }
+            else { t = x / y; return y * MathX.Sqrt(1f + t * t); }
         }
 
         public static int Dimension
@@ -197,7 +197,7 @@ namespace Droid.Core
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
 
-        public static Complex origin = new(0.0f, 0.0f);
+        public static Complex origin = new(0f, 0f);
         //#define zero origin
     }
 }

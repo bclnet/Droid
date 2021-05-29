@@ -96,7 +96,7 @@ namespace Droid.Core
         /// </returns>
         public static Rotation operator /(Rotation _, float s)
         {
-            Debug.Assert(s != 0.0f);
+            Debug.Assert(s != 0f);
             return new Rotation(_.origin, _.vec, _.angle / s);
         }
         /// <summary>
@@ -157,9 +157,9 @@ namespace Droid.Core
             float yy = y * y2, yz = y * z2, zz = z * z2;
             float wx = c * x2, wy = c * y2, wz = c * z2;
 
-            axis.mat[0].x = 1.0f - (yy + zz); axis.mat[0].y = xy - wz; axis.mat[0].z = xz + wy;
-            axis.mat[1].x = xy + wz; axis.mat[1].y = 1.0f - (xx + zz); axis.mat[1].z = yz - wx;
-            axis.mat[2].x = xz - wy; axis.mat[2].y = yz + wx; axis.mat[2].z = 1.0f - (xx + yy);
+            axis.mat[0].x = 1f - (yy + zz); axis.mat[0].y = xy - wz; axis.mat[0].z = xz + wy;
+            axis.mat[1].x = xy + wz; axis.mat[1].y = 1f - (xx + zz); axis.mat[1].z = yz - wx;
+            axis.mat[2].x = xz - wy; axis.mat[2].y = yz + wx; axis.mat[2].z = 1f - (xx + yy);
 
             axisValid = true;
 
@@ -179,15 +179,15 @@ namespace Droid.Core
 
         public void Normalize180()
         {
-            angle -= (float)Math.Floor(angle / 360.0f) * 360.0f;
-            if (angle > 180.0f) angle -= 360.0f;
-            else if (angle < -180.0f) angle += 360.0f;
+            angle -= (float)Math.Floor(angle / 360f) * 360f;
+            if (angle > 180f) angle -= 360f;
+            else if (angle < -180f) angle += 360f;
         }
         public void Normalize360()
         {
-            angle -= (float)Math.Floor(angle / 360.0f) * 360.0f;
-            if (angle > 360.0f) angle -= 360.0f;
-            else if (angle < 0.0f) angle += 360.0f;
+            angle -= (float)Math.Floor(angle / 360f) * 360f;
+            if (angle > 360f) angle -= 360f;
+            else if (angle < 0f) angle += 360f;
         }
 
         internal Vector3 origin;         // origin of rotation

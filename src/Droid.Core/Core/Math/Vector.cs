@@ -7,11 +7,6 @@ namespace Droid.Core
 {
     public unsafe delegate T FloatPtr<T>(float* ptr);
 
-    public static partial class VectorX_
-    {
-        public const float EPSILON = 0.001f;
-    }
-
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector2
     {
@@ -30,7 +25,7 @@ namespace Droid.Core
             this.y = y;
         }
         public void Zero()
-            => x = y = 0.0f;
+            => x = y = 0f;
 
         public unsafe float this[int index]
         {
@@ -52,7 +47,7 @@ namespace Droid.Core
         public static Vector2 operator *(Vector2 _, float a)
             => new(_.x * a, _.y * a);
         public static Vector2 operator /(Vector2 _, float a)
-        { var inva = 1.0f / a; return new(_.x * inva, _.y * inva); }
+        { var inva = 1f / a; return new(_.x * inva, _.y * inva); }
         public static Vector2 operator +(Vector2 _, Vector2 a)
             => new(_.x + a.x, _.y + a.y);
         public static Vector2 operator -(Vector2 _, Vector2 a)
@@ -206,15 +201,16 @@ namespace Droid.Core
         /// <returns></returns>
         public void Lerp(Vector2 v1, Vector2 v2, float l)
         {
-            if (l <= 0.0f) this = v1;
-            else if (l >= 1.0f) this = v2;
+            if (l <= 0f) this = v1;
+            else if (l >= 1f) this = v2;
             else this = v1 + l * (v2 - v1);
         }
 
-        public static Vector2 origin = new(0.0f, 0.0f);
+        public static Vector2 origin = new(0f, 0f);
         //#define zero origin
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct Vector3
     {
         public float x;
@@ -237,7 +233,7 @@ namespace Droid.Core
             this.z = z;
         }
         public void Zero()
-            => x = y = z = 0.0f;
+            => x = y = z = 0f;
 
         public unsafe float this[int index]
         {
@@ -261,7 +257,7 @@ namespace Droid.Core
             => new(_.x * a, _.y * a, _.z * a);
         public static Vector3 operator /(Vector3 _, float a)
         {
-            var inva = 1.0f / a;
+            var inva = 1f / a;
             return new Vector3(_.x * inva, _.y * inva, _.z * inva);
         }
         public static Vector3 operator +(Vector3 _, Vector3 a)
@@ -323,43 +319,43 @@ namespace Droid.Core
         /// <returns></returns>
         public bool FixDegenerateNormal()
         {
-            if (x == 0.0f)
+            if (x == 0f)
             {
-                if (y == 0.0f)
+                if (y == 0f)
                 {
-                    if (z > 0.0f) { if (z != 1.0f) { z = 1.0f; return true; } }
-                    else { if (z != -1.0f) { z = -1.0f; return true; } }
+                    if (z > 0f) { if (z != 1f) { z = 1f; return true; } }
+                    else { if (z != -1f) { z = -1f; return true; } }
                     return false;
                 }
-                else if (z == 0.0f)
+                else if (z == 0f)
                 {
-                    if (y > 0.0f) { if (y != 1.0f) { y = 1.0f; return true; } }
-                    else { if (y != -1.0f) { y = -1.0f; return true; } }
-                    return false;
-                }
-            }
-            else if (y == 0.0f)
-            {
-                if (z == 0.0f)
-                {
-                    if (x > 0.0f) { if (x != 1.0f) { x = 1.0f; return true; } }
-                    else { if (x != -1.0f) { x = -1.0f; return true; } }
+                    if (y > 0f) { if (y != 1f) { y = 1f; return true; } }
+                    else { if (y != -1f) { y = -1f; return true; } }
                     return false;
                 }
             }
-            if (MathX.Fabs(x) == 1.0f)
+            else if (y == 0f)
             {
-                if (y != 0.0f || z != 0.0f) { y = z = 0.0f; return true; }
+                if (z == 0f)
+                {
+                    if (x > 0f) { if (x != 1f) { x = 1f; return true; } }
+                    else { if (x != -1f) { x = -1f; return true; } }
+                    return false;
+                }
+            }
+            if (MathX.Fabs(x) == 1f)
+            {
+                if (y != 0f || z != 0f) { y = z = 0f; return true; }
                 return false;
             }
-            else if (MathX.Fabs(y) == 1.0f)
+            else if (MathX.Fabs(y) == 1f)
             {
-                if (x != 0.0f || z != 0.0f) { x = z = 0.0f; return true; }
+                if (x != 0f || z != 0f) { x = z = 0f; return true; }
                 return false;
             }
-            else if (MathX.Fabs(z) == 1.0f)
+            else if (MathX.Fabs(z) == 1f)
             {
-                if (x != 0.0f || y != 0.0f) { x = y = 0.0f; return true; }
+                if (x != 0f || y != 0f) { x = y = 0f; return true; }
                 return false;
             }
             return false;
@@ -371,9 +367,9 @@ namespace Droid.Core
         public bool FixDenormals()
         {
             var denormal = false;
-            if (Math.Abs(x) < 1e-30f) { x = 0.0f; denormal = true; }
-            if (Math.Abs(y) < 1e-30f) { y = 0.0f; denormal = true; }
-            if (Math.Abs(z) < 1e-30f) { z = 0.0f; denormal = true; }
+            if (Math.Abs(x) < 1e-30f) { x = 0f; denormal = true; }
+            if (Math.Abs(y) < 1e-30f) { y = 0f; denormal = true; }
+            if (Math.Abs(z) < 1e-30f) { z = 0f; denormal = true; }
             return denormal;
         }
 
@@ -481,27 +477,27 @@ namespace Droid.Core
         public float ToYaw()
         {
             float yaw;
-            if ((y == 0.0f) && (x == 0.0f))
-                yaw = 0.0f;
+            if ((y == 0f) && (x == 0f))
+                yaw = 0f;
             else
             {
                 yaw = MathX.RAD2DEG((float)Math.Atan2(y, x));
-                if (yaw < 0.0f)
-                    yaw += 360.0f;
+                if (yaw < 0f)
+                    yaw += 360f;
             }
             return yaw;
         }
         public float ToPitch()
         {
             float forward, pitch;
-            if ((x == 0.0f) && (y == 0.0f))
-                pitch = z > 0.0f ? 90.0f : 270.0f;
+            if ((x == 0f) && (y == 0f))
+                pitch = z > 0f ? 90f : 270f;
             else
             {
                 forward = (float)MathX.Sqrt(x * x + y * y);
                 pitch = MathX.RAD2DEG((float)Math.Atan2(z, forward));
-                if (pitch < 0.0f)
-                    pitch += 360.0f;
+                if (pitch < 0f)
+                    pitch += 360f;
             }
             return pitch;
         }
@@ -509,44 +505,44 @@ namespace Droid.Core
         public Angles ToAngles()
         {
             float forward, yaw, pitch;
-            if ((x == 0.0f) && (y == 0.0f))
+            if ((x == 0f) && (y == 0f))
             {
-                yaw = 0.0f;
-                pitch = z > 0.0f ? 90.0f : 270.0f;
+                yaw = 0f;
+                pitch = z > 0f ? 90f : 270f;
             }
             else
             {
                 yaw = MathX.RAD2DEG((float)Math.Atan2(y, x));
-                if (yaw < 0.0f)
-                    yaw += 360.0f;
+                if (yaw < 0f)
+                    yaw += 360f;
 
                 forward = (float)MathX.Sqrt(x * x + y * y);
                 pitch = MathX.RAD2DEG((float)Math.Atan2(z, forward));
-                if (pitch < 0.0f)
-                    pitch += 360.0f;
+                if (pitch < 0f)
+                    pitch += 360f;
             }
 
-            return new Angles(-pitch, yaw, 0.0f);
+            return new Angles(-pitch, yaw, 0f);
         }
 
         public Polar3 ToPolar()
         {
             float forward, yaw, pitch;
-            if ((x == 0.0f) && (y == 0.0f))
+            if ((x == 0f) && (y == 0f))
             {
-                yaw = 0.0f;
-                pitch = z > 0.0f ? 90.0f : 270.0f;
+                yaw = 0f;
+                pitch = z > 0f ? 90f : 270f;
             }
             else
             {
                 yaw = MathX.RAD2DEG((float)Math.Atan2(y, x));
-                if (yaw < 0.0f)
-                    yaw += 360.0f;
+                if (yaw < 0f)
+                    yaw += 360f;
 
                 forward = (float)MathX.Sqrt(x * x + y * y);
                 pitch = MathX.RAD2DEG((float)Math.Atan2(z, forward));
-                if (pitch < 0.0f)
-                    pitch += 360.0f;
+                if (pitch < 0f)
+                    pitch += 360f;
             }
             return new Polar3(MathX.Sqrt(x * x + y * y + z * z), yaw, -pitch);
         }
@@ -561,16 +557,16 @@ namespace Droid.Core
             var d = x * x + y * y;
             if (d == 0)
             {
-                mat[1].x = 1.0f;
-                mat[1].y = 0.0f;
-                mat[1].z = 0.0f;
+                mat[1].x = 1f;
+                mat[1].y = 0f;
+                mat[1].z = 0f;
             }
             else
             {
                 d = MathX.InvSqrt(d);
                 mat[1].x = -y * d;
                 mat[1].y = x * d;
-                mat[1].z = 0.0f;
+                mat[1].z = 0f;
             }
             mat[2] = Cross(mat[1]);
             return mat;
@@ -636,7 +632,7 @@ namespace Droid.Core
             }
         }
 
-        public void ProjectOntoPlane(Vector3 normal, float overBounce = 1.0f)
+        public void ProjectOntoPlane(Vector3 normal, float overBounce = 1f)
         {
             var backoff = this * normal;
             if (overBounce != 1.0)
@@ -646,7 +642,7 @@ namespace Droid.Core
             }
             this -= backoff * normal;
         }
-        public bool ProjectAlongPlane(Vector3 normal, float epsilon, float overBounce = 1.0f)
+        public bool ProjectAlongPlane(Vector3 normal, float epsilon, float overBounce = 1f)
         {
             var cross = Cross(normal).Cross(this);
             // normalize so a fixed epsilon can be used
@@ -669,7 +665,7 @@ namespace Droid.Core
             var len = Length;
             z = len < rsqr * 0.5f
                 ? (float)Math.Sqrt(rsqr - len)
-                : rsqr / (2.0f * (float)Math.Sqrt(len));
+                : rsqr / (2f * (float)Math.Sqrt(len));
         }
 
         /// <summary>
@@ -681,8 +677,8 @@ namespace Droid.Core
         /// <returns></returns>
         public void Lerp(Vector3 v1, Vector3 v2, float l)
         {
-            if (l <= 0.0f) this = v1;
-            else if (l >= 1.0f) this = v2;
+            if (l <= 0f) this = v1;
+            else if (l >= 1f) this = v2;
             else this = v1 + l * (v2 - v1);
         }
         const float LERP_DELTA = 1e-6f;
@@ -697,30 +693,31 @@ namespace Droid.Core
         public void SLerp(Vector3 v1, Vector3 v2, float l)
         {
             float omega, cosom, sinom, scale0, scale1;
-            if (l <= 0.0f) { this = v1; return; }
-            else if (l >= 1.0f) { this = v2; return; }
+            if (l <= 0f) { this = v1; return; }
+            else if (l >= 1f) { this = v2; return; }
 
             cosom = v1 * v2;
-            if ((1.0f - cosom) > LERP_DELTA)
+            if ((1f - cosom) > LERP_DELTA)
             {
                 omega = (float)Math.Acos(cosom);
                 sinom = (float)Math.Sin(omega);
-                scale0 = (float)Math.Sin((1.0f - l) * omega) / sinom;
+                scale0 = (float)Math.Sin((1f - l) * omega) / sinom;
                 scale1 = (float)Math.Sin(l * omega) / sinom;
             }
             else
             {
-                scale0 = 1.0f - l;
+                scale0 = 1f - l;
                 scale1 = l;
             }
 
             this = v1 * scale0 + v2 * scale1;
         }
 
-        public static Vector3 origin = new(0.0f, 0.0f, 0.0f);
+        public static Vector3 origin = new(0f, 0f, 0f);
         //#define zero origin
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct Vector4
     {
         public float x;
@@ -744,7 +741,7 @@ namespace Droid.Core
             this.w = w;
         }
         public void Zero()
-            => x = y = z = w = 0.0f;
+            => x = y = z = w = 0f;
 
         public unsafe float this[int index]
         {
@@ -768,7 +765,7 @@ namespace Droid.Core
             => new(_.x * a, _.y * a, _.z * a, _.w * a);
         public static Vector4 operator /(Vector4 _, float a)
         {
-            var inva = 1.0f / a;
+            var inva = 1f / a;
             return new(_.x * inva, _.y * inva, _.z * inva, _.w * inva);
         }
         public static Vector4 operator +(Vector4 _, Vector4 a)
@@ -872,15 +869,16 @@ namespace Droid.Core
         /// <returns></returns>
         public void Lerp(Vector4 v1, Vector4 v2, float l)
         {
-            if (l <= 0.0f) this = v1;
-            else if (l >= 1.0f) this = v2;
+            if (l <= 0f) this = v1;
+            else if (l >= 1f) this = v2;
             else this = v1 + l * (v2 - v1);
         }
 
-        public static Vector4 origin = new(0.0f, 0.0f, 0.0f, 0.0f);
+        public static Vector4 origin = new(0f, 0f, 0f, 0f);
         //#define zero origin
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct Vector5
     {
         public float x;
@@ -946,8 +944,8 @@ namespace Droid.Core
 
         public void Lerp(Vector5 v1, Vector5 v2, float l)
         {
-            if (l <= 0.0f) this = v1;
-            else if (l >= 1.0f) this = v2;
+            if (l <= 0f) this = v1;
+            else if (l >= 1f) this = v2;
             else
             {
                 x = v1.x + l * (v2.x - v1.x);
@@ -957,10 +955,11 @@ namespace Droid.Core
                 t = v1.t + l * (v2.t - v1.t);
             }
         }
-        public static Vector5 origin = new(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+        public static Vector5 origin = new(0f, 0f, 0f, 0f, 0f);
         //#define zero origin
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct Vector6
     {
         public Vector6(float[] a)
@@ -992,7 +991,7 @@ namespace Droid.Core
             p[5] = a6;
         }
         public void Zero()
-            => p[0] = p[1] = p[2] = p[3] = p[4] = p[5] = 0.0f;
+            => p[0] = p[1] = p[2] = p[3] = p[4] = p[5] = 0f;
 
         public float this[int index]
         {
@@ -1007,8 +1006,8 @@ namespace Droid.Core
             => new(_.p[0] * a, _.p[1] * a, _.p[2] * a, _.p[3] * a, _.p[4] * a, _.p[5] * a);
         public static Vector6 operator /(Vector6 _, float a)
         {
-            Debug.Assert(a != 0.0f);
-            var inva = 1.0f / a;
+            Debug.Assert(a != 0f);
+            var inva = 1f / a;
             return new Vector6(_.p[0] * inva, _.p[1] * inva, _.p[2] * inva, _.p[3] * inva, _.p[4] * inva, _.p[5] * inva);
         }
         public static float operator *(Vector6 _, Vector6 a)
@@ -1124,19 +1123,22 @@ namespace Droid.Core
 
         internal fixed float p[6];
 
-        public static Vector6 origin = new(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+        public static Vector6 origin = new(0f, 0f, 0f, 0f, 0f, 0f);
         //#define zero origin
         public static Vector6 infinity = new(MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY);
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct VectorX
     {
+        public const float EPSILON = 0.001f;
+
         static float[] temp = new float[VECX_MAX_TEMP + 4];   // used to store intermediate results
         static int tempPtr = 0; // (float *) ( ( (intptr_t)temp + 15 ) & ~15 );              // pointer to 16 byte aligned temporary memory
         static int tempIndex = 0;               // index into memory pool, wraps around
         const int VECX_MAX_TEMP = 1024;
         static unsafe int VECX_QUAD(int x) => ((x + 3) & ~3) * sizeof(float);
-        void VECX_CLEAREND() { var s = size; while (s < ((s + 3) & ~3)) p[pi + s++] = 0.0f; }
+        void VECX_CLEAREND() { var s = size; while (s < ((s + 3) & ~3)) p[pi + s++] = 0f; }
         internal static float[] VECX_ALLOCA(int n) => new float[VECX_QUAD(n)];
 
         int size;                   // size of the vector
@@ -1224,14 +1226,14 @@ namespace Droid.Core
         }
         public static VectorX operator /(VectorX _, float a)
         {
-            Debug.Assert(a != 0.0f);
-            return _ * (1.0f / a);
+            Debug.Assert(a != 0f);
+            return _ * (1f / a);
         }
 
         public static float operator *(VectorX _, VectorX a)
         {
             Debug.Assert(_.size == a.size);
-            var sum = 0.0f;
+            var sum = 0f;
             for (var i = 0; i < _.size; i++)
                 sum += _.p[_.pi + i] * a.p[a.pi + i];
             return sum;
@@ -1345,7 +1347,7 @@ namespace Droid.Core
                 // zero any new elements
                 if (makeZero)
                     for (var i = size; i < size; i++)
-                        p[i] = 0.0f;
+                        p[i] = 0f;
             }
             this.size = size;
             VECX_CLEAREND();
@@ -1379,14 +1381,14 @@ namespace Droid.Core
             Array.Clear(p, pi, size);
 #endif
         }
-        public void Random(int seed, float l = 0.0f, float u = 1.0f)
+        public void Random(int seed, float l = 0f, float u = 1f)
         {
             var rnd = new Random(seed);
             var c = u - l;
             for (var i = 0; i < size; i++)
                 p[pi + i] = l + rnd.RandomFloat() * c;
         }
-        public void Random(int length, int seed, float l = 0.0f, float u = 1.0f)
+        public void Random(int length, int seed, float l = 0f, float u = 1f)
         {
             var rnd = new Random(seed);
             SetSize(length);
@@ -1423,7 +1425,7 @@ namespace Droid.Core
         {
             get
             {
-                var sum = 0.0f;
+                var sum = 0f;
                 for (var i = 0; i < size; i++)
                     sum += p[pi + i] * p[pi + i];
                 return MathX.Sqrt(sum);
@@ -1433,7 +1435,7 @@ namespace Droid.Core
         {
             get
             {
-                var sum = 0.0f;
+                var sum = 0f;
                 for (var i = 0; i < size; i++)
                     sum += p[pi + i] * p[pi + i];
                 return sum;
@@ -1444,7 +1446,7 @@ namespace Droid.Core
             int i;
             var m = new VectorX();
             m.SetTempSize(size);
-            var sum = 0.0f;
+            var sum = 0f;
             for (i = 0; i < size; i++)
                 sum += p[pi + i] * p[pi + i];
             var invSqrt = MathX.InvSqrt(sum);
@@ -1455,7 +1457,7 @@ namespace Droid.Core
         public float NormalizeSelf()
         {
             int i;
-            var sum = 0.0f;
+            var sum = 0f;
             for (i = 0; i < size; i++)
                 sum += p[pi + i] * p[pi + i];
             var invSqrt = MathX.InvSqrt(sum);

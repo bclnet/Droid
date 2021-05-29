@@ -27,17 +27,17 @@ namespace Droid.Core
             => max == 0 ? 0 : RandomInt() % max;
 
         /// <summary>
-        /// random number in the range [0.0f, 1.0f]
+        /// random number in the range [0f, 1f]
         /// </summary>
         /// <returns></returns>
         public float RandomFloat()
             => RandomInt() / (float)(MAX_RAND + 1);
         /// <summary>
-        /// random number in the range [-1.0f, 1.0f]
+        /// random number in the range [-1f, 1f]
         /// </summary>
         /// <returns></returns>
         public float CRandomFloat()
-            => 2.0f * (RandomFloat() - 0.5f);
+            => 2f * (RandomFloat() - 0.5f);
     }
 
     public struct Random2
@@ -70,23 +70,23 @@ namespace Droid.Core
             => max == 0 ? 0 : (RandomInt() >> (16 - MathX.BitsForInteger(max))) % max;
 
         /// <summary>
-        /// random number in the range [0.0f, 1.0f]
+        /// random number in the range [0f, 1f]
         /// </summary>
         /// <returns></returns>
         public float RandomFloat()
         {
             Seed = 1664525 * Seed + 1013904223;
-            return reinterpret.cast_float(IEEE_ONE | (Seed & IEEE_MASK)) - 1.0f;
+            return reinterpret.cast_float(IEEE_ONE | (Seed & IEEE_MASK)) - 1f;
         }
 
         /// <summary>
-        /// random number in the range [-1.0f, 1.0f]
+        /// random number in the range [-1f, 1f]
         /// </summary>
         /// <returns></returns>
         public float CRandomFloat()
         {
             Seed = 1664525 * Seed + 1013904223;
-            return 2.0f * reinterpret.cast_float(IEEE_ONE | (Seed & IEEE_MASK)) - 3.0f;
+            return 2f * reinterpret.cast_float(IEEE_ONE | (Seed & IEEE_MASK)) - 3f;
         }
     }
 }

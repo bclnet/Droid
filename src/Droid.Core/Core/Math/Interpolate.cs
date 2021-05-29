@@ -6,7 +6,7 @@ namespace Droid.Core
     {
         public Interpolate_float()
         {
-            currentTime = startTime = duration = 0;
+            currentTime = startTime = duration = 0f;
             currentValue = default;
             startValue = endValue = currentValue;
         }
@@ -17,7 +17,7 @@ namespace Droid.Core
             this.duration = duration;
             this.startValue = startValue;
             this.endValue = endValue;
-            this.currentTime = startTime - 1;
+            this.currentTime = startTime - 1f;
             this.currentValue = startValue;
         }
 
@@ -81,7 +81,7 @@ namespace Droid.Core
             this.decelTime = decelTime;
             this.startValue = startValue;
             this.endValue = endValue;
-            if (duration <= 0.0f)
+            if (duration <= 0f)
                 return;
 
             if (this.accelTime + this.decelTime > duration)
@@ -90,7 +90,7 @@ namespace Droid.Core
                 this.decelTime = duration - this.accelTime;
             }
             this.linearTime = duration - this.accelTime - this.decelTime;
-            float speed = (endValue - startValue) * (1000.0f / (this.linearTime + (this.accelTime + this.decelTime) * 0.5f));
+            float speed = (endValue - startValue) * (1000f / (this.linearTime + (this.accelTime + this.decelTime) * 0.5f));
 
             if (this.accelTime != 0) extrapolate.Init(startTime, this.accelTime, startValue, startValue - startValue, speed, EXTRAPOLATION.ACCELLINEAR);
             else if (this.linearTime != 0) extrapolate.Init(startTime, this.linearTime, startValue, startValue - startValue, speed, EXTRAPOLATION.LINEAR);
@@ -171,7 +171,7 @@ namespace Droid.Core
             this.startValue = startValue;
             this.endValue = endValue;
 
-            if (duration <= 0.0f)
+            if (duration <= 0f)
                 return;
 
             if (this.accelTime + this.decelTime > duration)
@@ -180,7 +180,7 @@ namespace Droid.Core
                 this.decelTime = duration - this.accelTime;
             }
             this.linearTime = duration - this.accelTime - this.decelTime;
-            float speed = (endValue - startValue) * (1000.0f / (this.linearTime + (this.accelTime + this.decelTime) * MathX.SQRT_1OVER2));
+            float speed = (endValue - startValue) * (1000f / (this.linearTime + (this.accelTime + this.decelTime) * MathX.SQRT_1OVER2));
 
             if (this.accelTime == 0) extrapolate.Init(startTime, this.accelTime, startValue, startValue - startValue, speed, EXTRAPOLATION.ACCELSINE);
             else if (this.linearTime == 0) extrapolate.Init(startTime, this.linearTime, startValue, startValue - startValue, speed, EXTRAPOLATION.LINEAR);

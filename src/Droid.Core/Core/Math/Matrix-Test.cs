@@ -8,7 +8,7 @@ namespace Droid.Core
     {
         public static void Test()
         {
-            MatrixX original = new(), m1 = new(), m2 = new(), m3 = new(), q1 = new(), q2 = new(), r1 = new(), r2 = new();
+            MatrixX original = new(), m1, m2, m3 = new(), q1 = new(), q2 = new(), r1 = new(), r2 = new();
             VectorX v = new(), w = new(), u = new(), c = new(), d = new();
             int offset, size;
 
@@ -65,12 +65,12 @@ namespace Droid.Core
             m1.Inverse_GaussJordan();
 
             // modify and invert m2
-            m2.Update_RankOne(v, w, 1.0f);
+            m2.Update_RankOne(v, w, 1f);
             if (!m2.Inverse_GaussJordan())
                 Debug.Assert(false);
 
             // update inverse of m1
-            m1.Inverse_UpdateRankOne(v, w, 1.0f);
+            m1.Inverse_UpdateRankOne(v, w, 1f);
 
             if (!m1.Compare(m2, 1e-4f))
                 throw new InvalidOperationException("MatrixX::Inverse_UpdateRankOne failed");
@@ -84,7 +84,7 @@ namespace Droid.Core
 
                 v.Random(size, 1);
                 w.Random(size, 2);
-                w[offset] = 0.0f;
+                w[offset] = 0f;
 
                 // invert m1
                 m1.Inverse_GaussJordan();
@@ -108,7 +108,7 @@ namespace Droid.Core
 
             v.Random(size + 1, 1);
             w.Random(size + 1, 2);
-            w[size] = 0.0f;
+            w[size] = 0f;
 
             // invert m1
             m1.Inverse_GaussJordan();
@@ -177,14 +177,14 @@ namespace Droid.Core
             m1.LU_Factor(index1);
 
             // modify and factor m2
-            m2.Update_RankOne(v, w, 1.0f);
+            m2.Update_RankOne(v, w, 1f);
             if (!m2.LU_Factor(index2))
                 Debug.Assert(false);
             m2.LU_MultiplyFactors(m3, index2);
             m2 = new MatrixX(m3);
 
             // update factored m1
-            m1.LU_UpdateRankOne(v, w, 1.0f, index1);
+            m1.LU_UpdateRankOne(v, w, 1f, index1);
             m1.LU_MultiplyFactors(m3, index1);
             m1 = new MatrixX(m1);
 
@@ -200,7 +200,7 @@ namespace Droid.Core
 
                 v.Random(size, 1);
                 w.Random(size, 2);
-                w[offset] = 0.0f;
+                w[offset] = 0f;
 
                 // factor m1
                 m1.LU_Factor(index1);
@@ -228,7 +228,7 @@ namespace Droid.Core
 
             v.Random(size + 1, 1);
             w.Random(size + 1, 2);
-            w[size] = 0.0f;
+            w[size] = 0f;
 
             // factor m1
             m1.LU_Factor(index1);
@@ -327,14 +327,14 @@ namespace Droid.Core
             m1.QR_UnpackFactors(q1, r1, c, d);
 
             // modify and factor m2
-            m2.Update_RankOne(v, w, 1.0f);
+            m2.Update_RankOne(v, w, 1f);
             if (!m2.QR_Factor(c, d))
                 Debug.Assert(false);
             m2.QR_UnpackFactors(q2, r2, c, d);
             m2 = q2 * r2;
 
             // update factored m1
-            q1.QR_UpdateRankOne(r1, v, w, 1.0f);
+            q1.QR_UpdateRankOne(r1, v, w, 1f);
             m1 = q1 * r1;
 
             if (!m1.Compare(m2, 1e-4f))
@@ -352,7 +352,7 @@ namespace Droid.Core
 
                 v.Random(size, 1);
                 w.Random(size, 2);
-                w[offset] = 0.0f;
+                w[offset] = 0f;
 
                 // factor m1
                 m1.QR_Factor(c, d);
@@ -383,7 +383,7 @@ namespace Droid.Core
 
             v.Random(size + 1, 1);
             w.Random(size + 1, 2);
-            w[size] = 0.0f;
+            w[size] = 0f;
 
             // factor m1
             m1.QR_Factor(c, d);
@@ -498,13 +498,13 @@ namespace Droid.Core
             m1.ClearUpperTriangle();
 
             // modify and factor m2
-            m2.Update_RankOneSymmetric(w, 1.0f);
+            m2.Update_RankOneSymmetric(w, 1f);
             if (!m2.Cholesky_Factor())
                 Debug.Assert(false);
             m2.ClearUpperTriangle();
 
             // update factored m1
-            m1.Cholesky_UpdateRankOne(w, 1.0f, 0);
+            m1.Cholesky_UpdateRankOne(w, 1f, 0);
 
             if (!m1.Compare(m2, 1e-4f))
                 throw new InvalidOperationException("MatrixX::Cholesky_UpdateRankOne failed");
@@ -631,13 +631,13 @@ namespace Droid.Core
             m1.ClearUpperTriangle();
 
             // modify and factor m2
-            m2.Update_RankOneSymmetric(w, 1.0f);
+            m2.Update_RankOneSymmetric(w, 1f);
             if (!m2.LDLT_Factor())
                 Debug.Assert(false);
             m2.ClearUpperTriangle();
 
             // update factored m1
-            m1.LDLT_UpdateRankOne(w, 1.0f, 0);
+            m1.LDLT_UpdateRankOne(w, 1f, 0);
 
             if (!m1.Compare(m2, 1e-4f))
                 throw new InvalidOperationException("MatrixX::LDLT_UpdateRankOne failed");

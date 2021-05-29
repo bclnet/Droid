@@ -16,7 +16,7 @@ public class Extrapolate_float
     public Extrapolate_float()
     {
         extrapolationType = EXTRAPOLATION.NONE;
-        startTime = duration = 0.0f;
+        startTime = duration = 0f;
         startValue = default;
         baseSpeed = default;
         speed = default;
@@ -92,7 +92,7 @@ public class Extrapolate_float
                     else
                     {
                         deltaTime = (time - startTime) / duration;
-                        s = (1.0f - MathX.Cos(deltaTime * MathX.HALF_PI)) * duration * 0.001f * MathX.SQRT_1OVER2;
+                        s = (1f - MathX.Cos(deltaTime * MathX.HALF_PI)) * duration * 0.001f * MathX.SQRT_1OVER2;
                         currentValue = startValue + deltaTime * baseSpeed + s * speed;
                     }
                     break;
@@ -140,7 +140,7 @@ public class Extrapolate_float
             case EXTRAPOLATION.DECELLINEAR:
                 {
                     deltaTime = (time - startTime) / duration;
-                    s = 1.0f - deltaTime;
+                    s = 1f - deltaTime;
                     return baseSpeed + s * speed;
                 }
             case EXTRAPOLATION.ACCELSINE:

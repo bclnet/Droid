@@ -1,6 +1,7 @@
 //#define MATX_SIMD
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Droid.Core
 {
@@ -22,12 +23,12 @@ namespace Droid.Core
             if (at > bt)
             {
                 ct = bt / at;
-                return at * MathX.Sqrt(1.0f + ct * ct);
+                return at * MathX.Sqrt(1f + ct * ct);
             }
             else
             {
-                if (bt != 0) { ct = at / bt; return bt * MathX.Sqrt(1.0f + ct * ct); }
-                else return 0.0f;
+                if (bt != 0) { ct = at / bt; return bt * MathX.Sqrt(1f + ct * ct); }
+                else return 0f;
             }
         }
 
@@ -53,8 +54,8 @@ namespace Droid.Core
 
             for (i0 = numRows - 1, i3 = numRows - 2; i0 >= 1; i0--, i3--)
             {
-                h = 0.0f;
-                scale = 0.0f;
+                h = 0f;
+                scale = 0f;
 
                 if (i3 > 0)
                 {
@@ -64,7 +65,7 @@ namespace Droid.Core
                         subd[i0] = this[i0][i3];
                     else
                     {
-                        invScale = 1.0f / scale;
+                        invScale = 1f / scale;
                         for (i2 = 0; i2 <= i3; i2++)
                         {
                             this[i0][i2] *= invScale;
@@ -72,17 +73,17 @@ namespace Droid.Core
                         }
                         f = this[i0][i3];
                         g = MathX.Sqrt(h);
-                        if (f > 0.0f)
+                        if (f > 0f)
                             g = -g;
                         subd[i0] = scale * g;
                         h -= f * g;
                         this[i0][i3] = f - g;
-                        f = 0.0f;
-                        invH = 1.0f / h;
+                        f = 0f;
+                        invH = 1f / h;
                         for (i1 = 0; i1 <= i3; i1++)
                         {
                             this[i1][i0] = this[i0][i1] * invH;
-                            g = 0.0f;
+                            g = 0f;
                             for (i2 = 0; i2 <= i1; i2++)
                                 g += this[i1][i2] * this[i0][i2];
                             for (i2 = i1 + 1; i2 <= i3; i2++)
@@ -107,15 +108,15 @@ namespace Droid.Core
                 diag[i0] = h;
             }
 
-            diag[0] = 0.0f;
-            subd[0] = 0.0f;
+            diag[0] = 0f;
+            subd[0] = 0f;
             for (i0 = 0, i3 = -1; i0 <= numRows - 1; i0++, i3++)
             {
                 if (diag[i0] != 0)
                 {
                     for (i1 = 0; i1 <= i3; i1++)
                     {
-                        sum = 0.0f;
+                        sum = 0f;
                         for (i2 = 0; i2 <= i3; i2++)
                             sum += this[i0][i2] * this[i2][i1];
                         for (i2 = 0; i2 <= i3; i2++)
@@ -123,18 +124,18 @@ namespace Droid.Core
                     }
                 }
                 diag[i0] = this[i0][i0];
-                this[i0][i0] = 1.0f;
+                this[i0][i0] = 1f;
                 for (i1 = 0; i1 <= i3; i1++)
                 {
-                    this[i1][i0] = 0.0f;
-                    this[i0][i1] = 0.0f;
+                    this[i1][i0] = 0f;
+                    this[i0][i1] = 0f;
                 }
             }
 
             // re-order
             for (i0 = 1, i3 = 0; i0 < numRows; i0++, i3++)
                 subd[i3] = subd[i0];
-            subd[numRows - 1] = 0.0f;
+            subd[numRows - 1] = 0f;
         }
 
         /// <summary>
@@ -168,15 +169,15 @@ namespace Droid.Core
                     if (i2 == i0)
                         break;
 
-                    g = (diag[i0 + 1] - diag[i0]) / (2.0f * subd[i0]);
-                    r = MathX.Sqrt(g * g + 1.0f);
-                    if (g < 0.0f)
+                    g = (diag[i0 + 1] - diag[i0]) / (2f * subd[i0]);
+                    r = MathX.Sqrt(g * g + 1f);
+                    if (g < 0f)
                         g = diag[i2] - diag[i0] + subd[i0] / (g - r);
                     else
                         g = diag[i2] - diag[i0] + subd[i0] / (g + r);
-                    s = 1.0f;
-                    c = 1.0f;
-                    p = 0.0f;
+                    s = 1f;
+                    c = 1f;
+                    p = 0f;
                     for (i3 = i2 - 1; i3 >= i0; i3--)
                     {
                         f = s * subd[i3];
@@ -184,21 +185,21 @@ namespace Droid.Core
                         if (MathX.Fabs(f) >= MathX.Fabs(g))
                         {
                             c = g / f;
-                            r = MathX.Sqrt(c * c + 1.0f);
+                            r = MathX.Sqrt(c * c + 1f);
                             subd[i3 + 1] = f * r;
-                            s = 1.0f / r;
+                            s = 1f / r;
                             c *= s;
                         }
                         else
                         {
                             s = f / g;
-                            r = MathX.Sqrt(s * s + 1.0f);
+                            r = MathX.Sqrt(s * s + 1f);
                             subd[i3 + 1] = g * r;
-                            c = 1.0f / r;
+                            c = 1f / r;
                             s *= c;
                         }
                         g = diag[i3 + 1] - p;
-                        r = (diag[i3] - g) * s + 2.0f * b * c;
+                        r = (diag[i3] - g) * s + 2f * b * c;
                         p = s * r;
                         diag[i3 + 1] = g + p;
                         g = c * r - b;
@@ -212,7 +213,7 @@ namespace Droid.Core
                     }
                     diag[i0] -= p;
                     subd[i0] = g;
-                    subd[i2] = 0.0f;
+                    subd[i2] = 0f;
                 }
                 if (i1 == maxIter)
                     return false;
@@ -236,20 +237,20 @@ namespace Droid.Core
 
             for (m = low + 1; m <= high - 1; m++)
             {
-                scale = 0.0f;
+                scale = 0f;
                 for (i = m; i <= high; i++)
                     scale += MathX.Fabs(H[i][m - 1]);
-                if (scale != 0.0f)
+                if (scale != 0f)
                 {
                     // compute Householder transformation.
-                    h = 0.0f;
+                    h = 0f;
                     for (i = high; i >= m; i--)
                     {
                         v[i] = H[i][m - 1] / scale;
                         h += v[i] * v[i];
                     }
                     g = MathX.Sqrt(h);
-                    if (v[m] > 0.0f)
+                    if (v[m] > 0f)
                         g = -g;
                     h -= v[m] * g;
                     v[m] = v[m] - g;
@@ -258,7 +259,7 @@ namespace Droid.Core
                     // H = (I-u*u'/h)*H*(I-u*u')/h)
                     for (j = m; j < numRows; j++)
                     {
-                        f = 0.0f;
+                        f = 0f;
                         for (i = high; i >= m; i--)
                             f += v[i] * H[i][j];
                         f /= h;
@@ -268,7 +269,7 @@ namespace Droid.Core
 
                     for (i = 0; i <= high; i++)
                     {
-                        f = 0.0f;
+                        f = 0f;
                         for (j = high; j >= m; j--)
                             f += v[j] * H[i][j];
                         f /= h;
@@ -284,13 +285,13 @@ namespace Droid.Core
             Identity();
             for (m = high - 1; m >= low + 1; m--)
             {
-                if (H[m][m - 1] != 0.0f)
+                if (H[m][m - 1] != 0f)
                 {
                     for (i = m + 1; i <= high; i++)
                         v[i] = H[i][m - 1];
                     for (j = m; j <= high; j++)
                     {
-                        g = 0.0f;
+                        g = 0f;
                         for (i = m; i <= high; i++)
                             g += v[i] * this[i][j];
                         // float division to avoid possible underflow
@@ -342,17 +343,17 @@ namespace Droid.Core
             int n = numRows - 1;
             int low = 0;
             int high = numRows - 1;
-            float eps = 2e-16f, exshift = 0.0f;
-            float p = 0.0f, q = 0.0f, r = 0.0f, s = 0.0f, z = 0.0f, t, w, x, y;
+            float eps = 2e-16f, exshift = 0f;
+            float p = 0f, q = 0f, r = 0f, s = 0f, z = 0f, t, w, x, y;
 
             // store roots isolated by balanc and compute matrix norm
-            var norm = 0.0f;
+            var norm = 0f;
             for (i = 0; i < numRows; i++)
             {
                 if (i < low || i > high)
                 {
                     realEigenValues[i] = H[i][i];
-                    imaginaryEigenValues[i] = 0.0f;
+                    imaginaryEigenValues[i] = 0f;
                 }
                 for (j = Math.Max(i - 1, 0); j < numRows; j++)
                     norm += MathX.Fabs(H[i][j]);
@@ -366,7 +367,7 @@ namespace Droid.Core
                 while (l > low)
                 {
                     s = MathX.Fabs(H[l - 1][l - 1]) + MathX.Fabs(H[l][l]);
-                    if (s == 0.0f)
+                    if (s == 0f)
                         s = norm;
                     if (MathX.Fabs(H[l][l - 1]) < eps * s)
                         break;
@@ -378,32 +379,32 @@ namespace Droid.Core
                 {   // one root found
                     H[n][n] = H[n][n] + exshift;
                     realEigenValues[n] = H[n][n];
-                    imaginaryEigenValues[n] = 0.0f;
+                    imaginaryEigenValues[n] = 0f;
                     n--;
                     iter = 0;
                 }
                 else if (l == n - 1)
                 {   // two roots found
                     w = H[n][n - 1] * H[n - 1][n];
-                    p = (H[n - 1][n - 1] - H[n][n]) / 2.0f;
+                    p = (H[n - 1][n - 1] - H[n][n]) / 2f;
                     q = p * p + w;
                     z = MathX.Sqrt(MathX.Fabs(q));
                     H[n][n] = H[n][n] + exshift;
                     H[n - 1][n - 1] = H[n - 1][n - 1] + exshift;
                     x = H[n][n];
 
-                    if (q >= 0.0f)
+                    if (q >= 0f)
                     {   // real pair
-                        if (p >= 0.0f)
+                        if (p >= 0f)
                             z = p + z;
                         else
                             z = p - z;
                         realEigenValues[n - 1] = x + z;
                         realEigenValues[n] = realEigenValues[n - 1];
-                        if (z != 0.0f)
+                        if (z != 0f)
                             realEigenValues[n] = x - w / z;
-                        imaginaryEigenValues[n - 1] = 0.0f;
-                        imaginaryEigenValues[n] = 0.0f;
+                        imaginaryEigenValues[n - 1] = 0f;
+                        imaginaryEigenValues[n] = 0f;
                         x = H[n][n - 1];
                         s = MathX.Fabs(x) + MathX.Fabs(z);
                         p = x / s;
@@ -451,8 +452,8 @@ namespace Droid.Core
 
                     // form shift
                     x = H[n][n];
-                    y = 0.0f;
-                    w = 0.0f;
+                    y = 0f;
+                    w = 0f;
                     if (l < n)
                     {
                         y = H[n - 1][n - 1];
@@ -473,14 +474,14 @@ namespace Droid.Core
                     // new ad hoc shift
                     if (iter == 30)
                     {
-                        s = (y - x) / 2.0f;
+                        s = (y - x) / 2f;
                         s = s * s + w;
                         if (s > 0)
                         {
                             s = MathX.Sqrt(s);
                             if (y < x)
                                 s = -s;
-                            s = x - w / ((y - x) / 2.0f + s);
+                            s = x - w / ((y - x) / 2f + s);
                             for (i = low; i <= n; i++)
                                 H[i][i] -= s;
                             exshift += s;
@@ -510,9 +511,9 @@ namespace Droid.Core
 
                     for (i = m + 2; i <= n; i++)
                     {
-                        H[i][i - 2] = 0.0f;
+                        H[i][i - 2] = 0f;
                         if (i > m + 2)
-                            H[i][i - 3] = 0.0f;
+                            H[i][i - 3] = 0f;
                     }
 
                     // double QR step involving rows l:n and columns m:n
@@ -523,21 +524,21 @@ namespace Droid.Core
                         {
                             p = H[k][k - 1];
                             q = H[k + 1][k - 1];
-                            r = notlast ? H[k + 2][k - 1] : 0.0f;
+                            r = notlast ? H[k + 2][k - 1] : 0f;
                             x = MathX.Fabs(p) + MathX.Fabs(q) + MathX.Fabs(r);
-                            if (x != 0.0f)
+                            if (x != 0f)
                             {
                                 p /= x;
                                 q /= x;
                                 r /= x;
                             }
                         }
-                        if (x == 0.0f)
+                        if (x == 0f)
                             break;
                         s = MathX.Sqrt(p * p + q * q + r * r);
-                        if (p < 0.0f)
+                        if (p < 0f)
                             s = -s;
-                        if (s != 0.0f)
+                        if (s != 0f)
                         {
                             if (k != m)
                                 H[k][k - 1] = -s * x;
@@ -594,7 +595,7 @@ namespace Droid.Core
             }
 
             // backsubstitute to find vectors of upper triangular form
-            if (norm == 0.0f)
+            if (norm == 0f)
                 return false;
 
             for (n = numRows - 1; n >= 0; n--)
@@ -602,17 +603,17 @@ namespace Droid.Core
                 p = realEigenValues[n];
                 q = imaginaryEigenValues[n];
 
-                if (q == 0.0f)
+                if (q == 0f)
                 {   // real vector
                     var l = n;
-                    H[n][n] = 1.0f;
+                    H[n][n] = 1f;
                     for (i = n - 1; i >= 0; i--)
                     {
                         w = H[i][i] - p;
-                        r = 0.0f;
+                        r = 0f;
                         for (j = l; j <= n; j++)
                             r += H[i][j] * H[j][n];
-                        if (imaginaryEigenValues[i] < 0.0f)
+                        if (imaginaryEigenValues[i] < 0f)
                         {
                             z = w;
                             s = r;
@@ -620,9 +621,9 @@ namespace Droid.Core
                         else
                         {
                             l = i;
-                            if (imaginaryEigenValues[i] == 0.0f)
+                            if (imaginaryEigenValues[i] == 0f)
                             {
-                                if (w != 0.0f)
+                                if (w != 0f)
                                     H[i][n] = -r / w;
                                 else
                                     H[i][n] = -r / (eps * norm);
@@ -648,7 +649,7 @@ namespace Droid.Core
                         }
                     }
                 }
-                else if (q < 0.0f)
+                else if (q < 0f)
                 {   // complex vector
                     var l = n - 1;
 
@@ -659,14 +660,14 @@ namespace Droid.Core
                         H[n - 1][n] = -(H[n][n] - p) / H[n][n - 1];
                     }
                     else
-                        ComplexDivision(0.0f, -H[n - 1][n], H[n - 1][n - 1] - p, q, ref H[n - 1][n - 1], ref H[n - 1][n]);
-                    H[n][n - 1] = 0.0f;
-                    H[n][n] = 1.0f;
+                        ComplexDivision(0f, -H[n - 1][n], H[n - 1][n - 1] - p, q, ref H[n - 1][n - 1], ref H[n - 1][n]);
+                    H[n][n - 1] = 0f;
+                    H[n][n] = 1f;
                     for (i = n - 2; i >= 0; i--)
                     {
                         float ra, sa, vr, vi;
-                        ra = 0.0f;
-                        sa = 0.0f;
+                        ra = 0f;
+                        sa = 0f;
                         for (j = l; j <= n; j++)
                         {
                             ra += H[i][j] * H[j][n - 1];
@@ -674,7 +675,7 @@ namespace Droid.Core
                         }
                         w = H[i][i] - p;
 
-                        if (imaginaryEigenValues[i] < 0.0f)
+                        if (imaginaryEigenValues[i] < 0f)
                         {
                             z = w;
                             r = ra;
@@ -683,7 +684,7 @@ namespace Droid.Core
                         else
                         {
                             l = i;
-                            if (imaginaryEigenValues[i] == 0.0f)
+                            if (imaginaryEigenValues[i] == 0f)
                                 ComplexDivision(-ra, -sa, w, q, ref H[i][n - 1], ref H[i][n]);
                             else
                             {
@@ -691,8 +692,8 @@ namespace Droid.Core
                                 x = H[i][i + 1];
                                 y = H[i + 1][i];
                                 vr = (realEigenValues[i] - p) * (realEigenValues[i] - p) + imaginaryEigenValues[i] * imaginaryEigenValues[i] - q * q;
-                                vi = (realEigenValues[i] - p) * 2.0f * q;
-                                if (vr == 0.0f && vi == 0.0f)
+                                vi = (realEigenValues[i] - p) * 2f * q;
+                                if (vr == 0f && vi == 0f)
                                     vr = eps * norm * (MathX.Fabs(w) + MathX.Fabs(q) + MathX.Fabs(x) + MathX.Fabs(y) + MathX.Fabs(z));
                                 ComplexDivision(x * r - z * ra + q * sa, x * s - z * sa - q * ra, vr, vi, ref H[i][n - 1], ref H[i][n]);
                                 if (MathX.Fabs(x) > (MathX.Fabs(z) + MathX.Fabs(q)))
@@ -727,7 +728,7 @@ namespace Droid.Core
             for (j = numRows - 1; j >= low; j--)
                 for (i = low; i <= high; i++)
                 {
-                    z = 0.0f;
+                    z = 0f;
                     for (k = low; k <= Math.Min(j, high); k++)
                         z += this[i][k] * H[k][j];
                     this[i][j] = z;
@@ -783,7 +784,7 @@ namespace Droid.Core
         ///     [ 0  a  0 ]
         /// A + [ d  b  e ]
         ///     [ 0  c  0 ]
-        /// where: a = v[0,r-1], b = v[r], c = v[r+1,numRows-1], d = w[0,r-1], w[r] = 0.0f, e = w[r+1,numColumns-1]
+        /// where: a = v[0,r-1], b = v[r], c = v[r+1,numRows-1], d = w[0,r-1], w[r] = 0f, e = w[r+1,numColumns-1]
         /// </summary>
         /// <param name="v">The v.</param>
         /// <param name="w">The w.</param>
@@ -792,7 +793,7 @@ namespace Droid.Core
         public void Update_RowColumn(VectorX v, VectorX w, int r)
         {
             int i;
-            Debug.Assert(w[r] == 0.0f);
+            Debug.Assert(w[r] == 0f);
             Debug.Assert(v.Size >= numColumns);
             Debug.Assert(w.Size >= numRows);
             for (i = 0; i < numRows; i++)
@@ -898,13 +899,13 @@ namespace Droid.Core
             var rowIndex = stackalloc int[numRows];
             var pivot = stackalloc bool[numRows];
 
-            U.memset(pivot, 0, numRows * sizeof(float));
+            Unsafe.InitBlock(pivot, 0, (uint)numRows * sizeof(float)); //U.memset(pivot, 0, numRows * sizeof(float));
 
             // elimination with full pivoting
             for (i = 0; i < numRows; i++)
             {
                 // search the whole matrix except for pivoted rows for the maximum absolute value
-                max = 0.0f;
+                max = 0f;
                 r = c = 0;
                 for (j = 0; j < numRows; j++)
                     if (!pivot[j])
@@ -920,7 +921,7 @@ namespace Droid.Core
                                 }
                             }
 
-                if (max == 0.0f)
+                if (max == 0f)
                     // matrix is not invertible
                     return false;
 
@@ -935,8 +936,8 @@ namespace Droid.Core
                 columnIndex[i] = c;
 
                 // scale the row to make the pivot entry equal to 1
-                d = 1.0f / this[c][c];
-                this[c][c] = 1.0f;
+                d = 1f / this[c][c];
+                this[c][c] = 1f;
                 for (k = 0; k < numRows; k++)
                     this[c][k] *= d;
 
@@ -945,7 +946,7 @@ namespace Droid.Core
                     if (j != c)
                     {
                         d = this[j][c];
-                        this[j][c] = 0.0f;
+                        this[j][c] = 0f;
                         for (k = 0; k < numRows; k++)
                             this[j][k] -= this[c][k] * d;
                     }
@@ -983,9 +984,9 @@ namespace Droid.Core
 
             Multiply(y, v);
             TransposeMultiply(z, w);
-            beta = 1.0f + (w * y);
+            beta = 1f + (w * y);
 
-            if (beta == 0.0f)
+            if (beta == 0f)
                 return false;
 
             alpha /= beta;
@@ -1006,7 +1007,7 @@ namespace Droid.Core
         ///  A + [ d  b  e ]
         ///	     [ 0  c  0 ]
         ///
-        ///  where: a = v[0,r-1], b = v[r], c = v[r+1,numRows-1], d = w[0,r-1], w[r] = 0.0f, e = w[r+1,numColumns-1]
+        ///  where: a = v[0,r-1], b = v[r], c = v[r+1,numRows-1], d = w[0,r-1], w[r] = 0f, e = w[r+1,numColumns-1]
         /// </summary>
         /// <param name="v">The v.</param>
         /// <param name="w">The w.</param>
@@ -1019,15 +1020,15 @@ namespace Droid.Core
             Debug.Assert(v.Size >= numColumns);
             Debug.Assert(w.Size >= numRows);
             Debug.Assert(r >= 0 && r < numRows && r < numColumns);
-            Debug.Assert(w[r] == 0.0f);
+            Debug.Assert(w[r] == 0f);
 
             s.SetData(Math.Max(numRows, numColumns), VectorX.VECX_ALLOCA(Math.Max(numRows, numColumns)));
             s.Zero();
-            s[r] = 1.0f;
+            s[r] = 1f;
 
-            if (!Inverse_UpdateRankOne(v, s, 1.0f))
+            if (!Inverse_UpdateRankOne(v, s, 1f))
                 return false;
-            if (!Inverse_UpdateRankOne(s, w, 1.0f))
+            if (!Inverse_UpdateRankOne(s, w, 1f))
                 return false;
             return true;
         }
@@ -1051,11 +1052,11 @@ namespace Droid.Core
             Debug.Assert(w.Size >= numColumns + 1);
 
             ChangeSize(numRows + 1, numColumns + 1, true);
-            this[numRows - 1][numRows - 1] = 1.0f;
+            this[numRows - 1][numRows - 1] = 1f;
 
             v2.SetData(numRows, VectorX.VECX_ALLOCA(numRows));
             v2 = v;
-            v2[numRows - 1] -= 1.0f;
+            v2[numRows - 1] -= 1f;
 
             return Inverse_UpdateRowColumn(v2, w, numRows - 1);
         }
@@ -1081,8 +1082,8 @@ namespace Droid.Core
             // update the row and column to identity
             v1 = -v;
             w1 = -w;
-            v1[r] += 1.0f;
-            w1[r] = 0.0f;
+            v1[r] += 1f;
+            w1[r] = 0f;
 
             if (!Inverse_UpdateRowColumn(v1, w1, r))
                 return false;
@@ -1135,7 +1136,7 @@ namespace Droid.Core
                 for (i = 0; i < numRows; i++)
                     index[i] = i;
 
-            w = 1.0f;
+            w = 1f;
             min = Math.Min(numRows, numColumns);
             for (i = 0; i < min; i++)
             {
@@ -1154,7 +1155,7 @@ namespace Droid.Core
                         }
                     }
 
-                if (s == 0.0f)
+                if (s == 0f)
                     return false;
 
                 if (newi != i)
@@ -1177,7 +1178,7 @@ namespace Droid.Core
 
                 if (i < numRows)
                 {
-                    d = 1.0f / this[i][i];
+                    d = 1f / this[i][i];
                     for (j = i + 1; j < numRows; j++)
                         this[j][i] *= d;
                 }
@@ -1223,8 +1224,9 @@ namespace Droid.Core
             else
                 for (i = 0; i < numRows; i++)
                     y[i] = alpha * v[i];
+
             fixed (float* w_ = w.p)
-                U.memcpy(z, w_ + w.pi, w.Size * sizeof(float));
+                Unsafe.CopyBlock(z, w_ + w.pi, (uint)w.Size * sizeof(float)); //U.memcpy(z, w_ + w.pi, w.Size * sizeof(float));
 
             max = Math.Min(numRows, numColumns);
             for (i = 0; i < max; i++)
@@ -1235,7 +1237,7 @@ namespace Droid.Core
                 p1 = z[i];
                 diag += p0 * p1;
 
-                if (diag == 0.0f)
+                if (diag == 0f)
                     return false;
 
                 beta = p1 / diag;
@@ -1272,7 +1274,7 @@ namespace Droid.Core
         // LU + [ d  b  e ]
         //      [ 0  c  0 ]
         // 
-        // where: a = v[0,r-1], b = v[r], c = v[r+1,numRows-1], d = w[0,r-1], w[r] = 0.0f, e = w[r+1,numColumns-1]
+        // where: a = v[0,r-1], b = v[r], c = v[r+1,numRows-1], d = w[0,r-1], w[r] = 0f, e = w[r+1,numColumns-1]
         /// </summary>
         /// <param name="v">The v.</param>
         /// <param name="w">The w.</param>
@@ -1285,7 +1287,7 @@ namespace Droid.Core
             Debug.Assert(v.Size >= numColumns);
             Debug.Assert(w.Size >= numRows);
             Debug.Assert(r >= 0 && r < numColumns && r < numRows);
-            Debug.Assert(w[r] == 0.0f);
+            Debug.Assert(w[r] == 0f);
 
             var y0 = stackalloc float[v.Size];
             var z0 = stackalloc float[w.Size];
@@ -1307,18 +1309,19 @@ namespace Droid.Core
             else
             {
                 fixed (float* v_ = v.p)
-                    U.memcpy(y0, v_ + v.pi, v.Size * sizeof(float));
+                    Unsafe.CopyBlock(y0, v_ + v.pi, (uint)v.Size * sizeof(float)); //U.memcpy(y0, v_ + v.pi, v.Size * sizeof(float));
                 rp = r;
             }
 
-            U.memset(y1, 0, v.Size * sizeof(float));
-            y1[rp] = 1.0f;
+            Unsafe.InitBlock(y1, 0, (uint)v.Size * sizeof(float)); //U.memset(y1, 0, v.Size * sizeof(float));
+            y1[rp] = 1f;
 
-            U.memset(z0, 0, w.Size * sizeof(float));
-            z0[r] = 1.0f;
+            Unsafe.InitBlock(z0, 0, (uint)w.Size * sizeof(float)); //U.memset(z0, 0, w.Size * sizeof(float));
+
+            z0[r] = 1f;
 
             fixed (float* w_ = w.p)
-                U.memcpy(z1, w_ + w.pi, w.Size * sizeof(float));
+                Unsafe.CopyBlock(z1, w_ + w.pi, (uint)w.Size * sizeof(float)); //U.memcpy(z1, w_ + w.pi, w.Size * sizeof(float));
 
             // update the beginning of the to be updated row and column
             min = Math.Min(r, rp);
@@ -1345,7 +1348,7 @@ namespace Droid.Core
                 p1 = z0[i];
                 diag += p0 * p1;
 
-                if (diag == 0.0f)
+                if (diag == 0f)
                     return false;
 
                 beta0 = p1 / diag;
@@ -1354,7 +1357,7 @@ namespace Droid.Core
                 q1 = z1[i];
                 diag += q0 * q1;
 
-                if (diag == 0.0f)
+                if (diag == 0f)
                     return false;
 
                 beta1 = q1 / diag;
@@ -1490,8 +1493,8 @@ namespace Droid.Core
                     }
                 }
 
-                v1[r] += 1.0f;
-                w1[r] = 0.0f;
+                v1[r] += 1f;
+                w1[r] = 0f;
 
                 if (!LU_UpdateRowColumn(v1, w1, r, index))
                     return false;
@@ -1502,10 +1505,10 @@ namespace Droid.Core
 
                     // move row index[r] of the original matrix to row index[p] of the original matrix
                     v1.Zero();
-                    v1[index[p]] = 1.0f;
+                    v1[index[p]] = 1f;
                     w1 = u - w;
 
-                    if (!LU_UpdateRankOne(v1, w1, 1.0f, index))
+                    if (!LU_UpdateRankOne(v1, w1, 1f, index))
                         return false;
                 }
 
@@ -1520,8 +1523,8 @@ namespace Droid.Core
             {
                 v1 = -v;
                 w1 = -w;
-                v1[r] += 1.0f;
-                w1[r] = 0.0f;
+                v1[r] += 1f;
+                w1[r] = 0f;
 
                 if (!LU_UpdateRowColumn(v1, w1, r, index))
                     return false;
@@ -1585,11 +1588,11 @@ namespace Droid.Core
 
             for (i = 0; i < numRows; i++)
             {
-                b[i] = 1.0f;
+                b[i] = 1f;
                 LU_Solve(x, b, index);
                 for (j = 0; j < numRows; j++)
                     inv[j][i] = x[j];
-                b[i] = 0.0f;
+                b[i] = 0f;
             }
         }
 
@@ -1609,7 +1612,7 @@ namespace Droid.Core
             {
                 for (j = 0; j < i; j++)
                     L[i][j] = this[i][j];
-                L[i][i] = 1.0f;
+                L[i][i] = 1f;
                 for (j = i; j < numColumns; j++)
                     U[i][j] = this[i][j];
             }
@@ -1640,7 +1643,7 @@ namespace Droid.Core
                     if (i >= r)
                         sum = this[r][i];
                     else
-                        sum = 0.0f;
+                        sum = 0f;
                     for (j = 0; j <= i && j < r; j++)
                         sum += this[r][j] * this[j][i];
                     m[rp][i] = sum;
@@ -1669,25 +1672,25 @@ namespace Droid.Core
 
             for (k = 0; k < numRows - 1; k++)
             {
-                scale = 0.0f;
+                scale = 0f;
                 for (i = k; i < numRows; i++)
                 {
                     s = MathX.Fabs(this[i][k]);
                     if (s > scale)
                         scale = s;
                 }
-                if (scale == 0.0f)
+                if (scale == 0f)
                 {
                     singular = true;
-                    c[k] = d[k] = 0.0f;
+                    c[k] = d[k] = 0f;
                 }
                 else
                 {
-                    s = 1.0f / scale;
+                    s = 1f / scale;
                     for (i = k; i < numRows; i++)
                         this[i][k] *= s;
 
-                    sum = 0.0f;
+                    sum = 0f;
                     for (i = k; i < numRows; i++)
                     {
                         s = this[i][k];
@@ -1695,7 +1698,7 @@ namespace Droid.Core
                     }
 
                     s = MathX.Sqrt(sum);
-                    if (this[k][k] < 0.0f)
+                    if (this[k][k] < 0f)
                         s = -s;
                     this[k][k] += s;
                     c[k] = s * this[k][k];
@@ -1703,7 +1706,7 @@ namespace Droid.Core
 
                     for (j = k + 1; j < numRows; j++)
                     {
-                        sum = 0.0f;
+                        sum = 0f;
                         for (i = k; i < numRows; i++)
                             sum += this[i][k] * this[i][j];
                         t = sum / c[k];
@@ -1713,7 +1716,7 @@ namespace Droid.Core
                 }
             }
             d[numRows - 1] = this[numRows - 1][numRows - 1];
-            if (d[numRows - 1] == 0.0f)
+            if (d[numRows - 1] == 0f)
                 singular = true;
 
             return !singular;
@@ -1731,24 +1734,24 @@ namespace Droid.Core
         {
             int j; float f, c, s, w, y;
 
-            if (a == 0.0f)
+            if (a == 0f)
             {
-                c = 0.0f;
-                s = (b >= 0.0f) ? 1.0f : -1.0f;
+                c = 0f;
+                s = (b >= 0f) ? 1f : -1f;
             }
             else if (MathX.Fabs(a) > MathX.Fabs(b))
             {
                 f = b / a;
-                c = MathX.Fabs(1.0f / MathX.Sqrt(1.0f + f * f));
-                if (a < 0.0f)
+                c = MathX.Fabs(1f / MathX.Sqrt(1f + f * f));
+                if (a < 0f)
                     c = -c;
                 s = f * c;
             }
             else
             {
                 f = a / b;
-                s = MathX.Fabs(1.0f / MathX.Sqrt(1.0f + f * f));
-                if (b < 0.0f)
+                s = MathX.Fabs(1f / MathX.Sqrt(1f + f * f));
+                if (b < 0f)
                     s = -s;
                 c = f * s;
             }
@@ -1787,22 +1790,22 @@ namespace Droid.Core
             u *= alpha;
 
             for (k = v.Size - 1; k > 0; k--)
-                if (u[k] != 0.0f)
+                if (u[k] != 0f)
                     break;
             for (i = k - 1; i >= 0; i--)
             {
                 QR_Rotate(R, i, u[i], -u[i + 1]);
-                if (u[i] == 0.0f)
+                if (u[i] == 0f)
                     u[i] = MathX.Fabs(u[i + 1]);
                 else if (MathX.Fabs(u[i]) > MathX.Fabs(u[i + 1]))
                 {
                     f = u[i + 1] / u[i];
-                    u[i] = MathX.Fabs(u[i]) * MathX.Sqrt(1.0f + f * f);
+                    u[i] = MathX.Fabs(u[i]) * MathX.Sqrt(1f + f * f);
                 }
                 else
                 {
                     f = u[i] / u[i + 1];
-                    u[i] = MathX.Fabs(u[i + 1]) * MathX.Sqrt(1.0f + f * f);
+                    u[i] = MathX.Fabs(u[i + 1]) * MathX.Sqrt(1f + f * f);
                 }
             }
             for (i = 0; i < v.Size; i++)
@@ -1819,7 +1822,7 @@ namespace Droid.Core
         /// QR + [ d  b  e ]
         ///      [ 0  c  0 ]
         /// 
-        /// where: a = v[0,r-1], b = v[r], c = v[r+1,numRows-1], d = w[0,r-1], w[r] = 0.0f, e = w[r+1,numColumns-1]
+        /// where: a = v[0,r-1], b = v[r], c = v[r+1,numRows-1], d = w[0,r-1], w[r] = 0f, e = w[r+1,numColumns-1]
         /// </summary>
         /// <param name="R">The r.</param>
         /// <param name="v">The v.</param>
@@ -1832,15 +1835,15 @@ namespace Droid.Core
             Debug.Assert(v.Size >= numColumns);
             Debug.Assert(w.Size >= numRows);
             Debug.Assert(r >= 0 && r < numRows && r < numColumns);
-            Debug.Assert(w[r] == 0.0f);
+            Debug.Assert(w[r] == 0f);
 
             s.SetData(Math.Max(numRows, numColumns), VectorX.VECX_ALLOCA(Math.Max(numRows, numColumns)));
             s.Zero();
-            s[r] = 1.0f;
+            s[r] = 1f;
 
-            if (!QR_UpdateRankOne(R, v, s, 1.0f))
+            if (!QR_UpdateRankOne(R, v, s, 1f))
                 return false;
-            if (!QR_UpdateRankOne(R, s, w, 1.0f))
+            if (!QR_UpdateRankOne(R, s, w, 1f))
                 return false;
             return true;
         }
@@ -1865,14 +1868,14 @@ namespace Droid.Core
             Debug.Assert(w.Size >= numColumns + 1);
 
             ChangeSize(numRows + 1, numColumns + 1, true);
-            this[numRows - 1][numRows - 1] = 1.0f;
+            this[numRows - 1][numRows - 1] = 1f;
 
             R.ChangeSize(R.numRows + 1, R.numColumns + 1, true);
-            R[R.numRows - 1][R.numRows - 1] = 1.0f;
+            R[R.numRows - 1][R.numRows - 1] = 1f;
 
             v2.SetData(numRows, VectorX.VECX_ALLOCA(numRows));
             v2 = v;
-            v2[numRows - 1] -= 1.0f;
+            v2[numRows - 1] -= 1f;
 
             return QR_UpdateRowColumn(R, v2, w, numRows - 1);
         }
@@ -1900,8 +1903,8 @@ namespace Droid.Core
             // update the row and column to identity
             v1 = -v;
             w1 = -w;
-            v1[r] += 1.0f;
-            w1[r] = 0.0f;
+            v1[r] += 1f;
+            w1[r] = 0f;
 
             if (!QR_UpdateRowColumn(R, v1, w1, r))
                 return false;
@@ -1933,7 +1936,7 @@ namespace Droid.Core
             // multiply b with transpose of Q
             for (i = 0; i < numRows - 1; i++)
             {
-                sum = 0.0f;
+                sum = 0f;
                 for (j = i; j < numRows; j++)
                     sum += this[j][i] * x[j];
                 t = sum / c[i];
@@ -1995,11 +1998,11 @@ namespace Droid.Core
 
             for (i = 0; i < numRows; i++)
             {
-                b[i] = 1.0f;
+                b[i] = 1f;
                 QR_Solve(x, b, c, d);
                 for (j = 0; j < numRows; j++)
                     inv[j][i] = x[j];
-                b[i] = 0.0f;
+                b[i] = 0f;
             }
         }
 
@@ -2018,11 +2021,11 @@ namespace Droid.Core
             Q.Identity(numRows, numColumns);
             for (i = 0; i < numColumns - 1; i++)
             {
-                if (c[i] == 0.0f)
+                if (c[i] == 0f)
                     continue;
                 for (j = 0; j < numRows; j++)
                 {
-                    sum = 0.0f;
+                    sum = 0f;
                     for (k = i; k < numColumns; k++)
                         sum += this[k][i] * Q[j][k];
                     sum /= c[i];
@@ -2054,11 +2057,11 @@ namespace Droid.Core
             Q.Identity(numRows, numColumns);
             for (i = 0; i < numColumns - 1; i++)
             {
-                if (c[i] == 0.0f)
+                if (c[i] == 0f)
                     continue;
                 for (j = 0; j < numRows; j++)
                 {
-                    sum = 0.0f;
+                    sum = 0f;
                     for (k = i; k < numColumns; k++)
                         sum += this[k][i] * Q[j][k];
                     sum /= c[i];
@@ -2085,13 +2088,13 @@ namespace Droid.Core
         {
             int i, j, k, l; float f, h, r, g, s, scale;
 
-            anorm = 0.0f;
-            g = s = scale = 0.0f;
+            anorm = 0f;
+            g = s = scale = 0f;
             for (i = 0; i < numColumns; i++)
             {
                 l = i + 1;
                 rv1[i] = scale * g;
-                g = s = scale = 0.0f;
+                g = s = scale = 0f;
                 if (i < numRows)
                 {
                     for (k = i; k < numRows; k++)
@@ -2105,14 +2108,14 @@ namespace Droid.Core
                         }
                         f = this[i][i];
                         g = MathX.Sqrt(s);
-                        if (f >= 0.0f)
+                        if (f >= 0f)
                             g = -g;
                         h = f * g - s;
                         this[i][i] = f - g;
                         if (i != (numColumns - 1))
                             for (j = l; j < numColumns; j++)
                             {
-                                for (s = 0.0f, k = i; k < numRows; k++)
+                                for (s = 0f, k = i; k < numRows; k++)
                                     s += this[k][i] * this[k][j];
                                 f = s / h;
                                 for (k = i; k < numRows; k++)
@@ -2123,7 +2126,7 @@ namespace Droid.Core
                     }
                 }
                 w[i] = scale * g;
-                g = s = scale = 0.0f;
+                g = s = scale = 0f;
                 if (i < numRows && i != (numColumns - 1))
                 {
                     for (k = l; k < numColumns; k++)
@@ -2137,16 +2140,16 @@ namespace Droid.Core
                         }
                         f = this[i][l];
                         g = MathX.Sqrt(s);
-                        if (f >= 0.0f)
+                        if (f >= 0f)
                             g = -g;
-                        h = 1.0f / (f * g - s);
+                        h = 1f / (f * g - s);
                         this[i][l] = f - g;
                         for (k = l; k < numColumns; k++)
                             rv1[k] = this[i][k] * h;
                         if (i != (numRows - 1))
                             for (j = l; j < numRows; j++)
                             {
-                                for (s = 0.0f, k = l; k < numColumns; k++)
+                                for (s = 0f, k = l; k < numColumns; k++)
                                     s += this[j][k] * this[i][k];
                                 for (k = l; k < numColumns; k++)
                                     this[j][k] += s * rv1[k];
@@ -2165,7 +2168,7 @@ namespace Droid.Core
         {
             int i, j, k, l; float f, g, s;
 
-            g = 0.0f;
+            g = 0f;
             for (i = (numColumns - 1); i >= 0; i--)
             {
                 l = i + 1;
@@ -2178,16 +2181,16 @@ namespace Droid.Core
                         // double division to reduce underflow
                         for (j = l; j < numColumns; j++)
                         {
-                            for (s = 0.0f, k = l; k < numColumns; k++)
+                            for (s = 0f, k = l; k < numColumns; k++)
                                 s += this[i][k] * V[k][j];
                             for (k = l; k < numColumns; k++)
                                 V[k][j] += s * V[k][i];
                         }
                     }
                     for (j = l; j < numColumns; j++)
-                        V[i][j] = V[j][i] = 0.0f;
+                        V[i][j] = V[j][i] = 0f;
                 }
-                V[i][i] = 1.0f;
+                V[i][i] = 1f;
                 g = rv1[i];
             }
             for (i = numColumns - 1; i >= 0; i--)
@@ -2196,14 +2199,14 @@ namespace Droid.Core
                 g = w[i];
                 if (i < (numColumns - 1))
                     for (j = l; j < numColumns; j++)
-                        this[i][j] = 0.0f;
+                        this[i][j] = 0f;
                 if (g != 0f)
                 {
-                    g = 1.0f / g;
+                    g = 1f / g;
                     if (i != (numColumns - 1))
                         for (j = l; j < numColumns; j++)
                         {
-                            for (s = 0.0f, k = l; k < numRows; k++)
+                            for (s = 0f, k = l; k < numRows; k++)
                                 s += this[k][i] * this[k][j];
                             f = (s / this[i][i]) * g;
                             for (k = i; k < numRows; k++)
@@ -2214,8 +2217,8 @@ namespace Droid.Core
                 }
                 else
                     for (j = i; j < numRows; j++)
-                        this[j][i] = 0.0f;
-                this[i][i] += 1.0f;
+                        this[j][i] = 0f;
+                this[i][i] += 1f;
             }
         }
 
@@ -2231,7 +2234,7 @@ namespace Droid.Core
         /// <returns></returns>
         public bool SVD_Factor(VectorX w, MatrixX V)               // factor in-place: U * Diag(w) * V.Transpose()
         {
-            int flag, i, its, j, jj, k, l, nm; float c, f, h, s, x, y, z, r, g = 0.0f; float anorm = 0.0f; VectorX rv1 = new();
+            int flag, i, its, j, jj, k, l, nm; float c, f, h, s, x, y, z, r, g = 0f; float anorm = 0f; VectorX rv1 = new();
 
             if (numRows < numColumns)
                 return false;
@@ -2262,8 +2265,8 @@ namespace Droid.Core
                     }
                     if (flag != 0f)
                     {
-                        c = 0.0f;
-                        s = 1.0f;
+                        c = 0f;
+                        s = 1f;
                         for (i = l; i <= k; i++)
                         {
                             f = s * rv1[i];
@@ -2273,7 +2276,7 @@ namespace Droid.Core
                                 g = w[i];
                                 h = Pythag(f, g);
                                 w[i] = h;
-                                h = 1.0f / h;
+                                h = 1f / h;
                                 c = g * h;
                                 s = -f * h;
                                 for (j = 0; j < numRows; j++)
@@ -2289,7 +2292,7 @@ namespace Droid.Core
                     z = w[k];
                     if (l == k)
                     {
-                        if (z < 0.0f)
+                        if (z < 0f)
                         {
                             w[k] = -z;
                             for (j = 0; j < numColumns; j++)
@@ -2304,11 +2307,11 @@ namespace Droid.Core
                     y = w[nm];
                     g = rv1[nm];
                     h = rv1[k];
-                    f = ((y - z) * (y + z) + (g - h) * (g + h)) / (2.0f * h * y);
-                    g = Pythag(f, 1.0f);
-                    r = f >= 0.0f ? g : -g;
+                    f = ((y - z) * (y + z) + (g - h) * (g + h)) / (2f * h * y);
+                    g = Pythag(f, 1f);
+                    r = f >= 0f ? g : -g;
                     f = ((x - z) * (x + z) + h * ((y / (f + r)) - h)) / x;
-                    c = s = 1.0f;
+                    c = s = 1f;
                     for (j = l; j <= nm; j++)
                     {
                         i = j + 1;
@@ -2335,7 +2338,7 @@ namespace Droid.Core
                         w[j] = z;
                         if (z != 0f)
                         {
-                            z = 1.0f / z;
+                            z = 1f / z;
                             c = f * z;
                             s = h * z;
                         }
@@ -2349,7 +2352,7 @@ namespace Droid.Core
                             this[jj][i] = z * c - y * s;
                         }
                     }
-                    rv1[l] = 0.0f;
+                    rv1[l] = 0f;
                     rv1[k] = f;
                     w[k] = x;
                 }
@@ -2376,7 +2379,7 @@ namespace Droid.Core
 
             for (i = 0; i < numColumns; i++)
             {
-                sum = 0.0f;
+                sum = 0f;
                 if (w[i] >= MathX.FLT_EPSILON)
                 {
                     for (j = 0; j < numRows; j++)
@@ -2387,7 +2390,7 @@ namespace Droid.Core
             }
             for (i = 0; i < numColumns; i++)
             {
-                sum = 0.0f;
+                sum = 0f;
                 for (j = 0; j < numColumns; j++)
                     sum += V[i][j] * tmp[j];
                 x[i] = sum;
@@ -2412,7 +2415,7 @@ namespace Droid.Core
             for (i = 0; i < numRows; i++)
             {
                 wi = w[i];
-                wi = (wi < MathX.FLT_EPSILON) ? 0.0f : 1.0f / wi;
+                wi = (wi < MathX.FLT_EPSILON) ? 0f : 1f / wi;
                 for (j = 0; j < numColumns; j++)
                     V2[j][i] *= wi;
             }
@@ -2447,14 +2450,14 @@ namespace Droid.Core
                 if (w[r] >= MathX.FLT_EPSILON)
                     for (i = 0; i < V.NumRows; i++)
                     {
-                        sum = 0.0f;
+                        sum = 0f;
                         for (j = 0; j < numColumns; j++)
                             sum += this[r][j] * V[i][j];
                         m[r][i] = sum * w[r];
                     }
                 else
                     for (i = 0; i < V.NumRows; i++)
-                        m[r][i] = 0.0f;
+                        m[r][i] = 0f;
             }
         }
 
@@ -2490,7 +2493,7 @@ namespace Droid.Core
                 for (k = 0; k < i; k++)
                     sum -= this[i][k] * this[i][k];
 
-                if (sum <= 0.0f)
+                if (sum <= 0f)
                     return false;
 
                 invSqrt[i] = MathX.InvSqrt(sum);
@@ -2516,17 +2519,17 @@ namespace Droid.Core
 
             var y = stackalloc float[v.Size];
             fixed (float* v_ = v.p)
-                U.memcpy(y, v_ + v.pi, v.Size * sizeof(float));
+                Unsafe.CopyBlock(y, v_ + v.pi, (uint)v.Size * sizeof(float)); //U.memcpy(y, v_ + v.pi, v.Size * sizeof(float));
 
             for (i = offset; i < numColumns; i++)
             {
                 p = y[i];
                 diag = this[i][i];
-                invDiag = 1.0f / diag;
+                invDiag = 1f / diag;
                 diagSqr = diag * diag;
                 newDiagSqr = diagSqr + alpha * p * p;
 
-                if (newDiagSqr <= 0.0f)
+                if (newDiagSqr <= 0f)
                     return false;
 
                 this[i][i] = newDiag = MathX.Sqrt(newDiagSqr);
@@ -2577,7 +2580,7 @@ namespace Droid.Core
                     sum = this[0][0];
                     sum *= sum;
                     sum += v0;
-                    if (sum <= 0.0f)
+                    if (sum <= 0f)
                         return false;
                     this[0][0] = MathX.Sqrt(sum);
                     return true;
@@ -2592,7 +2595,7 @@ namespace Droid.Core
                 // calculate original row/column of matrix
                 for (i = 0; i < numRows; i++)
                 {
-                    sum = 0.0f;
+                    sum = 0f;
                     for (j = 0; j <= i; j++)
                         sum += this[r][j] * this[i][j];
                     original[i] = sum;
@@ -2614,7 +2617,7 @@ namespace Droid.Core
                     sum = original[r] + v[r];
                     for (j = 0; j < r; j++)
                         sum -= this[r][j] * this[r][j];
-                    if (sum <= 0.0f)
+                    if (sum <= 0f)
                         return false;
                     this[r][r] = MathX.Sqrt(sum);
                     return true;
@@ -2623,7 +2626,7 @@ namespace Droid.Core
                 // calculate the row/column to be added to the lower right sub matrix starting at (r, r)
                 for (i = r; i < numColumns; i++)
                 {
-                    sum = 0.0f;
+                    sum = 0f;
                     for (j = 0; j <= r; j++)
                         sum += this[r][j] * this[i][j];
                     addSub[i] = v[i] - (sum - original[i]);
@@ -2639,24 +2642,24 @@ namespace Droid.Core
             var v2 = stackalloc float[numColumns];
 
             d = MathX.SQRT_1OVER2;
-            v1[r] = (0.5f * addSub[r] + 1.0f) * d;
-            v2[r] = (0.5f * addSub[r] - 1.0f) * d;
+            v1[r] = (0.5f * addSub[r] + 1f) * d;
+            v2[r] = (0.5f * addSub[r] - 1f) * d;
             for (i = r + 1; i < numColumns; i++)
                 v1[i] = v2[i] = addSub[i] * d;
 
-            alpha1 = 1.0f;
-            alpha2 = -1.0f;
+            alpha1 = 1f;
+            alpha2 = -1f;
 
             // simultaneous update/downdate of the sub matrix starting at (r, r)
             for (i = r; i < numColumns; i++)
             {
                 p1 = v1[i];
                 diag = this[i][i];
-                invDiag = 1.0f / diag;
+                invDiag = 1f / diag;
                 diagSqr = diag * diag;
                 newDiagSqr = diagSqr + alpha1 * p1 * p1;
 
-                if (newDiagSqr <= 0.0f)
+                if (newDiagSqr <= 0f)
                     return false;
 
                 alpha1 /= newDiagSqr;
@@ -2667,7 +2670,7 @@ namespace Droid.Core
                 diagSqr = newDiagSqr;
                 newDiagSqr = diagSqr + alpha2 * p2 * p2;
 
-                if (newDiagSqr <= 0.0f)
+                if (newDiagSqr <= 0f)
                     return false;
 
                 this[i][i] = newDiag = MathX.Sqrt(newDiagSqr);
@@ -2730,7 +2733,7 @@ namespace Droid.Core
                 sum -= x[i] * x[i];
             }
 
-            if (sum <= 0.0f)
+            if (sum <= 0f)
                 return false;
 
             // store the diagonal entry
@@ -2757,7 +2760,7 @@ namespace Droid.Core
 
             // update the row and column to identity
             v1 = -v;
-            v1[r] += 1.0f;
+            v1[r] += 1f;
 
             // NOTE:	msvc compiler bug: the this pointer stored in edi is expected to stay
             //			untouched when calling Cholesky_UpdateRowColumn in the if statement
@@ -2819,11 +2822,11 @@ namespace Droid.Core
 
             for (i = 0; i < numRows; i++)
             {
-                b[i] = 1.0f;
+                b[i] = 1f;
                 Cholesky_Solve(x, b);
                 for (j = 0; j < numRows; j++)
                     inv[j][i] = x[j];
-                b[i] = 0.0f;
+                b[i] = 0f;
             }
         }
 
@@ -2843,7 +2846,7 @@ namespace Droid.Core
                 // calculate row of matrix
                 for (i = 0; i < numRows; i++)
                 {
-                    sum = 0.0f;
+                    sum = 0f;
                     for (j = 0; j <= i && j <= r; j++)
                         sum += this[r][j] * this[i][j];
                     m[r][i] = sum;
@@ -2881,11 +2884,11 @@ namespace Droid.Core
                     sum -= v[j] * d;
                 }
 
-                if (sum == 0.0f)
+                if (sum == 0f)
                     return false;
 
                 this[i][i] = sum;
-                d = 1.0f / sum;
+                d = 1f / sum;
 
                 for (j = i + 1; j < numRows; j++)
                 {
@@ -2916,7 +2919,7 @@ namespace Droid.Core
 
             var y = stackalloc float[v.Size];
             fixed (float* v_ = v.p)
-                U.memcpy(y, v_ + v.pi, v.Size * sizeof(float));
+                Unsafe.CopyBlock(y, v_ + v.pi, (uint)v.Size * sizeof(float)); //U.memcpy(y, v_ + v.pi, v.Size * sizeof(float));
 
             for (i = offset; i < numColumns; i++)
             {
@@ -2924,7 +2927,7 @@ namespace Droid.Core
                 diag = this[i][i];
                 this[i][i] = newDiag = diag + alpha * p * p;
 
-                if (newDiag == 0.0f)
+                if (newDiag == 0f)
                     return false;
 
                 alpha /= newDiag;
@@ -3017,7 +3020,7 @@ namespace Droid.Core
                     sum = original[r] + v[r];
                     for (j = 0; j < r; j++)
                         sum -= this[r][j] * y[j];
-                    if (sum == 0.0f)
+                    if (sum == 0f)
                         return false;
                     this[r][r] = sum;
                     return true;
@@ -3045,13 +3048,13 @@ namespace Droid.Core
             var v2 = stackalloc float[numColumns];
 
             d = MathX.SQRT_1OVER2;
-            v1[r] = (0.5f * addSub[r] + 1.0f) * d;
-            v2[r] = (0.5f * addSub[r] - 1.0f) * d;
+            v1[r] = (0.5f * addSub[r] + 1f) * d;
+            v2[r] = (0.5f * addSub[r] - 1f) * d;
             for (i = r + 1; i < numColumns; i++)
                 v1[i] = v2[i] = addSub[i] * d;
 
-            alpha1 = 1.0f;
-            alpha2 = -1.0f;
+            alpha1 = 1f;
+            alpha2 = -1f;
 
             // simultaneous update/downdate of the sub matrix starting at (r, r)
             for (i = r; i < numColumns; i++)
@@ -3060,7 +3063,7 @@ namespace Droid.Core
                 p1 = v1[i];
                 newDiag = diag + alpha1 * p1 * p1;
 
-                if (newDiag == 0.0f)
+                if (newDiag == 0f)
                     return false;
 
                 alpha1 /= newDiag;
@@ -3071,7 +3074,7 @@ namespace Droid.Core
                 p2 = v2[i];
                 newDiag = diag + alpha2 * p2 * p2;
 
-                if (newDiag == 0.0f)
+                if (newDiag == 0f)
                     return false;
 
                 alpha2 /= newDiag;
@@ -3134,7 +3137,7 @@ namespace Droid.Core
                 sum -= d * x[i];
             }
 
-            if (sum == 0.0f)
+            if (sum == 0f)
                 return false;
 
             // store the diagonal entry
@@ -3161,7 +3164,7 @@ namespace Droid.Core
 
             // update the row and column to identity
             v1 = -v;
-            v1[r] += 1.0f;
+            v1[r] += 1f;
 
             // NOTE:	msvc compiler bug: the this pointer stored in edi is expected to stay
             //			untouched when calling LDLT_UpdateRowColumn in the if statement
@@ -3227,11 +3230,11 @@ namespace Droid.Core
 
             for (i = 0; i < numRows; i++)
             {
-                b[i] = 1.0f;
+                b[i] = 1f;
                 LDLT_Solve(x, b);
                 for (j = 0; j < numRows; j++)
                     inv[j][i] = x[j];
-                b[i] = 0.0f;
+                b[i] = 0f;
             }
         }
 
@@ -3251,7 +3254,7 @@ namespace Droid.Core
             {
                 for (j = 0; j < i; j++)
                     L[i][j] = this[i][j];
-                L[i][i] = 1.0f;
+                L[i][i] = 1f;
                 D[i][i] = this[i][i];
             }
         }
@@ -3300,8 +3303,8 @@ namespace Droid.Core
             for (i = 0; i < numRows - 2; i++)
                 for (j = i + 2; j < numColumns; j++)
                 {
-                    this[i][j] = 0.0f;
-                    this[j][i] = 0.0f;
+                    this[i][j] = 0f;
+                    this[j][i] = 0f;
                 }
         }
 
@@ -3320,17 +3323,17 @@ namespace Droid.Core
             tmp.SetData(numRows, VectorX.VECX_ALLOCA(numRows));
 
             d = this[0][0];
-            if (d == 0.0f)
+            if (d == 0f)
                 return false;
-            d = 1.0f / d;
+            d = 1f / d;
             x[0] = b[0] * d;
             for (i = 1; i < numRows; i++)
             {
                 tmp[i] = this[i - 1][i] * d;
                 d = this[i][i] - this[i][i - 1] * tmp[i];
-                if (d == 0.0f)
+                if (d == 0f)
                     return false;
-                d = 1.0f / d;
+                d = 1f / d;
                 x[i] = (b[i] - this[i][i - 1] * x[i - 1]) * d;
             }
             for (i = numRows - 2; i >= 0; i--)
@@ -3355,11 +3358,11 @@ namespace Droid.Core
 
             for (i = 0; i < numRows; i++)
             {
-                b[i] = 1.0f;
+                b[i] = 1f;
                 TriDiagonal_Solve(x, b);
                 for (j = 0; j < numRows; j++)
                     inv[j][i] = x[j];
-                b[i] = 0.0f;
+                b[i] = 0f;
             }
         }
 

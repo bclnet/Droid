@@ -1,17 +1,14 @@
 //#define MATX_SIMD
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Droid.Core
 {
-    public static partial class Matrix_
-    {
-        public const float MATRIX_INVERSE_EPSILON = 1e-14F;
-        public const float MATRIX_EPSILON = 1e-6F;
-    }
-
     public struct Matrix2x2
     {
+        public Matrix2x2(Matrix2x2 a)
+            => mat = (Vector2[])a.mat.Clone();
         public Matrix2x2(Vector2 x, Vector2 y)
         {
             mat = new Vector2[2];
@@ -24,14 +21,14 @@ namespace Droid.Core
             mat[0].x = xx; mat[0].y = xy;
             mat[1].x = yx; mat[1].y = yy;
         }
-        public Matrix2x2(float[][] src)
+        public unsafe Matrix2x2(float[,] src)
         {
             mat = new Vector2[2];
-            mat[0] = new Vector2(src[0][0], src[0][1]);
-            mat[1] = new Vector2(src[1][0], src[1][1]);
+            fixed (void* matp = mat, srcp = &src[0, 0])
+                Unsafe.CopyBlock(matp, srcp, 2U * 2U * sizeof(float));
+            //mat[0] = new Vector2(src[0, 0], src[0, 1]);
+            //mat[1] = new Vector2(src[1, 0], src[1, 1]);
         }
-        internal unsafe Matrix2x2(Vector2[] mat)
-            => this.mat = mat;
 
         public ref Vector2 this[int index]
             => ref mat[index];
@@ -96,13 +93,17 @@ namespace Droid.Core
             mat[0].Zero();
             mat[1].Zero();
         }
+
         public void Identity()
-            => this = identity;
-        public bool IsIdentity(float epsilon = Matrix_.MATRIX_EPSILON)
+            => this = new(identity);
+
+        public bool IsIdentity(float epsilon = MatrixX.EPSILON)
             => Compare(identity, epsilon);
-        public bool IsSymmetric(float epsilon = Matrix_.MATRIX_EPSILON)
+
+        public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
             => MathX.Fabs(mat[0].y - mat[1].x) < epsilon;
-        public bool IsDiagonal(float epsilon = Matrix_.MATRIX_EPSILON)
+
+        public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
         {
             if (MathX.Fabs(mat[0].y) > epsilon ||
                 MathX.Fabs(mat[1].x) > epsilon)
@@ -112,8 +113,10 @@ namespace Droid.Core
 
         public float Trace()
             => mat[0].x + mat[1].y;
+
         public float Determinant()
             => mat[0].x * mat[1].y - mat[0].y * mat[1].x;
+
         public Matrix2x2 Transpose()   // returns transpose
             => new(
             mat[0].x, mat[1].x,
@@ -125,9 +128,10 @@ namespace Droid.Core
             mat[1].x = tmp;
             return this;
         }
+
         public Matrix2x2 Inverse()      // returns the inverse ( m * m.Inverse() = identity )
         {
-            var invMat = this;
+            Matrix2x2 invMat = new(this);
             var r = invMat.InverseSelf();
             Debug.Assert(r);
             return invMat;
@@ -136,21 +140,24 @@ namespace Droid.Core
         {
             // 2+4 = 6 multiplications
             //		 1 division
-            var det = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
-            if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
+            double det, invDet, a;
+
+            det = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
+            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                 return false;
 
-            var invDet = 1.0f / det;
-            var a = mat[0].x;
-            mat[0].x = mat[1].y * invDet;
-            mat[0].y = -mat[0].y * invDet;
-            mat[1].x = -mat[1].x * invDet;
-            mat[1].y = a * invDet;
+            invDet = 1f / det;
+            a = mat[0].x;
+            mat[0].x = (float)(mat[1].y * invDet);
+            mat[0].y = (float)(-mat[0].y * invDet);
+            mat[1].x = (float)(-mat[1].x * invDet);
+            mat[1].y = (float)(a * invDet);
             return true;
         }
+
         public Matrix2x2 InverseFast()  // returns the inverse ( m * m.Inverse() = identity )
         {
-            var invMat = this;
+            Matrix2x2 invMat = new(this);
             var r = invMat.InverseFastSelf();
             Debug.Assert(r);
             return invMat;
@@ -159,16 +166,18 @@ namespace Droid.Core
         {
             // 2+4 = 6 multiplications
             //		 1 division
-            var det = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
-            if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
+            double det, invDet, a;
+
+            det = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
+            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                 return false;
 
-            var invDet = 1.0f / det;
-            var a = mat[0].x;
-            mat[0].x = mat[1].y * invDet;
-            mat[0].y = -mat[0].y * invDet;
-            mat[1].x = -mat[1].x * invDet;
-            mat[1].y = a * invDet;
+            invDet = 1f / det;
+            a = mat[0].x;
+            mat[0].x = (float)(mat[1].y * invDet);
+            mat[0].y = (float)(-mat[0].y * invDet);
+            mat[1].x = (float)(-mat[1].x * invDet);
+            mat[1].y = (float)(a * invDet);
             return true;
         }
 
@@ -182,13 +191,14 @@ namespace Droid.Core
 
         internal Vector2[] mat;
 
-        public static Matrix2x2 zero = new(new Vector2(0, 0), new Vector2(0, 0));
-        public static Matrix2x2 identity = new(new Vector2(1, 0), new Vector2(0, 1));
-        //#define default	identity
+        public static Matrix2x2 zero = new(new Vector2(0f, 0f), new Vector2(0f, 0f));
+        public static Matrix2x2 identity = new(new Vector2(1f, 0f), new Vector2(0f, 1f));
     }
 
     public struct Matrix3x3
     {
+        public Matrix3x3(Matrix3x3 a)
+            => mat = (Vector3[])a.mat.Clone();
         public Matrix3x3(Vector3 x, Vector3 y, Vector3 z)
         {
             mat = new Vector3[3];
@@ -203,15 +213,15 @@ namespace Droid.Core
             mat[1].x = yx; mat[1].y = yy; mat[1].z = yz;
             mat[2].x = zx; mat[2].y = zy; mat[2].z = zz;
         }
-        public unsafe Matrix3x3(float[][] src)
+        public unsafe Matrix3x3(float[,] src)
         {
             mat = new Vector3[3];
-            mat[0] = new Vector3(src[0][0], src[0][1], src[0][2]);
-            mat[1] = new Vector3(src[1][0], src[1][1], src[1][2]);
-            mat[2] = new Vector3(src[2][0], src[2][1], src[2][2]);
+            fixed (void* matp = mat, srcp = &src[0, 0])
+                Unsafe.CopyBlock(matp, srcp, 2U * 2U * sizeof(float));
+            //mat[0] = new Vector3(src[0, 0], src[0, 1], src[0, 2]);
+            //mat[1] = new Vector3(src[1, 0], src[1, 1], src[1, 2]);
+            //mat[2] = new Vector3(src[2, 0], src[2, 1], src[2, 2]);
         }
-        internal unsafe Matrix3x3(Vector3[] mat)
-            => this.mat = mat;
 
         public ref Vector3 this[int index]
             => ref mat[index];
@@ -235,7 +245,7 @@ namespace Droid.Core
         public static unsafe Matrix3x3 operator *(Matrix3x3 _, Matrix3x3 a)
         {
             Matrix3x3 dst = new();
-            fixed (void* __ = &_.mat[0], a_ = &a.mat[0], dst_ = &dst.mat[0])
+            fixed (void* __ = _.mat, a_ = a.mat, dst_ = dst.mat)
             {
                 var m1Ptr = (float*)__;
                 var m2Ptr = (float*)a_;
@@ -254,7 +264,6 @@ namespace Droid.Core
                 return dst;
             }
         }
-
         public static Matrix3x3 operator +(Matrix3x3 _, Matrix3x3 a)
             => new(
             _.mat[0].x + a.mat[0].x, _.mat[0].y + a.mat[0].y, _.mat[0].z + a.mat[0].z,
@@ -298,18 +307,22 @@ namespace Droid.Core
 
         public unsafe void Zero()
             => Array.Clear(mat, 0, 3);
+
         public void Identity()
-            => this = identity;
-        public bool IsIdentity(float epsilon = Matrix_.MATRIX_EPSILON)
+            => this = new(identity);
+
+        public bool IsIdentity(float epsilon = MatrixX.EPSILON)
             => Compare(identity, epsilon);
-        public bool IsSymmetric(float epsilon = Matrix_.MATRIX_EPSILON)
+
+        public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
         {
             if (MathX.Fabs(mat[0].y - mat[1].x) > epsilon) return false;
             if (MathX.Fabs(mat[0].z - mat[2].x) > epsilon) return false;
             if (MathX.Fabs(mat[1].z - mat[2].y) > epsilon) return false;
             return true;
         }
-        public bool IsDiagonal(float epsilon = Matrix_.MATRIX_EPSILON)
+
+        public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
         {
             if (MathX.Fabs(mat[0].y) > epsilon ||
                 MathX.Fabs(mat[0].z) > epsilon ||
@@ -320,6 +333,7 @@ namespace Droid.Core
                 return false;
             return true;
         }
+
         public bool IsRotated()
             => !Compare(identity);
 
@@ -329,6 +343,7 @@ namespace Droid.Core
             dst.y = src * mat[1];
             dst.z = src * mat[2];
         }
+
         public void UnprojectVector(Vector3 src, out Vector3 dst)
             => dst = mat[0] * src.x + mat[1] * src.y + mat[2] * src.z;
 
@@ -339,6 +354,7 @@ namespace Droid.Core
             r |= mat[2].FixDegenerateNormal();
             return r;
         }
+
         public bool FixDenormals()       // change tiny numbers to zero
         {
             var r = mat[0].FixDenormals();
@@ -349,6 +365,7 @@ namespace Droid.Core
 
         public float Trace()
             => mat[0].x + mat[1].y + mat[2].z;
+
         public float Determinant()
         {
             var det2_12_01 = mat[1].x * mat[2].y - mat[1].y * mat[2].x;
@@ -356,9 +373,10 @@ namespace Droid.Core
             var det2_12_12 = mat[1].y * mat[2].z - mat[1].z * mat[2].y;
             return mat[0].x * det2_12_12 - mat[0].y * det2_12_02 + mat[0].z * det2_12_01;
         }
+
         public Matrix3x3 OrthoNormalize()
         {
-            var ortho = this;
+            Matrix3x3 ortho = new(this);
             ortho.mat[0].Normalize();
             ortho.mat[2].Cross(mat[0], mat[1]); ortho.mat[2].Normalize();
             ortho.mat[1].Cross(mat[2], mat[0]); ortho.mat[1].Normalize();
@@ -371,6 +389,7 @@ namespace Droid.Core
             mat[1].Cross(mat[2], mat[0]); mat[1].Normalize();
             return this;
         }
+
         public Matrix3x3 Transpose()   // returns transpose
             => new(
             mat[0].x, mat[1].x, mat[2].x,
@@ -386,7 +405,7 @@ namespace Droid.Core
 
         public Matrix3x3 Inverse()     // returns the inverse ( m * m.Inverse() = identity )
         {
-            var invMat = this;
+            Matrix3x3 invMat = new(this);
             var r = invMat.InverseSelf();
             Debug.Assert(r);
             return invMat;
@@ -395,13 +414,14 @@ namespace Droid.Core
         {
             // 18+3+9 = 30 multiplications
             //			 1 division
-            Matrix3x3 inverse = new();
+            Matrix3x3 inverse = new(); double det, invDet;
+
             inverse.mat[0].x = mat[1].y * mat[2].z - mat[1].z * mat[2].y;
             inverse.mat[1].x = mat[1].z * mat[2].x - mat[1].x * mat[2].z;
             inverse.mat[2].x = mat[1].x * mat[2].y - mat[1].y * mat[2].x;
 
-            var det = mat[0].x * inverse.mat[0].x + mat[0].y * inverse.mat[1].x + mat[0].z * inverse.mat[2].x;
-            if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
+            det = mat[0].x * inverse.mat[0].x + mat[0].y * inverse.mat[1].x + mat[0].z * inverse.mat[2].x;
+            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                 return false;
 
             inverse.mat[0].y = mat[0].z * mat[2].y - mat[0].y * mat[2].z;
@@ -411,16 +431,17 @@ namespace Droid.Core
             inverse.mat[2].y = mat[0].y * mat[2].x - mat[0].x * mat[2].y;
             inverse.mat[2].z = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
 
-            var invDet = 1.0f / det;
-            mat[0].x = inverse.mat[0].x * invDet; mat[0].y = inverse.mat[0].y * invDet; mat[0].z = inverse.mat[0].z * invDet;
-            mat[1].x = inverse.mat[1].x * invDet; mat[1].y = inverse.mat[1].y * invDet; mat[1].z = inverse.mat[1].z * invDet;
-            mat[2].x = inverse.mat[2].x * invDet; mat[2].y = inverse.mat[2].y * invDet; mat[2].z = inverse.mat[2].z * invDet;
+            invDet = 1f / det;
+            mat[0].x = (float)(inverse.mat[0].x * invDet); mat[0].y = (float)(inverse.mat[0].y * invDet); mat[0].z = (float)(inverse.mat[0].z * invDet);
+            mat[1].x = (float)(inverse.mat[1].x * invDet); mat[1].y = (float)(inverse.mat[1].y * invDet); mat[1].z = (float)(inverse.mat[1].z * invDet);
+            mat[2].x = (float)(inverse.mat[2].x * invDet); mat[2].y = (float)(inverse.mat[2].y * invDet); mat[2].z = (float)(inverse.mat[2].z * invDet);
 
             return true;
         }
+
         public Matrix3x3 InverseFast() // returns the inverse ( m * m.Inverse() = identity )
         {
-            var invMat = this;
+            Matrix3x3 invMat = new(this);
             var r = invMat.InverseFastSelf();
             Debug.Assert(r);
             return invMat;
@@ -429,13 +450,14 @@ namespace Droid.Core
         {
             // 18+3+9 = 30 multiplications
             //			 1 division
-            Matrix3x3 inverse = new();
+            Matrix3x3 inverse = new(); double det, invDet;
+
             inverse.mat[0].x = mat[1].y * mat[2].z - mat[1].z * mat[2].y;
             inverse.mat[1].x = mat[1].z * mat[2].x - mat[1].x * mat[2].z;
             inverse.mat[2].x = mat[1].x * mat[2].y - mat[1].y * mat[2].x;
 
-            var det = mat[0].x * inverse.mat[0].x + mat[0].y * inverse.mat[1].x + mat[0].z * inverse.mat[2].x;
-            if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
+            det = mat[0].x * inverse.mat[0].x + mat[0].y * inverse.mat[1].x + mat[0].z * inverse.mat[2].x;
+            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                 return false;
 
             inverse.mat[0].y = mat[0].z * mat[2].y - mat[0].y * mat[2].z;
@@ -445,13 +467,14 @@ namespace Droid.Core
             inverse.mat[2].y = mat[0].y * mat[2].x - mat[0].x * mat[2].y;
             inverse.mat[2].z = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
 
-            var invDet = 1.0f / det;
-            mat[0].x = inverse.mat[0].x * invDet; mat[0].y = inverse.mat[0].y * invDet; mat[0].z = inverse.mat[0].z * invDet;
-            mat[1].x = inverse.mat[1].x * invDet; mat[1].y = inverse.mat[1].y * invDet; mat[1].z = inverse.mat[1].z * invDet;
-            mat[2].x = inverse.mat[2].x * invDet; mat[2].y = inverse.mat[2].y * invDet; mat[2].z = inverse.mat[2].z * invDet;
+            invDet = 1f / det;
+            mat[0].x = (float)(inverse.mat[0].x * invDet); mat[0].y = (float)(inverse.mat[0].y * invDet); mat[0].z = (float)(inverse.mat[0].z * invDet);
+            mat[1].x = (float)(inverse.mat[1].x * invDet); mat[1].y = (float)(inverse.mat[1].y * invDet); mat[1].z = (float)(inverse.mat[1].z * invDet);
+            mat[2].x = (float)(inverse.mat[2].x * invDet); mat[2].y = (float)(inverse.mat[2].y * invDet); mat[2].z = (float)(inverse.mat[2].z * invDet);
 
             return true;
         }
+
         public Matrix3x3 TransposeMultiply(Matrix3x3 b)
             => new(
             mat[0].x * b.mat[0].x + mat[1].x * b.mat[1].x + mat[2].x * b.mat[2].x,
@@ -466,9 +489,10 @@ namespace Droid.Core
 
         public Matrix3x3 InertiaTranslate(float mass, Vector3 centerOfMass, Vector3 translation)
         {
-            var newCenter = centerOfMass + translation;
+            Matrix3x3 m = new(); Vector3 newCenter;
 
-            Matrix3x3 m = new();
+            newCenter = centerOfMass + translation;
+
             m.mat[0].x = mass * ((centerOfMass.y * centerOfMass.y + centerOfMass.z * centerOfMass.z) - (newCenter.y * newCenter.y + newCenter.z * newCenter.z));
             m.mat[1].y = mass * ((centerOfMass.x * centerOfMass.x + centerOfMass.z * centerOfMass.z) - (newCenter.x * newCenter.x + newCenter.z * newCenter.z));
             m.mat[2].z = mass * ((centerOfMass.x * centerOfMass.x + centerOfMass.y * centerOfMass.y) - (newCenter.x * newCenter.x + newCenter.y * newCenter.y));
@@ -481,9 +505,10 @@ namespace Droid.Core
         }
         public Matrix3x3 InertiaTranslateSelf(float mass, Vector3 centerOfMass, Vector3 translation)
         {
-            var newCenter = centerOfMass + translation;
+            Matrix3x3 m = new(); Vector3 newCenter;
 
-            Matrix3x3 m = new();
+            newCenter = centerOfMass + translation;
+
             m.mat[0].x = mass * ((centerOfMass.y * centerOfMass.y + centerOfMass.z * centerOfMass.z) - (newCenter.y * newCenter.y + newCenter.z * newCenter.z));
             m.mat[1].y = mass * ((centerOfMass.x * centerOfMass.x + centerOfMass.z * centerOfMass.z) - (newCenter.x * newCenter.x + newCenter.z * newCenter.z));
             m.mat[2].z = mass * ((centerOfMass.x * centerOfMass.x + centerOfMass.y * centerOfMass.y) - (newCenter.x * newCenter.x + newCenter.y * newCenter.y));
@@ -496,6 +521,7 @@ namespace Droid.Core
 
             return this;
         }
+
         public Matrix3x3 InertiaRotate(Matrix3x3 rotation)
             // NOTE: the rotation matrix is stored column-major
             => rotation.Transpose() * this * rotation;
@@ -511,39 +537,40 @@ namespace Droid.Core
 
         public Angles ToAngles()
         {
-            var sp = mat[0].z;
+            Angles angles; double theta, cp; float sp;
+
+            sp = mat[0].z;
             // cap off our sin value so that we don't get any NANs
-            if (sp > 1.0f) sp = 1.0f;
-            else if (sp < -1.0f) sp = -1.0f;
+            if (sp > 1f) sp = 1f;
+            else if (sp < -1f) sp = -1f;
 
-            var theta = -(float)Math.Asin(sp);
-            var cp = (float)Math.Cos(theta);
+            theta = -(float)Math.Asin(sp);
+            cp = (float)Math.Cos(theta);
 
-            Angles angles;
-            if (cp > 8192.0f * MathX.FLT_EPSILON)
+            if (cp > 8192f * MathX.FLT_EPSILON)
             {
-                angles.pitch = MathX.RAD2DEG(theta);
+                angles.pitch = MathX.RAD2DEG((float)theta);
                 angles.yaw = MathX.RAD2DEG((float)Math.Atan2(mat[0].y, mat[0].x));
                 angles.roll = MathX.RAD2DEG((float)Math.Atan2(mat[1].z, mat[2].z));
             }
             else
             {
-                angles.pitch = MathX.RAD2DEG(theta);
+                angles.pitch = MathX.RAD2DEG((float)theta);
                 angles.yaw = MathX.RAD2DEG(-(float)Math.Atan2(mat[1].x, mat[1].y));
                 angles.roll = 0;
             }
             return angles;
         }
+
         static int[] _ToQuat_next = { 1, 2, 0 };
         public Quat ToQuat()
         {
-            float t, s;
-            var q = new Quat();
+            Quat q = new(); float trace, s, t; int i, j, k;
 
-            var trace = mat[0].x + mat[1].y + mat[2].z;
-            if (trace > 0.0f)
+            trace = mat[0].x + mat[1].y + mat[2].z;
+            if (trace > 0f)
             {
-                t = trace + 1.0f;
+                t = trace + 1f;
                 s = MathX.InvSqrt(t) * 0.5f;
 
                 q.w = s * t;
@@ -553,13 +580,13 @@ namespace Droid.Core
             }
             else
             {
-                var i = 0;
+                i = 0;
                 if (mat[1].y > mat[0].x) i = 1;
                 if (mat[2].z > this[i][i]) i = 2;
-                var j = _ToQuat_next[i];
-                var k = _ToQuat_next[j];
+                j = _ToQuat_next[i];
+                k = _ToQuat_next[j];
 
-                t = this[i][i] - (this[j][j] + this[k][k]) + 1.0f;
+                t = this[i][i] - (this[j][j] + this[k][k]) + 1f;
                 s = MathX.InvSqrt(t) * 0.5f;
 
                 q[i] = s * t;
@@ -569,23 +596,24 @@ namespace Droid.Core
             }
             return q;
         }
+
         public CQuat ToCQuat()
         {
             var q = ToQuat();
-            return q.w < 0.0f
+            return q.w < 0f
                 ? new CQuat(-q.x, -q.y, -q.z)
                 : new CQuat(q.x, q.y, q.z);
         }
+
         static int[] _ToRotation_next = { 1, 2, 0 };
         public Rotation ToRotation()
         {
-            var r = new Rotation();
-            float t, s;
+            Rotation r = new(); float trace, s, t; int i, j, k;
 
-            var trace = mat[0].x + mat[1].y + mat[2].z;
-            if (trace > 0.0f)
+            trace = mat[0].x + mat[1].y + mat[2].z;
+            if (trace > 0f)
             {
-                t = trace + 1.0f;
+                t = trace + 1f;
                 s = MathX.InvSqrt(t) * 0.5f;
 
                 r.angle = s * t;
@@ -595,13 +623,13 @@ namespace Droid.Core
             }
             else
             {
-                var i = 0;
+                i = 0;
                 if (mat[1].y > mat[0].x) i = 1;
                 if (mat[2].z > this[i][i]) i = 2;
-                var j = _ToRotation_next[i];
-                var k = _ToRotation_next[j];
+                j = _ToRotation_next[i];
+                k = _ToRotation_next[j];
 
-                t = (this[i][i] - (this[j][j] + this[k][k])) + 1.0f;
+                t = (this[i][i] - (this[j][j] + this[k][k])) + 1f;
                 s = MathX.InvSqrt(t) * 0.5f;
 
                 r.vec[i] = s * t;
@@ -612,14 +640,14 @@ namespace Droid.Core
             r.angle = MathX.ACos(r.angle);
             if (MathX.Fabs(r.angle) < 1e-10f)
             {
-                r.vec.Set(0.0f, 0.0f, 1.0f);
-                r.angle = 0.0f;
+                r.vec.Set(0f, 0f, 1f);
+                r.angle = 0f;
             }
             else
             {
                 r.vec.Normalize();
                 r.vec.FixDegenerateNormal();
-                r.angle *= 2.0f * MathX.M_RAD2DEG;
+                r.angle *= 2f * MathX.M_RAD2DEG;
             }
 
             r.origin.Zero();
@@ -627,18 +655,21 @@ namespace Droid.Core
             r.axisValid = true;
             return r;
         }
+
         public Matrix4x4 ToMat4()
             // NOTE: Matrix3x3 is transposed because it is column-major
             => new(
-                mat[0].x, mat[1].x, mat[2].x, 0.0f,
-                mat[0].y, mat[1].y, mat[2].y, 0.0f,
-                mat[0].z, mat[1].z, mat[2].z, 0.0f,
-                0.0f, 0.0f, 0.0f, 1.0f);
+            mat[0].x, mat[1].x, mat[2].x, 0f,
+            mat[0].y, mat[1].y, mat[2].y, 0f,
+            mat[0].z, mat[1].z, mat[2].z, 0f,
+            0f, 0f, 0f, 1f);
+
         public Vector3 ToAngularVelocity()
         {
             var rotation = ToRotation();
             return rotation.GetVec() * MathX.DEG2RAD(rotation.GetAngle());
         }
+
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
@@ -658,17 +689,18 @@ namespace Droid.Core
             dst.mat[2].z = inv.mat[0].z * b.mat[0].z + inv.mat[1].z * b.mat[1].z + inv.mat[2].z * b.mat[2].z;
         }
         public Matrix3x3 SkewSymmetric(Vector3 src)
-            => new(0.0f, -src.z, src.y, src.z, 0.0f, -src.x, -src.y, src.x, 0.0f);
+            => new(0f, -src.z, src.y, src.z, 0f, -src.x, -src.y, src.x, 0f);
 
         internal Vector3[] mat;
 
         public static Matrix3x3 zero = new(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0));
         public static Matrix3x3 identity = new(new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1));
-        //#define default identity
     }
 
     public struct Matrix4x4
     {
+        public Matrix4x4(Matrix4x4 a)
+            => mat = (Vector4[])a.mat.Clone();
         public Matrix4x4(Vector4 x, Vector4 y, Vector4 z, Vector4 w)
         {
             mat = new Vector4[4];
@@ -704,21 +736,21 @@ namespace Droid.Core
             mat[2].y = rotation.mat[1].z;
             mat[2].z = rotation.mat[2].z;
             mat[2].w = translation.z;
-            mat[3].x = 0.0f;
-            mat[3].y = 0.0f;
-            mat[3].z = 0.0f;
-            mat[3].w = 1.0f;
+            mat[3].x = 0f;
+            mat[3].y = 0f;
+            mat[3].z = 0f;
+            mat[3].w = 1f;
         }
-        public Matrix4x4(float[][] src)
+        public unsafe Matrix4x4(float[,] src)
         {
             mat = new Vector4[4];
-            mat[0] = new Vector4(src[0][0], src[0][1], src[0][2], src[0][3]);
-            mat[1] = new Vector4(src[1][0], src[1][1], src[1][2], src[1][3]);
-            mat[2] = new Vector4(src[2][0], src[2][1], src[2][2], src[2][3]);
-            mat[3] = new Vector4(src[3][0], src[3][1], src[3][2], src[3][3]);
+            fixed (void* matp = mat, srcp = &src[0, 0])
+                Unsafe.CopyBlock(matp, srcp, 4U * 4U * sizeof(float));
+            //mat[0] = new Vector4(src[0, 0], src[0, 1], src[0, 2], src[0, 3]);
+            //mat[1] = new Vector4(src[1, 0], src[1, 1], src[1, 2], src[1, 3]);
+            //mat[2] = new Vector4(src[2, 0], src[2, 1], src[2, 2], src[2, 3]);
+            //mat[3] = new Vector4(src[3, 0], src[3, 1], src[3, 2], src[3, 3]);
         }
-        internal unsafe Matrix4x4(Vector4[] mat)
-            => this.mat = mat;
 
         public ref Vector4 this[int index]
             => ref mat[index];
@@ -738,16 +770,16 @@ namespace Droid.Core
         public static Vector3 operator *(Matrix4x4 _, Vector3 vec)
         {
             var s = _.mat[3].x * vec.x + _.mat[3].y * vec.y + _.mat[3].z * vec.z + _.mat[3].w;
-            if (s == 0.0f)
-                return new(0.0f, 0.0f, 0.0f);
-            if (s == 1.0f)
+            if (s == 0f)
+                return new(0f, 0f, 0f);
+            if (s == 1f)
                 return new(
                 _.mat[0].x * vec.x + _.mat[0].y * vec.y + _.mat[0].z * vec.z + _.mat[0].w,
                 _.mat[1].x * vec.x + _.mat[1].y * vec.y + _.mat[1].z * vec.z + _.mat[1].w,
                 _.mat[2].x * vec.x + _.mat[2].y * vec.y + _.mat[2].z * vec.z + _.mat[2].w);
             else
             {
-                var invS = 1.0f / s;
+                var invS = 1f / s;
                 return new(
                 (_.mat[0].x * vec.x + _.mat[0].y * vec.y + _.mat[0].z * vec.z + _.mat[0].w) * invS,
                 (_.mat[1].x * vec.x + _.mat[1].y * vec.y + _.mat[1].z * vec.z + _.mat[1].w) * invS,
@@ -757,7 +789,7 @@ namespace Droid.Core
         public static unsafe Matrix4x4 operator *(Matrix4x4 _, Matrix4x4 a)
         {
             Matrix4x4 dst = new();
-            fixed (void* __ = &_.mat[0], a_ = &a.mat[0], dst_ = &dst.mat[0])
+            fixed (void* __ = _.mat, a_ = a.mat, dst_ = dst.mat)
             {
                 var m1Ptr = (float*)__;
                 var m2Ptr = (float*)a_;
@@ -800,7 +832,7 @@ namespace Droid.Core
 
         public unsafe bool Compare(Matrix4x4 a)                       // exact compare, no epsilon
         {
-            fixed (void* mat_ = &mat[0], a_ = &a.mat[0])
+            fixed (void* mat_ = mat, a_ = a.mat)
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
@@ -812,7 +844,7 @@ namespace Droid.Core
         }
         public unsafe bool Compare(Matrix4x4 a, float epsilon)  // compare with epsilon
         {
-            fixed (void* mat_ = &mat[0], a_ = &a.mat[0])
+            fixed (void* mat_ = mat, a_ = a.mat)
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
@@ -833,11 +865,14 @@ namespace Droid.Core
 
         public unsafe void Zero()
             => Array.Clear(mat, 0, 4);
+
         public void Identity()
-            => this = identity;
-        public bool IsIdentity(float epsilon = Matrix_.MATRIX_EPSILON)
+            => this = new(identity);
+
+        public bool IsIdentity(float epsilon = MatrixX.EPSILON)
             => Compare(identity, epsilon);
-        public bool IsSymmetric(float epsilon = Matrix_.MATRIX_EPSILON)
+
+        public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
         {
             for (var i = 1; i < 4; i++)
                 for (var j = 0; j < i; j++)
@@ -845,7 +880,8 @@ namespace Droid.Core
                         return false;
             return true;
         }
-        public bool IsDiagonal(float epsilon = Matrix_.MATRIX_EPSILON)
+
+        public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
         {
             for (var i = 0; i < 4; i++)
                 for (var j = 0; j < 4; j++)
@@ -853,6 +889,7 @@ namespace Droid.Core
                         return false;
             return true;
         }
+
         public bool IsRotated()
         {
             if (mat[0].y == 0 && mat[0].z == 0 &&
@@ -874,6 +911,7 @@ namespace Droid.Core
 
         public float Trace()
             => mat[0].x + mat[1].y + mat[2].z + mat[3].w;
+
         public float Determinant()
         {
             // 2x2 sub-determinants
@@ -892,6 +930,7 @@ namespace Droid.Core
 
             return -det3_201_123 * mat[3].x + det3_201_023 * mat[3].y - det3_201_013 * mat[3].z + det3_201_012 * mat[3].w;
         }
+
         public Matrix4x4 Transpose()   // returns transpose
         {
             var transpose = new Matrix4x4();
@@ -911,9 +950,10 @@ namespace Droid.Core
                 }
             return this;
         }
+
         public Matrix4x4 Inverse()     // returns the inverse ( m * m.Inverse() = identity )
         {
-            var invMat = this;
+            Matrix4x4 invMat = new(this);
             var r = invMat.InverseSelf();
             Debug.Assert(r);
             return invMat;
@@ -922,6 +962,8 @@ namespace Droid.Core
         {
             // 84+4+16 = 104 multiplications
             //			   1 division
+            double det, invDet;
+
             // 2x2 sub-determinants required to calculate 4x4 determinant
             var det2_01_01 = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
             var det2_01_02 = mat[0].x * mat[1].z - mat[0].z * mat[1].x;
@@ -936,11 +978,11 @@ namespace Droid.Core
             var det3_201_023 = mat[2].x * det2_01_23 - mat[2].z * det2_01_03 + mat[2].w * det2_01_02;
             var det3_201_123 = mat[2].y * det2_01_23 - mat[2].z * det2_01_13 + mat[2].w * det2_01_12;
 
-            var det = -det3_201_123 * mat[3].x + det3_201_023 * mat[3].y - det3_201_013 * mat[3].z + det3_201_012 * mat[3].w;
-            if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
+            det = -det3_201_123 * mat[3].x + det3_201_023 * mat[3].y - det3_201_013 * mat[3].z + det3_201_012 * mat[3].w;
+            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                 return false;
 
-            var invDet = 1.0f / det;
+            invDet = 1f / det;
 
             // remaining 2x2 sub-determinants
             var det2_03_01 = mat[0].x * mat[3].y - mat[0].y * mat[3].x;
@@ -973,24 +1015,28 @@ namespace Droid.Core
             var det3_301_023 = mat[3].x * det2_01_23 - mat[3].z * det2_01_03 + mat[3].w * det2_01_02;
             var det3_301_123 = mat[3].y * det2_01_23 - mat[3].z * det2_01_13 + mat[3].w * det2_01_12;
 
-            mat[0].x = -det3_213_123 * invDet; mat[1].x = +det3_213_023 * invDet; mat[2].x = -det3_213_013 * invDet; mat[3].x = +det3_213_012 * invDet;
-            mat[0].y = +det3_203_123 * invDet; mat[1].y = -det3_203_023 * invDet; mat[2].y = +det3_203_013 * invDet; mat[3].y = -det3_203_012 * invDet;
-            mat[0].z = +det3_301_123 * invDet; mat[1].z = -det3_301_023 * invDet; mat[2].z = +det3_301_013 * invDet; mat[3].z = -det3_301_012 * invDet;
-            mat[0].w = -det3_201_123 * invDet; mat[1].w = +det3_201_023 * invDet; mat[2].w = -det3_201_013 * invDet; mat[3].w = +det3_201_012 * invDet;
+            mat[0].x = (float)(-det3_213_123 * invDet); mat[1].x = (float)(+det3_213_023 * invDet); mat[2].x = (float)(-det3_213_013 * invDet); mat[3].x = (float)(+det3_213_012 * invDet);
+            mat[0].y = (float)(+det3_203_123 * invDet); mat[1].y = (float)(-det3_203_023 * invDet); mat[2].y = (float)(+det3_203_013 * invDet); mat[3].y = (float)(-det3_203_012 * invDet);
+            mat[0].z = (float)(+det3_301_123 * invDet); mat[1].z = (float)(-det3_301_023 * invDet); mat[2].z = (float)(+det3_301_013 * invDet); mat[3].z = (float)(-det3_301_012 * invDet);
+            mat[0].w = (float)(-det3_201_123 * invDet); mat[1].w = (float)(+det3_201_023 * invDet); mat[2].w = (float)(-det3_201_013 * invDet); mat[3].w = (float)(+det3_201_012 * invDet);
 
             return true;
         }
+
         public Matrix4x4 InverseFast() // returns the inverse ( m * m.Inverse() = identity )
         {
-            var invMat = this;
+            Matrix4x4 invMat = new(this);
             var r = invMat.InverseFastSelf();
             Debug.Assert(r);
             return invMat;
         }
-        public bool InverseFastSelf()    // returns false if determinant is zero
+        public unsafe bool InverseFastSelf()    // returns false if determinant is zero
         {
+#if false
             // 84+4+16 = 104 multiplications
             //			   1 division
+            double det, invDet;
+
             // 2x2 sub-determinants required to calculate 4x4 determinant
             var det2_01_01 = mat[0].x * mat[1].y - mat[0].y * mat[1].x;
             var det2_01_02 = mat[0].x * mat[1].z - mat[0].z * mat[1].x;
@@ -1005,11 +1051,11 @@ namespace Droid.Core
             var det3_201_023 = mat[2].x * det2_01_23 - mat[2].z * det2_01_03 + mat[2].w * det2_01_02;
             var det3_201_123 = mat[2].y * det2_01_23 - mat[2].z * det2_01_13 + mat[2].w * det2_01_12;
 
-            var det = -det3_201_123 * mat[3].x + det3_201_023 * mat[3].y - det3_201_013 * mat[3].z + det3_201_012 * mat[3].w;
-            if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
+             det = -det3_201_123 * mat[3].x + det3_201_023 * mat[3].y - det3_201_013 * mat[3].z + det3_201_012 * mat[3].w;
+            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                 return false;
 
-            var invDet = 1.0f / det;
+            invDet = 1f / det;
 
             // remaining 2x2 sub-determinants
             var det2_03_01 = mat[0].x * mat[3].y - mat[0].y * mat[3].x;
@@ -1046,9 +1092,93 @@ namespace Droid.Core
             mat[0].y = +det3_203_123 * invDet; mat[1].y = -det3_203_023 * invDet; mat[2].y = +det3_203_013 * invDet; mat[3].y = -det3_203_012 * invDet;
             mat[0].z = +det3_301_123 * invDet; mat[1].z = -det3_301_023 * invDet; mat[2].z = +det3_301_013 * invDet; mat[3].z = -det3_301_012 * invDet;
             mat[0].w = -det3_201_123 * invDet; mat[1].w = +det3_201_023 * invDet; mat[2].w = -det3_201_013 * invDet; mat[3].w = +det3_201_012 * invDet;
+#else
+            //	6*8+2*6 = 60 multiplications
+            //		2*1 =  2 divisions
+            Matrix2x2 r0 = new(), r1 = new(), r2 = new(), r3 = new(); float a, det, invDet;
 
-            return true;
+            fixed (float* mat = &this.mat[0].x)
+            {
+                // r0 = m0.Inverse();
+                det = mat[0 * 4 + 0] * mat[1 * 4 + 1] - mat[0 * 4 + 1] * mat[1 * 4 + 0];
+
+                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
+                    return false;
+
+                invDet = 1f / det;
+
+                r0[0].x = mat[1 * 4 + 1] * invDet;
+                r0[0].y = -mat[0 * 4 + 1] * invDet;
+                r0[1].x = -mat[1 * 4 + 0] * invDet;
+                r0[1].y = mat[0 * 4 + 0] * invDet;
+
+                // r1 = r0 * m1;
+                r1[0].x = r0[0].x * mat[0 * 4 + 2] + r0[0].y * mat[1 * 4 + 2];
+                r1[0].y = r0[0].x * mat[0 * 4 + 3] + r0[0].y * mat[1 * 4 + 3];
+                r1[1].x = r0[1].x * mat[0 * 4 + 2] + r0[1].y * mat[1 * 4 + 2];
+                r1[1].y = r0[1].x * mat[0 * 4 + 3] + r0[1].y * mat[1 * 4 + 3];
+
+                // r2 = m2 * r1;
+                r2[0].x = mat[2 * 4 + 0] * r1[0].x + mat[2 * 4 + 1] * r1[1].x;
+                r2[0].y = mat[2 * 4 + 0] * r1[0].y + mat[2 * 4 + 1] * r1[1].y;
+                r2[1].x = mat[3 * 4 + 0] * r1[0].x + mat[3 * 4 + 1] * r1[1].x;
+                r2[1].y = mat[3 * 4 + 0] * r1[0].y + mat[3 * 4 + 1] * r1[1].y;
+
+                // r3 = r2 - m3;
+                r3[0].x = r2[0].x - mat[2 * 4 + 2];
+                r3[0].y = r2[0].y - mat[2 * 4 + 3];
+                r3[1].x = r2[1].x - mat[3 * 4 + 2];
+                r3[1].y = r2[1].y - mat[3 * 4 + 3];
+
+                // r3.InverseSelf();
+                det = r3[0].x * r3[1].y - r3[0].y * r3[1].x;
+
+                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
+                    return false;
+
+                invDet = 1f / det;
+
+                a = r3[0].x;
+                r3[0].x = r3[1].y * invDet;
+                r3[0].y = -r3[0].y * invDet;
+                r3[1].x = -r3[1].x * invDet;
+                r3[1].y = a * invDet;
+
+                // r2 = m2 * r0;
+                r2[0].x = mat[2 * 4 + 0] * r0[0].x + mat[2 * 4 + 1] * r0[1].x;
+                r2[0].y = mat[2 * 4 + 0] * r0[0].y + mat[2 * 4 + 1] * r0[1].y;
+                r2[1].x = mat[3 * 4 + 0] * r0[0].x + mat[3 * 4 + 1] * r0[1].x;
+                r2[1].y = mat[3 * 4 + 0] * r0[0].y + mat[3 * 4 + 1] * r0[1].y;
+
+                // m2 = r3 * r2;
+                mat[2 * 4 + 0] = r3[0].x * r2[0].x + r3[0].y * r2[1].x;
+                mat[2 * 4 + 1] = r3[0].x * r2[0].y + r3[0].y * r2[1].y;
+                mat[3 * 4 + 0] = r3[1].x * r2[0].x + r3[1].y * r2[1].x;
+                mat[3 * 4 + 1] = r3[1].x * r2[0].y + r3[1].y * r2[1].y;
+
+                // m0 = r0 - r1 * m2;
+                mat[0 * 4 + 0] = r0[0].x - r1[0].x * mat[2 * 4 + 0] - r1[0].y * mat[3 * 4 + 0];
+                mat[0 * 4 + 1] = r0[0].y - r1[0].x * mat[2 * 4 + 1] - r1[0].y * mat[3 * 4 + 1];
+                mat[1 * 4 + 0] = r0[1].x - r1[1].x * mat[2 * 4 + 0] - r1[1].y * mat[3 * 4 + 0];
+                mat[1 * 4 + 1] = r0[1].y - r1[1].x * mat[2 * 4 + 1] - r1[1].y * mat[3 * 4 + 1];
+
+                // m1 = r1 * r3;
+                mat[0 * 4 + 2] = r1[0].x * r3[0].x + r1[0].y * r3[1].x;
+                mat[0 * 4 + 3] = r1[0].x * r3[0].y + r1[0].y * r3[1].y;
+                mat[1 * 4 + 2] = r1[1].x * r3[0].x + r1[1].y * r3[1].x;
+                mat[1 * 4 + 3] = r1[1].x * r3[0].y + r1[1].y * r3[1].y;
+
+                // m3 = -r3;
+                mat[2 * 4 + 2] = -r3[0].x;
+                mat[2 * 4 + 3] = -r3[0].y;
+                mat[3 * 4 + 2] = -r3[1].x;
+                mat[3 * 4 + 3] = -r3[1].y;
+
+                return true;
+            }
+#endif
         }
+
         public Matrix4x4 TransposeMultiply(Matrix4x4 b)
             => throw new NotSupportedException();
 
@@ -1064,11 +1194,12 @@ namespace Droid.Core
 
         public static Matrix4x4 zero = new(new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0));
         public static Matrix4x4 identity = new(new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), new Vector4(0, 0, 1, 0), new Vector4(0, 0, 0, 1));
-        //#define default	identity
     }
 
     public struct Matrix5x5
     {
+        public Matrix5x5(Matrix5x5 a)
+            => mat = (Vector5[])a.mat.Clone();
         public Matrix5x5(Vector5 v0, Vector5 v1, Vector5 v2, Vector5 v3, Vector5 v4)
         {
             mat = new Vector5[5];
@@ -1078,17 +1209,17 @@ namespace Droid.Core
             mat[3] = v3;
             mat[4] = v4;
         }
-        public Matrix5x5(float[][] src)
+        public unsafe Matrix5x5(float[,] src)
         {
             mat = new Vector5[5];
-            mat[0] = new Vector5(src[0][0], src[0][1], src[0][2], src[0][3], src[0][4]);
-            mat[1] = new Vector5(src[1][0], src[1][1], src[1][2], src[1][3], src[1][4]);
-            mat[2] = new Vector5(src[2][0], src[2][1], src[2][2], src[2][3], src[2][4]);
-            mat[3] = new Vector5(src[3][0], src[3][1], src[3][2], src[3][3], src[3][4]);
-            mat[4] = new Vector5(src[4][0], src[4][1], src[4][2], src[4][3], src[4][4]);
+            fixed (void* matp = mat, srcp = &src[0, 0])
+                Unsafe.CopyBlock(matp, srcp, 5U * 5U * sizeof(float));
+            //mat[0] = new Vector5(src[0, 0], src[0, 1], src[0, 2], src[0, 3], src[0, 4]);
+            //mat[1] = new Vector5(src[1, 0], src[1, 1], src[1, 2], src[1, 3], src[1, 4]);
+            //mat[2] = new Vector5(src[2, 0], src[2, 1], src[2, 2], src[2, 3], src[2, 4]);
+            //mat[3] = new Vector5(src[3, 0], src[3, 1], src[3, 2], src[3, 3], src[3, 4]);
+            //mat[4] = new Vector5(src[4, 0], src[4, 1], src[4, 2], src[4, 3], src[4, 4]);
         }
-        internal unsafe Matrix5x5(Vector5[] mat)
-            => this.mat = mat;
 
         public ref Vector5 this[int index]
             => ref mat[index];
@@ -1110,7 +1241,7 @@ namespace Droid.Core
         public static unsafe Matrix5x5 operator *(Matrix5x5 _, Matrix5x5 a)
         {
             Matrix5x5 dst = new();
-            fixed (void* __ = &_.mat[0], a_ = &a.mat[0], dst_ = &dst.mat[0])
+            fixed (void* __ = _.mat, a_ = a.mat, dst_ = dst.mat)
             {
                 var m1Ptr = (float*)__;
                 var m2Ptr = (float*)a_;
@@ -1153,7 +1284,7 @@ namespace Droid.Core
 
         public unsafe bool Compare(Matrix5x5 a)                       // exact compare, no epsilon
         {
-            fixed (void* mat_ = &mat[0], a_ = &a.mat[0])
+            fixed (void* mat_ = mat, a_ = a.mat)
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
@@ -1165,7 +1296,7 @@ namespace Droid.Core
         }
         public unsafe bool Compare(Matrix5x5 a, float epsilon)  // compare with epsilon
         {
-            fixed (void* mat_ = &mat[0], a_ = &a.mat[0])
+            fixed (void* mat_ = mat, a_ = a.mat)
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
@@ -1186,11 +1317,14 @@ namespace Droid.Core
 
         public unsafe void Zero()
             => Array.Clear(mat, 0, 5);
+
         public void Identity()
-            => this = identity;
-        public bool IsIdentity(float epsilon = Matrix_.MATRIX_EPSILON)
+            => this = new(identity);
+
+        public bool IsIdentity(float epsilon = MatrixX.EPSILON)
             => Compare(identity, epsilon);
-        public bool IsSymmetric(float epsilon = Matrix_.MATRIX_EPSILON)
+
+        public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
         {
             for (var i = 1; i < 5; i++)
                 for (var j = 0; j < i; j++)
@@ -1198,7 +1332,8 @@ namespace Droid.Core
                         return false;
             return true;
         }
-        public bool IsDiagonal(float epsilon = Matrix_.MATRIX_EPSILON)
+
+        public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
         {
             for (var i = 0; i < 5; i++)
                 for (var j = 0; j < 5; j++)
@@ -1209,6 +1344,7 @@ namespace Droid.Core
 
         public float Trace()
             => mat[0].x + mat[1].y + mat[2].z + mat[3].s + mat[4].t;
+
         public float Determinant()
         {
             // 2x2 sub-determinants required to calculate 5x5 determinant
@@ -1245,9 +1381,10 @@ namespace Droid.Core
             // determinant of 5x5 matrix
             return mat[0].x * det4_1234_1234 - mat[0].y * det4_1234_0234 + mat[0].z * det4_1234_0134 - mat[0].s * det4_1234_0124 + mat[0].t * det4_1234_0123;
         }
+
         public Matrix5x5 Transpose()   // returns transpose
         {
-            var transpose = new Matrix5x5();
+            Matrix5x5 transpose = new();
             for (var i = 0; i < 5; i++)
                 for (var j = 0; j < 5; j++)
                     transpose[i][j] = this[j][i];
@@ -1264,9 +1401,10 @@ namespace Droid.Core
                 }
             return this;
         }
+
         public Matrix5x5 Inverse()     // returns the inverse ( m * m.Inverse() = identity )
         {
-            var invMat = this;
+            Matrix5x5 invMat = new(this);
             var r = invMat.InverseSelf();
             Debug.Assert(r);
             return invMat;
@@ -1275,6 +1413,8 @@ namespace Droid.Core
         {
             // 280+5+25 = 310 multiplications
             //				1 division
+            double det, invDet;
+
             // 2x2 sub-determinants required to calculate 5x5 determinant
             var det2_34_01 = mat[3].x * mat[4].y - mat[3].y * mat[4].x;
             var det2_34_02 = mat[3].x * mat[4].z - mat[3].z * mat[4].x;
@@ -1307,11 +1447,11 @@ namespace Droid.Core
             var det4_1234_1234 = mat[1].y * det3_234_234 - mat[1].z * det3_234_134 + mat[1].s * det3_234_124 - mat[1].t * det3_234_123;
 
             // determinant of 5x5 matrix
-            var det = mat[0].x * det4_1234_1234 - mat[0].y * det4_1234_0234 + mat[0].z * det4_1234_0134 - mat[0].s * det4_1234_0124 + mat[0].t * det4_1234_0123;
-            if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
+            det = mat[0].x * det4_1234_1234 - mat[0].y * det4_1234_0234 + mat[0].z * det4_1234_0134 - mat[0].s * det4_1234_0124 + mat[0].t * det4_1234_0123;
+            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                 return false;
 
-            var invDet = 1.0f / det;
+            invDet = 1f / det;
 
             // remaining 2x2 sub-determinants
             var det2_23_01 = mat[2].x * mat[3].y - mat[2].y * mat[3].x;
@@ -1389,17 +1529,18 @@ namespace Droid.Core
             var det4_0234_0234 = mat[0].x * det3_234_234 - mat[0].z * det3_234_034 + mat[0].s * det3_234_024 - mat[0].t * det3_234_023;
             var det4_0234_1234 = mat[0].y * det3_234_234 - mat[0].z * det3_234_134 + mat[0].s * det3_234_124 - mat[0].t * det3_234_123;
 
-            mat[0].x = det4_1234_1234 * invDet; mat[0].y = -det4_0234_1234 * invDet; mat[0].z = det4_0134_1234 * invDet; mat[0].s = -det4_0124_1234 * invDet; mat[0].t = det4_0123_1234 * invDet;
-            mat[1].x = -det4_1234_0234 * invDet; mat[1].y = det4_0234_0234 * invDet; mat[1].z = -det4_0134_0234 * invDet; mat[1].s = det4_0124_0234 * invDet; mat[1].t = -det4_0123_0234 * invDet;
-            mat[2].x = det4_1234_0134 * invDet; mat[2].y = -det4_0234_0134 * invDet; mat[2].z = det4_0134_0134 * invDet; mat[2].s = -det4_0124_0134 * invDet; mat[2].t = det4_0123_0134 * invDet;
-            mat[3].x = -det4_1234_0124 * invDet; mat[3].y = det4_0234_0124 * invDet; mat[3].z = -det4_0134_0124 * invDet; mat[3].s = det4_0124_0124 * invDet; mat[3].t = -det4_0123_0124 * invDet;
-            mat[4].x = det4_1234_0123 * invDet; mat[4].y = -det4_0234_0123 * invDet; mat[4].z = det4_0134_0123 * invDet; mat[4].s = -det4_0124_0123 * invDet; mat[4].t = det4_0123_0123 * invDet;
+            mat[0].x = (float)(det4_1234_1234 * invDet); mat[0].y = (float)(-det4_0234_1234 * invDet); mat[0].z = (float)(det4_0134_1234 * invDet); mat[0].s = (float)(-det4_0124_1234 * invDet); mat[0].t = (float)(det4_0123_1234 * invDet);
+            mat[1].x = (float)(-det4_1234_0234 * invDet); mat[1].y = (float)(det4_0234_0234 * invDet); mat[1].z = (float)(-det4_0134_0234 * invDet); mat[1].s = (float)(det4_0124_0234 * invDet); mat[1].t = (float)(-det4_0123_0234 * invDet);
+            mat[2].x = (float)(det4_1234_0134 * invDet); mat[2].y = (float)(-det4_0234_0134 * invDet); mat[2].z = (float)(det4_0134_0134 * invDet); mat[2].s = (float)(-det4_0124_0134 * invDet); mat[2].t = (float)(det4_0123_0134 * invDet);
+            mat[3].x = (float)(-det4_1234_0124 * invDet); mat[3].y = (float)(det4_0234_0124 * invDet); mat[3].z = (float)(-det4_0134_0124 * invDet); mat[3].s = (float)(det4_0124_0124 * invDet); mat[3].t = (float)(-det4_0123_0124 * invDet);
+            mat[4].x = (float)(det4_1234_0123 * invDet); mat[4].y = (float)(-det4_0234_0123 * invDet); mat[4].z = (float)(det4_0134_0123 * invDet); mat[4].s = (float)(-det4_0124_0123 * invDet); mat[4].t = (float)(det4_0123_0123 * invDet);
 
             return true;
         }
+
         public Matrix5x5 InverseFast() // returns the inverse ( m * m.Inverse() = identity )
         {
-            var invMat = this;
+            Matrix5x5 invMat = new(this);
             var r = invMat.InverseFastSelf();
             Debug.Assert(r);
             return invMat;
@@ -1408,20 +1549,21 @@ namespace Droid.Core
         {
             // 86+30+6 = 122 multiplications
             //	  2*1  =   2 divisions
+            Matrix3x3 r0 = new(), r1 = new(), r2 = new(), r3 = new(); float c0, c1, c2, det, invDet;
+
             fixed (float* mat = &this.mat[0].x)
             {
                 //r0 = m0.Inverse();	// 3x3
-                var c0 = mat[1 * 5 + 1] * mat[2 * 5 + 2] - mat[1 * 5 + 2] * mat[2 * 5 + 1];
-                var c1 = mat[1 * 5 + 2] * mat[2 * 5 + 0] - mat[1 * 5 + 0] * mat[2 * 5 + 2];
-                var c2 = mat[1 * 5 + 0] * mat[2 * 5 + 1] - mat[1 * 5 + 1] * mat[2 * 5 + 0];
+                c0 = mat[1 * 5 + 1] * mat[2 * 5 + 2] - mat[1 * 5 + 2] * mat[2 * 5 + 1];
+                c1 = mat[1 * 5 + 2] * mat[2 * 5 + 0] - mat[1 * 5 + 0] * mat[2 * 5 + 2];
+                c2 = mat[1 * 5 + 0] * mat[2 * 5 + 1] - mat[1 * 5 + 1] * mat[2 * 5 + 0];
 
-                var det = mat[0 * 5 + 0] * c0 + mat[0 * 5 + 1] * c1 + mat[0 * 5 + 2] * c2;
-                if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
+                det = mat[0 * 5 + 0] * c0 + mat[0 * 5 + 1] * c1 + mat[0 * 5 + 2] * c2;
+                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                     return false;
 
-                var invDet = 1.0f / det;
+                invDet = 1f / det;
 
-                var r0 = new Matrix3x3();
                 r0.mat[0].x = c0 * invDet;
                 r0.mat[0].y = (mat[0 * 5 + 2] * mat[2 * 5 + 1] - mat[0 * 5 + 1] * mat[2 * 5 + 2]) * invDet;
                 r0.mat[0].z = (mat[0 * 5 + 1] * mat[1 * 5 + 2] - mat[0 * 5 + 2] * mat[1 * 5 + 1]) * invDet;
@@ -1433,7 +1575,6 @@ namespace Droid.Core
                 r0.mat[2].z = (mat[0 * 5 + 0] * mat[1 * 5 + 1] - mat[0 * 5 + 1] * mat[1 * 5 + 0]) * invDet;
 
                 // r1 = r0 * m1;		// 3x2 = 3x3 * 3x2
-                var r1 = new Matrix3x3();
                 r1.mat[0].x = r0.mat[0].x * mat[0 * 5 + 3] + r0.mat[0].y * mat[1 * 5 + 3] + r0.mat[0].z * mat[2 * 5 + 3];
                 r1.mat[0].y = r0.mat[0].x * mat[0 * 5 + 4] + r0.mat[0].y * mat[1 * 5 + 4] + r0.mat[0].z * mat[2 * 5 + 4];
                 r1.mat[1].x = r0.mat[1].x * mat[0 * 5 + 3] + r0.mat[1].y * mat[1 * 5 + 3] + r0.mat[1].z * mat[2 * 5 + 3];
@@ -1442,14 +1583,12 @@ namespace Droid.Core
                 r1.mat[2].y = r0.mat[2].x * mat[0 * 5 + 4] + r0.mat[2].y * mat[1 * 5 + 4] + r0.mat[2].z * mat[2 * 5 + 4];
 
                 // r2 = m2 * r1;		// 2x2 = 2x3 * 3x2
-                var r2 = new Matrix3x3();
                 r2.mat[0].x = mat[3 * 5 + 0] * r1.mat[0].x + mat[3 * 5 + 1] * r1.mat[1].x + mat[3 * 5 + 2] * r1.mat[2].x;
                 r2.mat[0].y = mat[3 * 5 + 0] * r1.mat[0].y + mat[3 * 5 + 1] * r1.mat[1].y + mat[3 * 5 + 2] * r1.mat[2].y;
                 r2.mat[1].x = mat[4 * 5 + 0] * r1.mat[0].x + mat[4 * 5 + 1] * r1.mat[1].x + mat[4 * 5 + 2] * r1.mat[2].x;
                 r2.mat[1].y = mat[4 * 5 + 0] * r1.mat[0].y + mat[4 * 5 + 1] * r1.mat[1].y + mat[4 * 5 + 2] * r1.mat[2].y;
 
                 // r3 = r2 - m3;		// 2x2 = 2x2 - 2x2
-                var r3 = new Matrix3x3();
                 r3.mat[0].x = r2.mat[0].x - mat[3 * 5 + 3];
                 r3.mat[0].y = r2.mat[0].y - mat[3 * 5 + 4];
                 r3.mat[1].x = r2.mat[1].x - mat[4 * 5 + 3];
@@ -1457,10 +1596,10 @@ namespace Droid.Core
 
                 // r3.InverseSelf();	// 2x2
                 det = r3.mat[0].x * r3.mat[1].y - r3.mat[0].y * r3.mat[1].x;
-                if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
+                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                     return false;
 
-                invDet = 1.0f / det;
+                invDet = 1f / det;
 
                 c0 = r3.mat[0].x;
                 r3.mat[0][0] = r3.mat[1].y * invDet;
@@ -1525,11 +1664,12 @@ namespace Droid.Core
 
         public static Matrix5x5 zero = new(new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0));
         public static Matrix5x5 identity = new(new Vector5(1, 0, 0, 0, 0), new Vector5(0, 1, 0, 0, 0), new Vector5(0, 0, 1, 0, 0), new Vector5(0, 0, 0, 1, 0), new Vector5(0, 0, 0, 0, 1));
-        //#define default	identity
     }
 
     public struct Matrix6x6
     {
+        public Matrix6x6(Matrix6x6 a)
+            => mat = (Vector6[])a.mat.Clone();
         public Matrix6x6(Vector6 v0, Vector6 v1, Vector6 v2, Vector6 v3, Vector6 v4, Vector6 v5)
         {
             mat = new Vector6[6];
@@ -1550,19 +1690,18 @@ namespace Droid.Core
             mat[4] = new Vector6(m2[1].x, m2[1].y, m2[1].z, m3[1].x, m3[1].y, m3[1].z);
             mat[5] = new Vector6(m2[2].x, m2[2].y, m2[2].z, m3[2].x, m3[2].y, m3[2].z);
         }
-
-        public Matrix6x6(float[][] src)
+        public unsafe Matrix6x6(float[,] src)
         {
             mat = new Vector6[6];
-            mat[0] = new Vector6(src[0][0], src[0][1], src[0][2], src[0][3], src[0][4], src[0][5]);
-            mat[1] = new Vector6(src[1][0], src[1][1], src[1][2], src[1][3], src[1][4], src[1][5]);
-            mat[2] = new Vector6(src[2][0], src[2][1], src[2][2], src[2][3], src[2][4], src[2][5]);
-            mat[3] = new Vector6(src[3][0], src[3][1], src[3][2], src[3][3], src[3][4], src[3][5]);
-            mat[4] = new Vector6(src[4][0], src[4][1], src[4][2], src[4][3], src[4][4], src[4][5]);
-            mat[5] = new Vector6(src[5][0], src[5][1], src[5][2], src[5][3], src[5][4], src[5][5]);
+            fixed (void* matp = mat, srcp = &src[0, 0])
+                Unsafe.CopyBlock(matp, srcp, 6U * 6U * sizeof(float));
+            //mat[0] = new Vector6(src[0, 0], src[0, 1], src[0, 2], src[0, 3], src[0, 4], src[0, 5]);
+            //mat[1] = new Vector6(src[1, 0], src[1, 1], src[1, 2], src[1, 3], src[1, 4], src[1, 5]);
+            //mat[2] = new Vector6(src[2, 0], src[2, 1], src[2, 2], src[2, 3], src[2, 4], src[2, 5]);
+            //mat[3] = new Vector6(src[3, 0], src[3, 1], src[3, 2], src[3, 3], src[3, 4], src[3, 5]);
+            //mat[4] = new Vector6(src[4, 0], src[4, 1], src[4, 2], src[4, 3], src[4, 4], src[4, 5]);
+            //mat[5] = new Vector6(src[5, 0], src[5, 1], src[5, 2], src[5, 3], src[5, 4], src[5, 5]);
         }
-        internal unsafe Matrix6x6(Vector6[] mat)
-            => this.mat = mat;
 
         public ref Vector6 this[int index]
            => ref mat[index];
@@ -1587,7 +1726,7 @@ namespace Droid.Core
         public static unsafe Matrix6x6 operator *(Matrix6x6 _, Matrix6x6 a)
         {
             Matrix6x6 dst = new();
-            fixed (void* __ = &_.mat[0], a_ = &a.mat[0], dst_ = &dst.mat[0])
+            fixed (void* __ = _.mat, a_ = a.mat, dst_ = dst.mat)
             {
                 var m1Ptr = (float*)__;
                 var m2Ptr = (float*)a_;
@@ -1633,7 +1772,7 @@ namespace Droid.Core
 
         public unsafe bool Compare(Matrix6x6 a)                       // exact compare, no epsilon
         {
-            fixed (void* mat_ = &mat[0], a_ = &a.mat[0])
+            fixed (void* mat_ = mat, a_ = a.mat)
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
@@ -1645,7 +1784,7 @@ namespace Droid.Core
         }
         public unsafe bool Compare(Matrix6x6 a, float epsilon)  // compare with epsilon
         {
-            fixed (void* mat_ = &mat[0], a_ = &a.mat[0])
+            fixed (void* mat_ = mat, a_ = a.mat)
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
@@ -1665,12 +1804,18 @@ namespace Droid.Core
             => mat[0].GetHashCode();
 
         public unsafe void Zero()
-            => Array.Clear(mat, 0, 6);
+        {
+            fixed (void* matp = mat)
+                Unsafe.InitBlock(matp, 0, 6U * (uint)sizeof(Vector6));
+        }
+
         public void Identity()
-            => this = identity;
-        public bool IsIdentity(float epsilon = Matrix_.MATRIX_EPSILON)
+            => this = new(identity);
+
+        public bool IsIdentity(float epsilon = MatrixX.EPSILON)
             => Compare(identity, epsilon);
-        public bool IsSymmetric(float epsilon = Matrix_.MATRIX_EPSILON)
+
+        public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
         {
             for (var i = 1; i < 6; i++)
                 for (var j = 0; j < i; j++)
@@ -1678,7 +1823,8 @@ namespace Droid.Core
                         return false;
             return true;
         }
-        public bool IsDiagonal(float epsilon = Matrix_.MATRIX_EPSILON)
+
+        public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
         {
             for (var i = 0; i < 6; i++)
                 for (var j = 0; j < 6; j++)
@@ -1697,8 +1843,10 @@ namespace Droid.Core
                 this[b0 + 1][b1 + 0], this[b0 + 1][b1 + 1], this[b0 + 1][b1 + 2],
                 this[b0 + 2][b1 + 0], this[b0 + 2][b1 + 1], this[b0 + 2][b1 + 2]);
         }
+
         public float Trace()
             => mat[0][0] + mat[1][1] + mat[2][2] + mat[3][3] + mat[4][4] + mat[5][5];
+
         public float Determinant()
         {
             // 2x2 sub-determinants required to calculate 6x6 determinant
@@ -1772,7 +1920,7 @@ namespace Droid.Core
 
         public Matrix6x6 Transpose()   // returns transpose
         {
-            var transpose = new Matrix6x6();
+            Matrix6x6 transpose = new();
             for (var i = 0; i < 6; i++)
                 for (var j = 0; j < 6; j++)
                     transpose[i][j] = this[j][i];
@@ -1789,9 +1937,10 @@ namespace Droid.Core
                 }
             return this;
         }
+
         public Matrix6x6 Inverse()     // returns the inverse ( m * m.Inverse() = identity )
         {
-            var invMat = this;
+            Matrix6x6 invMat = new(this);
             var r = invMat.InverseSelf();
             Debug.Assert(r);
             return invMat;
@@ -1800,6 +1949,7 @@ namespace Droid.Core
         {
             // 810+6+36 = 852 multiplications
             //				1 division
+            double det, invDet;
 
             // 2x2 sub-determinants required to calculate 6x6 determinant
             var det2_45_01 = mat[4][0] * mat[5][1] - mat[4][1] * mat[5][0];
@@ -1866,11 +2016,11 @@ namespace Droid.Core
             var det5_12345_12345 = mat[1][1] * det4_2345_2345 - mat[1][2] * det4_2345_1345 + mat[1][3] * det4_2345_1245 - mat[1][4] * det4_2345_1235 + mat[1][5] * det4_2345_1234;
 
             // determinant of 6x6 matrix
-            var det = mat[0][0] * det5_12345_12345 - mat[0][1] * det5_12345_02345 + mat[0][2] * det5_12345_01345 - mat[0][3] * det5_12345_01245 + mat[0][4] * det5_12345_01235 - mat[0][5] * det5_12345_01234;
-            if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
+            det = mat[0][0] * det5_12345_12345 - mat[0][1] * det5_12345_02345 + mat[0][2] * det5_12345_01345 - mat[0][3] * det5_12345_01245 + mat[0][4] * det5_12345_01235 - mat[0][5] * det5_12345_01234;
+            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                 return false;
 
-            var invDet = 1.0f / det;
+            invDet = 1f / det;
 
             // remaining 2x2 sub-determinants
             var det2_34_01 = mat[3][0] * mat[4][1] - mat[3][1] * mat[4][0];
@@ -2060,18 +2210,19 @@ namespace Droid.Core
             var det5_02345_02345 = mat[0][0] * det4_2345_2345 - mat[0][2] * det4_2345_0345 + mat[0][3] * det4_2345_0245 - mat[0][4] * det4_2345_0235 + mat[0][5] * det4_2345_0234;
             var det5_02345_12345 = mat[0][1] * det4_2345_2345 - mat[0][2] * det4_2345_1345 + mat[0][3] * det4_2345_1245 - mat[0][4] * det4_2345_1235 + mat[0][5] * det4_2345_1234;
 
-            mat[0][0] = det5_12345_12345 * invDet; mat[0][1] = -det5_02345_12345 * invDet; mat[0][2] = det5_01345_12345 * invDet; mat[0][3] = -det5_01245_12345 * invDet; mat[0][4] = det5_01235_12345 * invDet; mat[0][5] = -det5_01234_12345 * invDet;
-            mat[1][0] = -det5_12345_02345 * invDet; mat[1][1] = det5_02345_02345 * invDet; mat[1][2] = -det5_01345_02345 * invDet; mat[1][3] = det5_01245_02345 * invDet; mat[1][4] = -det5_01235_02345 * invDet; mat[1][5] = det5_01234_02345 * invDet;
-            mat[2][0] = det5_12345_01345 * invDet; mat[2][1] = -det5_02345_01345 * invDet; mat[2][2] = det5_01345_01345 * invDet; mat[2][3] = -det5_01245_01345 * invDet; mat[2][4] = det5_01235_01345 * invDet; mat[2][5] = -det5_01234_01345 * invDet;
-            mat[3][0] = -det5_12345_01245 * invDet; mat[3][1] = det5_02345_01245 * invDet; mat[3][2] = -det5_01345_01245 * invDet; mat[3][3] = det5_01245_01245 * invDet; mat[3][4] = -det5_01235_01245 * invDet; mat[3][5] = det5_01234_01245 * invDet;
-            mat[4][0] = det5_12345_01235 * invDet; mat[4][1] = -det5_02345_01235 * invDet; mat[4][2] = det5_01345_01235 * invDet; mat[4][3] = -det5_01245_01235 * invDet; mat[4][4] = det5_01235_01235 * invDet; mat[4][5] = -det5_01234_01235 * invDet;
-            mat[5][0] = -det5_12345_01234 * invDet; mat[5][1] = det5_02345_01234 * invDet; mat[5][2] = -det5_01345_01234 * invDet; mat[5][3] = det5_01245_01234 * invDet; mat[5][4] = -det5_01235_01234 * invDet; mat[5][5] = det5_01234_01234 * invDet;
+            mat[0][0] = (float)(det5_12345_12345 * invDet); mat[0][1] = (float)(-det5_02345_12345 * invDet); mat[0][2] = (float)(det5_01345_12345 * invDet); mat[0][3] = (float)(-det5_01245_12345 * invDet); mat[0][4] = (float)(det5_01235_12345 * invDet); mat[0][5] = (float)(-det5_01234_12345 * invDet);
+            mat[1][0] = (float)(-det5_12345_02345 * invDet); mat[1][1] = (float)(det5_02345_02345 * invDet); mat[1][2] = (float)(-det5_01345_02345 * invDet); mat[1][3] = (float)(det5_01245_02345 * invDet); mat[1][4] = (float)(-det5_01235_02345 * invDet); mat[1][5] = (float)(det5_01234_02345 * invDet);
+            mat[2][0] = (float)(det5_12345_01345 * invDet); mat[2][1] = (float)(-det5_02345_01345 * invDet); mat[2][2] = (float)(det5_01345_01345 * invDet); mat[2][3] = (float)(-det5_01245_01345 * invDet); mat[2][4] = (float)(det5_01235_01345 * invDet); mat[2][5] = (float)(-det5_01234_01345 * invDet);
+            mat[3][0] = (float)(-det5_12345_01245 * invDet); mat[3][1] = (float)(det5_02345_01245 * invDet); mat[3][2] = (float)(-det5_01345_01245 * invDet); mat[3][3] = (float)(det5_01245_01245 * invDet); mat[3][4] = (float)(-det5_01235_01245 * invDet); mat[3][5] = (float)(det5_01234_01245 * invDet);
+            mat[4][0] = (float)(det5_12345_01235 * invDet); mat[4][1] = (float)(-det5_02345_01235 * invDet); mat[4][2] = (float)(det5_01345_01235 * invDet); mat[4][3] = (float)(-det5_01245_01235 * invDet); mat[4][4] = (float)(det5_01235_01235 * invDet); mat[4][5] = (float)(-det5_01234_01235 * invDet);
+            mat[5][0] = (float)(-det5_12345_01234 * invDet); mat[5][1] = (float)(det5_02345_01234 * invDet); mat[5][2] = (float)(-det5_01345_01234 * invDet); mat[5][3] = (float)(det5_01245_01234 * invDet); mat[5][4] = (float)(-det5_01235_01234 * invDet); mat[5][5] = (float)(det5_01234_01234 * invDet);
 
             return true;
         }
+
         public Matrix6x6 InverseFast() // returns the inverse ( m * m.Inverse() = identity )
         {
-            var invMat = this;
+            Matrix6x6 invMat = new(this);
             var r = invMat.InverseFastSelf();
             Debug.Assert(r);
             return invMat;
@@ -2080,21 +2231,21 @@ namespace Droid.Core
         {
             // 6*27+2*30 = 222 multiplications
             //		2*1  =	 2 divisions
+            Matrix3x3 r0 = new(), r1 = new(), r2 = new(), r3 = new(); float c0, c1, c2, det, invDet;
 
             fixed (float* mat = &this.mat[0].p[0])
             {
                 // r0 = m0.Inverse();
-                var c0 = mat[1 * 6 + 1] * mat[2 * 6 + 2] - mat[1 * 6 + 2] * mat[2 * 6 + 1];
-                var c1 = mat[1 * 6 + 2] * mat[2 * 6 + 0] - mat[1 * 6 + 0] * mat[2 * 6 + 2];
-                var c2 = mat[1 * 6 + 0] * mat[2 * 6 + 1] - mat[1 * 6 + 1] * mat[2 * 6 + 0];
+                c0 = mat[1 * 6 + 1] * mat[2 * 6 + 2] - mat[1 * 6 + 2] * mat[2 * 6 + 1];
+                c1 = mat[1 * 6 + 2] * mat[2 * 6 + 0] - mat[1 * 6 + 0] * mat[2 * 6 + 2];
+                c2 = mat[1 * 6 + 0] * mat[2 * 6 + 1] - mat[1 * 6 + 1] * mat[2 * 6 + 0];
 
-                var det = mat[0 * 6 + 0] * c0 + mat[0 * 6 + 1] * c1 + mat[0 * 6 + 2] * c2;
-                if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
+                det = mat[0 * 6 + 0] * c0 + mat[0 * 6 + 1] * c1 + mat[0 * 6 + 2] * c2;
+                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                     return false;
 
-                var invDet = 1.0f / det;
+                invDet = 1f / det;
 
-                Matrix3x3 r0 = new();
                 r0.mat[0].x = c0 * invDet;
                 r0.mat[0].y = (mat[0 * 6 + 2] * mat[2 * 6 + 1] - mat[0 * 6 + 1] * mat[2 * 6 + 2]) * invDet;
                 r0.mat[0].z = (mat[0 * 6 + 1] * mat[1 * 6 + 2] - mat[0 * 6 + 2] * mat[1 * 6 + 1]) * invDet;
@@ -2106,7 +2257,6 @@ namespace Droid.Core
                 r0.mat[2].z = (mat[0 * 6 + 0] * mat[1 * 6 + 1] - mat[0 * 6 + 1] * mat[1 * 6 + 0]) * invDet;
 
                 // r1 = r0 * m1;
-                Matrix3x3 r1 = new();
                 r1.mat[0].x = r0.mat[0].x * mat[0 * 6 + 3] + r0.mat[0].y * mat[1 * 6 + 3] + r0.mat[0].z * mat[2 * 6 + 3];
                 r1.mat[0].y = r0.mat[0].x * mat[0 * 6 + 4] + r0.mat[0].y * mat[1 * 6 + 4] + r0.mat[0].z * mat[2 * 6 + 4];
                 r1.mat[0].z = r0.mat[0].x * mat[0 * 6 + 5] + r0.mat[0].y * mat[1 * 6 + 5] + r0.mat[0].z * mat[2 * 6 + 5];
@@ -2118,7 +2268,6 @@ namespace Droid.Core
                 r1.mat[2].z = r0.mat[2].x * mat[0 * 6 + 5] + r0.mat[2].y * mat[1 * 6 + 5] + r0.mat[2].z * mat[2 * 6 + 5];
 
                 // r2 = m2 * r1;
-                Matrix3x3 r2 = new();
                 r2.mat[0].x = mat[3 * 6 + 0] * r1.mat[0].x + mat[3 * 6 + 1] * r1.mat[1].x + mat[3 * 6 + 2] * r1.mat[2].x;
                 r2.mat[0].y = mat[3 * 6 + 0] * r1.mat[0].y + mat[3 * 6 + 1] * r1.mat[1].y + mat[3 * 6 + 2] * r1.mat[2].y;
                 r2.mat[0].z = mat[3 * 6 + 0] * r1.mat[0].z + mat[3 * 6 + 1] * r1.mat[1].z + mat[3 * 6 + 2] * r1.mat[2].z;
@@ -2130,7 +2279,6 @@ namespace Droid.Core
                 r2.mat[2].z = mat[5 * 6 + 0] * r1.mat[0].z + mat[5 * 6 + 1] * r1.mat[1].z + mat[5 * 6 + 2] * r1.mat[2].z;
 
                 // r3 = r2 - m3;
-                Matrix3x3 r3 = new();
                 r3.mat[0].x = r2.mat[0].x - mat[3 * 6 + 3];
                 r3.mat[0].y = r2.mat[0].y - mat[3 * 6 + 4];
                 r3.mat[0].z = r2.mat[0].z - mat[3 * 6 + 5];
@@ -2147,10 +2295,10 @@ namespace Droid.Core
                 r2.mat[2].x = r3.mat[1].x * r3.mat[2].y - r3.mat[1].y * r3.mat[2].x;
 
                 det = r3.mat[0].x * r2.mat[0].x + r3.mat[0].y * r2.mat[1].x + r3.mat[0].z * r2.mat[2].x;
-                if (MathX.Fabs(det) < Matrix_.MATRIX_INVERSE_EPSILON)
+                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                     return false;
 
-                invDet = 1.0f / det;
+                invDet = 1f / det;
 
                 r2.mat[0].y = r3.mat[0].z * r3.mat[2].y - r3.mat[0].y * r3.mat[2].z;
                 r2.mat[0].z = r3.mat[0].y * r3.mat[1].z - r3.mat[0].z * r3.mat[1].y;
@@ -2240,14 +2388,16 @@ namespace Droid.Core
 
         public static Matrix6x6 zero = new(new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0));
         public static Matrix6x6 identity = new(new Vector6(1, 0, 0, 0, 0, 0), new Vector6(0, 1, 0, 0, 0, 0), new Vector6(0, 0, 1, 0, 0, 0), new Vector6(0, 0, 0, 1, 0, 0), new Vector6(0, 0, 0, 0, 1, 0), new Vector6(0, 0, 0, 0, 0, 1));
-        //#define default identity
     }
 
     public partial struct MatrixX
     {
+        public const float INVERSE_EPSILON = 1e-14F;
+        public const float EPSILON = 1e-6F;
+
         const int MATX_MAX_TEMP = 1024;
         static int MATX_QUAD(int x) => ((x) + 3) & ~3;
-        void MATX_CLEAREND() { int s = numRows * numColumns; while (s < ((s + 3) & ~3)) { mat[s++] = 0.0f; } }
+        void MATX_CLEAREND() { int s = numRows * numColumns; while (s < ((s + 3) & ~3)) { mat[s++] = 0f; } }
         static float[] MATX_ALLOCA(int n) => new float[MATX_QUAD(n)];
         static float[] temp; // = new float[MATX_MAX_TEMP + 4];   // used to store intermediate results
                              // static float[] tempPtr = temp; //(float*)(((intptr_t)idMatX::temp + 15) & ~15);              // pointer to 16 byte aligned temporary memory
@@ -2272,6 +2422,18 @@ namespace Droid.Core
             MATX_CLEAREND();
         }
 
+        public MatrixX(MatrixX a)
+        {
+            numRows = numColumns = alloced = 0;
+            mat = null;
+            SetSize(a.numRows, a.numColumns);
+#if MATX_SIMD
+            SIMDProcessor.Copy16(mat, a.mat, a.numRows * a.numColumns);
+#else
+            Array.Copy(a.mat, mat, a.numRows * a.numColumns);
+#endif
+            tempIndex = 0;
+        }
         //public MatrixX()
         //{
         //    numRows = numColumns = alloced = 0;
@@ -2288,18 +2450,6 @@ namespace Droid.Core
             numRows = numColumns = alloced = 0;
             mat = null;
             SetData(rows, columns, src);
-        }
-        public MatrixX(MatrixX a)
-        {
-            numRows = numColumns = alloced = 0;
-            mat = null;
-            SetSize(a.numRows, a.numColumns);
-#if MATX_SIMD
-            SIMDProcessor.Copy16(mat, a.mat, a.numRows * a.numColumns);
-#else
-            Array.Copy(a.mat, mat, a.numRows * a.numColumns);
-#endif
-            tempIndex = 0;
         }
 
         public void Set(int rows, int columns, float[] src)
@@ -2490,7 +2640,7 @@ namespace Droid.Core
                     {
                         if (makeZero)
                             for (var j = columns - 1; j >= numColumns; j--)
-                                mat[i * columns + j] = 0.0f;
+                                mat[i * columns + j] = 0f;
                         for (var j = numColumns - 1; j >= 0; j--)
                             mat[i * columns + j] = mat[i * numColumns + j];
                     }
@@ -2540,7 +2690,7 @@ namespace Droid.Core
             Array.Clear(mat, 0, numRows * numColumns);
 #endif
             for (var i = 0; i < numRows; i++)
-                mat[i * numColumns + i] = 1.0f;
+                mat[i * numColumns + i] = 1f;
         }
         public void Identity(int rows, int columns)                               // set size and clear to identity matrix
         {
@@ -2554,7 +2704,7 @@ namespace Droid.Core
             for (var i = 0; i < v.Size; i++)
                 mat[i * numColumns + i] = v[i];
         }
-        public void Random(int seed, float l = 0.0f, float u = 1.0f)              // fill matrix with random values
+        public void Random(int seed, float l = 0f, float u = 1f)              // fill matrix with random values
         {
             var rnd = new Random(seed);
             var c = u - l;
@@ -2562,7 +2712,7 @@ namespace Droid.Core
             for (var i = 0; i < s; i++)
                 mat[i] = l + rnd.RandomFloat() * c;
         }
-        public void Random(int rows, int columns, int seed, float l = 0.0f, float u = 1.0f)
+        public void Random(int rows, int columns, int seed, float l = 0f, float u = 1f)
         {
             var rnd = new Random(seed);
             SetSize(rows, columns);
@@ -2674,19 +2824,19 @@ namespace Droid.Core
         public float MaxDifference(MatrixX m)                          // return maximum element difference between this and m
         {
             Debug.Assert(numRows == m.numRows && numColumns == m.numColumns);
-            var maxDiff = -1.0f;
+            var maxDiff = -1f;
             for (var i = 0; i < numRows; i++)
                 for (var j = 0; j < numColumns; j++)
                 {
                     var diff = MathX.Fabs(mat[i * numColumns + j] - m[i][j]);
-                    if (maxDiff < 0.0f || diff > maxDiff)
+                    if (maxDiff < 0f || diff > maxDiff)
                         maxDiff = diff;
                 }
             return maxDiff;
         }
 
         public bool IsSquare() => numRows == numColumns;
-        public bool IsZero(float epsilon = Matrix_.MATRIX_EPSILON)
+        public bool IsZero(float epsilon = MatrixX.EPSILON)
         {
             // returns true if this == Zero
             for (var i = 0; i < numRows; i++)
@@ -2695,7 +2845,7 @@ namespace Droid.Core
                         return false;
             return true;
         }
-        public bool IsIdentity(float epsilon = Matrix_.MATRIX_EPSILON)
+        public bool IsIdentity(float epsilon = MatrixX.EPSILON)
         {
             // returns true if this == Identity
             Debug.Assert(numRows == numColumns);
@@ -2705,7 +2855,7 @@ namespace Droid.Core
                         return false;
             return true;
         }
-        public bool IsDiagonal(float epsilon = Matrix_.MATRIX_EPSILON)
+        public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
         {
             // returns true if all elements are zero except for the elements on the diagonal
             Debug.Assert(numRows == numColumns);
@@ -2715,7 +2865,7 @@ namespace Droid.Core
                         return false;
             return true;
         }
-        public bool IsTriDiagonal(float epsilon = Matrix_.MATRIX_EPSILON)
+        public bool IsTriDiagonal(float epsilon = MatrixX.EPSILON)
         {
             // returns true if all elements are zero except for the elements on the diagonal plus or minus one column
             if (numRows != numColumns)
@@ -2730,7 +2880,7 @@ namespace Droid.Core
                 }
             return true;
         }
-        public bool IsSymmetric(float epsilon = Matrix_.MATRIX_EPSILON)
+        public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
         {
             // this[i][j] == this[j][i]
             if (numRows != numColumns)
@@ -2748,7 +2898,7 @@ namespace Droid.Core
         /// <returns>
         ///   <c>true</c> if the specified epsilon is orthogonal; otherwise, <c>false</c>.
         /// </returns>
-        public unsafe bool IsOrthogonal(float epsilon = Matrix_.MATRIX_EPSILON)
+        public unsafe bool IsOrthogonal(float epsilon = MatrixX.EPSILON)
         {
             if (!IsSquare())
                 return false;
@@ -2781,7 +2931,7 @@ namespace Droid.Core
         /// <returns>
         ///   <c>true</c> if the specified epsilon is orthonormal; otherwise, <c>false</c>.
         /// </returns>
-        public unsafe bool IsOrthonormal(float epsilon = Matrix_.MATRIX_EPSILON)
+        public unsafe bool IsOrthonormal(float epsilon = MatrixX.EPSILON)
         {
             if (!IsSquare())
                 return false;
@@ -2810,7 +2960,7 @@ namespace Droid.Core
                     ptr1 += numColumns;
 
                     // check that length of *column* vector i is 1 (no need for sqrt because sqrt(1)==1)
-                    if (MathX.Fabs(colVecSum - 1.0f) > epsilon)
+                    if (MathX.Fabs(colVecSum - 1f) > epsilon)
                         return false;
                 }
             }
@@ -2824,7 +2974,7 @@ namespace Droid.Core
         /// <returns>
         ///   <c>true</c> if [is p matrix] [the specified epsilon]; otherwise, <c>false</c>.
         /// </returns>
-        public bool IsPMatrix(float epsilon = Matrix_.MATRIX_EPSILON)
+        public bool IsPMatrix(float epsilon = MatrixX.EPSILON)
         {
             if (!IsSquare())
                 return false;
@@ -2863,7 +3013,7 @@ namespace Droid.Core
         /// <returns>
         ///   <c>true</c> if the matrix is a Z-matrix; otherwise, <c>false</c>.
         /// </returns>
-        public bool IsZMatrix(float epsilon = Matrix_.MATRIX_EPSILON)
+        public bool IsZMatrix(float epsilon = MatrixX.EPSILON)
         {
             if (!IsSquare())
                 return false;
@@ -2882,7 +3032,7 @@ namespace Droid.Core
         /// <returns>
         ///   <c>true</c> if the matrix is Positive Definite (PD); otherwise, <c>false</c>.
         /// </returns>
-        public bool IsPositiveDefinite(float epsilon = Matrix_.MATRIX_EPSILON)
+        public bool IsPositiveDefinite(float epsilon = MatrixX.EPSILON)
         {
             // the matrix must be square
             if (!IsSquare())
@@ -2905,11 +3055,11 @@ namespace Droid.Core
                 for (j = i; j < numColumns; j++)
                     if (m[j][j] <= epsilon)
                         return false;
-                var d = 1.0f / m[i][i];
+                var d = 1f / m[i][i];
                 for (j = i + 1; j < numColumns; j++)
                 {
                     var s = d * m[j][i];
-                    m[j][i] = 0.0f;
+                    m[j][i] = 0f;
                     for (k = i + 1; k < numRows; k++)
                         m[j][k] -= s * m[i][k];
                 }
@@ -2925,7 +3075,7 @@ namespace Droid.Core
         /// <returns>
         ///   <c>true</c> if the matrix is Positive Semi Definite (PSD); otherwise, <c>false</c>.
         /// </returns>
-        public bool IsSymmetricPositiveDefinite(float epsilon = Matrix_.MATRIX_EPSILON)
+        public bool IsSymmetricPositiveDefinite(float epsilon = MatrixX.EPSILON)
         {
             // the matrix must be symmetric
             if (!IsSymmetric(epsilon))
@@ -2947,7 +3097,7 @@ namespace Droid.Core
         /// <returns>
         ///   <c>true</c> if the matrix is Positive Semi Definite (PSD); otherwise, <c>false</c>.
         /// </returns>
-        public bool IsPositiveSemiDefinite(float epsilon = Matrix_.MATRIX_EPSILON)
+        public bool IsPositiveSemiDefinite(float epsilon = MatrixX.EPSILON)
         {
             // the matrix must be square
             if (!IsSquare())
@@ -2981,11 +3131,11 @@ namespace Droid.Core
                 if (m[i][i] <= epsilon)
                     continue;
 
-                var d = 1.0f / m[i][i];
+                var d = 1f / m[i][i];
                 for (j = i + 1; j < numColumns; j++)
                 {
                     var s = d * m[j][i];
-                    m[j][i] = 0.0f;
+                    m[j][i] = 0f;
                     for (k = i + 1; k < numRows; k++)
                         m[j][k] -= s * m[i][k];
                 }
@@ -3001,7 +3151,7 @@ namespace Droid.Core
         /// <returns>
         ///   <c>true</c> if the matrix is Symmetric Positive Semi Definite (PSD); otherwise, <c>false</c>.
         /// </returns>
-        public bool IsSymmetricPositiveSemiDefinite(float epsilon = Matrix_.MATRIX_EPSILON)
+        public bool IsSymmetricPositiveSemiDefinite(float epsilon = MatrixX.EPSILON)
             // the matrix must be symmetric
             => IsSymmetric(epsilon) && IsPositiveSemiDefinite(epsilon);
 
@@ -3009,29 +3159,30 @@ namespace Droid.Core
         {
             Debug.Assert(numRows == numColumns);
             // sum of elements on the diagonal
-            var trace = 0.0f;
-            for (int i = 0; i < numRows; i++)
+            var trace = 0f;
+            for (var i = 0; i < numRows; i++)
                 trace += mat[i * numRows + i];
             return trace;
         }
         public unsafe float Determinant()                                     // returns determinant of matrix
         {
             Debug.Assert(numRows == numColumns);
+            if (numRows == 1)
+                return mat[0];
             fixed (float* mat = &this.mat[0])
-                switch (numRows)
+                return numRows switch
                 {
-                    case 1: return mat[0];
-                    case 2: return reinterpret.cast_mat2(mat).Determinant();
-                    case 3: return reinterpret.cast_mat3(mat).Determinant();
-                    case 4: return reinterpret.cast_mat4(mat).Determinant();
-                    case 5: return reinterpret.cast_mat5(mat).Determinant();
-                    case 6: return reinterpret.cast_mat6(mat).Determinant();
-                    default: return DeterminantGeneric();
-                }
+                    2 => reinterpret.cast_mat2(mat).Determinant(),
+                    3 => reinterpret.cast_mat3(mat).Determinant(),
+                    4 => reinterpret.cast_mat4(mat).Determinant(),
+                    5 => reinterpret.cast_mat5(mat).Determinant(),
+                    6 => reinterpret.cast_mat6(mat).Determinant(),
+                    _ => DeterminantGeneric(),
+                };
         }
         public MatrixX Transpose()                                     // returns transpose
         {
-            var m = new MatrixX();
+            MatrixX m = new();
             m.SetTempSize(numColumns, numRows);
             for (var i = 0; i < numRows; i++)
                 for (var j = 0; j < numColumns; j++)
@@ -3040,12 +3191,12 @@ namespace Droid.Core
         }
         public MatrixX TransposeSelf()                                            // transposes the matrix itself
         {
-            this = Transpose();
+            this = new(Transpose());
             return this;
         }
         public MatrixX Inverse()                                           // returns the inverse ( m * m.Inverse() = identity )
         {
-            var m = new MatrixX();
+            MatrixX m = new();
             m.SetTempSize(numRows, numColumns);
             Array.Copy(mat, m.mat, numRows * numColumns);
             var r = m.InverseSelf();
@@ -3055,21 +3206,23 @@ namespace Droid.Core
         public unsafe bool InverseSelf()                                            // returns false if determinant is zero
         {
             Debug.Assert(numRows == numColumns);
-            fixed (float* mat = &this.mat[0])
-                switch (numRows)
+            if (numRows == 1)
+            {
+                if (MathX.Fabs(mat[0]) < INVERSE_EPSILON)
+                    return false;
+                mat[0] = 1f / mat[0];
+                return true;
+            }
+            fixed (float* mat = this.mat)
+                return numRows switch
                 {
-                    case 1:
-                        if (MathX.Fabs(mat[0]) < Matrix_.MATRIX_INVERSE_EPSILON)
-                            return false;
-                        mat[0] = 1.0f / mat[0];
-                        return true;
-                    case 2: return reinterpret.cast_mat2(mat).InverseSelf();
-                    case 3: return reinterpret.cast_mat3(mat).InverseSelf();
-                    case 4: return reinterpret.cast_mat4(mat).InverseSelf();
-                    case 5: return reinterpret.cast_mat5(mat).InverseSelf();
-                    case 6: return reinterpret.cast_mat6(mat).InverseSelf();
-                    default: return InverseSelfGeneric();
-                }
+                    2 => reinterpret.cast_mat2(mat).InverseSelf(),
+                    3 => reinterpret.cast_mat3(mat).InverseSelf(),
+                    4 => reinterpret.cast_mat4(mat).InverseSelf(),
+                    5 => reinterpret.cast_mat5(mat).InverseSelf(),
+                    6 => reinterpret.cast_mat6(mat).InverseSelf(),
+                    _ => InverseSelfGeneric(),
+                };
         }
         public MatrixX InverseFast()                                       // returns the inverse ( m * m.Inverse() = identity )
         {
@@ -3083,22 +3236,23 @@ namespace Droid.Core
         public unsafe bool InverseFastSelf()                                        // returns false if determinant is zero
         {
             Debug.Assert(numRows == numColumns);
+            if (numRows == 1)
+            {
+                if (MathX.Fabs(mat[0]) < INVERSE_EPSILON)
+                    return false;
+                mat[0] = 1f / mat[0];
+                return true;
+            }
             fixed (float* mat = &this.mat[0])
-                switch (numRows)
+                return numRows switch
                 {
-                    case 1:
-                        if (MathX.Fabs(mat[0]) < Matrix_.MATRIX_INVERSE_EPSILON)
-                            return false;
-                        mat[0] = 1.0f / mat[0];
-                        return true;
-                    case 2: return reinterpret.cast_mat2(mat).InverseFastSelf();
-                    case 3: return reinterpret.cast_mat3(mat).InverseFastSelf();
-                    case 4: return reinterpret.cast_mat3(mat).InverseFastSelf();
-                    case 5: return reinterpret.cast_mat5(mat).InverseFastSelf();
-                    case 6: return reinterpret.cast_mat6(mat).InverseFastSelf();
-                    default: break;
-                }
-            return InverseSelfGeneric();
+                    2 => reinterpret.cast_mat2(mat).InverseFastSelf(),
+                    3 => reinterpret.cast_mat3(mat).InverseFastSelf(),
+                    4 => reinterpret.cast_mat3(mat).InverseFastSelf(),
+                    5 => reinterpret.cast_mat5(mat).InverseFastSelf(),
+                    6 => reinterpret.cast_mat6(mat).InverseFastSelf(),
+                    _ => InverseSelfGeneric(),
+                };
         }
 
         /// <summary>
@@ -3110,12 +3264,12 @@ namespace Droid.Core
             for (var i = 0; i < numRows; i++)
             {
                 var d = this[i][i];
-                if (d == 0.0f)
+                if (d == 0f)
                     return false;
-                this[i][i] = d = 1.0f / d;
+                this[i][i] = d = 1f / d;
                 for (var j = 0; j < i; j++)
                 {
-                    var sum = 0.0f;
+                    var sum = 0f;
                     for (var k = j; k < i; k++)
                         sum -= this[i][k] * this[k][j];
                     this[i][j] = sum * d;
@@ -3132,12 +3286,12 @@ namespace Droid.Core
             for (var i = numRows - 1; i >= 0; i--)
             {
                 var d = this[i][i];
-                if (d == 0.0f)
+                if (d == 0f)
                     return false;
-                this[i][i] = d = 1.0f / d;
+                this[i][i] = d = 1f / d;
                 for (var j = numRows - 1; j > i; j--)
                 {
-                    var sum = 0.0f;
+                    var sum = 0f;
                     for (var k = j; k > i; k--)
                         sum -= this[i][k] * this[k][j];
                     this[i][j] = sum * d;
@@ -3429,7 +3583,7 @@ namespace Droid.Core
             tmp = this;
 
             if (!tmp.LU_Factor(index, out var det))
-                return 0.0f;
+                return 0f;
 
             return det;
         }
@@ -3449,11 +3603,11 @@ namespace Droid.Core
 
             for (var i = 0; i < numRows; i++)
             {
-                b[i] = 1.0f;
+                b[i] = 1f;
                 tmp.LU_Solve(x, b, index);
                 for (var j = 0; j < numRows; j++)
                     this[j][i] = x[j];
-                b[i] = 0.0f;
+                b[i] = 0f;
             }
             return true;
         }

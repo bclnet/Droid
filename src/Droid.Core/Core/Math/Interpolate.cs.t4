@@ -77,7 +77,7 @@ public class InterpolateAccelDecelLinear_<#=type#>
         this.decelTime = decelTime;
         this.startValue = startValue;
         this.endValue = endValue;
-        if (duration <= 0.0f)
+        if (duration <= 0f)
             return;
 
         if (this.accelTime + this.decelTime > duration)
@@ -86,7 +86,7 @@ public class InterpolateAccelDecelLinear_<#=type#>
             this.decelTime = duration - this.accelTime;
         }
         this.linearTime = duration - this.accelTime - this.decelTime;
-        <#=type#> speed = (endValue - startValue) * (1000.0f / (this.linearTime + (this.accelTime + this.decelTime) * 0.5f));
+        <#=type#> speed = (endValue - startValue) * (1000f / (this.linearTime + (this.accelTime + this.decelTime) * 0.5f));
 
         if (this.accelTime != 0) extrapolate.Init(startTime, this.accelTime, startValue, startValue - startValue, speed, EXTRAPOLATION.ACCELLINEAR);
         else if (this.linearTime != 0) extrapolate.Init(startTime, this.linearTime, startValue, startValue - startValue, speed, EXTRAPOLATION.LINEAR);
@@ -167,7 +167,7 @@ public class InterpolateAccelDecelSine_<#=type#>
         this.startValue = startValue;
         this.endValue = endValue;
 
-        if (duration <= 0.0f)
+        if (duration <= 0f)
             return;
 
         if (this.accelTime + this.decelTime > duration)
@@ -176,7 +176,7 @@ public class InterpolateAccelDecelSine_<#=type#>
             this.decelTime = duration - this.accelTime;
         }
         this.linearTime = duration - this.accelTime - this.decelTime;
-        <#=type#> speed = (endValue - startValue) * (1000.0f / (this.linearTime + (this.accelTime + this.decelTime) * MathX.SQRT_1OVER2));
+        <#=type#> speed = (endValue - startValue) * (1000f / (this.linearTime + (this.accelTime + this.decelTime) * MathX.SQRT_1OVER2));
 
         if (this.accelTime == 0) extrapolate.Init(startTime, this.accelTime, startValue, startValue - startValue, speed, EXTRAPOLATION.ACCELSINE);
         else if (this.linearTime == 0) extrapolate.Init(startTime, this.linearTime, startValue, startValue - startValue, speed, EXTRAPOLATION.LINEAR);

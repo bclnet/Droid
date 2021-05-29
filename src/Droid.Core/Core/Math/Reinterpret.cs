@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Droid.Core
@@ -23,11 +24,41 @@ namespace Droid.Core
         public static unsafe Vector3 cast_vec3(float* s, int index) => *(Vector3*)&s[index];
         public static unsafe Vector6 cast_vec6(float* s, int index) => *(Vector6*)&s[index];
 
-        public static unsafe Matrix2x2 cast_mat2(float* s) => new(U.MarshalTArray<Vector2>(s, 2));
-        public static unsafe Matrix3x3 cast_mat3(float* s) => new(U.MarshalTArray<Vector3>(s, 3));
-        public static unsafe Matrix4x4 cast_mat4(float* s) => new(U.MarshalTArray<Vector4>(s, 4));
-        public static unsafe Matrix5x5 cast_mat5(float* s) => new(U.MarshalTArray<Vector5>(s, 5));
-        public static unsafe Matrix6x6 cast_mat6(float* s) => new(U.MarshalTArray<Vector6>(s, 6));
+        public static unsafe Matrix2x2 cast_mat2(float* s)
+        {
+            var mat = new Vector2[2];
+            fixed (void* matp = mat)
+                Unsafe.CopyBlock(matp, s, 2U * 2U * sizeof(float));
+            return new() { mat = mat };
+        }
+        public static unsafe Matrix3x3 cast_mat3(float* s)
+        {
+            var mat = new Vector3[3];
+            fixed (void* matp = mat)
+                Unsafe.CopyBlock(matp, s, 3U * 3U * sizeof(float));
+            return new() { mat = mat };
+        }
+        public static unsafe Matrix4x4 cast_mat4(float* s)
+        {
+            var mat = new Vector4[4];
+            fixed (void* matp = mat)
+                Unsafe.CopyBlock(matp, s, 4U * 4U * sizeof(float));
+            return new() { mat = mat };
+        }
+        public static unsafe Matrix5x5 cast_mat5(float* s)
+        {
+            var mat = new Vector5[5];
+            fixed (void* matp = mat)
+                Unsafe.CopyBlock(matp, s, 5U * 5U * sizeof(float));
+            return new() { mat = mat };
+        }
+        public static unsafe Matrix6x6 cast_mat6(float* s)
+        {
+            var mat = new Vector6[6];
+            fixed (void* matp = mat)
+                Unsafe.CopyBlock(matp, s, 6U * 6U * sizeof(float));
+            return new() { mat = mat };
+        }
 
         [StructLayout(LayoutKind.Explicit)]
         internal struct F2ui
