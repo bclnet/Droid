@@ -1027,6 +1027,7 @@ namespace Droid.Core
 
             return Inverse_UpdateRowColumn(v2, w, numRows - 1);
         }
+
         /// <summary>
         /// Updates the in-place inverse to obtain the inverse of the matrix with row r and column r removed.
         /// v and w should store the column and row of the original matrix respectively.
@@ -1443,7 +1444,7 @@ namespace Droid.Core
                         var c = v1[index_r];
                         v1[index_r] = v1[index_p];
                         v1[index_p] = c;
-                    } //: open
+                    }; //: open
                     UnsafeX.Swap(ref index[r], ref index[p]);
                 }
 
@@ -3400,7 +3401,7 @@ namespace Droid.Core
             realEigenValues.SetSize(numRows);
             imaginaryEigenValues.SetSize(numRows);
 
-            H = this;
+            H = new MatrixX(this);
 
             // reduce to Hessenberg form
             HessenbergReduction(H);

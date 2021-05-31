@@ -189,7 +189,7 @@ namespace Droid.Core
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
 
         [FieldOffset(0)] internal Vector2[] mat;
 
@@ -534,7 +534,7 @@ namespace Droid.Core
         public Matrix3x3 InertiaRotateSelf(Matrix3x3 rotation)
         {
             // NOTE: the rotation matrix is stored column-major
-            this = rotation.Transpose() * this * rotation;
+            this = new(rotation.Transpose() * this * rotation);
             return this;
         }
 
@@ -679,7 +679,7 @@ namespace Droid.Core
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
 
         public void TransposeMultiply(Matrix3x3 inv, Matrix3x3 b, out Matrix3x3 dst)
         {
@@ -1198,7 +1198,7 @@ namespace Droid.Core
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
 
         [FieldOffset(0)] internal Vector4[] mat;
 
@@ -1672,7 +1672,7 @@ namespace Droid.Core
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
 
         [FieldOffset(0)] internal Vector5[] mat;
 
@@ -2397,7 +2397,7 @@ namespace Droid.Core
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
 
         [FieldOffset(0)] internal Vector6[] mat;
 
@@ -2414,7 +2414,7 @@ namespace Droid.Core
         const int MATX_MAX_TEMP = 1024;
         static int MATX_QUAD(int x) => ((x) + 3) & ~3;
         void MATX_CLEAREND() { int s = numRows * numColumns; while (s < ((s + 3) & ~3)) { mat[s++] = 0f; } }
-        static float[] MATX_ALLOCA(int n) => new float[MATX_QUAD(n)];
+        internal static float[] MATX_ALLOCA(int n) => new float[MATX_QUAD(n)];
         static float[] temp; // = new float[MATX_MAX_TEMP + 4];   // used to store intermediate results
                              // static float[] tempPtr = temp; //(float*)(((intptr_t)idMatX::temp + 15) & ~15);              // pointer to 16 byte aligned temporary memory
         static int tempIndex = 0;                   // index into memory pool, wraps around
@@ -2502,7 +2502,7 @@ namespace Droid.Core
         {
             get
             {
-                Debug.Assert((index >= 0) && (index < numRows));
+                Debug.Assert(index >= 0 && index < numRows);
                 return mat.AsSpan(index * numColumns);
             }
         }
@@ -2523,7 +2523,7 @@ namespace Droid.Core
         public static VectorX operator *(MatrixX _, VectorX vec)
         {
             Debug.Assert(_.numColumns == vec.Size);
-            var dst = new VectorX();
+            VectorX dst = new();
             dst.SetTempSize(_.numRows);
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplyVecX(dst, *this, vec);
@@ -2535,7 +2535,7 @@ namespace Droid.Core
         public static MatrixX operator *(MatrixX _, MatrixX a)
         {
             Debug.Assert(_.numColumns == a.numRows);
-            var dst = new MatrixX();
+            MatrixX dst = new();
             dst.SetTempSize(_.numRows, a.numColumns);
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplyMatX(dst, *this, a);
@@ -2547,7 +2547,7 @@ namespace Droid.Core
         public static MatrixX operator +(MatrixX _, MatrixX a)
         {
             Debug.Assert(_.numRows == a.numRows && _.numColumns == a.numColumns);
-            var m = new MatrixX();
+            MatrixX m = new();
             m.SetTempSize(_.numRows, _.numColumns);
 #if MATX_SIMD
             SIMDProcessor.Add16(m.mat, mat, a.mat, numRows * numColumns);
@@ -2561,7 +2561,7 @@ namespace Droid.Core
         public static MatrixX operator -(MatrixX _, MatrixX a)
         {
             Debug.Assert(_.numRows == a.numRows && _.numColumns == a.numColumns);
-            var m = new MatrixX();
+            MatrixX m = new();
             m.SetTempSize(_.numRows, _.numColumns);
 #if MATX_SIMD
             SIMDProcessor.Sub16(m.mat, mat, a.mat, numRows * numColumns);
@@ -2721,7 +2721,7 @@ namespace Droid.Core
 
         public void Random(int seed, float l = 0f, float u = 1f)              // fill matrix with random values
         {
-            var rnd = new Random(seed);
+            var rnd = new RandomX(seed);
             var c = u - l;
             var s = numRows * numColumns;
             for (var i = 0; i < s; i++)
@@ -2729,7 +2729,7 @@ namespace Droid.Core
         }
         public void Random(int rows, int columns, int seed, float l = 0f, float u = 1f)
         {
-            var rnd = new Random(seed);
+            var rnd = new RandomX(seed);
             SetSize(rows, columns);
             var c = u - l;
             var s = numRows * numColumns;
@@ -2760,22 +2760,22 @@ namespace Droid.Core
 
         public unsafe MatrixX SwapRows(int r1, int r2)                                     // swap rows
         {
-            var ptr = new float[numColumns];
-            fixed (float* ptr_ = ptr, mat = this.mat)
+            var ptr = stackalloc float[numColumns];
+            fixed (float* mat = this.mat)
             {
-                Unsafe.CopyBlock(ptr_, mat + r1 * numColumns, (uint)numColumns * sizeof(float));
+                Unsafe.CopyBlock(ptr, mat + r1 * numColumns, (uint)numColumns * sizeof(float));
                 Unsafe.CopyBlock(mat + r1 * numColumns, mat + r2 * numColumns, (uint)numColumns * sizeof(float));
-                Unsafe.CopyBlock(mat + r2 * numColumns, ptr_, (uint)numColumns * sizeof(float));
+                Unsafe.CopyBlock(mat + r2 * numColumns, ptr, (uint)numColumns * sizeof(float));
+                return this;
             }
-            return this;
         }
 
         public unsafe MatrixX SwapColumns(int r1, int r2)                                  // swap columns
         {
-            fixed (float* matp = mat)
+            fixed (float* mat = this.mat)
                 for (var i = 0; i < numRows; i++)
                 {
-                    var ptr = matp + i * numColumns;
+                    var ptr = mat + i * numColumns;
                     var tmp = ptr[r1];
                     ptr[r1] = ptr[r2];
                     ptr[r2] = tmp;
@@ -2793,17 +2793,23 @@ namespace Droid.Core
         public unsafe MatrixX RemoveRow(int r)                                             // remove a row
         {
             Debug.Assert(r < numRows);
+
             numRows--;
+
             fixed (float* mat = this.mat)
                 for (var i = r; i < numRows; i++)
                     Unsafe.CopyBlock(&mat[i * numColumns], &mat[(i + 1) * numColumns], (uint)numColumns * sizeof(float));
+
             return this;
         }
+
         public unsafe MatrixX RemoveColumn(int r)                                          // remove a column
         {
-            Debug.Assert(r < numColumns);
             int i;
+            Debug.Assert(r < numColumns);
+
             numColumns--;
+
             fixed (float* mat = this.mat)
             {
                 for (i = 0; i < numRows - 1; i++)
@@ -2815,10 +2821,12 @@ namespace Droid.Core
 
         public unsafe MatrixX RemoveRowColumn(int r)                                       // remove a row and column
         {
-            Debug.Assert(r < numRows && r < numColumns);
             int i;
+            Debug.Assert(r < numRows && r < numColumns);
+
             numRows--;
             numColumns--;
+
             fixed (float* mat = this.mat)
             {
                 if (r > 0)
@@ -2838,6 +2846,7 @@ namespace Droid.Core
         public unsafe void ClearUpperTriangle()                                     // clear the upper triangle
         {
             Debug.Assert(numRows == numColumns);
+
             fixed (float* mat = this.mat)
                 for (var i = numRows - 2; i >= 0; i--)
                     Unsafe.InitBlock(mat + i * numColumns + i + 1, 0, (uint)(numColumns - 1 - i) * sizeof(float));
@@ -2846,6 +2855,7 @@ namespace Droid.Core
         public unsafe void ClearLowerTriangle()                                     // clear the lower triangle
         {
             Debug.Assert(numRows == numColumns);
+
             fixed (float* mat = this.mat)
                 for (var i = 1; i < numRows; i++)
                     Unsafe.InitBlock(mat + i * numColumns, 0, (uint)i * sizeof(float));
@@ -2854,17 +2864,18 @@ namespace Droid.Core
         public unsafe void SquareSubMatrix(MatrixX m, int size)                  // get square sub-matrix from 0,0 to size,size
         {
             Debug.Assert(size <= m.numRows && size <= m.numColumns);
+
             SetSize(size, size);
+
             fixed (float* mat = this.mat, m_mat = m.mat)
-            {
                 for (var i = 0; i < size; i++)
                     Unsafe.CopyBlock(mat + i * numColumns, m_mat + i * m.numColumns, (uint)size * sizeof(float));
-            }
         }
 
         public float MaxDifference(MatrixX m)                          // return maximum element difference between this and m
         {
             Debug.Assert(numRows == m.numRows && numColumns == m.numColumns);
+
             var maxDiff = -1f;
             for (var i = 0; i < numRows; i++)
                 for (var j = 0; j < numColumns; j++)
@@ -2892,6 +2903,7 @@ namespace Droid.Core
         {
             // returns true if this == Identity
             Debug.Assert(numRows == numColumns);
+
             for (var i = 0; i < numRows; i++)
                 for (var j = 0; j < numColumns; j++)
                     if (MathX.Fabs(mat[i * numColumns + j] - (i == j ? 1f : 0f)) > epsilon)
@@ -2903,6 +2915,7 @@ namespace Droid.Core
         {
             // returns true if all elements are zero except for the elements on the diagonal
             Debug.Assert(numRows == numColumns);
+
             for (var i = 0; i < numRows; i++)
                 for (var j = 0; j < numColumns; j++)
                     if (i != j && MathX.Fabs(mat[i * numColumns + j]) > epsilon)
@@ -2968,8 +2981,8 @@ namespace Droid.Core
                     }
                     ptr1 += numColumns;
                 }
+                return true;
             }
-            return true;
         }
         /// <summary>
         /// returns true if this * this.Transpose() == Identity and the length of each column vector is 1
@@ -3010,8 +3023,8 @@ namespace Droid.Core
                     if (MathX.Fabs(colVecSum - 1f) > epsilon)
                         return false;
                 }
+                return true;
             }
-            return true;
         }
 
         /// <summary>
@@ -3631,13 +3644,13 @@ namespace Droid.Core
 
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
-            fixed (float* array = mat)
-                return callback(array);
+            fixed (float* _ = mat)
+                return callback(_);
         }
         public unsafe string ToString(int precision = 2)
         {
             var dimension = Dimension;
-            return ToFloatPtr(array => StringX.FloatArrayToString(array, dimension, precision));
+            return ToFloatPtr(_ => StringX.FloatArrayToString(_, dimension, precision));
         }
 
         float DeterminantGeneric()

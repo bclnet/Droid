@@ -9,17 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Core\math\Curve.cs" />
-    <Compile Remove="Core\math\Lcp.cs" />
-    <Compile Remove="Core\math\Ode.cs" />
-    <Compile Remove="Core\math\Plane.cs" />
-    <Compile Remove="Core\math\Pluecker.cs" />
-    <Compile Remove="Core\math\Polynomial.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="Core\math\Curve.cs.t4" />
-    <None Remove="Core\math\Curve.tt" />
     <None Remove="Core\math\Plane.cpp" />
     <None Remove="Framework\Console.cpp" />
     <None Remove="Framework\Console.h" />
@@ -37,6 +26,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Core\math\Curve.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Curve.tt</DependentUpon>
+    </Compile>
     <Compile Update="Core\math\Extrapolate.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -50,6 +44,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Core\math\Curve.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Curve.cs</LastGenOutput>
+    </None>
     <None Update="Core\math\Interpolate.tt">
       <LastGenOutput>Interpolate.cs</LastGenOutput>
       <Generator>TextTemplatingFileGenerator</Generator>
@@ -58,6 +56,12 @@
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>Extrapolate.cs</LastGenOutput>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Core\bv\" />
+    <Folder Include="Core\containers\" />
+    <Folder Include="Core\geometry\" />
   </ItemGroup>
 
 </Project>

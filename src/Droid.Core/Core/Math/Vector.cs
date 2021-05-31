@@ -6,8 +6,6 @@ using System.Runtime.InteropServices;
 
 namespace Droid.Core
 {
-    public unsafe delegate T FloatPtr<T>(float* ptr);
-
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector2
     {
@@ -187,11 +185,11 @@ namespace Droid.Core
 
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
-            fixed (float* p = &x)
-                return callback(p);
+            fixed (float* _ = &x)
+                return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
 
         /// <summary>
         /// Linearly inperpolates one vector to another.
@@ -208,7 +206,6 @@ namespace Droid.Core
         }
 
         public static Vector2 origin = new(0f, 0f);
-        //#define zero origin
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -577,11 +574,11 @@ namespace Droid.Core
             => reinterpret.cast_vec2(this);
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
-            fixed (float* p = &x)
-                return callback(p);
+            fixed (float* _ = &x)
+                return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
 
         /// <summary>
         /// vector should be normalized
@@ -715,7 +712,6 @@ namespace Droid.Core
         }
 
         public static Vector3 origin = new(0f, 0f, 0f);
-        //#define zero origin
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -855,11 +851,11 @@ namespace Droid.Core
             => reinterpret.cast_vec3(this);
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
-            fixed (float* p = &x)
-                return callback(p);
+            fixed (float* _ = &x)
+                return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
 
         /// <summary>
         /// Linearly inperpolates one vector to another.
@@ -876,7 +872,6 @@ namespace Droid.Core
         }
 
         public static Vector4 origin = new(0f, 0f, 0f, 0f);
-        //#define zero origin
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -905,28 +900,17 @@ namespace Droid.Core
             this.t = t;
         }
 
-        public float this[int index]
+        public unsafe float this[int index]
         {
-            get => index switch
+            get
             {
-                0 => x,
-                1 => y,
-                2 => z,
-                3 => s,
-                4 => t,
-                _ => throw new ArgumentOutOfRangeException(nameof(index)),
-            };
+                fixed (float* p = &x)
+                    return p[index];
+            }
             set
             {
-                switch (index)
-                {
-                    case 0: x = value; return;
-                    case 1: y = value; return;
-                    case 2: z = value; return;
-                    case 3: s = value; return;
-                    case 4: t = value; return;
-                    default: throw new ArgumentOutOfRangeException(nameof(index));
-                }
+                fixed (float* p = &x)
+                    p[index] = value;
             }
         }
 
@@ -935,13 +919,14 @@ namespace Droid.Core
 
         public Vector3 ToVec3()
             => reinterpret.cast_vec3(this);
+
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
-            fixed (float* p = &x)
-                return callback(p);
+            fixed (float* _ = &x)
+                return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
 
         public void Lerp(Vector5 v1, Vector5 v2, float l)
         {
@@ -957,20 +942,15 @@ namespace Droid.Core
             }
         }
         public static Vector5 origin = new(0f, 0f, 0f, 0f, 0f);
-        //#define zero origin
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct Vector6
     {
-        public Vector6(float[] a)
+        public unsafe Vector6(float[] a)
         {
-            p[0] = a[0];
-            p[1] = a[1];
-            p[2] = a[2];
-            p[3] = a[3];
-            p[4] = a[4];
-            p[5] = a[5];
+            fixed (float* p = this.p, a_ = a)
+                Unsafe.CopyBlock(p, a_, 6U * sizeof(float));
         }
         public Vector6(float a1, float a2, float a3, float a4, float a5, float a6)
         {
@@ -1116,16 +1096,15 @@ namespace Droid.Core
         }
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
-            fixed (float* array = p)
-                return callback(array);
+            fixed (float* _ = p)
+                return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
 
         internal fixed float p[6];
 
         public static Vector6 origin = new(0f, 0f, 0f, 0f, 0f, 0f);
-        //#define zero origin
         public static Vector6 infinity = new(MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY);
     }
 
@@ -1171,7 +1150,7 @@ namespace Droid.Core
             SIMDProcessor.Copy16(p, a.p, a.size);
 #else
             fixed (float* p = this.p, a_p = a.p)
-                Unsafe.CopyBlock(p, a_p, (uint)a.size * sizeof(float));
+                Unsafe.CopyBlock(p + pi, a_p + a.pi, (uint)a.size * sizeof(float));
 #endif
             tempIndex = 0;
         }
@@ -1367,33 +1346,35 @@ namespace Droid.Core
             VECX_CLEAREND();
         }
 
-        public void Zero()
+        public unsafe void Zero()
         {
 #if VECX_SIMD
             SIMDProcessor.Zero16(p, size);
 #else
-            Array.Clear(p, pi, size);
+            fixed (float* p = this.p)
+                Unsafe.InitBlock(p + pi, 0, (uint)size * sizeof(float));
 #endif
         }
-        public void Zero(int length)
+        public unsafe void Zero(int length)
         {
             SetSize(length);
 #if VECX_SIMD
             SIMDProcessor.Zero16(p, length);
 #else
-            Array.Clear(p, pi, size);
+            fixed (float* p = this.p)
+                Unsafe.InitBlock(p + pi, 0, (uint)size * sizeof(float));
 #endif
         }
         public void Random(int seed, float l = 0f, float u = 1f)
         {
-            var rnd = new Random(seed);
+            var rnd = new RandomX(seed);
             var c = u - l;
             for (var i = 0; i < size; i++)
                 p[pi + i] = l + rnd.RandomFloat() * c;
         }
         public void Random(int length, int seed, float l = 0f, float u = 1f)
         {
-            var rnd = new Random(seed);
+            var rnd = new RandomX(seed);
             SetSize(length);
             var c = u - l;
             for (var i = 0; i < size; i++)
@@ -1489,10 +1470,15 @@ namespace Droid.Core
             fixed (float* _ = p)
                 return callback(_ + pi);
         }
+        public unsafe void ToFloatPtr(FloatPtr callback)
+        {
+            fixed (float* _ = p)
+                callback(_ + pi);
+        }
         public unsafe string ToString(int precision = 2)
         {
             var dimension = Dimension;
-            return ToFloatPtr(array => StringX.FloatArrayToString(array, dimension, precision));
+            return ToFloatPtr(_ => StringX.FloatArrayToString(_, dimension, precision));
         }
     }
 

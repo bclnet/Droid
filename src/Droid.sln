@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Droid", "Droid\Droid.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Droid.Local", "Droid.Local\Droid.Local.csproj", "{B3B3C2F0-3203-4960-870A-1525D098925B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Droid.Sys", "Droid.Sys\Droid.Sys.csproj", "{D00BE2C9-0D81-49EE-8071-08BBDCB76903}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Droid.Abstract", "Droid.Abstract\Droid.Abstract.csproj", "{E60EEF06-DB62-4B7E-AEE7-62E4C1E47BA1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Droid.Core", "Droid.Core\Droid.Core.csproj", "{10E9A088-2F80-4AF8-AC87-5B6B1EA0FF41}"
@@ -27,10 +25,6 @@ Global
 		{B3B3C2F0-3203-4960-870A-1525D098925B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B3B3C2F0-3203-4960-870A-1525D098925B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B3B3C2F0-3203-4960-870A-1525D098925B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D00BE2C9-0D81-49EE-8071-08BBDCB76903}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D00BE2C9-0D81-49EE-8071-08BBDCB76903}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D00BE2C9-0D81-49EE-8071-08BBDCB76903}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D00BE2C9-0D81-49EE-8071-08BBDCB76903}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E60EEF06-DB62-4B7E-AEE7-62E4C1E47BA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E60EEF06-DB62-4B7E-AEE7-62E4C1E47BA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E60EEF06-DB62-4B7E-AEE7-62E4C1E47BA1}.Release|Any CPU.ActiveCfg = Release|Any CPU

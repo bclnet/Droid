@@ -1,5 +1,4 @@
-using System;
-using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Droid.Core
 {
@@ -35,6 +34,28 @@ namespace Droid.Core
             //}
             //return s;
             return "STRING";
+        }
+
+        /// <summary>
+        /// Safe strncpy that ensures a trailing zero
+        /// </summary>
+        /// <param name="dest">The dest.</param>
+        /// <param name="src">The source.</param>
+        /// <param name="destsize">The destsize.</param>
+        public static void Copynz(byte[] dest, byte[] src, int destsize)
+        {
+            if (src != null)
+            {
+                Lib.Warning("Str::Copynz: NULL src");
+                return;
+            }
+            if (destsize < 1)
+            {
+                Lib.Warning("Str::Copynz: destsize < 1");
+                return;
+            }
+            Unsafe.CopyBlock(ref dest[0], ref src[0], (uint)destsize - 1);
+            dest[destsize - 1] = 0;
         }
     }
 }

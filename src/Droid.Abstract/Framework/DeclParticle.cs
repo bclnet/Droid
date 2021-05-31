@@ -13,8 +13,8 @@ namespace Droid.Framework
         public float from;
         public float to;
 
-        public float Eval(float frac, Random rand) => throw new NotImplementedException();
-        public float Integrate(float frac, Random rand) => throw new NotImplementedException();
+        public float Eval(float frac, RandomX rand) => throw new NotImplementedException();
+        public float Integrate(float frac, RandomX rand) => throw new NotImplementedException();
     }
 
     public enum PDIST

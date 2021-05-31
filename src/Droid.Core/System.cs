@@ -1,8 +1,8 @@
+using Droid.Core;
 using System;
 using System.Collections.Generic;
-using System.IO;
 
-namespace Droid.Sys
+namespace Droid
 {
     [Flags]
     public enum CPUID
@@ -18,7 +18,7 @@ namespace Droid.Sys
         ALTIVEC = 0x00200,      // AltiVec
     }
 
-    public enum AXIS
+    public enum JOYSTICK_AXIS
     {
         SIDE,
         FORWARD,
@@ -26,7 +26,7 @@ namespace Droid.Sys
         ROLL,
         YAW,
         PITCH,
-        MAX_JOYSTICK_AXIS
+        MAX
     }
 
     public enum SE
@@ -54,13 +54,13 @@ namespace Droid.Sys
         M_DELTAZ
     }
 
-    public struct sysEvent
+    public struct SysEvent
     {
         public SE evType;
         public int evValue;
         public int evValue2;
-        public int evPtrLength;        // bytes of data pointed to by evPtr, for journaling
-        public object evPtr;                // this must be manually freed if not NULL
+        public int evPtrLength;         // bytes of data pointed to by evPtr, for journaling
+        public IntPtr evPtr;            // this must be manually freed if not NULL
     }
 
     public enum PATH
@@ -71,7 +71,7 @@ namespace Droid.Sys
         EXE
     }
 
-    public static partial class Sys
+    public static partial class SysX
     {
         public static void Init() => throw new NotImplementedException();
         public static void Shutdown() => throw new NotImplementedException();
@@ -114,11 +114,11 @@ namespace Droid.Sys
         public static int GetSystemRam() => throw new NotImplementedException();
 
         // returns amount of drive space in path
-        public static int _GetDriveFreeSpace(string path) => throw new NotImplementedException();
+        public static int GetDriveFreeSpace(string path) => throw new NotImplementedException();
 
         // lock and unlock memory
-        public static bool LockMemory(IntPtr ptr, int bytes) => throw new NotImplementedException();
-        public static bool UnlockMemory(IntPtr ptr, int bytes) => throw new NotImplementedException();
+        public static unsafe bool LockMemory(void* ptr, int bytes) => throw new NotImplementedException();
+        public static unsafe bool UnlockMemory(void* ptr, int bytes) => throw new NotImplementedException();
 
         // set amount of physical work memory
         public static void SetPhysicalWorkMemory(int minBytes, int maxBytes) => throw new NotImplementedException();
@@ -130,7 +130,7 @@ namespace Droid.Sys
 
         // event generation
         public static void GenerateEvents() => throw new NotImplementedException();
-        public static SE GetEvent() => throw new NotImplementedException();
+        public static SysEvent GetEvent() => throw new NotImplementedException();
         public static void ClearEvents() => throw new NotImplementedException();
         public static string ConsoleInput() => throw new NotImplementedException();
 
@@ -139,8 +139,7 @@ namespace Droid.Sys
         public static void ShutdownInput() => throw new NotImplementedException();
         public static void InitScanTable() => throw new NotImplementedException();
         public static sbyte GetConsoleKey(bool shifted) => throw new NotImplementedException();
-        // map a scancode key to a char
-        // does nothing on win32, as SE_KEY == SE_CHAR there on other OSes, consider the keyboard mapping
+        // map a scancode key to a char. does nothing on win32, as SE_KEY == SE_CHAR there on other OSes, consider the keyboard mapping
         public static char MapCharForKey(int key) => throw new NotImplementedException();
 
         // keyboard input polling
@@ -153,19 +152,16 @@ namespace Droid.Sys
         public static int ReturnMouseInputEvent(int n, out int action, out int value) => throw new NotImplementedException();
         public static void EndMouseInputEvents() => throw new NotImplementedException();
 
-        // when the console is down, or the game is about to perform a lengthy operation like map loading, the system can release the mouse cursor
-        // when in windowed mode
+        // when the console is down, or the game is about to perform a lengthy operation like map loading, the system can release the mouse cursor when in windowed mode
         public static void GrabMouseCursor(bool grabIt) => throw new NotImplementedException();
 
         public static void AddMouseMoveEvent(int dx, int dy) => throw new NotImplementedException();
         public static void AddMouseButtonEvent(int button, bool pressed) => throw new NotImplementedException();
         public static void AddKeyEvent(int key, bool pressed) => throw new NotImplementedException();
 
-
         public static void ShowWindow(bool show) => throw new NotImplementedException();
         public static bool IsWindowVisible() => throw new NotImplementedException();
         public static void ShowConsole(int visLevel, bool quitOnClose) => throw new NotImplementedException();
-
 
         public static void Mkdir(string path) => throw new NotImplementedException();
         public static DateTime FileTimeStamp(VFile fp) => throw new NotImplementedException();
@@ -179,23 +175,15 @@ namespace Droid.Sys
         public static int ListFiles(string directory, string extension, List<string> list) => throw new NotImplementedException();
     }
 
-    /*
-    ==============================================================
-
-        Networking
-
-    ==============================================================
-    */
-
     public enum NA
     {
-        NA_BAD,                 // an address lookup failed
-        NA_LOOPBACK,
-        NA_BROADCAST,
-        NA_IP
+        BAD,                 // an address lookup failed
+        LOOPBACK,
+        BROADCAST,
+        IP
     }
 
-    public class netadr
+    public class Netadr
     {
         public NA type;
         public byte[] ip = new byte[4];
@@ -211,12 +199,12 @@ namespace Droid.Sys
         // if the InitForPort fails, the idPort.port field will remain 0
         public bool InitForPort(int portNumber) => throw new NotImplementedException();
         public int GetPort() => bound_to.port;
-        public netadr GetAdr() => bound_to;
+        public Netadr GetAdr() => bound_to;
         public void Close() => throw new NotImplementedException();
 
-        public bool GetPacket(netadr from, byte[] data, int size, int maxSize) => throw new NotImplementedException();
-        public bool GetPacketBlocking(netadr from, byte[] data, int size, int maxSize, int timeout) => throw new NotImplementedException();
-        public void SendPacket(netadr to, byte[] data, int size) => throw new NotImplementedException();
+        public bool GetPacket(Netadr from, byte[] data, int size, int maxSize) => throw new NotImplementedException();
+        public bool GetPacketBlocking(Netadr from, byte[] data, int size, int maxSize, int timeout) => throw new NotImplementedException();
+        public void SendPacket(Netadr to, byte[] data, int size) => throw new NotImplementedException();
 
         public int packetsRead;
         public int bytesRead;
@@ -224,7 +212,7 @@ namespace Droid.Sys
         public int packetsWritten;
         public int bytesWritten;
 
-        netadr bound_to;      // interface and port
+        Netadr bound_to;      // interface and port
         int netSocket;      // OS specific socket
     }
 
@@ -240,21 +228,21 @@ namespace Droid.Sys
         // those are non blocking, can be used for polling
         // there is no buffering, you are not guaranteed to Read or Write everything in a single call
         // (specially on win32, see recv and send documentation)
-        int Read(byte[] data, int size) => throw new NotImplementedException();
-        int Write(byte[] data, int size) => throw new NotImplementedException();
+        public int Read(byte[] data, int size) => throw new NotImplementedException();
+        public int Write(byte[] data, int size) => throw new NotImplementedException();
 
-        netadr address;       // remote address
+        Netadr address;       // remote address
         int fd;             // OS specific socket
     }
 
-    static partial class Sys
+    static partial class SysX
     {
         // parses the port number, can also do DNS resolve if you ask for it.
         // NOTE: DNS resolve is a slow/blocking call, think before you use (could be exploited for server DoS)
-        public static bool StringToNetAdr(string s, netadr a, bool doDNSResolve) => throw new NotImplementedException();
-        public static string NetAdrToString(netadr a) => throw new NotImplementedException();
-        public static bool IsLANAddress(netadr a) => throw new NotImplementedException();
-        public static bool CompareNetAdrBase(netadr a, netadr b) => throw new NotImplementedException();
+        public static bool StringToNetAdr(string s, Netadr a, bool doDNSResolve) => throw new NotImplementedException();
+        public static string NetAdrToString(Netadr a) => throw new NotImplementedException();
+        public static bool IsLANAddress(Netadr a) => throw new NotImplementedException();
+        public static bool CompareNetAdrBase(Netadr a, Netadr b) => throw new NotImplementedException();
 
         public static void InitNetworking() => throw new NotImplementedException();
         public static void ShutdownNetworking() => throw new NotImplementedException();
@@ -268,7 +256,7 @@ namespace Droid.Sys
     ==============================================================
     */
 
-    public struct xthreadInfo
+    public struct XThreadInfo
     {
         public string name;
         public object threadHandle;
@@ -295,10 +283,10 @@ namespace Droid.Sys
         EVENT_IMAGES_PROCESSES
     }
 
-    static partial class Sys
+    static partial class SysX
     {
-        public static void CreateThread(object function, object parms, out xthreadInfo info, string name) => throw new NotImplementedException();
-        public static void DestroyThread(ref xthreadInfo info) => throw new NotImplementedException(); // sets threadHandle back to 0
+        public static void CreateThread(object function, object parms, out XThreadInfo info, string name) => throw new NotImplementedException();
+        public static void DestroyThread(ref XThreadInfo info) => throw new NotImplementedException(); // sets threadHandle back to 0
 
         // find the name of the calling thread
         // if index != NULL, set the index in threads array (use -1 for "main" thread)
@@ -318,7 +306,7 @@ namespace Droid.Sys
         public static void TriggerEvent(TRIGGER_EVENT index = TRIGGER_EVENT.ZERO) => throw new NotImplementedException();
     }
 
-    public interface System
+    public interface ISystem
     {
         void DebugPrintf(string fmt, params object[] args);
         void DebugVPrintf(string fmt, object[] args);
@@ -336,8 +324,8 @@ namespace Droid.Sys
         void DLL_Unload(IntPtr dllHandle);
         void DLL_GetFileName(string baseName, string dllName, int maxLength);
 
-        sysEvent GenerateMouseButtonEvent(int button, bool down);
-        sysEvent GenerateMouseMoveEvent(int deltax, int deltay);
+        SysEvent GenerateMouseButtonEvent(int button, bool down);
+        SysEvent GenerateMouseMoveEvent(int deltax, int deltay);
 
         void OpenURL(string url, bool quit);
         void StartProcess(string exePath, bool quit);

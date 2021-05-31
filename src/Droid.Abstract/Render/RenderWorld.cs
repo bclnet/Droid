@@ -1,6 +1,6 @@
+using Droid.Core;
 using Droid.Framework;
 using Droid.UI;
-using System.Numerics;
 
 namespace Droid.Render
 {

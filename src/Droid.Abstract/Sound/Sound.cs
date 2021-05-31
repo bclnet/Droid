@@ -2,8 +2,6 @@ using Droid.Core;
 using Droid.Framework;
 using Droid.Render;
 using System;
-using System.IO;
-using System.Numerics;
 using SoundSample = System.Object;
 
 namespace Droid.Sound

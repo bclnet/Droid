@@ -7,7 +7,7 @@ namespace Droid.Core
     public static class MathX
     {
         public static float DEG2RAD(float a) => a * M_DEG2RAD;
-        //public static float RAD2DEG(float a) => a * M_RAD2DEG;
+        public static float RAD2DEG(float a) => a * M_RAD2DEG;
         public static double RAD2DEG(double a) => a * M_RAD2DEG;
 
         public static int SEC2MS(float t) => FtoiFast(t * M_SEC2MS);
@@ -71,9 +71,9 @@ namespace Droid.Core
             reinterpret.F2ui fi = new(), fo = new();
             for (var i = 0; i < SQRT_TABLE_SIZE; i++)
             {
-                fi.i = (uint)(((EXP_BIAS - 1) << EXP_POS) | (i << LOOKUP_POS));
+                fi.u = (uint)(((EXP_BIAS - 1) << EXP_POS) | (i << LOOKUP_POS));
                 fo.f = (float)(1.0 / Math.Sqrt(fi.f));
-                iSqrt[i] = (((fo.i + (1 << (SEED_POS - 2))) >> SEED_POS) & 0xFF) << SEED_POS;
+                iSqrt[i] = (((fo.u + (1 << (SEED_POS - 2))) >> SEED_POS) & 0xFF) << SEED_POS;
             }
             iSqrt[SQRT_TABLE_SIZE / 2] = (uint)0xFF << SEED_POS;
             initialized = true;
@@ -92,11 +92,11 @@ namespace Droid.Core
         public static float InvSqrt(float x)          // inverse square root with 32 bits precision, returns huge number when x == 0.0
         {
             Debug.Assert(initialized);
-            uint a = new reinterpret.F2ui { f = x }.i;
+            uint a = new reinterpret.F2ui { f = x }.u;
             reinterpret.F2ui seed = new();
 
             double y = x * 0.5f;
-            seed.i = (((3 * EXP_BIAS - 1 - ((a >> EXP_POS) & 0xFF)) >> 1) << EXP_POS) | iSqrt[(a >> (EXP_POS - LOOKUP_BITS)) & LOOKUP_MASK];
+            seed.u = (((3 * EXP_BIAS - 1 - ((a >> EXP_POS) & 0xFF)) >> 1) << EXP_POS) | iSqrt[(a >> (EXP_POS - LOOKUP_BITS)) & LOOKUP_MASK];
             double r = seed.f;
             r *= 1.5f - r * r * y;
             r *= 1.5f - r * r * y;
@@ -105,11 +105,11 @@ namespace Droid.Core
         public static float InvSqrt16(float x)        // inverse square root with 16 bits precision, returns huge number when x == 0.0
         {
             Debug.Assert(initialized);
-            uint a = new reinterpret.F2ui { f = x }.i;
+            uint a = new reinterpret.F2ui { f = x }.u;
             reinterpret.F2ui seed = new();
 
             double y = x * 0.5f;
-            seed.i = (((3 * EXP_BIAS - 1 - ((a >> EXP_POS) & 0xFF)) >> 1) << EXP_POS) | iSqrt[(a >> (EXP_POS - LOOKUP_BITS)) & LOOKUP_MASK];
+            seed.u = (((3 * EXP_BIAS - 1 - ((a >> EXP_POS) & 0xFF)) >> 1) << EXP_POS) | iSqrt[(a >> (EXP_POS - LOOKUP_BITS)) & LOOKUP_MASK];
             double r = seed.f;
             r *= 1.5f - r * r * y;
             return (float)r;
@@ -117,11 +117,11 @@ namespace Droid.Core
         public static double InvSqrt64(float x)       // inverse square root with 64 bits precision, returns huge number when x == 0.0
         {
             Debug.Assert(initialized);
-            uint a = new reinterpret.F2ui { f = x }.i;
+            uint a = new reinterpret.F2ui { f = x }.u;
             reinterpret.F2ui seed = new();
 
             double y = x * 0.5f;
-            seed.i = (((3 * EXP_BIAS - 1 - ((a >> EXP_POS) & 0xFF)) >> 1) << EXP_POS) | iSqrt[(a >> (EXP_POS - LOOKUP_BITS)) & LOOKUP_MASK];
+            seed.u = (((3 * EXP_BIAS - 1 - ((a >> EXP_POS) & 0xFF)) >> 1) << EXP_POS) | iSqrt[(a >> (EXP_POS - LOOKUP_BITS)) & LOOKUP_MASK];
             double r = seed.f;
             r *= 1.5f - r * r * y;
             r *= 1.5f - r * r * y;
@@ -132,12 +132,12 @@ namespace Droid.Core
         public static float Sqrt(float x)          // square root with 32 bits precision
             => x * InvSqrt(x);
         public static float Sqrt16(float x)           // square root with 16 bits precision
-             => x * InvSqrt16(x);
+            => x * InvSqrt16(x);
         public static double Sqrt64(float x)          // square root with 64 bits precision
-             => x * InvSqrt64(x);
+            => x * InvSqrt64(x);
 
         public static float Sin(float a)             // sine with 32 bits precision
-             => (float)Math.Sin(a);
+            => (float)Math.Sin(a);
         public static float Sin16(float a)            // sine with 16 bits precision, maximum absolute error is 2.3082e-09
         {
             float s;
@@ -163,10 +163,10 @@ namespace Droid.Core
             return a * (((((-2.39e-08f * s + 2.7526e-06f) * s - 1.98409e-04f) * s + 8.3333315e-03f) * s - 1.666666664e-01f) * s + 1f);
         }
         public static double Sin64(float a)          // sine with 64 bits precision
-             => Math.Sin(a);
+            => Math.Sin(a);
 
         public static float Cos(float a)              // cosine with 32 bits precision
-             => (float)Math.Cos(a);
+            => (float)Math.Cos(a);
         public static float Cos16(float a)            // cosine with 16 bits precision, maximum absolute error is 2.3082e-09
         {
             float s, d;
@@ -258,8 +258,7 @@ namespace Droid.Core
             => (float)Math.Tan(a);
         public static float Tan16(float a)            // tangent with 16 bits precision, maximum absolute error is 1.8897e-08
         {
-            float s;
-            bool reciprocal;
+            float s; bool reciprocal;
 
             if ((a < 0f) || (a >= PI))
                 a -= (float)Math.Floor(a / PI) * PI;
@@ -336,10 +335,8 @@ namespace Droid.Core
         }
         public static double ACos64(float a)          // arc cosine with 64 bits precision
         {
-            if (a <= -1f)
-                return PI;
-            if (a >= 1f)
-                return 0f;
+            if (a <= -1f) return PI;
+            if (a >= 1f) return 0f;
             return Math.Acos(a);
         }
 
@@ -463,6 +460,7 @@ namespace Droid.Core
             int r; for (r = x; y > 1; y--) { r *= x; }
             return r;
         }
+
         public static int ILog2(float f)         // integral base-2 logarithm of the floating point value
             => ((reinterpret.cast_int(f) >> IEEE_FLT_MANTISSA_BITS) & ((1 << IEEE_FLT_EXPONENT_BITS) - 1)) - IEEE_FLT_EXPONENT_BIAS;
         public static int ILog2(int i)                // integral base-2 logarithm of the integer value
@@ -470,14 +468,19 @@ namespace Droid.Core
 
         public static int BitsForFloat(float f)   // minumum number of bits required to represent ceil( f )
             => ILog2(f) + 1;
+
         public static int BitsForInteger(int i)   // minumum number of bits required to represent i
             => ILog2((float)i) + 1;
+
         public static int MaskForFloatSign(float f)// returns 0x00000000 if x >= 0f and returns 0xFFFFFFFF if x <= -0f
             => (reinterpret.cast_int(f) >> 31);
+
         public static int MaskForIntegerSign(int i)// returns 0x00000000 if x >= 0 and returns 0xFFFFFFFF if x < 0
             => (i >> 31);
+
         public static int FloorPowerOfTwo(int x)  // round x down to the nearest power of 2
             => CeilPowerOfTwo(x) >> 1;
+
         public static int CeilPowerOfTwo(int x)   // round x up to the nearest power of 2
         {
             x--;
@@ -489,8 +492,10 @@ namespace Droid.Core
             x++;
             return x;
         }
+
         public static bool IsPowerOfTwo(int x)        // returns true if x is a power of 2
             => (x & (x - 1)) == 0 && x > 0;
+
         public static int BitCount(int x)         // returns the number of 1 bits in x
         {
             x -= ((x >> 1) & 0x55555555);
@@ -499,6 +504,7 @@ namespace Droid.Core
             x += (x >> 8);
             return (x + (x >> 16)) & 0x0000003f;
         }
+
         public static int BitReverse(int x)       // returns the bit reverse of x
         {
             x = (((x >> 1) & 0x55555555) | ((x & 0x55555555) << 1));
@@ -513,6 +519,7 @@ namespace Droid.Core
             int y = x >> 31;
             return (x ^ y) - y;
         }
+
         public static float Fabs(float f)         // returns the absolute value of the floating point value
         {
             int tmp = reinterpret.cast_int(f);
@@ -525,12 +532,16 @@ namespace Droid.Core
             tmp &= 0x7FFFFFFF;
             return reinterpret.cast_float(tmp);
         }
+
         public static float Floor(float f)            // returns the largest integer that is less than or equal to the given value
             => (float)Math.Floor(f);
+
         public static float Ceil(float f)         // returns the smallest integer that is greater than or equal to the given value
             => (float)Math.Ceiling(f);
+
         public static float Rint(float f)         // returns the nearest integer
             => (float)Math.Floor(f + 0.5f);
+
         public static int Ftoi(float f)           // float to int conversion
             => (int)f;
         public static int FtoiFast(float f)       // fast float to int conversion but uses current FPU round mode (default round nearest)
@@ -540,28 +551,14 @@ namespace Droid.Core
 	__asm fld		f
 	__asm fistp		i		// use default rouding mode (round nearest)
 	return i;
-#elif false						// round chop (C/C++ standard)
-	int i, s, e, m, shift;
-	i = *reinterpret_cast<int *>(&f);
-	s = i >> IEEE_FLT_SIGN_BIT;
-	e = ( ( i >> IEEE_FLT_MANTISSA_BITS ) & ( ( 1 << IEEE_FLT_EXPONENT_BITS ) - 1 ) ) - IEEE_FLT_EXPONENT_BIAS;
-	m = ( i & ( ( 1 << IEEE_FLT_MANTISSA_BITS ) - 1 ) ) | ( 1 << IEEE_FLT_MANTISSA_BITS );
-	shift = e - IEEE_FLT_MANTISSA_BITS;
-	return ( ( ( ( m >> -shift ) | ( m << shift ) ) & ~( e >> 31 ) ) ^ s ) - s;
-//#elif defined( __i386__ )
-#elif false
-	int i = 0;
-	__asm__ __volatile__ (
-						  "fld %1\n" \
-						  "fistp %0\n" \
-						  : "=m" (i) \
-						  : "m" (f) );
-	return i;
 #else
             return (int)f;
 #endif
         }
+
         public static uint Ftol(float f)          // float to int conversion
+            => (uint)f;
+        public static uint Ftol(double f)          // float to int conversion
             => (uint)f;
         public static uint FtolFast(float f)           // fast float to int conversion but uses current FPU round mode (default round nearest)
         {
@@ -570,24 +567,6 @@ namespace Droid.Core
 	unsigned int i;
 	__asm fld		f
 	__asm fistp		i		// use default rouding mode (round nearest)
-	return i;
-#elif false						// round chop (C/C++ standard)
-	int i, s, e, m, shift;
-	i = *reinterpret_cast<int *>(&f);
-	s = i >> IEEE_FLT_SIGN_BIT;
-	e = ( ( i >> IEEE_FLT_MANTISSA_BITS ) & ( ( 1 << IEEE_FLT_EXPONENT_BITS ) - 1 ) ) - IEEE_FLT_EXPONENT_BIAS;
-	m = ( i & ( ( 1 << IEEE_FLT_MANTISSA_BITS ) - 1 ) ) | ( 1 << IEEE_FLT_MANTISSA_BITS );
-	shift = e - IEEE_FLT_MANTISSA_BITS;
-	return ( ( ( ( m >> -shift ) | ( m << shift ) ) & ~( e >> 31 ) ) ^ s ) - s;
-//#elif defined( __i386__ )
-#elif false
-	// for some reason, on gcc I need to make sure i == 0 before performing a fistp
-	int i = 0;
-	__asm__ __volatile__ (
-						  "fld %1\n" \
-						  "fistp %0\n" \
-						  : "=m" (i) \
-						  : "m" (f) );
 	return i;
 #else
             return (uint)f;
@@ -600,18 +579,21 @@ namespace Droid.Core
             if (i > 127) return 127;
             return (sbyte)i;
         }
+
         public static short ClampShort(int i)
         {
             if (i < -32768) return -32768;
             if (i > 32767) return 32767;
             return (short)i;
         }
+
         public static int ClampInt(int min, int max, int value)
         {
             if (value < min) return min;
             if (value > max) return max;
             return value;
         }
+
         public static float ClampFloat(float min, float max, float value)
         {
             if (value < min) return min;
@@ -625,6 +607,7 @@ namespace Droid.Core
                 angle -= (float)Math.Floor(angle / 360f) * 360f;
             return angle;
         }
+
         public static float AngleNormalize180(float angle)
         {
             angle = AngleNormalize360(angle);
@@ -632,13 +615,13 @@ namespace Droid.Core
                 angle -= 360f;
             return angle;
         }
+
         public static float AngleDelta(float angle1, float angle2)
             => AngleNormalize180(angle1 - angle2);
 
         public static int FloatToBits(float f, int exponentBits, int mantissaBits)
         {
             int i, sign, exponent, mantissa, value;
-
             Debug.Assert(exponentBits >= 2 && exponentBits <= 8);
             Debug.Assert(mantissaBits >= 2 && mantissaBits <= 23);
 
@@ -669,17 +652,17 @@ namespace Droid.Core
             value |= mantissa >> (IEEE_FLT_MANTISSA_BITS - mantissaBits);
             return value;
         }
-        static int[] exponentSign = new[] { 1, -1 };
+
+        static int[] BitsToFloat_exponentSign = new[] { 1, -1 };
         public static float BitsToFloat(int i, int exponentBits, int mantissaBits)
         {
             int sign, exponent, mantissa, value;
-
             Debug.Assert(exponentBits >= 2 && exponentBits <= 8);
             Debug.Assert(mantissaBits >= 2 && mantissaBits <= 23);
 
             exponentBits--;
             sign = i >> (1 + exponentBits + mantissaBits);
-            exponent = ((i >> mantissaBits) & ((1 << exponentBits) - 1)) * exponentSign[(i >> (exponentBits + mantissaBits)) & 1];
+            exponent = ((i >> mantissaBits) & ((1 << exponentBits) - 1)) * BitsToFloat_exponentSign[(i >> (exponentBits + mantissaBits)) & 1];
             mantissa = (i & ((1 << mantissaBits) - 1)) << (IEEE_FLT_MANTISSA_BITS - mantissaBits);
             value = sign << IEEE_FLT_SIGN_BIT | (exponent + IEEE_FLT_EXPONENT_BIAS) << IEEE_FLT_MANTISSA_BITS | mantissa;
             return reinterpret.cast_float(value);
@@ -687,13 +670,14 @@ namespace Droid.Core
 
         public static int FloatHash(float[] array, int numFloats)
         {
-            int i, hash = 0;
+            throw new NotImplementedException();
+            //int i, hash = 0;
             //const int* ptr;
 
             //ptr = reinterpret_cast_int(array);
             //for (i = 0; i < numFloats; i++)
             //    hash ^= ptr[i];
-            return hash;
+            //return hash;
         }
 
         public const float PI = 3.14159265358979323846f;                          // pi

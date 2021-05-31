@@ -8,5 +8,5 @@ using System.Diagnostics;
 namespace Droid.Core
 {
 <# type = "Vector3"; #>
-<#@ include file="Curve.cs.t4" #>
+<#@ include file="Curve.t4" #>
 }

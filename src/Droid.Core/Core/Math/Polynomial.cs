@@ -1,599 +1,577 @@
 using System;
+using System.Diagnostics;
 
 namespace Droid.Core
 {
+    public partial class Polynomial
+    {
+        int degree;
+        int allocated;
+        float[] coefficient;
+        const float EPSILON = 1e-6f;
 
-	class idPolynomial {
-public:
-					idPolynomial( void );
-					explicit idPolynomial( int d );
-					explicit idPolynomial( float a, float b );
-					explicit idPolynomial( float a, float b, float c );
-					explicit idPolynomial( float a, float b, float c, float d );
-					explicit idPolynomial( float a, float b, float c, float d, float e );
+        void Resize(int d, bool keep)
+        {
+            var alloc = (d + 1 + 3) & ~3;
+            if (alloc > allocated)
+            {
+                var ptr = new float[alloc];
+                if (coefficient != null && keep)
+                    for (int i = 0; i <= degree; i++)
+                        ptr[i] = coefficient[i];
+                allocated = alloc;
+                coefficient = ptr;
+            }
+            degree = d;
+        }
 
-					~idPolynomial() // DG: don't leak coefficient's memory!
-					{
-						Mem_Free16( coefficient );
-					}
+        public Polynomial(Polynomial p)
+        {
+            Resize(p.degree, false);
+            for (var i = 0; i <= degree; i++)
+                coefficient[i] = p.coefficient[i];
+        }
+        public Polynomial()
+        {
+            degree = -1;
+            allocated = 0;
+            coefficient = null;
+        }
+        public Polynomial(int d)
+        {
+            degree = -1;
+            allocated = 0;
+            coefficient = null;
+            Resize(d, false);
+        }
+        public Polynomial(float a, float b)
+        {
+            degree = -1;
+            allocated = 0;
+            coefficient = null;
+            Resize(1, false);
+            coefficient[0] = b;
+            coefficient[1] = a;
+        }
+        public Polynomial(float a, float b, float c)
+        {
+            degree = -1;
+            allocated = 0;
+            coefficient = null;
+            Resize(2, false);
+            coefficient[0] = c;
+            coefficient[1] = b;
+            coefficient[2] = a;
+        }
+        public Polynomial(float a, float b, float c, float d)
+        {
+            degree = -1;
+            allocated = 0;
+            coefficient = null;
+            Resize(3, false);
+            coefficient[0] = d;
+            coefficient[1] = c;
+            coefficient[2] = b;
+            coefficient[3] = a;
+        }
+        public Polynomial(float a, float b, float c, float d, float e)
+        {
+            degree = -1;
+            allocated = 0;
+            coefficient = null;
+            Resize(4, false);
+            coefficient[0] = e;
+            coefficient[1] = d;
+            coefficient[2] = c;
+            coefficient[3] = b;
+            coefficient[4] = a;
+        }
 
-	float			operator[]( int index ) const;
-	float &			operator[]( int index );
+        //public float this[int index]
+        //{
+        //    get
+        //    {
+        //        Debug.Assert(index >= 0 && index <= degree);
+        //        return coefficient[index];
+        //    }
+        //}
 
-	idPolynomial	operator-() const;
-	idPolynomial &	operator=( const idPolynomial &p );
+        public static Polynomial operator -(Polynomial _)
+        {
+            Polynomial n = new(_);
+            for (var i = 0; i <= _.degree; i++)
+                n.coefficient[i] = -n.coefficient[i];
+            return n;
+        }
+        public static Polynomial operator +(Polynomial _, Polynomial p)
+        {
+            int i; Polynomial n = new();
 
-	idPolynomial	operator+( const idPolynomial &p ) const;
-	idPolynomial	operator-( const idPolynomial &p ) const;
-	idPolynomial	operator*( const float s ) const;
-	idPolynomial	operator/( const float s ) const;
+            if (_.degree > p.degree)
+            {
+                n.Resize(_.degree, false);
+                for (i = 0; i <= p.degree; i++)
+                    n.coefficient[i] = _.coefficient[i] + p.coefficient[i];
+                for (; i <= _.degree; i++)
+                    n.coefficient[i] = _.coefficient[i];
+                n.degree = _.degree;
+            }
+            else if (p.degree > _.degree)
+            {
+                n.Resize(p.degree, false);
+                for (i = 0; i <= _.degree; i++)
+                    n.coefficient[i] = _.coefficient[i] + p.coefficient[i];
+                for (; i <= p.degree; i++)
+                    n.coefficient[i] = p.coefficient[i];
+                n.degree = p.degree;
+            }
+            else
+            {
+                n.Resize(_.degree, false);
+                n.degree = 0;
+                for (i = 0; i <= _.degree; i++)
+                {
+                    n.coefficient[i] = _.coefficient[i] + p.coefficient[i];
+                    if (n.coefficient[i] != 0f)
+                        n.degree = i;
+                }
+            }
+            return n;
+        }
+        public static Polynomial operator -(Polynomial _, Polynomial p)
+        {
+            int i; Polynomial n = new();
 
-	idPolynomial &	operator+=( const idPolynomial &p );
-	idPolynomial &	operator-=( const idPolynomial &p );
-	idPolynomial &	operator*=( const float s );
-	idPolynomial &	operator/=( const float s );
+            if (_.degree > p.degree)
+            {
+                n.Resize(_.degree, false);
+                for (i = 0; i <= p.degree; i++)
+                    n.coefficient[i] = _.coefficient[i] - p.coefficient[i];
+                for (; i <= _.degree; i++)
+                    n.coefficient[i] = _.coefficient[i];
+                n.degree = _.degree;
+            }
+            else if (p.degree >= _.degree)
+            {
+                n.Resize(p.degree, false);
+                for (i = 0; i <= _.degree; i++)
+                    n.coefficient[i] = _.coefficient[i] - p.coefficient[i];
+                for (; i <= p.degree; i++)
+                    n.coefficient[i] = -p.coefficient[i];
+                n.degree = p.degree;
+            }
+            else
+            {
+                n.Resize(_.degree, false);
+                n.degree = 0;
+                for (i = 0; i <= _.degree; i++)
+                {
+                    n.coefficient[i] = _.coefficient[i] - p.coefficient[i];
+                    if (n.coefficient[i] != 0f)
+                        n.degree = i;
+                }
+            }
+            return n;
+        }
+        public static Polynomial operator *(Polynomial _, float s)
+        {
+            Polynomial n = new();
 
-	bool			Compare( const idPolynomial &p ) const;						// exact compare, no epsilon
-	bool			Compare( const idPolynomial &p, const float epsilon ) const;// compare with epsilon
-	bool			operator==(	const idPolynomial &p ) const;					// exact compare, no epsilon
-	bool			operator!=(	const idPolynomial &p ) const;					// exact compare, no epsilon
+            if (s == 0f)
+                n.degree = 0;
+            else
+            {
+                n.Resize(_.degree, false);
+                for (var i = 0; i <= _.degree; i++)
+                    n.coefficient[i] = _.coefficient[i] * s;
+            }
+            return n;
+        }
+        public static Polynomial operator /(Polynomial _, float s)
+        {
+            float invs; Polynomial n = new();
 
-	void			Zero( void );
-	void			Zero( int d );
+            Debug.Assert(s != 0f);
+            n.Resize(_.degree, false);
+            invs = 1f / s;
+            for (var i = 0; i <= _.degree; i++)
+                n.coefficient[i] = _.coefficient[i] * invs;
+            return n;
+        }
 
-	int				GetDimension( void ) const;									// get the degree of the polynomial
-	int				GetDegree( void ) const;									// get the degree of the polynomial
-	float			GetValue( const float x ) const;							// evaluate the polynomial with the given real value
-	idComplex		GetValue( const idComplex &x ) const;						// evaluate the polynomial with the given complex value
-	idPolynomial	GetDerivative( void ) const;								// get the first derivative of the polynomial
-	idPolynomial	GetAntiDerivative( void ) const;							// get the anti derivative of the polynomial
+        public bool Compare(Polynomial p)                      // exact compare, no epsilon
+        {
+            if (degree != p.degree)
+                return false;
+            for (var i = 0; i <= degree; i++)
+                if (coefficient[i] != p.coefficient[i])
+                    return false;
+            return true;
+        }
+        public bool Compare(Polynomial p, float epsilon) // compare with epsilon
+        {
+            if (degree != p.degree)
+                return false;
+            for (var i = 0; i <= degree; i++)
+                if (MathX.Fabs(coefficient[i] - p.coefficient[i]) > epsilon)
+                    return false;
+            return true;
+        }
+        public static bool operator ==(Polynomial _, Polynomial p)                   // exact compare, no epsilon
+            => _.Compare(p);
+        public static bool operator !=(Polynomial _, Polynomial p)                   // exact compare, no epsilon
+            => !_.Compare(p);
+        public override bool Equals(object obj)
+            => obj is Polynomial q && Compare(q);
+        public override int GetHashCode()
+            => coefficient[0].GetHashCode();
 
-	int				GetRoots( idComplex *roots ) const;							// get all roots
-	int				GetRoots( float *roots ) const;								// get the real roots
+        public void Zero()
+            => degree = 0;
+        public void Zero(int d)
+        {
+            Resize(d, false);
+            for (var i = 0; i <= degree; i++)
+                coefficient[i] = 0f;
+        }
 
-	static int		GetRoots1( float a, float b, float *roots );
-	static int		GetRoots2( float a, float b, float c, float *roots );
-	static int		GetRoots3( float a, float b, float c, float d, float *roots );
-	static int		GetRoots4( float a, float b, float c, float d, float e, float *roots );
+        public int Dimension                                   // get the degree of the polynomial
+            => degree;
+        public int Degree                                  // get the degree of the polynomial
+            => degree;
 
-	const float *	ToFloatPtr( void ) const;
-	float *			ToFloatPtr( void );
-	const char *	ToString( int precision = 2 ) const;
+        public float GetValue(float x)                         // evaluate the polynomial with the given real value
+        {
+            var y = coefficient[0];
+            var z = x;
+            for (int i = 1; i <= degree; i++)
+            {
+                y += coefficient[i] * z;
+                z *= x;
+            }
+            return y;
+        }
 
-	static void		Test( void );
+        public Complex GetValue(Complex x)                     // evaluate the polynomial with the given complex value
+        {
+            var y = new Complex(coefficient[0], 0f);
+            var z = x;
+            for (var i = 1; i <= degree; i++)
+            {
+                y += coefficient[i] * z;
+                z *= x;
+            }
+            return y;
+        }
 
-private:
-	int				degree;
-	int				allocated;
-	float *			coefficient;
+        public Polynomial GetDerivative()                                // get the first derivative of the polynomial
+        {
+            Polynomial n = new();
 
-	void			Resize( int d, bool keep );
-	int				Laguer( const idComplex *coef, const int degree, idComplex &r ) const;
-};
+            if (degree == 0)
+                return n;
+            n.Resize(degree - 1, false);
+            for (var i = 1; i <= degree; i++)
+                n.coefficient[i - 1] = i * coefficient[i];
+            return n;
+        }
 
-ID_INLINE idPolynomial::idPolynomial( void ) {
-	degree = -1;
-	allocated = 0;
-	coefficient = NULL;
+        public Polynomial GetAntiDerivative()                            // get the anti derivative of the polynomial
+        {
+            Polynomial n = new();
+
+            if (degree == 0)
+                return n;
+            n.Resize(degree + 1, false);
+            n.coefficient[0] = 0f;
+            for (var i = 0; i <= degree; i++)
+                n.coefficient[i + 1] = coefficient[i] / (i + 1);
+            return n;
+        }
+
+        public unsafe int GetRoots(out Complex[] roots)                          // get all roots
+        {
+            int i, j; Complex x = new(), b, c;
+
+            var coef = stackalloc Complex[degree + 1];
+            for (i = 0; i <= degree; i++)
+                coef[i].Set(coefficient[i], 0f);
+
+            roots = new Complex[degree];
+            for (i = degree - 1; i >= 0; i--)
+            {
+                x.Zero();
+                Laguer(coef, i + 1, x);
+                if (MathX.Fabs(x.i) < 2f * EPSILON * MathX.Fabs(x.r))
+                    x.i = 0f;
+                roots[i] = x;
+                b = coef[i + 1];
+                for (j = i; j >= 0; j--)
+                {
+                    c = coef[j];
+                    coef[j] = b;
+                    b = x * b + c;
+                }
+            }
+
+            for (i = 0; i <= degree; i++)
+                coef[i].Set(coefficient[i], 0f);
+            for (i = 0; i < degree; i++)
+                Laguer(coef, degree, roots[i]);
+
+            for (i = 1; i < degree; i++)
+            {
+                x = roots[i];
+                for (j = i - 1; j >= 0; j--)
+                {
+                    if (roots[j].r <= x.r)
+                        break;
+                    roots[j + 1] = roots[j];
+                }
+                roots[j + 1] = x;
+            }
+
+            return degree;
+        }
+        public int GetRoots(out float[] roots)                             // get the real roots
+        {
+            switch (degree)
+            {
+                case 0: roots = default; return 0;
+                case 1: return GetRoots1(coefficient[1], coefficient[0], out roots);
+                case 2: return GetRoots2(coefficient[2], coefficient[1], coefficient[0], out roots);
+                case 3: return GetRoots3(coefficient[3], coefficient[2], coefficient[1], coefficient[0], out roots);
+                case 4: return GetRoots4(coefficient[4], coefficient[3], coefficient[2], coefficient[1], coefficient[0], out roots);
+                default:
+                    // The Abel-Ruffini theorem states that there is no general solution in radicals to polynomial equations of degree five or higher.
+                    // A polynomial equation can be solved by radicals if and only if its Galois group is a solvable group.
+                    GetRoots(out Complex[] complexRoots);
+                    roots = new float[degree];
+                    int i, num;
+                    for (num = i = 0; i < degree; i++)
+                        if (complexRoots[i].i == 0f)
+                        {
+                            roots[i] = complexRoots[i].r;
+                            num++;
+                        }
+                    return num;
+            }
+        }
+
+        public static int GetRoots1(float a, float b, out float[] roots)
+        {
+            Debug.Assert(a != 0f);
+            roots = new float[1];
+            roots[0] = -b / a;
+            return 1;
+        }
+        public static int GetRoots2(float a, float b, float c, out float[] roots)
+        {
+            float inva, ds;
+
+            roots = new float[2];
+            if (a != 1f)
+            {
+                Debug.Assert(a != 0f);
+                inva = 1f / a;
+                c *= inva;
+                b *= inva;
+            }
+            ds = b * b - 4f * c;
+            if (ds < 0f)
+                return 0;
+            else if (ds > 0f)
+            {
+                ds = MathX.Sqrt(ds);
+                roots[0] = 0.5f * (-b - ds);
+                roots[1] = 0.5f * (-b + ds);
+                return 2;
+            }
+            else
+            {
+                roots[0] = 0.5f * -b;
+                return 1;
+            }
+        }
+        public static int GetRoots3(float a, float b, float c, float d, out float[] roots)
+        {
+            float inva, f, g, halfg, ofs, ds, dist, angle, cs, ss, t;
+
+            roots = new float[3];
+            if (a != 1f)
+            {
+                Debug.Assert(a != 0f);
+                inva = 1f / a;
+                d *= inva;
+                c *= inva;
+                b *= inva;
+            }
+
+            f = (1f / 3f) * (3f * c - b * b);
+            g = (1f / 27f) * (2f * b * b * b - 9f * c * b + 27f * d);
+            halfg = 0.5f * g;
+            ofs = (1f / 3f) * b;
+            ds = 0.25f * g * g + (1f / 27f) * f * f * f;
+
+            if (ds < 0f)
+            {
+                dist = MathX.Sqrt((-1f / 3f) * f);
+                angle = (1f / 3f) * MathX.ATan(MathX.Sqrt(-ds), -halfg);
+                cs = MathX.Cos(angle);
+                ss = MathX.Sin(angle);
+                roots[0] = 2f * dist * cs - ofs;
+                roots[1] = -dist * (cs + MathX.SQRT_THREE * ss) - ofs;
+                roots[2] = -dist * (cs - MathX.SQRT_THREE * ss) - ofs;
+                return 3;
+            }
+            else if (ds > 0f)
+            {
+                ds = MathX.Sqrt(ds);
+                t = -halfg + ds;
+                if (t >= 0f)
+                    roots[0] = MathX.Pow(t, (1f / 3f));
+                else
+                    roots[0] = -MathX.Pow(-t, (1f / 3f));
+                t = -halfg - ds;
+                if (t >= 0f)
+                    roots[0] += MathX.Pow(t, (1f / 3f));
+                else
+                    roots[0] -= MathX.Pow(-t, (1f / 3f));
+                roots[0] -= ofs;
+                return 1;
+            }
+            else
+            {
+                t = halfg >= 0f
+                    ? -MathX.Pow(halfg, 1f / 3f)
+                    : MathX.Pow(-halfg, 1f / 3f); //: opt
+                roots[0] = 2f * t - ofs;
+                roots[1] = -t - ofs;
+                roots[2] = roots[1];
+                return 3;
+            }
+        }
+        public static int GetRoots4(float a, float b, float c, float d, float e, out float[] roots)
+        {
+            int count; float inva, y, ds, r, s1, s2, t1, t2, tp, tm;
+
+            roots = new float[4];
+            if (a != 1f)
+            {
+                Debug.Assert(a != 0f);
+                inva = 1f / a;
+                e *= inva;
+                d *= inva;
+                c *= inva;
+                b *= inva;
+            }
+
+            count = 0;
+
+            GetRoots3(1f, -c, b * d - 4f * e, -b * b * e + 4f * c * e - d * d, out var roots3);
+            y = roots3[0];
+            ds = 0.25f * b * b - c + y;
+
+            if (ds < 0f)
+                return 0;
+            else if (ds > 0f)
+            {
+                r = MathX.Sqrt(ds);
+                t1 = 0.75f * b * b - r * r - 2f * c;
+                t2 = (4f * b * c - 8f * d - b * b * b) / (4f * r);
+                tp = t1 + t2;
+                tm = t1 - t2;
+
+                if (tp >= 0f)
+                {
+                    s1 = MathX.Sqrt(tp);
+                    roots[count++] = -0.25f * b + 0.5f * (r + s1);
+                    roots[count++] = -0.25f * b + 0.5f * (r - s1);
+                }
+                if (tm >= 0f)
+                {
+                    s2 = MathX.Sqrt(tm);
+                    roots[count++] = -0.25f * b + 0.5f * (s2 - r);
+                    roots[count++] = -0.25f * b - 0.5f * (s2 + r);
+                }
+                return count;
+            }
+            else
+            {
+                t2 = y * y - 4f * e;
+                if (t2 >= 0f)
+                {
+                    t2 = 2f * MathX.Sqrt(t2);
+                    t1 = 0.75f * b * b - 2f * c;
+                    if (t1 + t2 >= 0f)
+                    {
+                        s1 = MathX.Sqrt(t1 + t2);
+                        roots[count++] = -0.25f * b + 0.5f * s1;
+                        roots[count++] = -0.25f * b - 0.5f * s1;
+                    }
+                    if (t1 - t2 >= 0f)
+                    {
+                        s2 = MathX.Sqrt(t1 - t2);
+                        roots[count++] = -0.25f * b + 0.5f * s2;
+                        roots[count++] = -0.25f * b - 0.5f * s2;
+                    }
+                }
+                return count;
+            }
+        }
+
+        public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        {
+            fixed (float* _ = this.coefficient)
+                return callback(_);
+        }
+        public unsafe string ToString(int precision = 2)
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
+
+        static readonly float[] Laguer_frac = new[] { 0f, 0.5f, 0.25f, 0.75f, 0.13f, 0.38f, 0.62f, 0.88f, 1f };
+        unsafe int Laguer(Complex* coef, int degree, Complex r)
+        {
+            const int MT = 10, MAX_ITERATIONS = MT * 8;
+            int i, j;
+            float abx, abp, abm, err;
+            Complex dx, cx, b, d = new(), f = new(), g, s, gps, gms, g2;
+
+            for (i = 1; i <= MAX_ITERATIONS; i++)
+            {
+                b = coef[degree];
+                err = b.Abs();
+                d.Zero();
+                f.Zero();
+                abx = r.Abs();
+                for (j = degree - 1; j >= 0; j--)
+                {
+                    f = r * f + d;
+                    d = r * d + b;
+                    b = r * b + coef[j];
+                    err = b.Abs() + abx * err;
+                }
+                if (b.Abs() < err * EPSILON)
+                    return i;
+                g = d / b;
+                g2 = g * g;
+                s = ((degree - 1) * (degree * (g2 - 2f * f / b) - g2)).Sqrt();
+                gps = g + s;
+                gms = g - s;
+                abp = gps.Abs();
+                abm = gms.Abs();
+                if (abp < abm)
+                    gps = gms;
+                dx = Math.Max(abp, abm) > 0f
+                    ? degree / gps
+                    : MathX.Exp(MathX.Log(1f + abx)) * new Complex(MathX.Cos(i), MathX.Sin(i)); //: opt
+                cx = r - dx;
+                if (r == cx)
+                    return i;
+                r = i % MT == 0
+                    ? cx
+                    : r - (Laguer_frac[i / MT] * dx); //: opt
+            }
+            return i;
+        }
+    }
 }
-
-ID_INLINE idPolynomial::idPolynomial( int d ) {
-	degree = -1;
-	allocated = 0;
-	coefficient = NULL;
-	Resize( d, false );
-}
-
-ID_INLINE idPolynomial::idPolynomial( float a, float b ) {
-	degree = -1;
-	allocated = 0;
-	coefficient = NULL;
-	Resize( 1, false );
-	coefficient[0] = b;
-	coefficient[1] = a;
-}
-
-ID_INLINE idPolynomial::idPolynomial( float a, float b, float c ) {
-	degree = -1;
-	allocated = 0;
-	coefficient = NULL;
-	Resize( 2, false );
-	coefficient[0] = c;
-	coefficient[1] = b;
-	coefficient[2] = a;
-}
-
-ID_INLINE idPolynomial::idPolynomial( float a, float b, float c, float d ) {
-	degree = -1;
-	allocated = 0;
-	coefficient = NULL;
-	Resize( 3, false );
-	coefficient[0] = d;
-	coefficient[1] = c;
-	coefficient[2] = b;
-	coefficient[3] = a;
-}
-
-ID_INLINE idPolynomial::idPolynomial( float a, float b, float c, float d, float e ) {
-	degree = -1;
-	allocated = 0;
-	coefficient = NULL;
-	Resize( 4, false );
-	coefficient[0] = e;
-	coefficient[1] = d;
-	coefficient[2] = c;
-	coefficient[3] = b;
-	coefficient[4] = a;
-}
-
-ID_INLINE float idPolynomial::operator[]( int index ) const {
-	assert( index >= 0 && index <= degree );
-	return coefficient[ index ];
-}
-
-ID_INLINE float& idPolynomial::operator[]( int index ) {
-	assert( index >= 0 && index <= degree );
-	return coefficient[ index ];
-}
-
-ID_INLINE idPolynomial idPolynomial::operator-() const {
-	int i;
-	idPolynomial n;
-
-	n = *this;
-	for ( i = 0; i <= degree; i++ ) {
-		n[i] = -n[i];
-	}
-	return n;
-}
-
-ID_INLINE idPolynomial &idPolynomial::operator=( const idPolynomial &p ) {
-	Resize( p.degree, false );
-	for ( int i = 0; i <= degree; i++ ) {
-		coefficient[i] = p.coefficient[i];
-	}
-	return *this;
-}
-
-ID_INLINE idPolynomial idPolynomial::operator+( const idPolynomial &p ) const {
-	int i;
-	idPolynomial n;
-
-	if ( degree > p.degree ) {
-		n.Resize( degree, false );
-		for ( i = 0; i <= p.degree; i++ ) {
-			n.coefficient[i] = coefficient[i] + p.coefficient[i];
-		}
-		for ( ; i <= degree; i++ ) {
-			n.coefficient[i] = coefficient[i];
-		}
-		n.degree = degree;
-	} else if ( p.degree > degree ) {
-		n.Resize( p.degree, false );
-		for ( i = 0; i <= degree; i++ ) {
-			n.coefficient[i] = coefficient[i] + p.coefficient[i];
-		}
-		for ( ; i <= p.degree; i++ ) {
-			n.coefficient[i] = p.coefficient[i];
-		}
-		n.degree = p.degree;
-	} else {
-		n.Resize( degree, false );
-		n.degree = 0;
-		for ( i = 0; i <= degree; i++ ) {
-			n.coefficient[i] = coefficient[i] + p.coefficient[i];
-			if ( n.coefficient[i] != 0.0f ) {
-				n.degree = i;
-			}
-		}
-	}
-	return n;
-}
-
-ID_INLINE idPolynomial idPolynomial::operator-( const idPolynomial &p ) const {
-	int i;
-	idPolynomial n;
-
-	if ( degree > p.degree ) {
-		n.Resize( degree, false );
-		for ( i = 0; i <= p.degree; i++ ) {
-			n.coefficient[i] = coefficient[i] - p.coefficient[i];
-		}
-		for ( ; i <= degree; i++ ) {
-			n.coefficient[i] = coefficient[i];
-		}
-		n.degree = degree;
-	} else if ( p.degree >= degree ) {
-		n.Resize( p.degree, false );
-		for ( i = 0; i <= degree; i++ ) {
-			n.coefficient[i] = coefficient[i] - p.coefficient[i];
-		}
-		for ( ; i <= p.degree; i++ ) {
-			n.coefficient[i] = - p.coefficient[i];
-		}
-		n.degree = p.degree;
-	} else {
-		n.Resize( degree, false );
-		n.degree = 0;
-		for ( i = 0; i <= degree; i++ ) {
-			n.coefficient[i] = coefficient[i] - p.coefficient[i];
-			if ( n.coefficient[i] != 0.0f ) {
-				n.degree = i;
-			}
-		}
-	}
-	return n;
-}
-
-ID_INLINE idPolynomial idPolynomial::operator*( const float s ) const {
-	idPolynomial n;
-
-	if ( s == 0.0f ) {
-		n.degree = 0;
-	} else {
-		n.Resize( degree, false );
-		for ( int i = 0; i <= degree; i++ ) {
-			n.coefficient[i] = coefficient[i] * s;
-		}
-	}
-	return n;
-}
-
-ID_INLINE idPolynomial idPolynomial::operator/( const float s ) const {
-	float invs;
-	idPolynomial n;
-
-	assert( s != 0.0f );
-	n.Resize( degree, false );
-	invs = 1.0f / s;
-	for ( int i = 0; i <= degree; i++ ) {
-		n.coefficient[i] = coefficient[i] * invs;
-	}
-	return n;
-}
-
-ID_INLINE idPolynomial &idPolynomial::operator+=( const idPolynomial &p ) {
-	int i;
-
-	if ( degree > p.degree ) {
-		for ( i = 0; i <= p.degree; i++ ) {
-			coefficient[i] += p.coefficient[i];
-		}
-	} else if ( p.degree > degree ) {
-		Resize( p.degree, true );
-		for ( i = 0; i <= degree; i++ ) {
-			coefficient[i] += p.coefficient[i];
-		}
-		for ( ; i <= p.degree; i++ ) {
-			coefficient[i] = p.coefficient[i];
-		}
-	} else {
-		for ( i = 0; i <= degree; i++ ) {
-			coefficient[i] += p.coefficient[i];
-			if ( coefficient[i] != 0.0f ) {
-				degree = i;
-			}
-		}
-	}
-	return *this;
-}
-
-ID_INLINE idPolynomial &idPolynomial::operator-=( const idPolynomial &p ) {
-	int i;
-
-	if ( degree > p.degree ) {
-		for ( i = 0; i <= p.degree; i++ ) {
-			coefficient[i] -= p.coefficient[i];
-		}
-	} else if ( p.degree > degree ) {
-		Resize( p.degree, true );
-		for ( i = 0; i <= degree; i++ ) {
-			coefficient[i] -= p.coefficient[i];
-		}
-		for ( ; i <= p.degree; i++ ) {
-			coefficient[i] = - p.coefficient[i];
-		}
-	} else {
-		for ( i = 0; i <= degree; i++ ) {
-			coefficient[i] -= p.coefficient[i];
-			if ( coefficient[i] != 0.0f ) {
-				degree = i;
-			}
-		}
-	}
-	return *this;
-}
-
-ID_INLINE idPolynomial &idPolynomial::operator*=( const float s ) {
-	if ( s == 0.0f ) {
-		degree = 0;
-	} else {
-		for ( int i = 0; i <= degree; i++ ) {
-			coefficient[i] *= s;
-		}
-	}
-	return *this;
-}
-
-ID_INLINE idPolynomial &idPolynomial::operator/=( const float s ) {
-	float invs;
-
-	assert( s != 0.0f );
-	invs = 1.0f / s;
-	for ( int i = 0; i <= degree; i++ ) {
-		coefficient[i] = invs;
-	}
-	return *this;;
-}
-
-ID_INLINE bool idPolynomial::Compare( const idPolynomial &p ) const {
-	if ( degree != p.degree ) {
-		return false;
-	}
-	for ( int i = 0; i <= degree; i++ ) {
-		if ( coefficient[i] != p.coefficient[i] ) {
-			return false;
-		}
-	}
-	return true;
-}
-
-ID_INLINE bool idPolynomial::Compare( const idPolynomial &p, const float epsilon ) const {
-	if ( degree != p.degree ) {
-		return false;
-	}
-	for ( int i = 0; i <= degree; i++ ) {
-		if ( idMath::Fabs( coefficient[i] - p.coefficient[i] ) > epsilon ) {
-			return false;
-		}
-	}
-	return true;
-}
-
-ID_INLINE bool idPolynomial::operator==( const idPolynomial &p ) const {
-	return Compare( p );
-}
-
-ID_INLINE bool idPolynomial::operator!=( const idPolynomial &p ) const {
-	return !Compare( p );
-}
-
-ID_INLINE void idPolynomial::Zero( void ) {
-	degree = 0;
-}
-
-ID_INLINE void idPolynomial::Zero( int d ) {
-	Resize( d, false );
-	for ( int i = 0; i <= degree; i++ ) {
-		coefficient[i] = 0.0f;
-	}
-}
-
-ID_INLINE int idPolynomial::GetDimension( void ) const {
-	return degree;
-}
-
-ID_INLINE int idPolynomial::GetDegree( void ) const {
-	return degree;
-}
-
-ID_INLINE float idPolynomial::GetValue( const float x ) const {
-	float y, z;
-	y = coefficient[0];
-	z = x;
-	for ( int i = 1; i <= degree; i++ ) {
-		y += coefficient[i] * z;
-		z *= x;
-	}
-	return y;
-}
-
-ID_INLINE idComplex idPolynomial::GetValue( const idComplex &x ) const {
-	idComplex y, z;
-	y.Set( coefficient[0], 0.0f );
-	z = x;
-	for ( int i = 1; i <= degree; i++ ) {
-		y += coefficient[i] * z;
-		z *= x;
-	}
-	return y;
-}
-
-ID_INLINE idPolynomial idPolynomial::GetDerivative( void ) const {
-	idPolynomial n;
-
-	if ( degree == 0 ) {
-		return n;
-	}
-	n.Resize( degree - 1, false );
-	for ( int i = 1; i <= degree; i++ ) {
-		n.coefficient[i-1] = i * coefficient[i];
-	}
-	return n;
-}
-
-ID_INLINE idPolynomial idPolynomial::GetAntiDerivative( void ) const {
-	idPolynomial n;
-
-	if ( degree == 0 ) {
-		return n;
-	}
-	n.Resize( degree + 1, false );
-	n.coefficient[0] = 0.0f;
-	for ( int i = 0; i <= degree; i++ ) {
-		n.coefficient[i+1] = coefficient[i] / ( i + 1 );
-	}
-	return n;
-}
-
-ID_INLINE int idPolynomial::GetRoots1( float a, float b, float *roots ) {
-	assert( a != 0.0f );
-	roots[0] = - b / a;
-	return 1;
-}
-
-ID_INLINE int idPolynomial::GetRoots2( float a, float b, float c, float *roots ) {
-	float inva, ds;
-
-	if ( a != 1.0f ) {
-		assert( a != 0.0f );
-		inva = 1.0f / a;
-		c *= inva;
-		b *= inva;
-	}
-	ds = b * b - 4.0f * c;
-	if ( ds < 0.0f ) {
-		return 0;
-	} else if ( ds > 0.0f ) {
-		ds = idMath::Sqrt( ds );
-		roots[0] = 0.5f * ( -b - ds );
-		roots[1] = 0.5f * ( -b + ds );
-		return 2;
-	} else {
-		roots[0] = 0.5f * -b;
-		return 1;
-	}
-}
-
-ID_INLINE int idPolynomial::GetRoots3( float a, float b, float c, float d, float *roots ) {
-	float inva, f, g, halfg, ofs, ds, dist, angle, cs, ss, t;
-
-	if ( a != 1.0f ) {
-		assert( a != 0.0f );
-		inva = 1.0f / a;
-		d *= inva;
-		c *= inva;
-		b *= inva;
-	}
-
-	f = ( 1.0f / 3.0f ) * ( 3.0f * c - b * b );
-	g = ( 1.0f / 27.0f ) * ( 2.0f * b * b * b - 9.0f * c * b + 27.0f * d );
-	halfg = 0.5f * g;
-	ofs = ( 1.0f / 3.0f ) * b;
-	ds = 0.25f * g * g + ( 1.0f / 27.0f ) * f * f * f;
-
-	if ( ds < 0.0f ) {
-		dist = idMath::Sqrt( ( -1.0f / 3.0f ) * f );
-		angle = ( 1.0f / 3.0f ) * idMath::ATan( idMath::Sqrt( -ds ), -halfg );
-		cs = idMath::Cos( angle );
-		ss = idMath::Sin( angle );
-		roots[0] = 2.0f * dist * cs - ofs;
-		roots[1] = -dist * ( cs + idMath::SQRT_THREE * ss ) - ofs;
-		roots[2] = -dist * ( cs - idMath::SQRT_THREE * ss ) - ofs;
-		return 3;
-	} else if ( ds > 0.0f )  {
-		ds = idMath::Sqrt( ds );
-		t = -halfg + ds;
-		if ( t >= 0.0f ) {
-			roots[0] = idMath::Pow( t, ( 1.0f / 3.0f ) );
-		} else {
-			roots[0] = -idMath::Pow( -t, ( 1.0f / 3.0f ) );
-		}
-		t = -halfg - ds;
-		if ( t >= 0.0f ) {
-			roots[0] += idMath::Pow( t, ( 1.0f / 3.0f ) );
-		} else {
-			roots[0] -= idMath::Pow( -t, ( 1.0f / 3.0f ) );
-		}
-		roots[0] -= ofs;
-		return 1;
-	} else {
-		if ( halfg >= 0.0f ) {
-			t = -idMath::Pow( halfg, ( 1.0f / 3.0f ) );
-		} else {
-			t = idMath::Pow( -halfg, ( 1.0f / 3.0f ) );
-		}
-		roots[0] = 2.0f * t - ofs;
-		roots[1] = -t - ofs;
-		roots[2] = roots[1];
-		return 3;
-	}
-}
-
-ID_INLINE int idPolynomial::GetRoots4( float a, float b, float c, float d, float e, float *roots ) {
-	int count;
-	float inva, y, ds, r, s1, s2, t1, t2, tp, tm;
-	float roots3[3];
-
-	if ( a != 1.0f ) {
-		assert( a != 0.0f );
-		inva = 1.0f / a;
-		e *= inva;
-		d *= inva;
-		c *= inva;
-		b *= inva;
-	}
-
-	count = 0;
-
-	GetRoots3( 1.0f, -c, b * d - 4.0f * e, -b * b * e + 4.0f * c * e - d * d, roots3 );
-	y = roots3[0];
-	ds = 0.25f * b * b - c + y;
-
-	if ( ds < 0.0f ) {
-		return 0;
-	} else if ( ds > 0.0f ) {
-		r = idMath::Sqrt( ds );
-		t1 = 0.75f * b * b - r * r - 2.0f * c;
-		t2 = ( 4.0f * b * c - 8.0f * d - b * b * b ) / ( 4.0f * r );
-		tp = t1 + t2;
-		tm = t1 - t2;
-
-		if ( tp >= 0.0f ) {
-			s1 = idMath::Sqrt( tp );
-			roots[count++] = -0.25f * b + 0.5f * ( r + s1 );
-			roots[count++] = -0.25f * b + 0.5f * ( r - s1 );
-		}
-		if ( tm >= 0.0f ) {
-			s2 = idMath::Sqrt( tm );
-			roots[count++] = -0.25f * b + 0.5f * ( s2 - r );
-			roots[count++] = -0.25f * b - 0.5f * ( s2 + r );
-		}
-		return count;
-	} else {
-		t2 = y * y - 4.0f * e;
-		if ( t2 >= 0.0f ) {
-			t2 = 2.0f * idMath::Sqrt( t2 );
-			t1 = 0.75f * b * b - 2.0f * c;
-			if ( t1 + t2 >= 0.0f ) {
-				s1 = idMath::Sqrt( t1 + t2 );
-				roots[count++] = -0.25f * b + 0.5f * s1;
-				roots[count++] = -0.25f * b - 0.5f * s1;
-			}
-			if ( t1 - t2 >= 0.0f ) {
-				s2 = idMath::Sqrt( t1 - t2 );
-				roots[count++] = -0.25f * b + 0.5f * s2;
-				roots[count++] = -0.25f * b - 0.5f * s2;
-			}
-		}
-		return count;
-	}
-}
-
-ID_INLINE const float *idPolynomial::ToFloatPtr( void ) const {
-	return coefficient;
-}
-
-ID_INLINE float *idPolynomial::ToFloatPtr( void ) {
-	return coefficient;
-}
-
-ID_INLINE void idPolynomial::Resize( int d, bool keep ) {
-	int alloc = ( d + 1 + 3 ) & ~3;
-	if ( alloc > allocated ) {
-		float *ptr = (float *) Mem_Alloc16( alloc * sizeof( float ) );
-		if ( coefficient != NULL ) {
-			if ( keep ) {
-				for ( int i = 0; i <= degree; i++ ) {
-					ptr[i] = coefficient[i];
-				}
-			}
-			Mem_Free16( coefficient );
-		}
-		allocated = alloc;
-		coefficient = ptr;
-	}
-	degree = d;
-}
-
-#endif /* !__MATH_POLYNOMIAL_H__ */

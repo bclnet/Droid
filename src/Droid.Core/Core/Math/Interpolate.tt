@@ -5,5 +5,5 @@
 namespace Droid.Core
 {
 <# type = "float"; #>
-<#@ include file="Interpolate.cs.t4" #>
+<#@ include file="Interpolate.t4" #>
 }

@@ -191,13 +191,12 @@ namespace Droid.Core
 
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
-            fixed (float* p = &r)
-                return callback(p);
+            fixed (float* _ = &r)
+                return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
 
         public static Complex origin = new(0f, 0f);
-        //#define zero origin
     }
 }

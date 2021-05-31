@@ -1,12 +1,27 @@
-using Droid.Core;
+using System;
 using System.Text;
 
-namespace Droid.Framework
+namespace Droid.Core
 {
+    // argument completion function
+    public delegate void ArgCompletion(CmdArgs args, Action<string> callback);
+
     public class CmdArgs
     {
-        public CmdArgs() { argc = 0; }
-        public CmdArgs(string text, bool keepAsStrings) => TokenizeString(text, keepAsStrings);
+        const int MAX_COMMAND_ARGS = 64;
+
+        int argc; // number of arguments
+        string[] argv = new string[MAX_COMMAND_ARGS]; // points into tokenized
+
+        public CmdArgs(CmdArgs args)
+        {
+            argc = args.argc;
+            argv = (string[])argv.Clone();
+        }
+        public CmdArgs()
+            => argc = 0;
+        public CmdArgs(string text, bool keepAsStrings)
+            => TokenizeString(text, keepAsStrings);
 
         /// <summary>
         /// The functions that execute commands get their parameters with these functions.
@@ -14,7 +29,8 @@ namespace Droid.Framework
         /// <value>
         /// The count.
         /// </value>
-        public int Count => argc;
+        public int Count
+            => argc;
 
         /// <summary>
         /// Argv() will return an empty string, not NULL if arg >= argc.
@@ -24,7 +40,8 @@ namespace Droid.Framework
         /// </value>
         /// <param name="arg">The argument.</param>
         /// <returns></returns>
-        public string this[int arg] => arg >= 0 && arg < argc ? argv[arg] : string.Empty;
+        public string this[int arg]
+            => arg >= 0 && arg < argc ? argv[arg] : string.Empty;
 
         /// <summary>
         /// Returns a single string containing argv(start) to argv(end) escapeArgs is a fugly way to put the string back into a state ready to tokenize again
@@ -64,7 +81,7 @@ namespace Droid.Framework
         /// <param name="keepAsStrings">if set to <c>true</c> [keep as strings].</param>
         public void TokenizeString(string text, bool keepAsStrings)
         {
-            var lex = new Lexer();
+            Lexer lex = new();
 
             // clear previous args
             argc = 0;
@@ -78,7 +95,8 @@ namespace Droid.Framework
                         | LEXFL.NOSTRINGCONCAT
                         | LEXFL.ALLOWPATHNAMES
                         | LEXFL.NOSTRINGESCAPECHARS
-                        | LEXFL.ALLOWIPADDRESSES | (keepAsStrings ? LEXFL.ONLYSTRINGS : 0);
+                        | LEXFL.ALLOWIPADDRESSES
+                        | (keepAsStrings ? LEXFL.ONLYSTRINGS : 0);
 
             while (true)
             {
@@ -89,7 +107,8 @@ namespace Droid.Framework
                     return;
 
                 // check for negative numbers
-                if (!keepAsStrings && token == "-" && lex.CheckTokenType(TT.NUMBER, 0, out var number))
+                if (!keepAsStrings && token == "-" &&
+                    lex.CheckTokenType(TT.NUMBER, 0, out var number))
                     token = "-" + number;
 
                 // check for cvar expansion
@@ -97,7 +116,9 @@ namespace Droid.Framework
                 {
                     if (!lex.ReadToken(out token))
                         return;
-                    token = G.cvarSystem != null ? G.cvarSystem.GetCVarString(token) : "<unknown>";
+                    token = Lib.cvarSystem != null
+                        ? Lib.cvarSystem.GetCVarString(token)
+                        : "<unknown>";
                 }
 
                 // add token
@@ -115,10 +136,27 @@ namespace Droid.Framework
             argc = this.argc;
             return argv;
         }
+    }
 
-        const int MAX_COMMAND_ARGS = 64;
+    public static class CmdArgsX
+    {
+        // Default argument completion functions.
+        public static void ArgCompletion_Boolean(CmdArgs args, Action<string> callback)
+        {
+            callback($"{args[0]} 0");
+            callback($"{args[0]} 1");
+        }
 
-        int argc; // number of arguments
-        string[] argv = new string[MAX_COMMAND_ARGS]; // points into tokenized
+        public static ArgCompletion ArgCompletion_Integer(int min, int max) => (CmdArgs args, Action<string> callback) =>
+        {
+            for (var i = min; i <= max; i++)
+                callback($"{args[0]} {i}");
+        };
+
+        public static void ArgCompletion_String(CmdArgs args, Action<string> callback, string[] strings)
+        {
+            for (var i = 0; i < strings.Length; i++)
+                callback($"{args[0]} {strings[i]}");
+        }
     }
 }

@@ -10,16 +10,21 @@ namespace Droid.Core
 
         public static unsafe Vector2 cast_vec2(Vector3 s) => *(Vector2*)&s;
         public static unsafe Vector2 cast_vec2(Vector4 s) => *(Vector2*)&s;
+        
         public static unsafe Vector3 cast_vec3(Vector4 s) => *(Vector3*)&s;
         public static unsafe Vector3 cast_vec3(Vector5 s) => *(Vector3*)&s;
+        public static unsafe Vector3 cast_vec3(Plane s) => *(Vector3*)&s;
         public static unsafe Vector3 cast_vec3(float* s, int index) => *(Vector3*)&s[index];
+
+        public static unsafe Vector4 cast_vec4(Plane s) => *(Vector4*)&s;
+
         public static unsafe Vector6 cast_vec6(float* s, int index) => *(Vector6*)&s[index];
 
         [StructLayout(LayoutKind.Explicit)]
         internal struct F2ui
         {
-            [FieldOffset(0)] public uint i;
             [FieldOffset(0)] public float f;
+            [FieldOffset(0)] public uint u;
         }
 
         [StructLayout(LayoutKind.Explicit)]

@@ -255,11 +255,11 @@ namespace Droid.Core
         }
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
-            fixed (float* p = &pitch)
-                return callback(p);
+            fixed (float* _ = &pitch)
+                return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
 
         public static Angles zero = new(0f, 0f, 0f);
     }

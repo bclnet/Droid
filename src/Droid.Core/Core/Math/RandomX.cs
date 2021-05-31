@@ -1,10 +1,10 @@
 namespace Droid.Core
 {
-    public struct Random
+    public struct RandomX
     {
         public const int MAX_RAND = 0x7fff;
 
-        public Random(int seed = 0)
+        public RandomX(int seed = 0)
             => Seed = seed;
         
         public int Seed;

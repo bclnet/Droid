@@ -26,9 +26,6 @@ namespace Droid.Framework
     // command function
     public delegate void CmdFunction(CmdArgs args);
 
-    // argument completion function
-    public delegate void ArgCompletion(CmdArgs args, Action<string> callback);
-
     public interface CmdSystem
     {
         // Registers a command and the function to call for it.
@@ -64,25 +61,6 @@ namespace Droid.Framework
 
     public static class CmdSystemX
     {
-        // Default argument completion functions.
-        public static void ArgCompletion_Boolean(CmdArgs args, Action<string> callback)
-        {
-            callback($"{args[0]} 0");
-            callback($"{args[0]} 1");
-        }
-
-        public static ArgCompletion ArgCompletion_Integer(int min, int max) => (CmdArgs args, Action<string> callback) =>
-        {
-            for (var i = min; i <= max; i++)
-                callback($"{args[0]} {i}");
-        };
-
-        public static void ArgCompletion_String(CmdArgs args, Action<string> callback, string[] strings)
-        {
-            for (var i = 0; i < strings.Length; i++)
-                callback($"{args[0]} {strings[i]}");
-        }
-
         public static void ArgCompletion_Decl(CmdArgs args, Action<string> callback, int type) =>
             G.cmdSystem.ArgCompletion_DeclName(args, callback, type);
         public static void ArgCompletion_FileName(CmdArgs args, Action<string> callback) =>

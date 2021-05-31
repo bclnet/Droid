@@ -1,334 +1,245 @@
 using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Droid.Core
 {
+    public class Pluecker
+    {
+        internal float[] p = new float[6];
 
-	class idPluecker {
-public:
-					idPluecker( void );
-					explicit idPluecker( const float *a );
-					explicit idPluecker( const idVec3 &start, const idVec3 &end );
-					explicit idPluecker( const float a1, const float a2, const float a3, const float a4, const float a5, const float a6 );
+        //public Pluecker() { }
+        public unsafe Pluecker(float[] a)
+        {
+            fixed (float* p = this.p, a_ = a)
+                Unsafe.CopyBlock(p, a_, 6U * sizeof(float));
+        }
+        public Pluecker(Vector3 start, Vector3 end)
+            => FromLine(start, end);
+        public Pluecker(float a1, float a2, float a3, float a4, float a5, float a6)
+        {
+            p[0] = a1;
+            p[1] = a2;
+            p[2] = a3;
+            p[3] = a4;
+            p[4] = a5;
+            p[5] = a6;
+        }
 
-	float			operator[]( const int index ) const;
-	float &			operator[]( const int index );
-	idPluecker		operator-() const;											// flips the direction
-	idPluecker		operator*( const float a ) const;
-	idPluecker		operator/( const float a ) const;
-	float			operator*( const idPluecker &a ) const;						// permuted inner product
-	idPluecker		operator-( const idPluecker &a ) const;
-	idPluecker		operator+( const idPluecker &a ) const;
-	idPluecker &	operator*=( const float a );
-	idPluecker &	operator/=( const float a );
-	idPluecker &	operator+=( const idPluecker &a );
-	idPluecker &	operator-=( const idPluecker &a );
+        public float this[int index]
+            => p[index];
 
-	bool			Compare( const idPluecker &a ) const;						// exact compare, no epsilon
-	bool			Compare( const idPluecker &a, const float epsilon ) const;	// compare with epsilon
-	bool			operator==(	const idPluecker &a ) const;					// exact compare, no epsilon
-	bool			operator!=(	const idPluecker &a ) const;					// exact compare, no epsilon
+        public static Pluecker operator -(Pluecker _)                                          // flips the direction
+                => new(-_.p[0], -_.p[1], -_.p[2], -_.p[3], -_.p[4], -_.p[5]);
+        public static Pluecker operator *(Pluecker _, float a)
+            => new(_.p[0] * a, _.p[1] * a, _.p[2] * a, _.p[3] * a, _.p[4] * a, _.p[5] * a);
+        public static Pluecker operator /(Pluecker _, float a)
+        {
+            Debug.Assert(a != 0f);
+            var inva = 1f / a;
+            return new(_.p[0] * inva, _.p[1] * inva, _.p[2] * inva, _.p[3] * inva, _.p[4] * inva, _.p[5] * inva);
+        }
+        public static float operator *(Pluecker _, Pluecker a)                     // permuted inner product
+            => _.p[0] * a.p[4] + _.p[1] * a.p[5] + _.p[2] * a.p[3] + _.p[4] * a.p[0] + _.p[5] * a.p[1] + _.p[3] * a.p[2];
+        public static Pluecker operator -(Pluecker _, Pluecker a)
+            => new(_.p[0] - a[0], _.p[1] - a[1], _.p[2] - a[2], _.p[3] - a[3], _.p[4] - a[4], _.p[5] - a[5]);
+        public static Pluecker operator +(Pluecker _, Pluecker a)
+            => new(_.p[0] + a[0], _.p[1] + a[1], _.p[2] + a[2], _.p[3] + a[3], _.p[4] + a[4], _.p[5] + a[5]);
 
-	void			Set( const float a1, const float a2, const float a3, const float a4, const float a5, const float a6 );
-	void			Zero( void );
 
-	void			FromLine( const idVec3 &start, const idVec3 &end );			// pluecker from line
-	void			FromRay( const idVec3 &start, const idVec3 &dir );			// pluecker from ray
-	bool			FromPlanes( const idPlane &p1, const idPlane &p2 );			// pluecker from intersection of planes
-	bool			ToLine( idVec3 &start, idVec3 &end ) const;					// pluecker to line
-	bool			ToRay( idVec3 &start, idVec3 &dir ) const;					// pluecker to ray
-	void			ToDir( idVec3 &dir ) const;									// pluecker to direction
-	float			PermutedInnerProduct( const idPluecker &a ) const;			// pluecker permuted inner product
-	float			Distance3DSqr( const idPluecker &a ) const;					// pluecker line distance
+        public bool Compare(Pluecker a)                      // exact compare, no epsilon
+            => (p[0] == a[0]) && (p[1] == a[1]) && (p[2] == a[2]) &&
+            (p[3] == a[3]) && (p[4] == a[4]) && (p[5] == a[5]);
+        public bool Compare(Pluecker a, float epsilon) // compare with epsilon
+        {
+            if (MathX.Fabs(p[0] - a[0]) > epsilon) return false;
+            if (MathX.Fabs(p[1] - a[1]) > epsilon) return false;
+            if (MathX.Fabs(p[2] - a[2]) > epsilon) return false;
+            if (MathX.Fabs(p[3] - a[3]) > epsilon) return false;
+            if (MathX.Fabs(p[4] - a[4]) > epsilon) return false;
+            if (MathX.Fabs(p[5] - a[5]) > epsilon) return false;
+            return true;
+        }
+        public static bool operator ==(Pluecker _, Pluecker a)                 // exact compare, no epsilon
+            => _.Compare(a);
+        public static bool operator !=(Pluecker _, Pluecker a)                 // exact compare, no epsilon
+            => !_.Compare(a);
+        public override bool Equals(object obj)
+            => obj is Pluecker q && Compare(q);
+        public override int GetHashCode()
+            => p[0].GetHashCode();
 
-	float			Length( void ) const;										// pluecker length
-	float			LengthSqr( void ) const;									// pluecker squared length
-	idPluecker		Normalize( void ) const;									// pluecker normalize
-	float			NormalizeSelf( void );										// pluecker normalize
+        public void Set(float a1, float a2, float a3, float a4, float a5, float a6)
+        {
+            p[0] = a1;
+            p[1] = a2;
+            p[2] = a3;
+            p[3] = a4;
+            p[4] = a5;
+            p[5] = a6;
+        }
 
-	int				GetDimension( void ) const;
+        public void Zero()
+           => p[0] = p[1] = p[2] = p[3] = p[4] = p[5] = 0f;
 
-	const float *	ToFloatPtr( void ) const;
-	float *			ToFloatPtr( void );
-	const char *	ToString( int precision = 2 ) const;
+        public void FromLine(Vector3 start, Vector3 end)           // pluecker from line
+        {
+            p[0] = start.x * end.y - end.x * start.y;
+            p[1] = start.x * end.z - end.x * start.z;
+            p[2] = start.x - end.x;
+            p[3] = start.y * end.z - end.y * start.z;
+            p[4] = start.z - end.z;
+            p[5] = end.y - start.y;
+        }
 
-private:
-	float			p[6];
-};
+        public void FromRay(Vector3 start, Vector3 dir)            // pluecker from ray
+        {
+            p[0] = start.x * dir.y - dir.x * start.y;
+            p[1] = start.x * dir.z - dir.x * start.z;
+            p[2] = -dir.x;
+            p[3] = start.y * dir.z - dir.y * start.z;
+            p[4] = -dir.z;
+            p[5] = dir.y;
+        }
 
-extern idPluecker pluecker_origin;
-#define pluecker_zero pluecker_origin
+        /// <summary>
+        /// pluecker coordinate for the intersection of two planes
+        /// </summary>
+        /// <param name="p1">The p1.</param>
+        /// <param name="p2">The p2.</param>
+        /// <returns></returns>
+        public bool FromPlanes(Plane p1, Plane p2)         // pluecker from intersection of planes
+        {
+            p[0] = -(p1.c * -p2.d - p2.c * -p1.d);
+            p[1] = -(p2.b * -p1.d - p1.b * -p2.d);
+            p[2] = p1.b * p2.c - p2.b * p1.c;
 
-ID_INLINE idPluecker::idPluecker( void ) {
+            p[3] = -(p1.a * -p2.d - p2.a * -p1.d);
+            p[4] = p1.a * p2.b - p2.a * p1.b;
+            p[5] = p1.a * p2.c - p2.a * p1.c;
+
+            return p[2] != 0f || p[5] != 0f || p[4] != 0f;
+        }
+
+        public bool ToLine(out Vector3 start, out Vector3 end)                 // pluecker to line
+        {
+            Vector3 dir1, dir2; float d;
+
+            dir1.x = p[3];
+            dir1.y = -p[1];
+            dir1.z = p[0];
+
+            dir2.x = -p[2];
+            dir2.y = p[5];
+            dir2.z = -p[4];
+
+            d = dir2 * dir2;
+            if (d == 0f)
+            {
+                start = end = default;
+                return false; // pluecker coordinate does not represent a line
+            }
+
+            start = dir2.Cross(dir1) * (1f / d);
+            end = start + dir2;
+            return true;
+        }
+
+        public bool ToRay(out Vector3 start, out Vector3 dir)                  // pluecker to ray
+        {
+            Vector3 dir1; float d;
+
+            dir1.x = p[3];
+            dir1.y = -p[1];
+            dir1.z = p[0];
+
+            dir.x = -p[2];
+            dir.y = p[5];
+            dir.z = -p[4];
+
+            d = dir * dir;
+            if (d == 0f)
+            {
+                start = default;
+                return false; // pluecker coordinate does not represent a line
+            }
+
+            start = dir.Cross(dir1) * (1f / d);
+            return true;
+        }
+
+        public void ToDir(out Vector3 dir)                                 // pluecker to direction
+        {
+            dir.x = -p[2];
+            dir.y = p[5];
+            dir.z = -p[4];
+        }
+
+        public float PermutedInnerProduct(Pluecker a)          // pluecker permuted inner product
+         => p[0] * a.p[4] + p[1] * a.p[5] + p[2] * a.p[3] + p[4] * a.p[0] + p[5] * a.p[1] + p[3] * a.p[2];
+
+        /// <summary>
+        /// calculates square of shortest distance between the two 3D lines represented by their pluecker coordinates
+        /// </summary>
+        /// <param name="a">a.</param>
+        /// <returns></returns>
+        public float Distance3DSqr(Pluecker a)                 // pluecker line distance
+        {
+            float d, s; Vector3 dir;
+
+            dir.x = -a.p[5] * p[4] - a.p[4] * -p[5];
+            dir.y = a.p[4] * p[2] - a.p[2] * p[4];
+            dir.z = a.p[2] * -p[5] - -a.p[5] * p[2];
+            if (dir.x == 0f && dir.y == 0f && dir.z == 0f)
+                return -1f;   // FIXME: implement for parallel lines
+            d = a.p[4] * (p[2] * dir.y - -p[5] * dir.x) +
+                a.p[5] * (p[2] * dir.z - p[4] * dir.x) +
+                a.p[2] * (-p[5] * dir.z - p[4] * dir.y);
+            s = PermutedInnerProduct(a) / d;
+            return dir * dir * (s * s);
+        }
+
+        public float Length                                      // pluecker length
+            => (float)MathX.Sqrt(p[5] * p[5] + p[4] * p[4] + p[2] * p[2]);
+
+        public float LengthSqr                                   // pluecker squared length
+            => p[5] * p[5] + p[4] * p[4] + p[2] * p[2];
+
+        public Pluecker Normalize()                                    // pluecker normalize
+        {
+            var d = LengthSqr;
+            if (d == 0f)
+                return this; // pluecker coordinate does not represent a line
+            d = MathX.InvSqrt(d);
+            return new(p[0] * d, p[1] * d, p[2] * d, p[3] * d, p[4] * d, p[5] * d);
+        }
+
+        public float NormalizeSelf()                                      // pluecker normalize
+        {
+            var l = LengthSqr;
+            if (l == 0f)
+                return l; // pluecker coordinate does not represent a line
+            var d = MathX.InvSqrt(l);
+            p[0] *= d;
+            p[1] *= d;
+            p[2] *= d;
+            p[3] *= d;
+            p[4] *= d;
+            p[5] *= d;
+            return d * l;
+        }
+
+        public static int Dimension
+            => 6;
+
+        public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        {
+            fixed (float* _ = this.p)
+                return callback(_);
+        }
+        public unsafe string ToString(int precision = 2)
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
+
+        public static Pluecker origin = new(0f, 0f, 0f, 0f, 0f, 0f);
+    }
 }
-
-ID_INLINE idPluecker::idPluecker( const float *a ) {
-	memcpy( p, a, 6 * sizeof( float ) );
-}
-
-ID_INLINE idPluecker::idPluecker( const idVec3 &start, const idVec3 &end ) {
-	FromLine( start, end );
-}
-
-ID_INLINE idPluecker::idPluecker( const float a1, const float a2, const float a3, const float a4, const float a5, const float a6 ) {
-	p[0] = a1;
-	p[1] = a2;
-	p[2] = a3;
-	p[3] = a4;
-	p[4] = a5;
-	p[5] = a6;
-}
-
-ID_INLINE idPluecker idPluecker::operator-() const {
-	return idPluecker( -p[0], -p[1], -p[2], -p[3], -p[4], -p[5] );
-}
-
-ID_INLINE float idPluecker::operator[]( const int index ) const {
-	return p[index];
-}
-
-ID_INLINE float &idPluecker::operator[]( const int index ) {
-	return p[index];
-}
-
-ID_INLINE idPluecker idPluecker::operator*( const float a ) const {
-	return idPluecker( p[0]*a, p[1]*a, p[2]*a, p[3]*a, p[4]*a, p[5]*a );
-}
-
-ID_INLINE float idPluecker::operator*( const idPluecker &a ) const {
-	return p[0] * a.p[4] + p[1] * a.p[5] + p[2] * a.p[3] + p[4] * a.p[0] + p[5] * a.p[1] + p[3] * a.p[2];
-}
-
-ID_INLINE idPluecker idPluecker::operator/( const float a ) const {
-	float inva;
-
-	assert( a != 0.0f );
-	inva = 1.0f / a;
-	return idPluecker( p[0]*inva, p[1]*inva, p[2]*inva, p[3]*inva, p[4]*inva, p[5]*inva );
-}
-
-ID_INLINE idPluecker idPluecker::operator+( const idPluecker &a ) const {
-	return idPluecker( p[0] + a[0], p[1] + a[1], p[2] + a[2], p[3] + a[3], p[4] + a[4], p[5] + a[5] );
-}
-
-ID_INLINE idPluecker idPluecker::operator-( const idPluecker &a ) const {
-	return idPluecker( p[0] - a[0], p[1] - a[1], p[2] - a[2], p[3] - a[3], p[4] - a[4], p[5] - a[5] );
-}
-
-ID_INLINE idPluecker &idPluecker::operator*=( const float a ) {
-	p[0] *= a;
-	p[1] *= a;
-	p[2] *= a;
-	p[3] *= a;
-	p[4] *= a;
-	p[5] *= a;
-	return *this;
-}
-
-ID_INLINE idPluecker &idPluecker::operator/=( const float a ) {
-	float inva;
-
-	assert( a != 0.0f );
-	inva = 1.0f / a;
-	p[0] *= inva;
-	p[1] *= inva;
-	p[2] *= inva;
-	p[3] *= inva;
-	p[4] *= inva;
-	p[5] *= inva;
-	return *this;
-}
-
-ID_INLINE idPluecker &idPluecker::operator+=( const idPluecker &a ) {
-	p[0] += a[0];
-	p[1] += a[1];
-	p[2] += a[2];
-	p[3] += a[3];
-	p[4] += a[4];
-	p[5] += a[5];
-	return *this;
-}
-
-ID_INLINE idPluecker &idPluecker::operator-=( const idPluecker &a ) {
-	p[0] -= a[0];
-	p[1] -= a[1];
-	p[2] -= a[2];
-	p[3] -= a[3];
-	p[4] -= a[4];
-	p[5] -= a[5];
-	return *this;
-}
-
-ID_INLINE bool idPluecker::Compare( const idPluecker &a ) const {
-	return ( ( p[0] == a[0] ) && ( p[1] == a[1] ) && ( p[2] == a[2] ) &&
-			( p[3] == a[3] ) && ( p[4] == a[4] ) && ( p[5] == a[5] ) );
-}
-
-ID_INLINE bool idPluecker::Compare( const idPluecker &a, const float epsilon ) const {
-	if ( idMath::Fabs( p[0] - a[0] ) > epsilon ) {
-		return false;
-	}
-
-	if ( idMath::Fabs( p[1] - a[1] ) > epsilon ) {
-		return false;
-	}
-
-	if ( idMath::Fabs( p[2] - a[2] ) > epsilon ) {
-		return false;
-	}
-
-	if ( idMath::Fabs( p[3] - a[3] ) > epsilon ) {
-		return false;
-	}
-
-	if ( idMath::Fabs( p[4] - a[4] ) > epsilon ) {
-		return false;
-	}
-
-	if ( idMath::Fabs( p[5] - a[5] ) > epsilon ) {
-		return false;
-	}
-
-	return true;
-}
-
-ID_INLINE bool idPluecker::operator==( const idPluecker &a ) const {
-	return Compare( a );
-}
-
-ID_INLINE bool idPluecker::operator!=( const idPluecker &a ) const {
-	return !Compare( a );
-}
-
-ID_INLINE void idPluecker::Set( const float a1, const float a2, const float a3, const float a4, const float a5, const float a6 ) {
-	p[0] = a1;
-	p[1] = a2;
-	p[2] = a3;
-	p[3] = a4;
-	p[4] = a5;
-	p[5] = a6;
-}
-
-ID_INLINE void idPluecker::Zero( void ) {
-	p[0] = p[1] = p[2] = p[3] = p[4] = p[5] = 0.0f;
-}
-
-ID_INLINE void idPluecker::FromLine( const idVec3 &start, const idVec3 &end ) {
-	p[0] = start[0] * end[1] - end[0] * start[1];
-	p[1] = start[0] * end[2] - end[0] * start[2];
-	p[2] = start[0] - end[0];
-	p[3] = start[1] * end[2] - end[1] * start[2];
-	p[4] = start[2] - end[2];
-	p[5] = end[1] - start[1];
-}
-
-ID_INLINE void idPluecker::FromRay( const idVec3 &start, const idVec3 &dir ) {
-	p[0] = start[0] * dir[1] - dir[0] * start[1];
-	p[1] = start[0] * dir[2] - dir[0] * start[2];
-	p[2] = -dir[0];
-	p[3] = start[1] * dir[2] - dir[1] * start[2];
-	p[4] = -dir[2];
-	p[5] = dir[1];
-}
-
-ID_INLINE bool idPluecker::ToLine( idVec3 &start, idVec3 &end ) const {
-	idVec3 dir1, dir2;
-	float d;
-
-	dir1[0] = p[3];
-	dir1[1] = -p[1];
-	dir1[2] = p[0];
-
-	dir2[0] = -p[2];
-	dir2[1] = p[5];
-	dir2[2] = -p[4];
-
-	d = dir2 * dir2;
-	if ( d == 0.0f ) {
-		return false; // pluecker coordinate does not represent a line
-	}
-
-	start = dir2.Cross(dir1) * (1.0f / d);
-	end = start + dir2;
-	return true;
-}
-
-ID_INLINE bool idPluecker::ToRay( idVec3 &start, idVec3 &dir ) const {
-	idVec3 dir1;
-	float d;
-
-	dir1[0] = p[3];
-	dir1[1] = -p[1];
-	dir1[2] = p[0];
-
-	dir[0] = -p[2];
-	dir[1] = p[5];
-	dir[2] = -p[4];
-
-	d = dir * dir;
-	if ( d == 0.0f ) {
-		return false; // pluecker coordinate does not represent a line
-	}
-
-	start = dir.Cross(dir1) * (1.0f / d);
-	return true;
-}
-
-ID_INLINE void idPluecker::ToDir( idVec3 &dir ) const {
-	dir[0] = -p[2];
-	dir[1] = p[5];
-	dir[2] = -p[4];
-}
-
-ID_INLINE float idPluecker::PermutedInnerProduct( const idPluecker &a ) const {
-	return p[0] * a.p[4] + p[1] * a.p[5] + p[2] * a.p[3] + p[4] * a.p[0] + p[5] * a.p[1] + p[3] * a.p[2];
-}
-
-ID_INLINE float idPluecker::Length( void ) const {
-	return ( float )idMath::Sqrt( p[5] * p[5] + p[4] * p[4] + p[2] * p[2] );
-}
-
-ID_INLINE float idPluecker::LengthSqr( void ) const {
-	return ( p[5] * p[5] + p[4] * p[4] + p[2] * p[2] );
-}
-
-ID_INLINE float idPluecker::NormalizeSelf( void ) {
-	float l, d;
-
-	l = LengthSqr();
-	if ( l == 0.0f ) {
-		return l; // pluecker coordinate does not represent a line
-	}
-	d = idMath::InvSqrt( l );
-	p[0] *= d;
-	p[1] *= d;
-	p[2] *= d;
-	p[3] *= d;
-	p[4] *= d;
-	p[5] *= d;
-	return d * l;
-}
-
-ID_INLINE idPluecker idPluecker::Normalize( void ) const {
-	float d;
-
-	d = LengthSqr();
-	if ( d == 0.0f ) {
-		return *this; // pluecker coordinate does not represent a line
-	}
-	d = idMath::InvSqrt( d );
-	return idPluecker( p[0]*d, p[1]*d, p[2]*d, p[3]*d, p[4]*d, p[5]*d );
-}
-
-ID_INLINE int idPluecker::GetDimension( void ) const {
-	return 6;
-}
-
-ID_INLINE const float *idPluecker::ToFloatPtr( void ) const {
-	return p;
-}
-
-ID_INLINE float *idPluecker::ToFloatPtr( void ) {
-	return p;
-}
-
-#endif /* !__MATH_PLUECKER_H__ */

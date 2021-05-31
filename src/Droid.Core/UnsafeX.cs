@@ -1,12 +1,18 @@
-using System;
 using System.Runtime.InteropServices;
+using System.Security;
 
 namespace Droid
 {
-    // https://github.com/dotnet/runtime/blob/main/src/libraries/System.Runtime.CompilerServices.Unsafe/src/System.Runtime.CompilerServices.Unsafe.il
+    public unsafe delegate T FloatPtr<T>(float* ptr);
+    public unsafe delegate void FloatPtr(float* ptr);
+
+    [SuppressUnmanagedCodeSecurity]
     public static class UnsafeX
     {
         [DllImport("msvcrt.dll", EntryPoint = "memmove", SetLastError = false)] public static unsafe extern void MoveBlock(void* destination, void* source, uint byteCount);
+        [DllImport("msvcrt.dll", EntryPoint = "memcpy", SetLastError = false)] public static unsafe extern void CopyBlock(void* destination, void* source, uint byteCount);
+        [DllImport("msvcrt.dll", EntryPoint = "memset", SetLastError = false)] public static unsafe extern void InitBlock(void* destination, int c, uint byteCount);
+        [DllImport("msvcrt.dll", EntryPoint = "memcmp", SetLastError = false)] public static unsafe extern int CompareBlock(void* b1, void* b2, int byteCount);
 
         public static void Swap<T>(ref T a, ref T b)
         {
@@ -14,28 +20,5 @@ namespace Droid
             a = b;
             b = c;
         }
-
-        //[DllImport("msvcrt.dll", SetLastError = false)] public static unsafe extern void memset(void* dest, int c, int byteCount);
-        //[DllImport("msvcrt.dll", SetLastError = false)] public static unsafe extern void memcpy(void* dest, void* src, int count);
-
-        //public static unsafe T MarshalT<T>(void* data)
-        //    => Marshal.PtrToStructure<T>(new IntPtr(data));
-
-        //public static unsafe T[] MarshalTArray<T>(void* data, int count)
-        //{
-        //    var result = new T[count];
-        //    var hresult = GCHandle.Alloc(result, GCHandleType.Pinned);
-        //    Unsafe.CopyBlock((void*)hresult.AddrOfPinnedObject(), data, (uint)count);
-        //    //memcpy((void*)hresult.AddrOfPinnedObject(), data, count);
-        //    hresult.Free();
-        //    return result;
-        //}
-
-        //public static void Swap<T>(ref T a, ref T b)
-        //{
-        //    var c = a;
-        //    a = b;
-        //    b = c;
-        //}
     }
 }

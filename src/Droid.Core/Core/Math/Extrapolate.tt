@@ -16,5 +16,5 @@ namespace Droid.Core
     }
 
 <# type = "float"; #>
-<#@ include file="Extrapolate.cs.t4" #>
+<#@ include file="Extrapolate.t4" #>
 }

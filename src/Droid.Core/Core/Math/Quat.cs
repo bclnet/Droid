@@ -186,11 +186,11 @@ namespace Droid.Core
         }
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
-            fixed (float* p = &x)
-                return callback(p);
+            fixed (float* _ = &x)
+                return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
 
         /// <summary>
         /// Spherical linear interpolation between two quaternions.
@@ -300,10 +300,10 @@ namespace Droid.Core
             => new(x, y, z, (float)Math.Sqrt((float)Math.Abs(1f - (x * x + y * y + z * z))));
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
-            fixed (float* p = &x)
-                return callback(p);
+            fixed (float* _ = &x)
+                return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(array => StringX.FloatArrayToString(array, Dimension, precision));
+            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
     }
 }

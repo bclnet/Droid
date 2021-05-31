@@ -1,12 +1,25 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Droid.Core
 {
     public class BitMsg
     {
+        static readonly byte[] EmptyByte = new byte[0];
+
+        byte[] writeData;            // pointer to data for writing
+        byte[] readData;           // pointer to data for reading
+        int maxSize;            // maximum size of message in bytes
+        int curSize;            // current size of message in bytes
+        int writeBit;           // number of bits written to the last written byte
+        int readCount;          // number of bytes read so far
+        int readBit;            // number of bits read from the last read byte
+        bool allowOverflow;     // if false, generate an error when the message is overflowed
+        bool overflowed;            // set to true if the buffer size failed (with allowOverflow set)
+
         public BitMsg()
         {
             writeData = null;
@@ -26,6 +39,7 @@ namespace Droid.Core
             readData = data;
             maxSize = length;
         }
+
         public void InitR(byte[] data, int length)
         {
             writeData = null;
@@ -33,11 +47,15 @@ namespace Droid.Core
             maxSize = length;
         }
 
-        public byte[] DataW => writeData;                     // get data for writing
-        public byte[] DataR => readData;                  // get data for reading
-        public int MaxSize => maxSize;                // get the maximum message size
-        public void SetAllowOverflow(bool set) => allowOverflow = set;         // generate error if not set and message is overflowed
-        public bool IsOverflowed => overflowed;               // returns true if the message was overflowed
+        public byte[] DataW => writeData;                   // get data for writing
+
+        public byte[] DataR => readData;                    // get data for reading
+
+        public int MaxSize => maxSize;                      // get the maximum message size
+
+        public void SetAllowOverflow(bool set) => allowOverflow = set; // generate error if not set and message is overflowed
+
+        public bool IsOverflowed => overflowed;             // returns true if the message was overflowed
 
         public int Size
         {
@@ -55,13 +73,17 @@ namespace Droid.Core
                     writeData[curSize - 1] &= (byte)((1 << writeBit) - 1);
             }
         }
+
         public int NumBitsWritten => ((curSize << 3) - ((8 - writeBit) & 7)); // returns number of bits written
+
         public int RemainingWriteBits => (maxSize << 3) - NumBitsWritten; // space left in bits for writing
+
         public void SaveWriteState(out int s, out int b)   // save the write state
         {
             s = curSize;
             b = writeBit;
         }
+
         public void RestoreWriteState(int s, int b)        // restore the write state
         {
             curSize = s;
@@ -75,14 +97,17 @@ namespace Droid.Core
             get => readCount; // bytes read so far
             set => readCount = value; // set the number of bytes and bits read
         }
+
         public int ReadBit
         {
             get => readBit; // get current read bit
             set => readBit = value & 7; // set current read bit
         }
 
-        public int NumBitsRead => ((readCount << 3) - ((8 - readBit) & 7));         // returns number of bits read
+        public int NumBitsRead => (readCount << 3) - ((8 - readBit) & 7);         // returns number of bits read
+
         public int RemainingReadBits => (curSize << 3) - NumBitsRead;      // number of bits left to read
+
         public void SaveReadState(out int c, out int b)   // save the read state
         {
             c = readCount;
@@ -101,7 +126,9 @@ namespace Droid.Core
             overflowed = false;
             writeBit = 0;
         }
+
         public int RemainingSpace => maxSize - curSize;       // space left in bytes
+
         public void WriteByteAlign() => writeBit = 0;                  // write up to the next byte boundary
         /// <summary>
         /// If the number of bits is negative a sign is included.
@@ -111,11 +138,11 @@ namespace Droid.Core
         public void WriteBits(int value, int numBits) // write the specified number of bits
         {
             if (writeData == null)
-                G.common.Error("BitMsg::WriteBits: cannot write to message");
+                Lib.Error("BitMsg::WriteBits: cannot write to message");
 
             // check if the number of bits is valid
             if (numBits == 0 || numBits < -31 || numBits > 32)
-                G.common.Error($"BitMsg::WriteBits: bad numBits {numBits}");
+                Lib.Error($"BitMsg::WriteBits: bad numBits {numBits}");
 
             // check for value overflows
             // this should be an error really, as it can go unnoticed and cause either bandwidth or corrupted data transmitted
@@ -123,14 +150,14 @@ namespace Droid.Core
             {
                 if (numBits > 0)
                 {
-                    if (value > (1 << numBits) - 1) G.common.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
-                    else if (value < 0) G.common.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
+                    if (value > (1 << numBits) - 1) Lib.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
+                    else if (value < 0) Lib.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
                 }
                 else
                 {
                     var r = 1 << (-1 - numBits);
-                    if (value > r - 1) G.common.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
-                    else if (value < -r) G.common.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
+                    if (value > r - 1) Lib.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
+                    else if (value < -r) Lib.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
                 }
             }
 
@@ -166,7 +193,7 @@ namespace Droid.Core
         public void WriteShort(int c) => WriteBits(c, -16);
         public void WriteUShort(int c) => WriteBits(c, 16);
         public void WriteInt(int c) => WriteBits(c, 32);
-        public void WriteFloat(float f) => WriteBits(MathX.reinterpret_cast_int(f), 32);
+        public void WriteFloat(float f) => WriteBits(reinterpret.cast_int(f), 32);
         public void WriteFloat(float f, int exponentBits, int mantissaBits)
         {
             var bits = MathX.FloatToBits(f, exponentBits, mantissaBits);
@@ -178,35 +205,31 @@ namespace Droid.Core
         public void WriteString(string s, int maxLength = -1, bool make7Bit = true)
         {
             if (s == null)
-                WriteData("", 1);
+                WriteData(EmptyByte, 1);
             else
             {
                 var l = s.Length;
                 if (maxLength >= 0 && l >= maxLength)
                     l = maxLength - 1;
-                var (dataPtr, p) = GetByteSpace(l + 1);
+                var dataPtr = GetByteSpace(l + 1);
                 var bytePtr = s;
                 int i;
                 if (make7Bit)
                     for (i = 0; i < l; i++)
-                        dataPtr[p + i] = bytePtr[i] > 127
+                        dataPtr[i] = bytePtr[i] > 127
                             ? (byte)'.'
                             : (byte)bytePtr[i];
                 else
                     for (i = 0; i < l; i++)
-                        dataPtr[p + i] = (byte)bytePtr[i];
-                dataPtr[p + i] = 0;
+                        dataPtr[i] = (byte)bytePtr[i];
+                dataPtr[i] = 0;
             }
         }
         public void WriteData(byte[] data, int length)
+            => Unsafe.CopyBlock(ref GetByteSpace(length)[0], ref data[0], (uint)length);
+        public void WriteNetadr(Netadr adr)
         {
-            var (dataPtr, p) = GetByteSpace(length);
-            Array.Copy(data, 0, dataPtr, p, length);
-        }
-        public void WriteNetadr(netadr adr)
-        {
-            var (dataPtr, p) = GetByteSpace(4);
-            Array.Copy(adr.ip, 0, dataPtr, p, 4);
+            Unsafe.CopyBlock(ref GetByteSpace(4)[0], ref adr.ip[0], 4U);
             WriteUShort(adr.port);
         }
 
@@ -214,7 +237,7 @@ namespace Droid.Core
         public void WriteDeltaByte(int oldValue, int newValue) => WriteDelta(oldValue, newValue, 8);
         public void WriteDeltaShort(int oldValue, int newValue) => WriteDelta(oldValue, newValue, -16);
         public void WriteDeltaInt(int oldValue, int newValue) => WriteDelta(oldValue, newValue, 32);
-        public void WriteDeltaFloat(float oldValue, float newValue) => WriteDelta(MathX.reinterpret_cast_int(oldValue), MathX.reinterpret_cast_int(newValue), 32);
+        public void WriteDeltaFloat(float oldValue, float newValue) => WriteDelta(reinterpret.cast_int(oldValue), reinterpret.cast_int(newValue), 32);
         public void WriteDeltaFloat(float oldValue, float newValue, int exponentBits, int mantissaBits)
         {
             var oldBits = MathX.FloatToBits(oldValue, exponentBits, mantissaBits);
@@ -313,11 +336,11 @@ namespace Droid.Core
         public int ReadBits(int numBits)            // read the specified number of bits
         {
             if (readData == null)
-                G.common.FatalError("BitMsg::ReadBits: cannot read from message");
+                Lib.FatalError("BitMsg::ReadBits: cannot read from message");
 
             // check if the number of bits is valid
             if (numBits == 0 || numBits < -31 || numBits > 32)
-                G.common.FatalError($"BitMsg::ReadBits: bad numBits {numBits}");
+                Lib.FatalError($"BitMsg::ReadBits: bad numBits {numBits}");
 
             bool sgn;
             if (numBits < 0) { numBits = -numBits; sgn = true; }
@@ -358,7 +381,7 @@ namespace Droid.Core
         public int ReadShort() => (short)ReadBits(-16);
         public int ReadUShort() => (ushort)ReadBits(16);
         public int ReadInt() => ReadBits(32);
-        public float ReadFloat() => MathX.reinterpret_cast_int(ReadBits(32));
+        public float ReadFloat() => reinterpret.cast_int(ReadBits(32));
         public float ReadFloat(int exponentBits, int mantissaBits)
         {
             var bits = ReadBits(1 + exponentBits + mantissaBits);
@@ -367,23 +390,23 @@ namespace Droid.Core
         public float ReadAngle8() => MathX.BYTE2ANGLE(ReadByte());
         public float ReadAngle16() => MathX.SHORT2ANGLE(ReadShort());
         public Vector3 ReadDir(int numBits) => BitsToDir(ReadBits(numBits), numBits);
-        public int ReadString(char[] buffer, int bufferSize, out string s)
+        public int ReadString(byte[] buffer, int bufferSize, out string s)
         {
+            int l; byte c;
             ReadByteAlign();
-            char c;
-            var l = 0;
+            l = 0;
             while (true)
             {
-                c = (char)ReadByte();
+                c = (byte)ReadByte();
                 if (c <= 0 || c >= 255)
                     break;
                 // translate all fmt spec to avoid crash bugs in string routines
-                if (c == '%') c = '.';
+                if (c == '%') c = (byte)'.';
                 // we will read past any excessively long string, so the following data can be read, but the string will be truncated
                 if (l < bufferSize - 1) { buffer[l] = c; l++; }
             }
-            buffer[l] = (char)0;
-            s = new string(buffer);
+            buffer[l] = 0;
+            s = Encoding.ASCII.GetString(buffer);
             return l;
         }
         public int ReadData(byte[] data, int length)
@@ -393,20 +416,20 @@ namespace Droid.Core
             if (readCount + length > curSize)
             {
                 if (data != null)
-                    Array.Copy(readData, readCount, data, 0, RemaingData);
+                    Unsafe.CopyBlock(ref data[0], ref readData.AsSpan(readCount)[0], (uint)RemaingData);
                 readCount = curSize;
             }
             else
             {
                 if (data != null)
-                    Array.Copy(readData, readCount, data, 0, length);
+                    Unsafe.CopyBlock(ref data[0], ref readData.AsSpan(readCount)[0], (uint)length);
                 readCount += length;
             }
             return readCount - cnt;
         }
-        public void ReadNetadr(netadr adr)
+        public void ReadNetadr(Netadr adr)
         {
-            adr.type = NA.NA_IP;
+            adr.type = NA.IP;
             for (var i = 0; i < 4; i++)
                 adr.ip[i] = (byte)ReadByte();
             adr.port = (ushort)ReadUShort();
@@ -416,7 +439,7 @@ namespace Droid.Core
         public int ReadDeltaByte(int oldValue) => (byte)ReadDelta(oldValue, 8);
         public int ReadDeltaShort(int oldValue) => (short)ReadDelta(oldValue, -16);
         public int ReadDeltaInt(int oldValue) => ReadDelta(oldValue, 32);
-        public float ReadDeltaFloat(float oldValue) => MathX.reinterpret_cast_int(ReadDelta(MathX.reinterpret_cast_int(oldValue), 32));
+        public float ReadDeltaFloat(float oldValue) => reinterpret.cast_int(ReadDelta(reinterpret.cast_int(oldValue), 32));
         public float ReadDeltaFloat(float oldValue, int exponentBits, int mantissaBits)
         {
             var oldBits = MathX.FloatToBits(oldValue, exponentBits, mantissaBits);
@@ -450,8 +473,8 @@ namespace Droid.Core
         }
         public bool ReadDeltaDict(Dictionary<string, string> dict, Dictionary<string, string> @base)
         {
-            var keybuf = new char[Platform.MAX_STRING_CHARS];
-            var valuebuf = new char[Platform.MAX_STRING_CHARS];
+            var keybuf = new byte[Platform.MAX_STRING_CHARS];
+            var valuebuf = new byte[Platform.MAX_STRING_CHARS];
             var changed = false;
 
             if (@base != null) dict = @base;
@@ -476,71 +499,60 @@ namespace Droid.Core
         public static int DirToBits(Vector3 dir, int numBits)
         {
             Debug.Assert(numBits >= 6 && numBits <= 32);
-            Debug.Assert(dir.LengthSqr() - 1.0f < 0.01f);
+            Debug.Assert(dir.LengthSqr - 1.0f < 0.01f);
 
             numBits /= 3;
             var max = (1 << (numBits - 1)) - 1;
             var bias = 0.5f / max;
 
-            var bits = MathX.FLOATSIGNBITSET(dir.X) ? 1 : 0 << (numBits * 3 - 1);
-            bits |= (MathX.Ftoi((MathX.Fabs(dir.X) + bias) * max)) << (numBits * 2);
-            bits |= MathX.FLOATSIGNBITSET(dir.Y) ? 1 : 0 << (numBits * 2 - 1);
-            bits |= (MathX.Ftoi((MathX.Fabs(dir.Y) + bias) * max)) << (numBits * 1);
-            bits |= MathX.FLOATSIGNBITSET(dir.Z) ? 1 : 0 << (numBits * 1 - 1);
-            bits |= (MathX.Ftoi((MathX.Fabs(dir.Z) + bias) * max)) << (numBits * 0);
+            var bits = MathX.FLOATSIGNBITSET(dir.x) ? 1 : 0 << (numBits * 3 - 1);
+            bits |= (MathX.Ftoi((MathX.Fabs(dir.x) + bias) * max)) << (numBits * 2);
+            bits |= MathX.FLOATSIGNBITSET(dir.y) ? 1 : 0 << (numBits * 2 - 1);
+            bits |= (MathX.Ftoi((MathX.Fabs(dir.y) + bias) * max)) << (numBits * 1);
+            bits |= MathX.FLOATSIGNBITSET(dir.z) ? 1 : 0 << (numBits * 1 - 1);
+            bits |= (MathX.Ftoi((MathX.Fabs(dir.z) + bias) * max)) << (numBits * 0);
             return bits;
         }
 
         static float[] sign = new[] { 1.0f, -1.0f };
         public static Vector3 BitsToDir(int bits, int numBits)
         {
-            int max;
-            float invMax;
-            Vector3 dir;
-
+            int max; float invMax; Vector3 dir;
             Debug.Assert(numBits >= 6 && numBits <= 32);
 
             numBits /= 3;
             max = (1 << (numBits - 1)) - 1;
             invMax = 1.0f / max;
 
-            dir.X = sign[(bits >> (numBits * 3 - 1)) & 1] * ((bits >> (numBits * 2)) & max) * invMax;
-            dir.Y = sign[(bits >> (numBits * 2 - 1)) & 1] * ((bits >> (numBits * 1)) & max) * invMax;
-            dir.Z = sign[(bits >> (numBits * 1 - 1)) & 1] * ((bits >> (numBits * 0)) & max) * invMax;
+            dir.x = sign[(bits >> (numBits * 3 - 1)) & 1] * ((bits >> (numBits * 2)) & max) * invMax;
+            dir.y = sign[(bits >> (numBits * 2 - 1)) & 1] * ((bits >> (numBits * 1)) & max) * invMax;
+            dir.z = sign[(bits >> (numBits * 1 - 1)) & 1] * ((bits >> (numBits * 0)) & max) * invMax;
             dir.NormalizeFast();
             return dir;
         }
 
-        byte[] writeData;            // pointer to data for writing
-        byte[] readData;           // pointer to data for reading
-        int maxSize;            // maximum size of message in bytes
-        int curSize;            // current size of message in bytes
-        int writeBit;           // number of bits written to the last written byte
-        int readCount;          // number of bytes read so far
-        int readBit;            // number of bits read from the last read byte
-        bool allowOverflow;     // if false, generate an error when the message is overflowed
-        bool overflowed;            // set to true if the buffer size failed (with allowOverflow set)
-
         bool CheckOverflow(int numBits)
         {
             Debug.Assert(numBits >= 0);
+
             if (numBits > RemainingWriteBits)
             {
                 if (!allowOverflow)
-                    G.common.FatalError("BitMsg: overflow without allowOverflow set");
+                    Lib.FatalError("BitMsg: overflow without allowOverflow set");
                 if (numBits > (maxSize << 3))
-                    G.common.FatalError($"BitMsg: {numBits} bits is > full message size");
-                G.common.Printf("BitMsg: overflow\n");
+                    Lib.FatalError($"BitMsg: {numBits} bits is > full message size");
+                Lib.Printf("BitMsg: overflow\n");
                 BeginWriting();
                 overflowed = true;
                 return true;
             }
             return false;
         }
-        (byte[], int) GetByteSpace(int length)
+
+        Span<byte> GetByteSpace(int length)
         {
             if (writeData == null)
-                G.common.FatalError("BitMsg::GetByteSpace: cannot write to message");
+                Lib.FatalError("BitMsg::GetByteSpace: cannot write to message");
 
             // round up to the next byte
             WriteByteAlign();
@@ -550,8 +562,9 @@ namespace Droid.Core
 
             var ptr = curSize;
             curSize += length;
-            return (writeData, ptr);
+            return writeData.AsSpan(ptr);
         }
+
         void WriteDelta(int oldValue, int newValue, int numBits)
         {
             if (oldValue == newValue)
@@ -562,15 +575,22 @@ namespace Droid.Core
             WriteBits(1, 1);
             WriteBits(newValue, numBits);
         }
-        int ReadDelta(int oldValue, int numBits) =>
-            ReadBits(1) != 0
-                ? ReadBits(numBits)
-                : oldValue;
+
+        int ReadDelta(int oldValue, int numBits)
+            => ReadBits(1) != 0
+            ? ReadBits(numBits)
+            : oldValue;
     }
 
     public class BitMsgDelta
     {
         const int MAX_DATA_BUFFER = 1024;
+
+        BitMsg base_;           // base
+        BitMsg newBase;      // new base
+        BitMsg writeDelta;       // delta from base to new base for writing
+        BitMsg readDelta;      // delta from base to new base for reading
+        bool changed;       // true if the new base is different from the base
 
         public BitMsgDelta()
         {
@@ -589,6 +609,7 @@ namespace Droid.Core
             this.readDelta = delta;
             this.changed = false;
         }
+
         public void InitR(BitMsg base_, BitMsg newBase, BitMsg delta)
         {
             this.base_ = base_;
@@ -597,6 +618,7 @@ namespace Droid.Core
             this.readDelta = delta;
             this.changed = false;
         }
+
         public bool HasChanged => changed;
 
         public void WriteBits(int value, int numBits)
@@ -620,7 +642,7 @@ namespace Droid.Core
         public void WriteShort(int c) => WriteBits(c, -16);
         public void WriteUShort(int c) => WriteBits(c, 16);
         public void WriteInt(int c) => WriteBits(c, 32);
-        public void WriteFloat(float f) => WriteBits(MathX.reinterpret_cast_int(f), 32);
+        public void WriteFloat(float f) => WriteBits(reinterpret.cast_int(f), 32);
         public void WriteFloat(float f, int exponentBits, int mantissaBits)
         {
             var bits = MathX.FloatToBits(f, exponentBits, mantissaBits);
@@ -640,13 +662,13 @@ namespace Droid.Core
             }
             else
             {
-                var baseString = new char[MAX_DATA_BUFFER];
+                var baseString = new byte[MAX_DATA_BUFFER];
                 base_.ReadString(baseString, baseString.Length, out var s2);
                 if (s == s2) writeDelta.WriteBits(0, 1);
                 else { writeDelta.WriteBits(1, 1); writeDelta.WriteString(s, maxLength); changed = true; }
             }
         }
-        public void WriteData(byte[] data, int length)
+        public unsafe void WriteData(byte[] data, int length)
         {
             newBase?.WriteData(data, length);
 
@@ -660,8 +682,9 @@ namespace Droid.Core
                 var baseData = new byte[MAX_DATA_BUFFER];
                 Debug.Assert(length < baseData.Length);
                 base_.ReadData(baseData, length);
-                if (memcmp(data, baseData, length) == 0) writeDelta.WriteBits(0, 1);
-                else { writeDelta.WriteBits(1, 1); writeDelta.WriteData(data, length); changed = true; }
+                fixed (void* data_ = data, baseData_ = baseData)
+                    if (UnsafeX.CompareBlock(data_, baseData_, length) == 0) writeDelta.WriteBits(0, 1);
+                    else { writeDelta.WriteBits(1, 1); writeDelta.WriteData(data, length); changed = true; }
             }
         }
         public void WriteDict(Dictionary<string, string> dict)
@@ -685,7 +708,7 @@ namespace Droid.Core
         public void WriteDeltaByte(int oldValue, int newValue) => WriteDelta(oldValue, newValue, 8);
         public void WriteDeltaShort(int oldValue, int newValue) => WriteDelta(oldValue, newValue, -16);
         public void WriteDeltaInt(int oldValue, int newValue) => WriteDelta(oldValue, newValue, 32);
-        public void WriteDeltaFloat(float oldValue, float newValue) => WriteDelta(MathX.reinterpret_cast_int(oldValue), MathX.reinterpret_cast_int(newValue), 32);
+        public void WriteDeltaFloat(float oldValue, float newValue) => WriteDelta(reinterpret.cast_int(oldValue), reinterpret.cast_int(newValue), 32);
         public void WriteDeltaFloat(float oldValue, float newValue, int exponentBits, int mantissaBits)
         {
             var oldBits = MathX.FloatToBits(oldValue, exponentBits, mantissaBits);
@@ -765,7 +788,7 @@ namespace Droid.Core
         public int ReadShort() => (short)ReadBits(-16);
         public int ReadUShort() => (ushort)ReadBits(16);
         public int ReadInt() => ReadBits(32);
-        public float ReadFloat() => MathX.reinterpret_cast_int(ReadBits(32));
+        public float ReadFloat() => reinterpret.cast_int(ReadBits(32));
         public float ReadFloat(int exponentBits, int mantissaBits)
         {
             var bits = ReadBits(1 + exponentBits + mantissaBits);
@@ -774,7 +797,7 @@ namespace Droid.Core
         public float ReadAngle8() => MathX.BYTE2ANGLE(ReadByte());
         public float ReadAngle16() => MathX.SHORT2ANGLE(ReadShort());
         public Vector3 ReadDir(int numBits) => BitMsg.BitsToDir(ReadBits(numBits), numBits);
-        public void ReadString(char[] buffer, int bufferSize)
+        public void ReadString(byte[] buffer, int bufferSize)
         {
             if (base_ == null)
             {
@@ -783,13 +806,14 @@ namespace Droid.Core
             }
             else
             {
-                var baseString = new char[MAX_DATA_BUFFER];
+                var baseString = new byte[MAX_DATA_BUFFER];
                 base_.ReadString(baseString, baseString.Length, out var baseS);
-                if (readDelta == null || readDelta.ReadBits(1) == 0) StringX.Copynz(buffer, baseString, bufferSize);
+                if (readDelta == null || readDelta.ReadBits(1) == 0)
+                    StringX.Copynz(buffer, baseString, bufferSize);
                 else { readDelta.ReadString(buffer, bufferSize, out var s); changed = true; }
             }
 
-            newBase?.WriteString(new string(buffer));
+            newBase?.WriteString(Encoding.ASCII.GetString(buffer));
         }
         public void ReadData(byte[] data, int length)
         {
@@ -803,7 +827,8 @@ namespace Droid.Core
                 var baseData = new byte[MAX_DATA_BUFFER];
                 Debug.Assert(length < baseData.Length);
                 base_.ReadData(baseData, length);
-                if (readDelta == null || readDelta.ReadBits(1) == 0) Array.Copy(baseData, data, length);
+                if (readDelta == null || readDelta.ReadBits(1) == 0)
+                    Unsafe.CopyBlock(ref data[0], ref baseData[0], (uint)length);
                 else { readDelta.ReadData(data, length); changed = true; }
             }
 
@@ -831,7 +856,7 @@ namespace Droid.Core
         public int ReadDeltaByte(int oldValue) => (byte)ReadDelta(oldValue, 8);
         public int ReadDeltaShort(int oldValue) => (short)ReadDelta(oldValue, -16);
         public int ReadDeltaInt(int oldValue) => ReadDelta(oldValue, 32);
-        public float ReadDeltaFloat(float oldValue) => MathX.reinterpret_cast_int(ReadDelta(MathX.reinterpret_cast_int(oldValue), 32));
+        public float ReadDeltaFloat(float oldValue) => reinterpret.cast_int(ReadDelta(reinterpret.cast_int(oldValue), 32));
         public float ReadDeltaFloat(float oldValue, int exponentBits, int mantissaBits)
         {
             var oldBits = MathX.FloatToBits(oldValue, exponentBits, mantissaBits);
@@ -895,12 +920,6 @@ namespace Droid.Core
             newBase?.WriteBits(value, 32);
             return value;
         }
-
-        BitMsg base_;           // base
-        BitMsg newBase;      // new base
-        BitMsg writeDelta;       // delta from base to new base for writing
-        BitMsg readDelta;      // delta from base to new base for reading
-        bool changed;       // true if the new base is different from the base
 
         void WriteDelta(int oldValue, int newValue, int numBits)
         {

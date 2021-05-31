@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 
 namespace Droid.Core
 {
@@ -160,6 +161,33 @@ namespace Droid.Core
         const int P_PRECOMP = 51;
         const int P_DOLLAR = 52;
 
+        bool loaded;                 // set when a script file is loaded from file or memory
+        string filename;            // file name of the script
+        bool allocated;              // true if buffer memory was allocated
+        string buffer;              // buffer containing the script
+        int script_p;               // current pointer in the script
+        int end_p;                  // pointer to the end of the script
+        int lastScript_p;           // script pointer before reading token
+        int whiteSpaceStart_p;      // start of last white space
+        int whiteSpaceEnd_p;        // end of last white space
+        DateTime fileTime;          // file time
+        int length;                 // length of the script in bytes
+        int line;                   // current line in script
+        int lastline;               // line before reading token
+        bool tokenavailable;         // set by unreadToken
+        LEXFL flags;                  // several script flags
+        (string p, int n)[] punctuations; // the punctuations used in the script
+        int[] punctuationtable;     // ASCII table with punctuations
+        int[] nextpunctuation;      // next punctuation in chain
+        Token token;                // available token
+        Lexer next;                 // next script in a chain
+        bool hadError;              // set by Error, even if the error is supressed
+
+        static int[] default_punctuationtable = new int[256];
+        static int[] default_nextpunctuation = new int[default_punctuations.Length];
+        static bool default_setup;
+        static string baseFolder;        // base folder to load files from
+
         // constructor
         public Lexer()
         {
@@ -221,23 +249,26 @@ namespace Droid.Core
         {
             if (loaded)
             {
-                G.common.Error("Lexer::LoadFile: another script already loaded");
+                Lib.Error("Lexer::LoadFile: another script already loaded");
                 return false;
             }
 
             var pathname = !OSPath && (baseFolder[0] != '\0') ? $"{baseFolder}/{filename}" : filename;
-            var fp = OSPath ? G.fileSystem.OpenExplicitFileRead(pathname) : G.fileSystem.OpenFileRead(pathname);
+            var fp = OSPath
+                ? Lib.fileSystem.OpenExplicitFileRead(pathname)
+                : Lib.fileSystem.OpenFileRead(pathname);
             if (fp == null)
                 return false;
+
             var length = fp.Length;
             var buf = new byte[length + 1];
-            //buf[length] = '\0';
+            buf[length] = 0;
             fp.Read(buf, length);
-            fileTime = fp.Timestamp();
-            filename = fp.GetFullPath();
-            G.fileSystem.CloseFile(fp);
+            fileTime = fp.Timestamp;
+            filename = fp.FullPath;
+            Lib.fileSystem.CloseFile(fp);
 
-            buffer = buf;
+            buffer = Encoding.ASCII.GetString(buf);
             this.length = length;
             // pointer in script buffer
             script_p = 0;
@@ -261,7 +292,7 @@ namespace Droid.Core
         {
             if (loaded)
             {
-                G.common.Error("Lexer::LoadMemory: another script already loaded");
+                Lib.Error("Lexer::LoadMemory: another script already loaded");
                 return false;
             }
             filename = name;
@@ -309,7 +340,7 @@ namespace Droid.Core
             token = new Token(string.Empty);
             if (!loaded)
             {
-                G.common.Error("Lexer::ReadToken: no file loaded");
+                Lib.Error("Lexer::ReadToken: no file loaded");
                 return false;
             }
 
@@ -638,7 +669,7 @@ namespace Droid.Core
         public void UnreadToken(Token token)
         {
             if (tokenavailable)
-                G.common.FatalError("Lexer::unreadToken, unread token twice\n");
+                Lib.FatalError("Lexer::unreadToken, unread token twice\n");
             this.token = token;
             tokenavailable = true;
         }
@@ -1037,10 +1068,8 @@ namespace Droid.Core
                 return;
 
             var text = str;
-            if ((flags & LEXFL.NOFATALERRORS) != 0)
-                G.common.Warning($"file {filename}, line {line}: {text}");
-            else
-                G.common.Error($"file {filename}, line {line}: {text}");
+            if ((flags & LEXFL.NOFATALERRORS) != 0) Lib.Warning($"file {filename}, line {line}: {text}");
+            else Lib.Error($"file {filename}, line {line}: {text}");
         }
 
         /// <summary>
@@ -1053,7 +1082,7 @@ namespace Droid.Core
                 return;
 
             var text = str;
-            G.common.Warning($"file {filename}, line {line}: {text}");
+            Lib.Warning($"file {filename}, line {line}: {text}");
         }
 
         /// <summary>
@@ -1068,33 +1097,6 @@ namespace Droid.Core
         /// <param name="path">The path.</param>
         public static void SetBaseFolder(string path) => baseFolder = path;
 
-        bool loaded;                 // set when a script file is loaded from file or memory
-        string filename;            // file name of the script
-        bool allocated;              // true if buffer memory was allocated
-        string buffer;              // buffer containing the script
-        int script_p;               // current pointer in the script
-        int end_p;                  // pointer to the end of the script
-        int lastScript_p;           // script pointer before reading token
-        int whiteSpaceStart_p;      // start of last white space
-        int whiteSpaceEnd_p;        // end of last white space
-        DateTime fileTime;          // file time
-        int length;                 // length of the script in bytes
-        int line;                   // current line in script
-        int lastline;               // line before reading token
-        bool tokenavailable;         // set by unreadToken
-        LEXFL flags;                  // several script flags
-        (string p, int n)[] punctuations; // the punctuations used in the script
-        int[] punctuationtable;     // ASCII table with punctuations
-        int[] nextpunctuation;      // next punctuation in chain
-        Token token;                // available token
-        Lexer next;                 // next script in a chain
-        bool hadError;              // set by Error, even if the error is supressed
-
-        static int[] default_punctuationtable = new int[256];
-        static int[] default_nextpunctuation = new int[default_punctuations.Length];
-        static bool default_setup;
-        static string baseFolder;        // base folder to load files from
-
         void CreatePunctuationTable((string p, int n)[] punctuations)
         {
             // get memory for the table
@@ -1106,7 +1108,7 @@ namespace Droid.Core
                 if (default_setup)
                     return;
                 default_setup = true;
-                i = default_punctuations.Length;
+                //i = default_punctuations.Length; //: opt
             }
             else
             {
