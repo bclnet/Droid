@@ -1187,8 +1187,7 @@ namespace Droid.Core
                 for (i = 0; i < numRows; i++)
                     y[i] = alpha * v[i];
 
-            fixed (float* w_p = w.p)
-                Unsafe.CopyBlock(z, w_p + w.pi, (uint)w.Size * sizeof(float));
+            w.ToFloatPtr(_ => Unsafe.CopyBlock(z, _, (uint)w.Size * sizeof(float)));
 
             max = Math.Min(numRows, numColumns);
             for (i = 0; i < max; i++)
@@ -1270,8 +1269,7 @@ namespace Droid.Core
             }
             else
             {
-                fixed (float* v_p = v.p)
-                    Unsafe.CopyBlock(y0, v_p + v.pi, (uint)v.Size * sizeof(float));
+                v.ToFloatPtr(_ => Unsafe.CopyBlock(y0, _, (uint)v.Size * sizeof(float)));
                 rp = r;
             }
 
@@ -1282,8 +1280,7 @@ namespace Droid.Core
 
             z0[r] = 1f;
 
-            fixed (float* w_p = w.p)
-                Unsafe.CopyBlock(z1, w_p + w.pi, (uint)w.Size * sizeof(float));
+            w.ToFloatPtr(_ => Unsafe.CopyBlock(z1, _, (uint)w.Size * sizeof(float)));
 
             // update the beginning of the to be updated row and column
             min = Math.Min(r, rp);
@@ -2485,8 +2482,7 @@ namespace Droid.Core
             Debug.Assert(offset >= 0 && offset < numRows);
 
             var y = stackalloc float[v.Size];
-            fixed (float* v_p = v.p)
-                Unsafe.CopyBlock(y, v_p + v.pi, (uint)v.Size * sizeof(float));
+            v.ToFloatPtr(_ => Unsafe.CopyBlock(y, _, (uint)v.Size * sizeof(float)));
 
             for (i = offset; i < numColumns; i++)
             {
@@ -2889,8 +2885,7 @@ namespace Droid.Core
             Debug.Assert(offset >= 0 && offset < numRows);
 
             var y = stackalloc float[v.Size];
-            fixed (float* v_p = v.p)
-                Unsafe.CopyBlock(y, v_p + v.pi, (uint)v.Size * sizeof(float));
+            v.ToFloatPtr(_ => Unsafe.CopyBlock(y, _, (uint)v.Size * sizeof(float)));
 
             for (i = offset; i < numColumns; i++)
             {
