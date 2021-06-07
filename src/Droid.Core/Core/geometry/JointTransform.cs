@@ -1,6 +1,6 @@
 namespace Droid.Core
 {
-    public class JointQuat
+    public struct JointQuat
     {
         public Quat q;
         public Vector3 t;

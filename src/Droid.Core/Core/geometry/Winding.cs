@@ -91,7 +91,7 @@ namespace Droid.Core
         {
             if (!EnsureAlloced(numPoints + 1, true))
                 return;
-            p[numPoints] = v;
+            p[numPoints] = reinterpret.cast_vec5(v);
             numPoints++;
         }
         public void AddPoint(Vector5 v)
@@ -553,7 +553,7 @@ namespace Droid.Core
             EnsureAlloced(numPoints + 1, true);
             for (i = numPoints; i > spot; i--)
                 p[i] = p[i - 1];
-            p[spot] = point;
+            p[spot] = reinterpret.cast_vec5(point);
             numPoints++;
         }
 
@@ -689,7 +689,7 @@ namespace Droid.Core
             {
                 case 0:
                     {
-                        p[0] = point;
+                        p[0] = reinterpret.cast_vec5(point);
                         numPoints++;
                         return;
                     }
@@ -762,7 +762,7 @@ namespace Droid.Core
             var hullPoints = stackalloc Vector5[numPoints + 1];
 
             // insert the point here
-            hullPoints[0] = point;
+            hullPoints[0] = reinterpret.cast_vec5(point);
             numHullPoints = 1;
 
             // copy over all points that aren't double fronts
@@ -786,32 +786,27 @@ namespace Droid.Core
         const float CONTINUOUS_EPSILON = 0.005f;
         public unsafe Winding TryMerge(Winding w, Vector3 normal, bool keep = false)
         {
-            Vector3* p1, p2, p3, p4, back;
-            Winding newf;
-            Winding f1, f2;
-            int i, j, k, l;
-            Vector3 normal2, delta;
-            float dot;
-            bool keep1, keep2;
+            int i, j, k, l; float dot; bool keep1, keep2;
+            Vector3 normal2, delta, p1 = default, p2 = default, p3, p4, back;
+            Winding f1, f2, newf;
 
             f1 = new(this);
             f2 = new(w);
-            p1 = p2 = null; // stop compiler warning
             j = 0;
 
             for (i = 0; i < f1.numPoints; i++)
             {
-                p1 = &f1.p[i].ToVec3();
-                p2 = &f1.p[(i + 1) % f1.numPoints].ToVec3();
+                p1 = f1.p[i].ToVec3();
+                p2 = f1.p[(i + 1) % f1.numPoints].ToVec3();
                 for (j = 0; j < f2.numPoints; j++)
                 {
-                    p3 = &f2.p[j].ToVec3();
-                    p4 = &f2.p[(j + 1) % f2.numPoints].ToVec3();
+                    p3 = f2.p[j].ToVec3();
+                    p4 = f2.p[(j + 1) % f2.numPoints].ToVec3();
                     for (k = 0; k < 3; k++)
                     {
-                        if (MathX.Fabs((*p1)[k] - (*p4)[k]) > 0.1f)
+                        if (MathX.Fabs(p1[k] - p4[k]) > 0.1f)
                             break;
-                        if (MathX.Fabs((*p2)[k] - (*p3)[k]) > 0.1f)
+                        if (MathX.Fabs(p2[k] - p3[k]) > 0.1f)
                             break;
                     }
                     if (k == 3)
@@ -828,26 +823,26 @@ namespace Droid.Core
             // check slope of connected lines
             // if the slopes are colinear, the point can be removed
             //
-            back = &f1.p[(i + f1.numPoints - 1) % f1.numPoints].ToVec3();
-            delta = (*p1) - (*back);
+            back = f1.p[(i + f1.numPoints - 1) % f1.numPoints].ToVec3();
+            delta = p1 - back;
             normal2 = normal.Cross(delta);
             normal2.Normalize();
 
-            back = &f2.p[(j + 2) % f2.numPoints].ToVec3();
-            delta = (*back) - (*p1);
+            back = f2.p[(j + 2) % f2.numPoints].ToVec3();
+            delta = back - p1;
             dot = delta * normal2;
             if (dot > CONTINUOUS_EPSILON)
                 return null;            // not a convex polygon
 
             keep1 = dot < -CONTINUOUS_EPSILON;
 
-            back = &f1.p[(i + 2) % f1.numPoints].ToVec3();
-            delta = (*back) - (*p2);
+            back = f1.p[(i + 2) % f1.numPoints].ToVec3();
+            delta = back - p2;
             normal2 = normal.Cross(delta);
             normal2.Normalize();
 
-            back = &f2.p[(j + f2.numPoints - 1) % f2.numPoints].ToVec3();
-            delta = (*back) - (*p2);
+            back = f2.p[(j + f2.numPoints - 1) % f2.numPoints].ToVec3();
+            delta = back - p2;
             dot = delta * normal2;
             if (dot > CONTINUOUS_EPSILON)
                 return null;            // not a convex polygon
@@ -1349,7 +1344,7 @@ namespace Droid.Core
             numPoints = winding.NumPoints;
         }
 
-        public virtual void Clear()
+        public override void Clear()
             => numPoints = 0;
 
         // splits the winding in a back and front part, 'this' becomes the front part, returns a SIDE_?
@@ -1455,7 +1450,7 @@ namespace Droid.Core
             return SIDE_CROSS;
         }
 
-        protected virtual bool ReAllocate(int n, bool keep = false)
+        protected override bool ReAllocate(int n, bool keep = false)
         {
             Debug.Assert(n <= MAX_POINTS_ON_WINDING);
 

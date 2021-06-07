@@ -20,7 +20,7 @@ namespace Droid.Core
         public static float BYTE2ANGLE(int x) => x * (360f / 256f);
 
         public static unsafe bool FLOATSIGNBITSET(float f) => ((*(uint*)&f) >> 31) != 0; public static unsafe int FLOATSIGNBITSET_(float f) => ((*(int*)&f) >> 31);
-        public static unsafe bool FLOATSIGNBITNOTSET(float f) => ((~*(uint*)&f) >> 31) != 0; public static unsafe int FLOATSIGNBITNOTSET_(float f) => (~*(int*)&f) >> 31);
+        public static unsafe bool FLOATSIGNBITNOTSET(float f) => ((~*(uint*)&f) >> 31) != 0; public static unsafe int FLOATSIGNBITNOTSET_(float f) => (~*(int*)&f) >> 31;
         public static unsafe bool FLOATNOTZERO(float f) => ((*(uint*)&f) & ~(1 << 31)) != 0;
         public static unsafe bool INTSIGNBITSET(int i) => (((uint)i) >> 31) != 0; public static unsafe int INTSIGNBITSET_(int i) => i >> 31;
         public static unsafe bool INTSIGNBITNOTSET(int i) => ((~(uint)i) >> 31) != 0; public static unsafe int INTSIGNBITNOTSET_(int i) => (~i) >> 31;

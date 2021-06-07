@@ -100,18 +100,9 @@ namespace Droid.Core
         static int HF_EXP(ushort x) => (x & 32767) >> 10;
         static int HF_SIGN(ushort x) => (x & 32768) != 0 ? -1 : 1;
 
-        //public static float F16toF32(ushort x)
-        //{
-        //    var e = HF_EXP(x);
-        //    var m = HF_MANTISSA(x);
-        //    var s = HF_SIGN(x);
-        //    if (0 < e && e < 31) return s * (float)Math.Pow(2f, e - 15f) * (1 + m / 1024f);
-        //    else if (m == 0) return s * 0f;
-        //    return s * (float)Math.Pow(2f, -14f) * (m / 1024f);
-        //}
-        public unsafe static float F16toF32(float f)
+        public unsafe static float F16toF32(float f) //: opt
         {
-            var x = *(ushort*)&f;
+            var x = *(ushort*)&f; //: added
             var e = HF_EXP(x);
             var m = HF_MANTISSA(x);
             var s = HF_SIGN(x);

@@ -237,16 +237,16 @@ namespace Droid.Core
                 surf = polytopeSurfaces[s];
 
                 edgeNum = surf.edgeIndexes[onPlaneEdges[s][0]];
-                v0 = surf.edges[Math.Abs(edgeNum)].verts[MathX.INTSIGNBITSET_(edgeNum)];
-                v1 = surf.edges[Math.Abs(edgeNum)].verts[MathX.INTSIGNBITNOTSET_(edgeNum)];
+                v0 = surf.edges[Math.Abs(edgeNum)].verts_(MathX.INTSIGNBITSET_(edgeNum));
+                v1 = surf.edges[Math.Abs(edgeNum)].verts_(MathX.INTSIGNBITNOTSET_(edgeNum));
 
                 for (i = 1; onPlaneEdges[s][i] >= 0; i++)
                     for (j = i + 1; onPlaneEdges[s][j] >= 0; j++)
                     {
                         edgeNum = surf.edgeIndexes[onPlaneEdges[s][j]];
-                        if (v1 == surf.edges[Math.Abs(edgeNum)].verts[MathX.INTSIGNBITSET_(edgeNum)])
+                        if (v1 == surf.edges[Math.Abs(edgeNum)].verts_(MathX.INTSIGNBITSET_(edgeNum)))
                         {
-                            v1 = surf.edges[Math.Abs(edgeNum)].verts[MathX.INTSIGNBITNOTSET_(edgeNum)];
+                            v1 = surf.edges[Math.Abs(edgeNum)].verts_(MathX.INTSIGNBITNOTSET_(edgeNum));
                             UnsafeX.Swap(ref onPlaneEdges[s][i], ref onPlaneEdges[s][j]);
                             break;
                         }
@@ -255,8 +255,8 @@ namespace Droid.Core
                 for (i = 2; onPlaneEdges[s][i] >= 0; i++)
                 {
                     edgeNum = surf.edgeIndexes[onPlaneEdges[s][i]];
-                    v1 = surf.edges[Math.Abs(edgeNum)].verts[MathX.INTSIGNBITNOTSET_(edgeNum)];
-                    v2 = surf.edges[Math.Abs(edgeNum)].verts[MathX.INTSIGNBITSET_(edgeNum)];
+                    v1 = surf.edges[Math.Abs(edgeNum)].verts_(MathX.INTSIGNBITNOTSET_(edgeNum));
+                    v2 = surf.edges[Math.Abs(edgeNum)].verts_(MathX.INTSIGNBITSET_(edgeNum));
                     surf.indexes.Add(v0);
                     surf.indexes.Add(v1);
                     surf.indexes.Add(v2);

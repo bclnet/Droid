@@ -838,7 +838,7 @@ namespace Droid.Core
                 for (j = 0; j < 3; j++)
                 {
                     edgeNum = polys[i].edges[j];
-                    polys[i].bounds.AddPoint(verts[edges[Math.Abs(edgeNum)].v[edgeNum < 0]]);
+                    polys[i].bounds.AddPoint(verts[edges[Math.Abs(edgeNum)].v[edgeNum < 0 ? 1 : 0]]);
                 }
             }
 
@@ -912,7 +912,7 @@ namespace Droid.Core
         {
             int i;
 
-            trm = new(this);
+            trm = this;
             trm.type = TRM.POLYGONVOLUME;
             trm.numVerts = numVerts * 2;
             trm.numEdges = numEdges * 3;
@@ -945,38 +945,35 @@ namespace Droid.Core
         const float SHARP_EDGE_DOT = -0.7f;
         public unsafe int GenerateEdgeNormals()
         {
-            int i, j, edgeNum, numSharpEdges; float dot; Vector3 dir;
-            TraceModelPoly* poly;
-            TraceModelEdge* edge;
+            int i, j, edgeNum, numSharpEdges; float dot; Vector3 dir; TraceModelEdge* edge;
 
             for (i = 0; i <= numEdges; i++)
                 edges[i].normal.Zero();
 
             numSharpEdges = 0;
-            fixed (TraceModelPoly* polys = this.polys)
             fixed (TraceModelEdge* edges = this.edges)
                 for (i = 0; i < numPolys; i++)
                 {
-                    poly = polys + i;
-                    for (j = 0; j < poly->numEdges; j++)
+                    ref TraceModelPoly poly = ref polys[i];
+                    for (j = 0; j < poly.numEdges; j++)
                     {
-                        edgeNum = poly->edges[j];
+                        edgeNum = poly.edges[j];
                         edge = edges + Math.Abs(edgeNum);
                         if (edge->normal[0] == 0f && edge->normal[1] == 0f && edge->normal[2] == 0f)
-                            edge->normal = poly->normal;
+                            edge->normal = poly.normal;
                         else
                         {
-                            dot = edge->normal * poly->normal;
+                            dot = edge->normal * poly.normal;
                             // if the two planes make a very sharp edge
                             if (dot < SHARP_EDGE_DOT)
                             {
                                 // max length normal pointing outside both polygons
                                 dir = verts[edge->v[edgeNum > 0 ? 1 : 0]] - verts[edge->v[edgeNum < 0 ? 1 : 0]];
-                                edge->normal = edge->normal.Cross(dir) + poly->normal.Cross(-dir);
-                                edge->normal *= (0.5f / (0.5f + 0.5f * SHARP_EDGE_DOT)) / edge->normal.Length;
+                                edge->normal = edge->normal.Cross(dir) + poly.normal.Cross(-dir);
+                                edge->normal *= 0.5f / (0.5f + 0.5f * SHARP_EDGE_DOT) / edge->normal.Length;
                                 numSharpEdges++;
                             }
-                            else edge->normal = (0.5f / (0.5f + 0.5f * dot)) * (edge->normal + poly->normal);
+                            else edge->normal = 0.5f / (0.5f + 0.5f * dot) * (edge->normal + poly.normal);
                         }
                     }
                 }
@@ -1030,9 +1027,7 @@ namespace Droid.Core
         // shrink the model m units on all sides
         public unsafe void Shrink(float m)
         {
-            int i, j, edgeNum;
-            TraceModelEdge* edge;
-            Vector3 dir;
+            int i, j, edgeNum; TraceModelEdge* edge; Vector3 dir;
 
             fixed (TraceModelEdge* edges = this.edges)
             {
@@ -1108,27 +1103,24 @@ namespace Droid.Core
 
             if (polyNum < 0 || polyNum >= numPolys)
                 return 0f;
-            fixed (TraceModelPoly* poly = &polys[polyNum])
+            ref TraceModelPoly poly = ref polys[polyNum];
+            total = 0f;
+            base_ = verts[edges[Math.Abs(poly.edges[0])].v[MathX.INTSIGNBITSET_(poly.edges[0])]];
+            for (i = 0; i < poly.numEdges; i++)
             {
-                total = 0f;
-                base_ = verts[edges[Math.Abs(poly->edges[0])].v[MathX.INTSIGNBITSET_(poly->edges[0])]];
-                for (i = 0; i < poly->numEdges; i++)
-                {
-                    v1 = verts[edges[Math.Abs(poly->edges[i])].v[MathX.INTSIGNBITSET_(poly->edges[i])]] - base_;
-                    v2 = verts[edges[Math.Abs(poly->edges[i])].v[MathX.INTSIGNBITNOTSET_(poly->edges[i])]] - base_;
-                    cross = v1.Cross(v2);
-                    total += cross.Length;
-                }
-                return total * 0.5f;
+                v1 = verts[edges[Math.Abs(poly.edges[i])].v[MathX.INTSIGNBITSET_(poly.edges[i])]] - base_;
+                v2 = verts[edges[Math.Abs(poly.edges[i])].v[MathX.INTSIGNBITNOTSET_(poly.edges[i])]] - base_;
+                cross = v1.Cross(v2);
+                total += cross.Length;
             }
+            return total * 0.5f;
         }
 
         #region SilhouetteEdges
 
         unsafe int GetOrderedSilhouetteEdges(int* edgeIsSilEdge, int[] silEdges)
         {
-            int i, j, edgeNum, numSilEdges, nextSilVert;
-            int* unsortedSilEdges = stackalloc int[MAX_TRACEMODEL_EDGES];
+            int i, j, edgeNum, numSilEdges, nextSilVert; int* unsortedSilEdges = stackalloc int[MAX_TRACEMODEL_EDGES];
 
             numSilEdges = 0;
             for (i = 1; i <= numEdges; i++)
@@ -1169,26 +1161,21 @@ namespace Droid.Core
         // get the silhouette edges
         public unsafe int GetProjectionSilhouetteEdges(Vector3 projectionOrigin, int[] silEdges)
         {
-            int i, j, edgeNum;
-            int* edgeIsSilEdge = stackalloc int[MAX_TRACEMODEL_EDGES + 1];
-            TraceModelPoly* poly;
-            Vector3 dir;
+            int i, j, edgeNum; int* edgeIsSilEdge = stackalloc int[MAX_TRACEMODEL_EDGES + 1]; Vector3 dir;
 
-            memset(edgeIsSilEdge, 0, sizeof(edgeIsSilEdge));
+            Unsafe.InitBlock(edgeIsSilEdge, 0, (MAX_TRACEMODEL_EDGES + 1) * sizeof(int));
 
             for (i = 0; i < numPolys; i++)
             {
-                poly = &polys[i];
-                edgeNum = poly->edges[0];
+                ref TraceModelPoly poly = ref polys[i];
+                edgeNum = poly.edges[0];
                 dir = verts[edges[Math.Abs(edgeNum)].v[MathX.INTSIGNBITSET_(edgeNum)]] - projectionOrigin;
-                if (dir * poly->normal < 0f)
-                {
-                    for (j = 0; j < poly->numEdges; j++)
+                if (dir * poly.normal < 0f)
+                    for (j = 0; j < poly.numEdges; j++)
                     {
-                        edgeNum = poly->edges[j];
+                        edgeNum = poly.edges[j];
                         edgeIsSilEdge[Math.Abs(edgeNum)] ^= 1;
                     }
-                }
             }
 
             return GetOrderedSilhouetteEdges(edgeIsSilEdge, silEdges);
@@ -1196,19 +1183,17 @@ namespace Droid.Core
 
         public unsafe int GetParallelProjectionSilhouetteEdges(Vector3 projectionDir, int[] silEdges)
         {
-            int i, j, edgeNum;
-            int* edgeIsSilEdge = stackalloc int[MAX_TRACEMODEL_EDGES + 1];
-            TraceModelPoly poly;
+            int i, j, edgeNum; int* edgeIsSilEdge = stackalloc int[MAX_TRACEMODEL_EDGES + 1];
 
-            memset(edgeIsSilEdge, 0, sizeof(edgeIsSilEdge));
+            Unsafe.InitBlock(edgeIsSilEdge, 0, (MAX_TRACEMODEL_EDGES + 1) * sizeof(int));
 
             for (i = 0; i < numPolys; i++)
             {
-                poly = &polys[i];
-                if (projectionDir * poly->normal < 0f)
-                    for (j = 0; j < poly->numEdges; j++)
+                ref TraceModelPoly poly = ref polys[i];
+                if (projectionDir * poly.normal < 0f)
+                    for (j = 0; j < poly.numEdges; j++)
                     {
-                        edgeNum = poly->edges[j];
+                        edgeNum = poly.edges[j];
                         edgeIsSilEdge[Math.Abs(edgeNum)] ^= 1;
                     }
             }
@@ -1288,7 +1273,7 @@ namespace Droid.Core
 
         unsafe void ProjectionIntegrals(int polyNum, int a, int b, out ProjectionIntegrals_ integrals)
         {
-            TraceModelPoly* poly;
+            ;
             int i, edgeNum;
             Vector3 v1, v2;
             float a0, a1, da;
@@ -1298,11 +1283,12 @@ namespace Droid.Core
             float C1, Ca, Caa, Caaa, Cb, Cbb, Cbbb;
             float Cab, Kab, Caab, Kaab, Cabb, Kabb;
 
-            memset(&integrals, 0, sizeof(ProjectionIntegrals_));
-            poly = &polys[polyNum];
-            for (i = 0; i < poly->numEdges; i++)
+            integrals = new(); // Unsafe.InitBlock(integrals, 0, sizeof(ProjectionIntegrals_));
+
+            ref TraceModelPoly poly = ref polys[polyNum];
+            for (i = 0; i < poly.numEdges; i++)
             {
-                edgeNum = poly->edges[i];
+                edgeNum = poly.edges[i];
                 v1 = verts[edges[Math.Abs(edgeNum)].v[edgeNum < 0 ? 1 : 0]];
                 v2 = verts[edges[Math.Abs(edgeNum)].v[edgeNum > 0 ? 1 : 0]];
                 a0 = v1[a];
@@ -1348,16 +1334,16 @@ namespace Droid.Core
                 integrals.Pabb += da * (a1 * Cabb + a0 * Kabb);
             }
 
-            integrals.P1 *= (1f / 2f);
-            integrals.Pa *= (1f / 6f);
-            integrals.Paa *= (1f / 12f);
-            integrals.Paaa *= (1f / 20f);
-            integrals.Pb *= (1f / -6f);
-            integrals.Pbb *= (1f / -12f);
-            integrals.Pbbb *= (1f / -20f);
-            integrals.Pab *= (1f / 24f);
-            integrals.Paab *= (1f / 60f);
-            integrals.Pabb *= (1f / -60f);
+            integrals.P1 *= 1f / 2f;
+            integrals.Pa *= 1f / 6f;
+            integrals.Paa *= 1f / 12f;
+            integrals.Paaa *= 1f / 20f;
+            integrals.Pb *= 1f / -6f;
+            integrals.Pbb *= 1f / -12f;
+            integrals.Pbbb *= 1f / -20f;
+            integrals.Pab *= 1f / 24f;
+            integrals.Paab *= 1f / 60f;
+            integrals.Pabb *= 1f / -60f;
         }
 
         unsafe void PolygonIntegrals(int polyNum, int a, int b, int c, out PolygonIntegrals_ integrals)
@@ -1397,40 +1383,38 @@ namespace Droid.Core
 
         void VolumeIntegrals(out VolumeIntegrals_ integrals)
         {
-            TraceModelPoly poly;
-            PolygonIntegrals_ pi;
-            int i, a, b, c;
-            float nx, ny, nz;
+            int i, a, b, c; float nx, ny, nz; PolygonIntegrals_ pi;
 
             integrals = new(); // Unsafe.InitBlock(integrals, 0, (uint)sizeof(VolumeIntegrals_));
+
             for (i = 0; i < numPolys; i++)
             {
-                poly = &polys[i];
+                ref TraceModelPoly poly = ref polys[i];
 
-                nx = MathX.Fabs(poly->normal[0]);
-                ny = MathX.Fabs(poly->normal[1]);
-                nz = MathX.Fabs(poly->normal[2]);
+                nx = MathX.Fabs(poly.normal[0]);
+                ny = MathX.Fabs(poly.normal[1]);
+                nz = MathX.Fabs(poly.normal[2]);
                 c = nx > ny && nx > nz ? 0 : ny > nz ? 1 : 2; //: opt
                 a = (c + 1) % 3;
                 b = (a + 1) % 3;
 
                 PolygonIntegrals(i, a, b, c, out pi);
 
-                integrals.T0 += poly->normal[0] * (a == 0 ? pi.Fa : b == 0 ? pi.Fb : pi.Fc);
+                integrals.T0 += poly.normal[0] * (a == 0 ? pi.Fa : b == 0 ? pi.Fb : pi.Fc);
 
-                integrals.T1[a] += poly->normal[a] * pi.Faa;
-                integrals.T1[b] += poly->normal[b] * pi.Fbb;
-                integrals.T1[c] += poly->normal[c] * pi.Fcc;
-                integrals.T2[a] += poly->normal[a] * pi.Faaa;
-                integrals.T2[b] += poly->normal[b] * pi.Fbbb;
-                integrals.T2[c] += poly->normal[c] * pi.Fccc;
-                integrals.TP[a] += poly->normal[a] * pi.Faab;
-                integrals.TP[b] += poly->normal[b] * pi.Fbbc;
-                integrals.TP[c] += poly->normal[c] * pi.Fcca;
+                integrals.T1[a] += poly.normal[a] * pi.Faa;
+                integrals.T1[b] += poly.normal[b] * pi.Fbb;
+                integrals.T1[c] += poly.normal[c] * pi.Fcc;
+                integrals.T2[a] += poly.normal[a] * pi.Faaa;
+                integrals.T2[b] += poly.normal[b] * pi.Fbbb;
+                integrals.T2[c] += poly.normal[c] * pi.Fccc;
+                integrals.TP[a] += poly.normal[a] * pi.Faab;
+                integrals.TP[b] += poly.normal[b] * pi.Fbbc;
+                integrals.TP[c] += poly.normal[c] * pi.Fcca;
             }
 
             integrals.T1 *= 0.5f;
-            integrals.T2 *= (1f / 3f);
+            integrals.T2 *= 1f / 3f;
             integrals.TP *= 0.5f;
         }
 

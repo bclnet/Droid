@@ -875,7 +875,7 @@ public class Curve_NaturalCubicSpline_Vector4 : Curve_Spline_Vector4
 				x[j] = c[j][i];
 			mat.LU_Solve(x, x, null);
 			for (j = 0; j < values.Count; j++)
-				c[j][i] = x[j];
+				c.Ptr()[j][i] = x[j];
 		}
 
 		for (i = 0; i < values.Count - 1; i++)
@@ -1040,7 +1040,7 @@ public class Curve_KochanekBartelsSpline_Vector4 : Curve_Spline_Vector4
 	/// <param name="continuity">The continuity.</param>
 	/// <param name="bias">The bias.</param>
 	/// <returns></returns>
-	public virtual int AddValue(float time, Vector3 value, float tension, float continuity, float bias)
+	public virtual int AddValue(float time, Vector4 value, float tension, float continuity, float bias)
 	{
 		var i = IndexForTime(time);
 		times.Insert(i, time);

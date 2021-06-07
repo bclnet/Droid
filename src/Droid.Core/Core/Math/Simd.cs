@@ -57,19 +57,19 @@ namespace Droid.Core
             processor = null;
             Processor = null;
         }
+
+        public const int MIXBUFFER_SAMPLES = 4096;
     }
 
-    // int MIXBUFFER_SAMPLES = 4096;
-
-    //typedef enum {
-    //	SPEAKER_LEFT = 0,
-    //	SPEAKER_RIGHT,
-    //	SPEAKER_CENTER,
-    //	SPEAKER_LFE,
-    //	SPEAKER_BACKLEFT,
-    //	SPEAKER_BACKRIGHT
-    //}
-    //speakerLabel;
+    public enum SPEAKER
+    {
+    	LEFT = 0,
+    	RIGHT,
+    	CENTER,
+    	LFE,
+    	BACKLEFT,
+    	BACKRIGHT
+    }
 
     public unsafe interface ISIMDProcessor
     {
@@ -91,10 +91,10 @@ namespace Droid.Core
 
         void Dot(float* dst, Vector3 constant, Vector3* src, int count);
         void Dot(float* dst, Vector3 constant, Plane* src, int count);
-        void Dot(float* dst, Vector3 constant, DrawVert* src, int count);
+        void Dot(float* dst, Vector3 constant, DrawVert src, int count);
         void Dot(float* dst, Plane constant, Vector3* src, int count);
         void Dot(float* dst, Plane constant, Plane* src, int count);
-        void Dot(float* dst, Plane constant, DrawVert* src, int count);
+        void Dot(float* dst, Plane constant, DrawVert src, int count);
         void Dot(float* dst, Vector3* src0, Vector3* src1, int count);
         void Dot(ref float dot, float* src1, float* src2, int count);
 
@@ -107,12 +107,12 @@ namespace Droid.Core
         void CmpLE(byte* dst, float* src0, float constant, int count);
         void CmpLE(byte* dst, byte bitNum, float* src0, float constant, int count);
 
-        void MinMax(ref float min, ref float max, float* src, int count);
-        void MinMax(ref Vector2 min, ref Vector2 max, Vector2* src, int count);
-        void MinMax(Vector3 min, Vector3 max, Vector3* src, int count);
-        void MinMax(Vector3 min, Vector3 max, DrawVert* src, int count);
-        void MinMax(Vector3 min, Vector3 max, DrawVert* src, int* indexes, int count);
-        void MinMax(Vector3 min, Vector3 max, DrawVert* src, short* indexes, int count);
+        void MinMax(out float min, out float max, float[] src, int count);
+        void MinMax(out Vector2 min, out Vector2 max, Vector2[] src, int count);
+        void MinMax(out Vector3 min, out Vector3 max, Vector3[] src, int count);
+        void MinMax(out Vector3 min, out Vector3 max, DrawVert src, int count);
+        void MinMax(out Vector3 min, out Vector3 max, DrawVert src, int[] indexes, int count);
+        void MinMax(out Vector3 min, out Vector3 max, DrawVert src, short[] indexes, int count);
 
         void Clamp(float* dst, float* src, float min, float max, int count);
         void ClampMin(float* dst, float* src, float min, int count);
@@ -132,7 +132,7 @@ namespace Droid.Core
         void SubAssign16(float* dst, float* src, int count);
         void MulAssign16(float* dst, float constant, int count);
 
-        // idMatX operations
+        // MatX operations
         void MatX_MultiplyVecX(VectorX dst, MatrixX mat, VectorX vec);
         void MatX_MultiplyAddVecX(VectorX dst, MatrixX mat, VectorX vec);
         void MatX_MultiplySubVecX(VectorX dst, MatrixX mat, VectorX vec);

@@ -23,10 +23,10 @@ namespace Droid.Core
             verts.SetNum(maxWidth * maxHeight);
             expanded = false;
         }
-        public Surface_Patch(Surface_Patch patch)
-        {
-            this = patch;
-        }
+        //public Surface_Patch(Surface_Patch patch)
+        //{
+        //    this = patch;
+        //}
 
         public void SetSize(int patchWidth, int patchHeight)
         {

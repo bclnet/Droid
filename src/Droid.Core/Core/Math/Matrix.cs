@@ -673,7 +673,7 @@ namespace Droid.Core
         public Vector3 ToAngularVelocity()
         {
             var rotation = ToRotation();
-            return rotation.GetVec() * MathX.DEG2RAD(rotation.GetAngle());
+            return rotation.Vec * MathX.DEG2RAD(rotation.Angle);
         }
 
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)

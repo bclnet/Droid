@@ -201,7 +201,7 @@ namespace Droid.Core
         public void FromPoints(Vector3[] points, int numPoints)
         {
             //Vector3 mins, maxs;
-            SIMDProcessor.MinMax(out var mins, out var maxs, points, numPoints);
+            SIMD.Processor.MinMax(out var mins, out var maxs, points, numPoints);
 
             var origin = (mins + maxs) * 0.5f;
 

@@ -97,8 +97,6 @@ namespace Droid.Core
 
         public bool AddPoint(Vector3 v)                    // add the point, returns true if the box expanded
         {
-
-
             if (extents.x < 0f)
             {
                 extents.Zero();

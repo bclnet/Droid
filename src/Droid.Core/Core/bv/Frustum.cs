@@ -485,27 +485,27 @@ namespace Droid.Core
             var pointCull = stackalloc int[winding.NumPoints];
 
             var transpose = axis.Transpose();
-            for (i = 0; i < winding.GetNumPoints(); i++)
+            for (i = 0; i < winding.NumPoints; i++)
                 localPoints[i] = (winding[i].ToVec3() - origin) * transpose;
 
             // if the winding is culled
-            if (CullLocalWinding(localPoints, winding.GetNumPoints(), pointCull))
+            if (CullLocalWinding(localPoints, winding.NumPoints, pointCull))
                 return false;
 
             winding.GetPlane(out var plane);
 
             ToIndexPointsAndCornerVecs(out var indexPoints, out var cornerVecs);
-            AxisProjection(indexPoints, cornerVecs, plane.Normal(), out var min, out var max);
+            AxisProjection(indexPoints, cornerVecs, plane.Normal, out var min, out var max);
 
             // if the frustum does not cross the winding plane
             if (min + plane[3] > 0f || max + plane[3] < 0f)
                 return false;
 
             // test if any of the winding edges goes through the frustum
-            for (i = 0; i < winding.GetNumPoints(); i++)
+            for (i = 0; i < winding.NumPoints; i++)
             {
-                j = (i + 1) % winding.GetNumPoints();
-                if (!(pointCull[i] & pointCull[j]))
+                j = (i + 1) % winding.NumPoints;
+                if ((pointCull[i] & pointCull[j]) == 0)
                     if (LocalLineIntersection(localPoints[i], localPoints[j]))
                         return true;
             }
@@ -1742,7 +1742,7 @@ namespace Droid.Core
             return true;
         }
 
-        public bool ProjectionBounds(Winding winding, Bounds projectionBounds)
+        public unsafe bool ProjectionBounds(Winding winding, Bounds projectionBounds)
         {
             int i, p1, p2;
 
@@ -1751,13 +1751,13 @@ namespace Droid.Core
             // transform the winding points into the space of this frustum
             var localPoints = stackalloc Vector3[winding.NumPoints];
             var transpose = axis.Transpose();
-            for (i = 0; i < winding.GetNumPoints(); i++)
+            for (i = 0; i < winding.NumPoints; i++)
                 localPoints[i] = (winding[i].ToVec3() - origin) * transpose;
 
             // test the winding edges
             int culled = -1, outside = 0;
             var pointCull = stackalloc int[winding.NumPoints];
-            for (i = 0; i < winding.GetNumPoints(); i += 2)
+            for (i = 0; i < winding.NumPoints; i += 2)
             {
                 p1 = i;
                 p2 = (i + 1) % winding.NumPoints;
@@ -1778,7 +1778,7 @@ namespace Droid.Core
             for (i = 1; i < winding.NumPoints; i += 2)
             {
                 p1 = i;
-                p2 = (i + 1) % winding.GetNumPoints();
+                p2 = (i + 1) % winding.NumPoints;
                 AddLocalLineToProjectionBoundsUseCull(localPoints[p1], localPoints[p2], pointCull[p1], pointCull[p2], projectionBounds);
             }
 
@@ -1942,9 +1942,9 @@ namespace Droid.Core
                     if ((boxPointCull[p1] & boxPointCull[p2]) == 0 &&
                         frustum.ClipLine(localPoints1, localPoints2, p1, p2, out start, out end, out startClip, out endClip)) //: opt
                     {
-                        AddLocalLineToProjectionBoundsSetCull(start, end, pointCull[0], pointCull[1], projectionBounds);
-                        AddLocalCapsToProjectionBounds(clipPoints + 4, clipPointCull + 4, start, pointCull[0], startClip, projectionBounds);
-                        AddLocalCapsToProjectionBounds(clipPoints + 4, clipPointCull + 4, end, pointCull[1], endClip, projectionBounds);
+                        AddLocalLineToProjectionBoundsSetCull(start, end, out pointCull[0], out pointCull[1], projectionBounds);
+                        AddLocalCapsToProjectionBounds(clipPoints.AsSpan(4), clipPointCull.AsSpan(4), start, pointCull[0], startClip, projectionBounds);
+                        AddLocalCapsToProjectionBounds(clipPoints.AsSpan(4), clipPointCull.AsSpan(4), end, pointCull[1], endClip, projectionBounds);
                         outside |= pointCull[0] | pointCull[1];
                     }
                 }
@@ -1956,9 +1956,9 @@ namespace Droid.Core
                     if ((boxPointCull[p1] & boxPointCull[p2]) == 0 &&
                         frustum.ClipLine(localPoints1, localPoints2, p1, p2, out start, out end, out startClip, out endClip)) //: opt
                     {
-                        AddLocalLineToProjectionBoundsSetCull(start, end, pointCull[0], pointCull[1], projectionBounds);
-                        AddLocalCapsToProjectionBounds(clipPoints + 4, clipPointCull + 4, start, pointCull[0], startClip, projectionBounds);
-                        AddLocalCapsToProjectionBounds(clipPoints + 4, clipPointCull + 4, end, pointCull[1], endClip, projectionBounds);
+                        AddLocalLineToProjectionBoundsSetCull(start, end, out pointCull[0], out pointCull[1], projectionBounds);
+                        AddLocalCapsToProjectionBounds(clipPoints.AsSpan(4), clipPointCull.AsSpan(4), start, pointCull[0], startClip, projectionBounds);
+                        AddLocalCapsToProjectionBounds(clipPoints.AsSpan(4), clipPointCull.AsSpan(4), end, pointCull[1], endClip, projectionBounds);
                         outside |= pointCull[0] | pointCull[1];
                     }
                 }
@@ -1991,10 +1991,10 @@ namespace Droid.Core
                 // test the outer edges of this frustum for intersection with both the other frustum and the clip bounds
                 if ((outside & 2) != 0 && (outside & 8) != 0)
                 {
-                    frustum.LocalRayIntersection(localOrigin1, localAxis1[0] - localAxis1[1] - localAxis1[2], s1, s2);
+                    frustum.LocalRayIntersection(localOrigin1, localAxis1[0] - localAxis1[1] - localAxis1[2], out s1, out s2);
                     if (s1 <= s2 && s1 >= 0f)
                     {
-                        BoundsRayIntersection(clipBounds, localOrigin2, localAxis2[0] - localAxis2[1] - localAxis2[2], t1, t2);
+                        BoundsRayIntersection(clipBounds, localOrigin2, localAxis2[0] - localAxis2[1] - localAxis2[2], out t1, out t2);
                         if (t1 <= t2 && t2 > s1 && t1 < s2)
                         {
                             projectionBounds.AddPoint(new Vector3(s1 * dFar, -1f, -1f));
@@ -2004,10 +2004,10 @@ namespace Droid.Core
                 }
                 if ((outside & 2) != 0 && (outside & 4) != 0)
                 {
-                    frustum.LocalRayIntersection(localOrigin1, localAxis1[0] - localAxis1[1] + localAxis1[2], s1, s2);
+                    frustum.LocalRayIntersection(localOrigin1, localAxis1[0] - localAxis1[1] + localAxis1[2], out s1, out s2);
                     if (s1 <= s2 && s1 >= 0f)
                     {
-                        BoundsRayIntersection(clipBounds, localOrigin2, localAxis2[0] - localAxis2[1] + localAxis2[2], t1, t2);
+                        BoundsRayIntersection(clipBounds, localOrigin2, localAxis2[0] - localAxis2[1] + localAxis2[2], out t1, out t2);
                         if (t1 <= t2 && t2 > s1 && t1 < s2)
                         {
                             projectionBounds.AddPoint(new Vector3(s1 * dFar, -1f, 1f));
@@ -2017,10 +2017,10 @@ namespace Droid.Core
                 }
                 if ((outside & 1) != 0 && (outside & 8) != 0)
                 {
-                    frustum.LocalRayIntersection(localOrigin1, localAxis1[0] + localAxis1[1] - localAxis1[2], s1, s2);
+                    frustum.LocalRayIntersection(localOrigin1, localAxis1[0] + localAxis1[1] - localAxis1[2], out s1, out s2);
                     if (s1 <= s2 && s1 >= 0f)
                     {
-                        BoundsRayIntersection(clipBounds, localOrigin2, localAxis2[0] + localAxis2[1] - localAxis2[2], t1, t2);
+                        BoundsRayIntersection(clipBounds, localOrigin2, localAxis2[0] + localAxis2[1] - localAxis2[2], out t1, out t2);
                         if (t1 <= t2 && t2 > s1 && t1 < s2)
                         {
                             projectionBounds.AddPoint(new Vector3(s1 * dFar, 1f, -1f));
@@ -2030,10 +2030,10 @@ namespace Droid.Core
                 }
                 if ((outside & 1) != 0 && (outside & 2) != 0)
                 {
-                    frustum.LocalRayIntersection(localOrigin1, localAxis1[0] + localAxis1[1] + localAxis1[2], s1, s2);
+                    frustum.LocalRayIntersection(localOrigin1, localAxis1[0] + localAxis1[1] + localAxis1[2], out s1, out s2);
                     if (s1 <= s2 && s1 >= 0f)
                     {
-                        BoundsRayIntersection(clipBounds, localOrigin2, localAxis2[0] + localAxis2[1] + localAxis2[2], t1, t2);
+                        BoundsRayIntersection(clipBounds, localOrigin2, localAxis2[0] + localAxis2[1] + localAxis2[2], out t1, out t2);
                         if (t1 <= t2 && t2 > s1 && t1 < s2)
                         {
                             projectionBounds.AddPoint(new Vector3(s1 * dFar, 1f, 1f));
@@ -2177,7 +2177,7 @@ namespace Droid.Core
             return false;
         }
 
-        bool CullLocalWinding(Vector3[] points, int numPoints, int[] pointCull)
+        unsafe bool CullLocalWinding(Vector3* points, int numPoints, int* pointCull)
         {
             var leftScale = dLeft * invFar;
             var upScale = dUp * invFar;

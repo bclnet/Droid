@@ -1,15 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using static Droid.Core.Plane;
 
 namespace Droid.Core
 {
-    public unsafe struct SurfaceEdge
+    public struct SurfaceEdge
     {
-        public fixed int verts[2];      // edge vertices always with ( verts[0] < verts[1] )
-        public fixed int tris[2];       // edge triangles
+        public (int v0, int v1) verts;      // edge vertices always with ( verts[0] < verts[1] )
+        public (int t0, int t1) tris;       // edge triangles
+
+        public int verts_(int index)
+            => index == 0 ? verts.v0 : verts.v1;
+        public int tris_(int index)
+            => index == 0 ? tris.t0 : tris.t1;
     }
 
     public class Surface
@@ -31,9 +37,9 @@ namespace Droid.Core
         {
             Debug.Assert(verts != null && indexes != null && numVerts > 0 && numIndexes > 0);
             this.verts.SetNum(numVerts);
-            memcpy(this.verts.Ptr(), verts, numVerts * sizeof(verts[0]));
+            this.verts.AddRange(verts.Take(numVerts));
             this.indexes.SetNum(numIndexes);
-            memcpy(this.indexes.Ptr(), indexes, numIndexes * sizeof(indexes[0]));
+            this.indexes.AddRange(indexes.Take(numIndexes));
             GenerateEdgeIndexes();
         }
 
@@ -118,12 +124,11 @@ namespace Droid.Core
         {
             float f;
             int* counts = stackalloc int[3];
-            //int* edgeSplitVertex;
             int numEdgeSplitVertexes;
             int[][] vertexRemap = new int[2][];
             int[][] vertexIndexNum = new int[2][];
             int[][] vertexCopyIndex = new int[2][];
-            int** indexPtr = stackalloc int*[2];
+            int[][] indexPtr = new int[2][];
             int* indexNum = stackalloc int[2];
             int[] index;
             int[][] onPlaneEdges = new int[2][];
@@ -191,8 +196,8 @@ namespace Droid.Core
             // split edges
             for (i = 0; i < edges.Count; i++)
             {
-                var v0 = edges[i].verts[0];
-                var v1 = edges[i].verts[1];
+                var v0 = edges[i].verts.v0;
+                var v1 = edges[i].verts.v1;
                 var sidesOr = (sides[v0] | sides[v1]);
 
                 // if both vertexes are on the same side or one is on the clipping plane
@@ -219,7 +224,7 @@ namespace Droid.Core
             // allocate indexes to construct the triangle indexes for the front and back surface
             vertexRemap[0] = new int[verts.Count];
             fixed (void* p = vertexRemap[0])
-                unchecked { Unsafe.InitBlock(p, (byte)-1, (uint)verts.Count * sizeof(int)) };
+                unchecked { Unsafe.InitBlock(p, (byte)-1, (uint)verts.Count * sizeof(int)); };
             vertexRemap[1] = new int[verts.Count];
             fixed (void* p = vertexRemap[1])
                 unchecked { Unsafe.InitBlock(p, (byte)-1, (uint)verts.Count * sizeof(int)); }
@@ -430,13 +435,15 @@ namespace Droid.Core
 
             if (frontOnPlaneEdges != null)
             {
-                memcpy(frontOnPlaneEdges, onPlaneEdges[0], numOnPlaneEdges[0] * sizeof(int));
+                fixed (void* frontOnPlaneEdges_ = frontOnPlaneEdges, onPlaneEdges_0_ = onPlaneEdges[0])
+                    Unsafe.CopyBlock(frontOnPlaneEdges_, onPlaneEdges_0_, (uint)(numOnPlaneEdges[0] * sizeof(int)));
                 frontOnPlaneEdges[numOnPlaneEdges[0]] = -1;
             }
 
             if (backOnPlaneEdges != null)
             {
-                memcpy(backOnPlaneEdges, onPlaneEdges[1], numOnPlaneEdges[1] * sizeof(int));
+                fixed (void* backOnPlaneEdges_ = backOnPlaneEdges, onPlaneEdges_1_ = onPlaneEdges[1])
+                    Unsafe.CopyBlock(backOnPlaneEdges_, onPlaneEdges_1_, (uint)(numOnPlaneEdges[1] * sizeof(int)));
                 backOnPlaneEdges[numOnPlaneEdges[1]] = -1;
             }
 
@@ -444,88 +451,65 @@ namespace Droid.Core
         }
 
         // cuts off the part at the back side of the plane, returns true if some part was at the front, if there is nothing at the front the number of points is set to zero
-        public bool ClipInPlace(Plane plane, float epsilon = Plane.ON_EPSILON, bool keepOn = false)
+        public unsafe bool ClipInPlace(Plane plane, float epsilon = Plane.ON_EPSILON, bool keepOn = false)
         {
-            float* dists;
-            float f;
-            byte* sides;
-            int counts[3];
-            int i;
-            int* edgeSplitVertex;
-            int* vertexRemap;
-            int vertexIndexNum[2];
-            int* vertexCopyIndex;
-            int* indexPtr;
+            int i; int* counts = stackalloc int[3]; float f;
+            int[] vertexIndexNum = new int[2];
+            int[] indexPtr;
             int indexNum;
             int numEdgeSplitVertexes;
-            idDrawVert v;
-            idList<idDrawVert> newVerts;
-            idList<int> newIndexes;
+            DrawVert v = new(); List<DrawVert> newVerts = new(); List<int> newIndexes = new();
 
-            dists = (float*)_alloca(verts.Num() * sizeof(float));
-            sides = (byte*)_alloca(verts.Num() * sizeof(byte));
+            var dists = stackalloc float[verts.Count];
+            var sides = stackalloc byte[verts.Count];
 
             counts[0] = counts[1] = counts[2] = 0;
 
             // determine side for each vertex
-            for (i = 0; i < verts.Num(); i++)
+            for (i = 0; i < verts.Count; i++)
             {
                 dists[i] = f = plane.Distance(verts[i].xyz);
-                if (f > epsilon)
-                {
-                    sides[i] = SIDE_FRONT;
-                }
-                else if (f < -epsilon)
-                {
-                    sides[i] = SIDE_BACK;
-                }
-                else
-                {
-                    sides[i] = SIDE_ON;
-                }
+                sides[i] = (byte)(f > epsilon ? SIDE_FRONT
+                    : f < -epsilon ? SIDE_BACK
+                    : SIDE_ON);
                 counts[sides[i]]++;
             }
 
             // if coplanar, put on the front side if the normals match
-            if (!counts[SIDE_FRONT] && !counts[SIDE_BACK])
+            if (counts[SIDE_FRONT] == 0 && counts[SIDE_BACK] == 0)
             {
-
-                f = (verts[indexes[1]].xyz - verts[indexes[0]].xyz).Cross(verts[indexes[0]].xyz - verts[indexes[2]].xyz) * plane.Normal();
-                if (FLOATSIGNBITSET(f))
+                f = (verts[indexes[1]].xyz - verts[indexes[0]].xyz).Cross(verts[indexes[0]].xyz - verts[indexes[2]].xyz) * plane.Normal;
+                if (MathX.FLOATSIGNBITSET(f))
                 {
                     Clear();
                     return false;
                 }
                 else
-                {
                     return true;
-                }
             }
             // if nothing at the front of the clipping plane
-            if (!counts[SIDE_FRONT])
+            if (counts[SIDE_FRONT] == 0)
             {
                 Clear();
                 return false;
             }
             // if nothing at the back of the clipping plane
-            if (!counts[SIDE_BACK])
-            {
+            if (counts[SIDE_BACK] == 0)
                 return true;
-            }
 
-            edgeSplitVertex = (int*)_alloca(edges.Num() * sizeof(int));
+            var edgeSplitVertex = stackalloc int[edges.Count];
             numEdgeSplitVertexes = 0;
 
             counts[SIDE_FRONT] = counts[SIDE_BACK] = 0;
 
             // split edges
-            for (i = 0; i < edges.Num(); i++)
+            for (i = 0; i < edges.Count; i++)
             {
-                int v0 = edges[i].verts[0];
-                int v1 = edges[i].verts[1];
+                var v0 = edges[i].verts.v0;
+                var v1 = edges[i].verts.v1;
 
                 // if both vertexes are on the same side or one is on the clipping plane
-                if (!(sides[v0] ^ sides[v1]) || ((sides[v0] | sides[v1]) & SIDE_ON))
+                if ((sides[v0] ^ sides[v1]) == 0 || ((sides[v0] | sides[v1]) & SIDE_ON) != 0)
                 {
                     edgeSplitVertex[i] = -1;
                     counts[(sides[v0] | sides[v1]) & SIDE_BACK]++;
@@ -535,7 +519,7 @@ namespace Droid.Core
                     f = dists[v0] / (dists[v0] - dists[v1]);
                     v.LerpAll(verts[v0], verts[v1], f);
                     edgeSplitVertex[i] = numEdgeSplitVertexes++;
-                    newVerts.Append(v);
+                    newVerts.Add(v);
                 }
             }
 
@@ -544,50 +528,43 @@ namespace Droid.Core
             newIndexes.Resize((counts[SIDE_FRONT] << 1) + (numEdgeSplitVertexes << 2));
 
             // allocate indexes to construct the triangle indexes for the front and back surface
-            vertexRemap = (int*)_alloca(verts.Num() * sizeof(int));
-            memset(vertexRemap, -1, verts.Num() * sizeof(int));
+            var vertexRemap = new int[verts.Count];
+            fixed (void* vertexRemap_ = vertexRemap)
+                unchecked { Unsafe.InitBlock(vertexRemap_, (byte)-1, (uint)(verts.Count * sizeof(int))); }
 
-            vertexCopyIndex = (int*)_alloca((numEdgeSplitVertexes + verts.Num()) * sizeof(int));
+            var vertexCopyIndex = new int[numEdgeSplitVertexes + verts.Count];
 
             vertexIndexNum[0] = 0;
             vertexIndexNum[1] = numEdgeSplitVertexes;
 
             indexPtr = newIndexes.Ptr();
-            indexNum = newIndexes.Num();
+            indexNum = newIndexes.Count;
 
             // split surface triangles
-            for (i = 0; i < edgeIndexes.Num(); i += 3)
+            for (i = 0; i < edgeIndexes.Count; i += 3)
             {
-                int e0, e1, e2, v0, v1, v2;
+                var e0 = Math.Abs(edgeIndexes[i + 0]);
+                var e1 = Math.Abs(edgeIndexes[i + 1]);
+                var e2 = Math.Abs(edgeIndexes[i + 2]);
 
-                e0 = abs(edgeIndexes[i + 0]);
-                e1 = abs(edgeIndexes[i + 1]);
-                e2 = abs(edgeIndexes[i + 2]);
+                var v0 = indexes[i + 0];
+                var v1 = indexes[i + 1];
+                var v2 = indexes[i + 2];
 
-                v0 = indexes[i + 0];
-                v1 = indexes[i + 1];
-                v2 = indexes[i + 2];
-
-                switch ((INTSIGNBITSET(edgeSplitVertex[e0]) | (INTSIGNBITSET(edgeSplitVertex[e1]) << 1) | (INTSIGNBITSET(edgeSplitVertex[e2]) << 2)) ^ 7)
+                switch ((MathX.INTSIGNBITSET_(edgeSplitVertex[e0]) | (MathX.INTSIGNBITSET_(edgeSplitVertex[e1]) << 1) | (MathX.INTSIGNBITSET_(edgeSplitVertex[e2]) << 2)) ^ 7)
                 {
                     case 0:
                         {   // no edges split
-                            if ((sides[v0] | sides[v1] | sides[v2]) & SIDE_BACK)
-                            {
+                            if (((sides[v0] | sides[v1] | sides[v2]) & SIDE_BACK) != 0)
                                 break;
-                            }
-                            if ((sides[v0] & sides[v1] & sides[v2]) & SIDE_ON)
+                            if (((sides[v0] & sides[v1] & sides[v2]) & SIDE_ON) != 0)
                             {
                                 // coplanar
                                 if (!keepOn)
-                                {
                                     break;
-                                }
-                                f = (verts[v1].xyz - verts[v0].xyz).Cross(verts[v0].xyz - verts[v2].xyz) * plane.Normal();
-                                if (FLOATSIGNBITSET(f))
-                                {
+                                f = (verts[v1].xyz - verts[v0].xyz).Cross(verts[v0].xyz - verts[v2].xyz) * plane.Normal;
+                                if (MathX.FLOATSIGNBITSET(f))
                                     break;
-                                }
                             }
                             indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0);
                             indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1);
@@ -596,7 +573,7 @@ namespace Droid.Core
                         }
                     case 1:
                         {   // first edge split
-                            if (!(sides[v0] & SIDE_BACK))
+                            if ((sides[v0] & SIDE_BACK) == 0)
                             {
                                 indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0);
                                 indexPtr[indexNum++] = edgeSplitVertex[e0];
@@ -612,7 +589,7 @@ namespace Droid.Core
                         }
                     case 2:
                         {   // second edge split
-                            if (!(sides[v1] & SIDE_BACK))
+                            if ((sides[v1] & SIDE_BACK) == 0)
                             {
                                 indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1);
                                 indexPtr[indexNum++] = edgeSplitVertex[e1];
@@ -628,7 +605,7 @@ namespace Droid.Core
                         }
                     case 3:
                         {   // first and second edge split
-                            if (!(sides[v1] & SIDE_BACK))
+                            if ((sides[v1] & SIDE_BACK) == 0)
                             {
                                 indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1);
                                 indexPtr[indexNum++] = edgeSplitVertex[e1];
@@ -647,7 +624,7 @@ namespace Droid.Core
                         }
                     case 4:
                         {   // third edge split
-                            if (!(sides[v2] & SIDE_BACK))
+                            if ((sides[v2] & SIDE_BACK) == 0)
                             {
                                 indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2);
                                 indexPtr[indexNum++] = edgeSplitVertex[e2];
@@ -663,7 +640,7 @@ namespace Droid.Core
                         }
                     case 5:
                         {   // first and third edge split
-                            if (!(sides[v0] & SIDE_BACK))
+                            if ((sides[v0] & SIDE_BACK) == 0)
                             {
                                 indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0);
                                 indexPtr[indexNum++] = edgeSplitVertex[e0];
@@ -682,7 +659,7 @@ namespace Droid.Core
                         }
                     case 6:
                         {   // second and third edge split
-                            if (!(sides[v2] & SIDE_BACK))
+                            if ((sides[v2] & SIDE_BACK) == 0)
                             {
                                 indexPtr[indexNum++] = UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2);
                                 indexPtr[indexNum++] = edgeSplitVertex[e2];
@@ -706,10 +683,8 @@ namespace Droid.Core
 
             // copy vertexes
             newVerts.SetNum(vertexIndexNum[1], false);
-            for (i = numEdgeSplitVertexes; i < newVerts.Num(); i++)
-            {
+            for (i = numEdgeSplitVertexes; i < newVerts.Count; i++)
                 newVerts[i] = verts[vertexCopyIndex[i]];
-            }
 
             // copy back to this surface
             indexes = newIndexes;
@@ -728,7 +703,7 @@ namespace Droid.Core
                 int i, j;
                 int queueStart, queueEnd;
                 int curTri, nextTri, edgeNum;
-                int* index;
+                Span<int> index;
 
                 var numIslands = 0;
                 var numTris = indexes.Count / 3;
@@ -748,12 +723,12 @@ namespace Droid.Core
 
                     for (curTri = queue[queueStart]; queueStart < queueEnd; curTri = queue[++queueStart])
                     {
-                        index = edgeIndexes[curTri * 3];
+                        index = edgeIndexes.Ptr(curTri * 3);
 
                         for (j = 0; j < 3; j++)
                         {
                             edgeNum = index[j];
-                            nextTri = edges[Math.Abs(edgeNum)].tris[MathX.INTSIGNBITNOTSET_(edgeNum)];
+                            nextTri = edges[Math.Abs(edgeNum)].tris_(MathX.INTSIGNBITNOTSET_(edgeNum));
 
                             if (nextTri == -1)
                                 continue;
@@ -780,7 +755,7 @@ namespace Droid.Core
             get
             {
                 for (var i = 0; i < edges.Count; i++)
-                    if (edges[i].tris[0] < 0 || edges[i].tris[1] < 0)
+                    if (edges[i].tris.t0 < 0 || edges[i].tris.t1 < 0)
                         return false;
                 return true;
             }
@@ -881,7 +856,7 @@ namespace Droid.Core
             // ray sidedness for edges
             for (i = 0; i < edges.Count; i++)
             {
-                pl.FromLine(verts[edges[i].verts[1]].xyz, verts[edges[i].verts[0]].xyz);
+                pl.FromLine(verts[edges[i].verts.v1].xyz, verts[edges[i].verts.v0].xyz);
                 d = pl.PermutedInnerProduct(rayPl);
                 sidedness[i] = (byte)MathX.FLOATSIGNBITSET_(d);
             }
@@ -923,7 +898,7 @@ namespace Droid.Core
         protected unsafe void GenerateEdgeIndexes()
         {
             int i, j, i0, i1, i2, s, v0, v1, edgeNum;
-            int* index;
+            Span<int> index;
             var e = stackalloc SurfaceEdge[3];
 
             var vertexEdges = stackalloc int[verts.Count];
@@ -935,53 +910,53 @@ namespace Droid.Core
             edges.Clear();
 
             // the first edge is a dummy
-            e[0].verts[0] = e[0].verts[1] = e[0].tris[0] = e[0].tris[1] = 0;
+            e[0].verts.v0 = e[0].verts.v1 = e[0].tris.t0 = e[0].tris.t1 = 0;
             edges.Add(e[0]);
 
             for (i = 0; i < indexes.Count; i += 3)
             {
-                index = indexes.Ptr() + i;
+                index = indexes.Ptr(i);
                 // vertex numbers
                 i0 = index[0];
                 i1 = index[1];
                 i2 = index[2];
                 // setup edges each with smallest vertex number first
                 s = MathX.INTSIGNBITSET_(i1 - i0);
-                e[0].verts[0] = index[s];
-                e[0].verts[1] = index[s ^ 1];
+                e[0].verts.v0 = index[s];
+                e[0].verts.v1 = index[s ^ 1];
                 s = MathX.INTSIGNBITSET_(i2 - i1) + 1;
-                e[1].verts[0] = index[s];
-                e[1].verts[1] = index[s ^ 3];
+                e[1].verts.v0 = index[s];
+                e[1].verts.v1 = index[s ^ 3];
                 s = MathX.INTSIGNBITSET_(i2 - i0) << 1;
-                e[2].verts[0] = index[s];
-                e[2].verts[1] = index[s ^ 2];
+                e[2].verts.v0 = index[s];
+                e[2].verts.v1 = index[s ^ 2];
                 // get edges
                 for (j = 0; j < 3; j++)
                 {
-                    v0 = e[j].verts[0];
-                    v1 = e[j].verts[1];
+                    v0 = e[j].verts.v0;
+                    v1 = e[j].verts.v1;
                     for (edgeNum = vertexEdges[v0]; edgeNum >= 0; edgeNum = edgeChain[edgeNum])
-                        if (edges[edgeNum].verts[1] == v1)
+                        if (edges[edgeNum].verts.v1 == v1)
                             break;
                     // if the edge does not yet exist
                     if (edgeNum < 0)
                     {
-                        e[j].tris[0] = e[j].tris[1] = -1;
-                        edgeNum = edges.Add(e[j]);
+                        e[j].tris.t0 = e[j].tris.t1 = -1;
+                        edgeNum = edges.Add_(e[j]);
                         edgeChain[edgeNum] = vertexEdges[v0];
                         vertexEdges[v0] = edgeNum;
                     }
                     // update edge index and edge tri references
                     if (index[j] == v0)
                     {
-                        Debug.Assert(edges[edgeNum].tris[0] == -1); // edge may not be shared by more than two triangles
-                        edges[edgeNum].tris[0] = i;
+                        Debug.Assert(edges[edgeNum].tris.t0 == -1); // edge may not be shared by more than two triangles
+                        edges.Ptr()[edgeNum].tris.t0 = i;
                         edgeIndexes[i + j] = edgeNum;
                     }
                     else
                     {
-                        Debug.Assert(edges[edgeNum].tris[1] == -1); // edge may not be shared by more than two triangles
-                        edges[edgeNum].tris[1] = i;
+                        Debug.Assert(edges[edgeNum].tris.t1 == -1); // edge may not be shared by more than two triangles
+                        edges.Ptr()[edgeNum].tris.t1 = i;
                         edgeIndexes[i + j] = -edgeNum;
                     }
                 }
@@ -1003,13 +978,12 @@ namespace Droid.Core
                 secondVert = v1;
             }
             for (i = 1; i < edges.Count; i++)
-                if (edges[i].verts[0] == firstVert)
-                    if (edges[i].verts[1] == secondVert)
-                        break;
+                if (edges[i].verts.v0 == firstVert &&
+                    edges[i].verts.v1 == secondVert) //: opt
+                    break;
             if (i < edges.Count)
                 return v1 < v2 ? i : -i;
             return 0;
         }
-
     }
 }

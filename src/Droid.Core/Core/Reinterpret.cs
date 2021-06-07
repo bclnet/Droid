@@ -18,6 +18,8 @@ namespace Droid.Core
 
         public static unsafe Vector4 cast_vec4(Plane s) => *(Vector4*)&s;
 
+        public static unsafe Vector5 cast_vec5(Vector3 s) => *(Vector5*)&s;
+
         public static unsafe Vector6 cast_vec6(float* s, int index) => *(Vector6*)&s[index];
 
         [StructLayout(LayoutKind.Explicit)]
