@@ -9,6 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Core\math\Simd-Test.cs" />
+    <Compile Remove="Core\Simd.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Core\math\Plane.cpp" />
     <None Remove="Framework\Console.cpp" />
     <None Remove="Framework\Console.h" />
@@ -59,9 +64,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Core\bv\" />
     <Folder Include="Core\containers\" />
-    <Folder Include="Core\geometry\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Core\math\Simd-Test.cs" />
+    <None Include="Core\math\Simd.cs" />
   </ItemGroup>
 
 </Project>

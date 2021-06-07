@@ -19,11 +19,11 @@ namespace Droid.Core
         public static int ANGLE2BYTE(float x) => FtoiFast(x * 256f / 360f) & 255;
         public static float BYTE2ANGLE(int x) => x * (360f / 256f);
 
-        public static unsafe bool FLOATSIGNBITSET(float f) => ((*(uint*)&f) >> 31) != 0;
-        public static unsafe bool FLOATSIGNBITNOTSET(float f) => ((~*(uint*)&f) >> 31) != 0;
+        public static unsafe bool FLOATSIGNBITSET(float f) => ((*(uint*)&f) >> 31) != 0; public static unsafe int FLOATSIGNBITSET_(float f) => ((*(int*)&f) >> 31);
+        public static unsafe bool FLOATSIGNBITNOTSET(float f) => ((~*(uint*)&f) >> 31) != 0; public static unsafe int FLOATSIGNBITNOTSET_(float f) => (~*(int*)&f) >> 31);
         public static unsafe bool FLOATNOTZERO(float f) => ((*(uint*)&f) & ~(1 << 31)) != 0;
-        public static unsafe bool INTSIGNBITSET(int i) => (((uint)i) >> 31) != 0;
-        public static unsafe bool INTSIGNBITNOTSET(int i) => ((~(uint)i) >> 31) != 0;
+        public static unsafe bool INTSIGNBITSET(int i) => (((uint)i) >> 31) != 0; public static unsafe int INTSIGNBITSET_(int i) => i >> 31;
+        public static unsafe bool INTSIGNBITNOTSET(int i) => ((~(uint)i) >> 31) != 0; public static unsafe int INTSIGNBITNOTSET_(int i) => (~i) >> 31;
 
         public static unsafe bool FLOAT_IS_NAN(float x) => ((*(uint*)&x) & 0x7f800000) == 0x7f800000;
         public static unsafe bool FLOAT_IS_INF(float x) => ((*(uint*)&x) & 0x7fffffff) == 0x7f800000;
@@ -56,8 +56,8 @@ namespace Droid.Core
         public static int Min3Index(int x, int y, int z) => x < y ? (x < z ? 0 : 2) : (y < z ? 1 : 2);
         public static float Max3(float x, float y, float z) => x > y ? (x > z ? x : z) : (y > z ? y : z);
         public static float Min3(float x, float y, float z) => x < y ? (x < z ? x : z) : (y < z ? y : z);
-        public static float Max3Index(float x, float y, float z) => x > y ? (x > z ? 0 : 2) : (y > z ? 1 : 2);
-        public static float Min3Index(float x, float y, float z) => x < y ? (x < z ? 0 : 2) : (y < z ? 1 : 2);
+        public static int Max3Index(float x, float y, float z) => x > y ? (x > z ? 0 : 2) : (y > z ? 1 : 2);
+        public static int Min3Index(float x, float y, float z) => x < y ? (x < z ? 0 : 2) : (y < z ? 1 : 2);
 
         public static int Sign(int f) => f > 0 ? 1 : (f < 0 ? -1 : 0);
         public static int Square(int x) => x * x;

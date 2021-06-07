@@ -230,6 +230,10 @@ namespace Droid.Core
             this.y = y;
             this.z = z;
         }
+
+        public void Set(Vector3 a)
+            => this = a;
+
         public void Zero()
             => x = y = z = 0f;
 

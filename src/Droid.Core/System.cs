@@ -312,7 +312,7 @@ namespace Droid
         void DebugVPrintf(string fmt, object[] args);
 
         uint GetMilliseconds();
-        int GetProcessorId();
+        CPUID GetProcessorId();
         void FPU_SetFTZ(bool enable);
         void FPU_SetDAZ(bool enable);
 

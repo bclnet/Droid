@@ -58,7 +58,8 @@ public class Curve_<#=type#>
 	public virtual bool IsDone(float time)
 		=> time >= times[times.Count - 1];
 
-	public int GetNumValues() => values.Count;
+	public int NumValues
+		=> values.Count;
 
 	public void SetValue(int index, <#=type#> value) { values[index] = value; changed = true; }
 
@@ -745,9 +746,9 @@ public class Curve_NaturalCubicSpline_<#=type#> : Curve_Spline_<#=type#>
 		beta[values.Count - 1] = 1f;
 		delta[values.Count - 1] = values[0] - values[0];
 
-		b.Capacity = values.Count;
-		c.Capacity = values.Count;
-		d.Capacity = values.Count;
+        b.AssureSize(values.Count);
+        c.AssureSize(values.Count);
+        d.AssureSize(values.Count);
 
 		c[values.Count - 1] = values[0] - values[0];
 
@@ -806,9 +807,9 @@ public class Curve_NaturalCubicSpline_<#=type#> : Curve_Spline_<#=type#>
 		inv = 1f / beta[values.Count - 1];
 		delta[values.Count - 1] = inv * (alpha[values.Count - 1] - d0[values.Count - 2] * delta[values.Count - 2]);
 
-		b.Capacity = values.Count;
-		c.Capacity = values.Count;
-		d.Capacity = values.Count;
+		b.AssureSize(values.Count);
+		c.AssureSize(values.Count);
+		d.AssureSize(values.Count);
 
 		c[values.Count - 1] = delta[values.Count - 1];
 
@@ -829,9 +830,9 @@ public class Curve_NaturalCubicSpline_<#=type#> : Curve_Spline_<#=type#>
 		x.SetData(values.Count, VectorX.VECX_ALLOCA(values.Count));
 		mat.SetData(values.Count, values.Count, MatrixX.MATX_ALLOCA(values.Count * values.Count));
 
-		b.Capacity = values.Count;
-		c.Capacity = values.Count;
-		d.Capacity = values.Count;
+		b.AssureSize(values.Count);
+		c.AssureSize(values.Count);
+		d.AssureSize(values.Count);
 
 		for (i = 0; i < values.Count - 1; i++)
 			d0[i] = times[i + 1] - times[i];

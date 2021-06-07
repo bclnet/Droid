@@ -3,8 +3,14 @@ using System.Diagnostics;
 
 namespace Droid.Core
 {
-    public struct Rotation
+    public class Rotation
     {
+        internal Vector3 origin;         // origin of rotation
+        internal Vector3 vec;            // normalized vector to rotate around
+        internal float angle;            // angle of rotation in degrees
+        internal Matrix3x3 axis;          // rotation axis
+        internal bool axisValid;     // true if rotation axis is valid
+
         public Rotation(Vector3 rotationOrigin, Vector3 rotationVec, float rotationAngle)
         {
             origin = rotationOrigin;
@@ -21,17 +27,7 @@ namespace Droid.Core
             angle = rotationAngle;
             axisValid = false;
         }
-        public void SetOrigin(Vector3 rotationOrigin)
-            => origin = rotationOrigin;
-        /// <summary>
-        /// has to be normalized
-        /// </summary>
-        /// <param name="rotationVec">The rotation vec.</param>
-        public void SetVec(Vector3 rotationVec)
-        {
-            vec = rotationVec;
-            axisValid = false;
-        }
+
         /// <summary>
         /// has to be normalized
         /// </summary>
@@ -45,27 +41,44 @@ namespace Droid.Core
             vec.z = z;
             axisValid = false;
         }
-        public void SetAngle(float rotationAngle)
-        {
-            angle = rotationAngle;
-            axisValid = false;
-        }
+
         public void Scale(float s)
         {
             angle *= s;
             axisValid = false;
         }
+
         public void ReCalculateMatrix()
         {
             axisValid = false;
             ToMat3();
         }
-        public Vector3 GetOrigin()
-            => origin;
-        public Vector3 GetVec()
-            => vec;
-        public float GetAngle()
-            => angle;
+
+        public Vector3 Origin
+        {
+            get => origin;
+            set => origin = value;
+        }
+
+        public Vector3 Vec
+        {
+            get => vec;
+            set
+            {
+                vec = value;
+                axisValid = false;
+            }
+        }
+
+        public float Angle
+        {
+            get => angle;
+            set
+            {
+                angle = value;
+                axisValid = false;
+            }
+        }
 
         /// <summary>
         /// flips rotation
@@ -99,6 +112,7 @@ namespace Droid.Core
             Debug.Assert(s != 0f);
             return new Rotation(_.origin, _.vec, _.angle / s);
         }
+
         /// <summary>
         /// rotate vector
         /// </summary>
@@ -189,11 +203,5 @@ namespace Droid.Core
             if (angle > 360f) angle -= 360f;
             else if (angle < 0f) angle += 360f;
         }
-
-        internal Vector3 origin;         // origin of rotation
-        internal Vector3 vec;            // normalized vector to rotate around
-        internal float angle;            // angle of rotation in degrees
-        internal Matrix3x3 axis;          // rotation axis
-        internal bool axisValid;     // true if rotation axis is valid
     }
 }

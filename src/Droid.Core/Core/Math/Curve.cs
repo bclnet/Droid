@@ -3,9 +3,9 @@ using System.Diagnostics;
 
 namespace Droid.Core
 {
-public class Curve_Vector3
+public class Curve_Vector4
 {
-	public Curve_Vector3()
+	public Curve_Vector4()
 	{
 		currentIndex = -1;
 		changed = false;
@@ -18,7 +18,7 @@ public class Curve_Vector3
 	/// <param name="time">The time.</param>
 	/// <param name="value">The value.</param>
 	/// <returns></returns>
-	public virtual int AddValue(float time, Vector3 value)
+	public virtual int AddValue(float time, Vector4 value)
 	{
 		var i = IndexForTime(time);
 		times.Insert(i, time);
@@ -36,7 +36,7 @@ public class Curve_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public virtual Vector3 GetCurrentValue(float time)
+	public virtual Vector4 GetCurrentValue(float time)
 	{
 		var i = IndexForTime(time);
 		return i >= values.Count
@@ -49,7 +49,7 @@ public class Curve_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public virtual Vector3 GetCurrentFirstDerivative(float time)
+	public virtual Vector4 GetCurrentFirstDerivative(float time)
 		=> values[0] - values[0];
 
 	/// <summary>
@@ -57,19 +57,20 @@ public class Curve_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public virtual Vector3 GetCurrentSecondDerivative(float time)
+	public virtual Vector4 GetCurrentSecondDerivative(float time)
 		=> values[0] - values[0];
 
 	public virtual bool IsDone(float time)
 		=> time >= times[times.Count - 1];
 
-	public int GetNumValues() => values.Count;
+	public int NumValues
+		=> values.Count;
 
-	public void SetValue(int index, Vector3 value) { values[index] = value; changed = true; }
+	public void SetValue(int index, Vector4 value) { values[index] = value; changed = true; }
 
-	public Vector3 GetValue(int index) => values[index];
+	public Vector4 GetValue(int index) => values[index];
 
-	public Vector3 GetValueAddress(int index) => values[index];
+	public Vector4 GetValueAddress(int index) => values[index];
 
 	public float GetTime(int index) => times[index];
 
@@ -168,7 +169,7 @@ public class Curve_Vector3
 		changed = true;
 	}
 
-	public void Translate(Vector3 translation)
+	public void Translate(Vector4 translation)
 	{
 		for (var i = 0; i < values.Count; i++)
 			values[i] += translation;
@@ -176,7 +177,7 @@ public class Curve_Vector3
 	}
 
 	protected List<float> times;          // knots
-	protected List<Vector3> values;         // knot values
+	protected List<Vector4> values;         // knot values
 
 	protected int currentIndex; // cached index for fast lookup
 	protected bool changed;     // set whenever the curve changes
@@ -232,7 +233,7 @@ public class Curve_Vector3
 	/// </summary>
 	/// <param name="index">The index.</param>
 	/// <returns></returns>
-	protected Vector3 ValueForIndex(int index)
+	protected Vector4 ValueForIndex(int index)
 	{
 		var n = values.Count - 1;
 		if (index < 0) return values[0] + index * (values[1] - values[0]);
@@ -244,7 +245,7 @@ public class Curve_Vector3
 	{
 		var value = GetCurrentFirstDerivative(time);
 		float speed; int i;
-		for (speed = 0f, i = 0; i < Vector3.Dimension; i++)
+		for (speed = 0f, i = 0; i < Vector4.Dimension; i++)
 			speed += value[i] * value[i];
 		return MathX.Sqrt(speed);
 	}
@@ -280,15 +281,15 @@ public class Curve_Vector3
 /// Bezier Curve template.
 /// The degree of the polynomial equals the number of knots minus one.
 /// </summary>
-/// <typeparam name="Vector3"></typeparam>
-public class Curve_Bezier_Vector3 : Curve_Vector3
+/// <typeparam name="Vector4"></typeparam>
+public class Curve_Bezier_Vector4 : Curve_Vector4
 {
 	/// <summary>
 	/// get the value for the given time
 	/// </summary>
 	/// <param name="time"></param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentValue(float time)
+	public unsafe override Vector4 GetCurrentValue(float time)
 	{
 		var bvals = stackalloc float[values.Count];
 
@@ -304,7 +305,7 @@ public class Curve_Bezier_Vector3 : Curve_Vector3
 	/// </summary>
 	/// <param name="time"></param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentFirstDerivative(float time)
+	public unsafe override Vector4 GetCurrentFirstDerivative(float time)
 	{
 		var bvals = stackalloc float[values.Count];
 
@@ -320,7 +321,7 @@ public class Curve_Bezier_Vector3 : Curve_Vector3
 	/// </summary>
 	/// <param name="time"></param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentSecondDerivative(float time)
+	public unsafe override Vector4 GetCurrentSecondDerivative(float time)
 	{
 		var bvals = stackalloc float[values.Count];
 
@@ -386,13 +387,13 @@ public class Curve_Bezier_Vector3 : Curve_Vector3
 	}
 }
 
-public class Curve_QuadraticBezier_Vector3 : Curve_Vector3
+public class Curve_QuadraticBezier_Vector4 : Curve_Vector4
 {
 	/// <summary>
 	/// get the value for the given time
 	/// </summary>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentValue(float time)
+	public unsafe override Vector4 GetCurrentValue(float time)
 	{
 		var bvals = stackalloc float[3];
 		Debug.Assert(values.Count == 3);
@@ -405,7 +406,7 @@ public class Curve_QuadraticBezier_Vector3 : Curve_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentFirstDerivative(float time)
+	public unsafe override Vector4 GetCurrentFirstDerivative(float time)
 	{
 		var bvals = stackalloc float[3];
 		Debug.Assert(values.Count == 3);
@@ -419,7 +420,7 @@ public class Curve_QuadraticBezier_Vector3 : Curve_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentSecondDerivative(float time)
+	public unsafe override Vector4 GetCurrentSecondDerivative(float time)
 	{
 		var bvals = stackalloc float[3];
 		Debug.Assert(values.Count == 3);
@@ -471,13 +472,13 @@ public class Curve_QuadraticBezier_Vector3 : Curve_Vector3
 	}
 }
 
-public class Curve_CubicBezier_Vector3 : Curve_Vector3
+public class Curve_CubicBezier_Vector4 : Curve_Vector4
 {
 	/// <summary>
 	/// get the value for the given time
 	/// </summary>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentValue(float time)
+	public unsafe override Vector4 GetCurrentValue(float time)
 	{
 		var bvals = stackalloc float[4];
 		Debug.Assert(values.Count == 4);
@@ -490,7 +491,7 @@ public class Curve_CubicBezier_Vector3 : Curve_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentFirstDerivative(float time)
+	public unsafe override Vector4 GetCurrentFirstDerivative(float time)
 	{
 		var bvals = stackalloc float[4];
 		Debug.Assert(values.Count == 4);
@@ -504,7 +505,7 @@ public class Curve_CubicBezier_Vector3 : Curve_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentSecondDerivative(float time)
+	public unsafe override Vector4 GetCurrentSecondDerivative(float time)
 	{
 		var bvals = stackalloc float[4];
 		Debug.Assert(values.Count == 4);
@@ -562,11 +563,11 @@ public class Curve_CubicBezier_Vector3 : Curve_Vector3
 	}
 }
 
-public class Curve_Spline_Vector3 : Curve_Vector3
+public class Curve_Spline_Vector4 : Curve_Vector4
 {
 	public enum BT { FREE, CLAMPED, CLOSED };
 
-	public Curve_Spline_Vector3()
+	public Curve_Spline_Vector4()
 	{
 		boundaryType = BT.FREE;
 		closeTime = 0f;
@@ -595,7 +596,7 @@ public class Curve_Spline_Vector3 : Curve_Vector3
 	/// </summary>
 	/// <param name="index">The index.</param>
 	/// <returns></returns>
-	protected Vector3 ValueForIndex(int index)
+	protected Vector4 ValueForIndex(int index)
 	{
 		var n = values.Count - 1;
 		if (index < 0)
@@ -633,7 +634,7 @@ public class Curve_Spline_Vector3 : Curve_Vector3
 	}
 
 	/// <summary>
-	/// return the clamped time based on the boundary Vector3
+	/// return the clamped time based on the boundary Vector4
 	/// </summary>
 	/// <param name="t">The t.</param>
 	/// <returns></returns>
@@ -648,7 +649,7 @@ public class Curve_Spline_Vector3 : Curve_Vector3
 	}
 }
 
-public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
+public class Curve_NaturalCubicSpline_Vector4 : Curve_Spline_Vector4
 {
 	public override void Clear() { base.Clear(); values.Clear(); b.Clear(); c.Clear(); d.Clear(); }
 
@@ -657,7 +658,7 @@ public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public override Vector3 GetCurrentValue(float time)
+	public override Vector4 GetCurrentValue(float time)
 	{
 		var clampedTime = ClampedTime(time);
 		var i = IndexForTime(clampedTime);
@@ -671,7 +672,7 @@ public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public override Vector3 GetCurrentFirstDerivative(float time)
+	public override Vector4 GetCurrentFirstDerivative(float time)
 	{
 		var clampedTime = ClampedTime(time);
 		var i = IndexForTime(clampedTime);
@@ -685,7 +686,7 @@ public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public override Vector3 GetCurrentSecondDerivative(float time)
+	public override Vector4 GetCurrentSecondDerivative(float time)
 	{
 		var clampedTime = ClampedTime(time);
 		var i = IndexForTime(clampedTime);
@@ -694,9 +695,9 @@ public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
 		return 2f * c[i] + 6f * s * d[i];
 	}
 
-	protected List<Vector3> b = new();
-	protected List<Vector3> c = new();
-	protected List<Vector3> d = new();
+	protected List<Vector4> b = new();
+	protected List<Vector4> c = new();
+	protected List<Vector4> d = new();
 
 	protected void Setup()
 	{
@@ -718,10 +719,10 @@ public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
 
 		var d0 = stackalloc float[values.Count - 1];
 		var d1 = stackalloc float[values.Count - 1];
-		var alpha = stackalloc Vector3[values.Count - 1];
+		var alpha = stackalloc Vector4[values.Count - 1];
 		var beta = stackalloc float[values.Count];
 		var gamma = stackalloc float[values.Count - 1];
-		var delta = stackalloc Vector3[values.Count];
+		var delta = stackalloc Vector4[values.Count];
 
 		for (i = 0; i < values.Count - 1; i++)
 			d0[i] = times[i + 1] - times[i];
@@ -731,7 +732,7 @@ public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
 
 		for (i = 1; i < values.Count - 1; i++)
 		{
-			Vector3 sum = 3f * (d0[i - 1] * values[i + 1] - d1[i] * values[i] + d0[i] * values[i - 1]);
+			Vector4 sum = 3f * (d0[i - 1] * values[i + 1] - d1[i] * values[i] + d0[i] * values[i - 1]);
 			inv = 1f / (d0[i - 1] * d0[i]);
 			alpha[i] = inv * sum;
 		}
@@ -750,9 +751,9 @@ public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
 		beta[values.Count - 1] = 1f;
 		delta[values.Count - 1] = values[0] - values[0];
 
-		b.Capacity = values.Count;
-		c.Capacity = values.Count;
-		d.Capacity = values.Count;
+        b.AssureSize(values.Count);
+        c.AssureSize(values.Count);
+        d.AssureSize(values.Count);
 
 		c[values.Count - 1] = values[0] - values[0];
 
@@ -771,10 +772,10 @@ public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
 
 		var d0 = stackalloc float[values.Count - 1];
 		var d1 = stackalloc float[values.Count - 1];
-		var alpha = stackalloc Vector3[values.Count - 1];
+		var alpha = stackalloc Vector4[values.Count - 1];
 		var beta = stackalloc float[values.Count];
 		var gamma = stackalloc float[values.Count - 1];
-		var delta = stackalloc Vector3[values.Count];
+		var delta = stackalloc Vector4[values.Count];
 
 		for (i = 0; i < values.Count - 1; i++)
 			d0[i] = times[i + 1] - times[i];
@@ -789,7 +790,7 @@ public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
 
 		for (i = 1; i < values.Count - 1; i++)
 		{
-			Vector3 sum = 3f * (d0[i - 1] * values[i + 1] - d1[i] * values[i] + d0[i] * values[i - 1]);
+			Vector4 sum = 3f * (d0[i - 1] * values[i + 1] - d1[i] * values[i] + d0[i] * values[i - 1]);
 			inv = 1f / (d0[i - 1] * d0[i]);
 			alpha[i] = inv * sum;
 		}
@@ -811,9 +812,9 @@ public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
 		inv = 1f / beta[values.Count - 1];
 		delta[values.Count - 1] = inv * (alpha[values.Count - 1] - d0[values.Count - 2] * delta[values.Count - 2]);
 
-		b.Capacity = values.Count;
-		c.Capacity = values.Count;
-		d.Capacity = values.Count;
+		b.AssureSize(values.Count);
+		c.AssureSize(values.Count);
+		d.AssureSize(values.Count);
 
 		c[values.Count - 1] = delta[values.Count - 1];
 
@@ -834,9 +835,9 @@ public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
 		x.SetData(values.Count, VectorX.VECX_ALLOCA(values.Count));
 		mat.SetData(values.Count, values.Count, MatrixX.MATX_ALLOCA(values.Count * values.Count));
 
-		b.Capacity = values.Count;
-		c.Capacity = values.Count;
-		d.Capacity = values.Count;
+		b.AssureSize(values.Count);
+		c.AssureSize(values.Count);
+		d.AssureSize(values.Count);
 
 		for (i = 0; i < values.Count - 1; i++)
 			d0[i] = times[i + 1] - times[i];
@@ -868,18 +869,13 @@ public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
 
 		// solve system for each dimension
 		mat.LU_Factor(null);
-		for (i = 0; i < Vector3.Dimension; i++)
+		for (i = 0; i < Vector4.Dimension; i++)
 		{
 			for (j = 0; j < values.Count; j++)
 				x[j] = c[j][i];
 			mat.LU_Solve(x, x, null);
-				for (j = 0; j < values.Count; j++)
-				{
-					//: sky
-					var z = c[j];
-					z[i] = x[j];
-					c[j] = z;
-				}
+			for (j = 0; j < values.Count; j++)
+				c[j][i] = x[j];
 		}
 
 		for (i = 0; i < values.Count - 1; i++)
@@ -891,14 +887,14 @@ public class Curve_NaturalCubicSpline_Vector3 : Curve_Spline_Vector3
 	}
 }
 
-public class Curve_CatmullRomSpline_Vector3 : Curve_Spline_Vector3
+public class Curve_CatmullRomSpline_Vector4 : Curve_Spline_Vector4
 {
 	/// <summary>
 	/// get the value for the given time
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentValue(float time)
+	public unsafe override Vector4 GetCurrentValue(float time)
 	{
 		if (times.Count == 1)
 			return values[0];
@@ -921,7 +917,7 @@ public class Curve_CatmullRomSpline_Vector3 : Curve_Spline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentFirstDerivative(float time)
+	public unsafe override Vector4 GetCurrentFirstDerivative(float time)
 	{
 		if (times.Count == 1)
 			return values[0] - values[0];
@@ -945,7 +941,7 @@ public class Curve_CatmullRomSpline_Vector3 : Curve_Spline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentSecondDerivative(float time)
+	public unsafe override Vector4 GetCurrentSecondDerivative(float time)
 	{
 		if (times.Count == 1)
 			return values[0] - values[0];
@@ -1014,7 +1010,7 @@ public class Curve_CatmullRomSpline_Vector3 : Curve_Spline_Vector3
 	}
 }
 
-public class Curve_KochanekBartelsSpline_Vector3 : Curve_Spline_Vector3
+public class Curve_KochanekBartelsSpline_Vector4 : Curve_Spline_Vector4
 {
 	/// <summary>
 	/// add a timed/value pair to the spline
@@ -1023,7 +1019,7 @@ public class Curve_KochanekBartelsSpline_Vector3 : Curve_Spline_Vector3
 	/// <param name="time">The time.</param>
 	/// <param name="value">The value.</param>
 	/// <returns></returns>
-	public override int AddValue(float time, Vector3 value)
+	public override int AddValue(float time, Vector4 value)
 	{
 		var i = IndexForTime(time);
 		times.Insert(i, time);
@@ -1064,7 +1060,7 @@ public class Curve_KochanekBartelsSpline_Vector3 : Curve_Spline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentValue(float time)
+	public unsafe override Vector4 GetCurrentValue(float time)
 	{
 		if (times.Count == 1)
 			return values[0];
@@ -1086,7 +1082,7 @@ public class Curve_KochanekBartelsSpline_Vector3 : Curve_Spline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentFirstDerivative(float time)
+	public unsafe override Vector4 GetCurrentFirstDerivative(float time)
 	{
 		if (times.Count == 1)
 			return values[0] - values[0];
@@ -1109,7 +1105,7 @@ public class Curve_KochanekBartelsSpline_Vector3 : Curve_Spline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentSecondDerivative(float time)
+	public unsafe override Vector4 GetCurrentSecondDerivative(float time)
 	{
 		if (times.Count == 1)
 			return values[0] - values[0];
@@ -1131,7 +1127,7 @@ public class Curve_KochanekBartelsSpline_Vector3 : Curve_Spline_Vector3
 	protected List<float> continuity = new();
 	protected List<float> bias = new();
 
-	protected void TangentsForIndex(int index, out Vector3 t0, out Vector3 t1)
+	protected void TangentsForIndex(int index, out Vector4 t0, out Vector4 t1)
 	{
 		var delta = ValueForIndex(index + 1) - ValueForIndex(index);
 		var dt = TimeForIndex(index + 1) - TimeForIndex(index);
@@ -1210,9 +1206,9 @@ public class Curve_KochanekBartelsSpline_Vector3 : Curve_Spline_Vector3
 	}
 }
 
-public class Curve_BSpline_Vector3 : Curve_Spline_Vector3
+public class Curve_BSpline_Vector4 : Curve_Spline_Vector4
 {
-	public Curve_BSpline_Vector3()
+	public Curve_BSpline_Vector4()
 		=> order = 4;   // default to cubic
 
 	public virtual int GetOrder() => order;
@@ -1223,7 +1219,7 @@ public class Curve_BSpline_Vector3 : Curve_Spline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public override Vector3 GetCurrentValue(float time)
+	public override Vector4 GetCurrentValue(float time)
 	{
 		if (times.Count == 1)
 			return values[0];
@@ -1244,7 +1240,7 @@ public class Curve_BSpline_Vector3 : Curve_Spline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public override Vector3 GetCurrentFirstDerivative(float time)
+	public override Vector4 GetCurrentFirstDerivative(float time)
 	{
 		if (times.Count == 1)
 			return values[0];
@@ -1265,7 +1261,7 @@ public class Curve_BSpline_Vector3 : Curve_Spline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public override Vector3 GetCurrentSecondDerivative(float time)
+	public override Vector4 GetCurrentSecondDerivative(float time)
 	{
 		if (times.Count == 1)
 			return values[0];
@@ -1328,9 +1324,9 @@ public class Curve_BSpline_Vector3 : Curve_Spline_Vector3
 			(order - 1) / (TimeForIndex(index + (order - 1) - 2) - TimeForIndex(index - 2));
 }
 
-public class Curve_UniformCubicBSpline_Vector3 : Curve_BSpline_Vector3
+public class Curve_UniformCubicBSpline_Vector4 : Curve_BSpline_Vector4
 {
-	public Curve_UniformCubicBSpline_Vector3()
+	public Curve_UniformCubicBSpline_Vector4()
 		=> order = 4;  // always cubic
 
 	/// <summary>
@@ -1338,7 +1334,7 @@ public class Curve_UniformCubicBSpline_Vector3 : Curve_BSpline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentValue(float time)
+	public unsafe override Vector4 GetCurrentValue(float time)
 	{
 		if (times.Count == 1)
 			return values[0];
@@ -1360,7 +1356,7 @@ public class Curve_UniformCubicBSpline_Vector3 : Curve_BSpline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentFirstDerivative(float time)
+	public unsafe override Vector4 GetCurrentFirstDerivative(float time)
 	{
 		if (times.Count == 1)
 			return values[0] - values[0];
@@ -1383,7 +1379,7 @@ public class Curve_UniformCubicBSpline_Vector3 : Curve_BSpline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentSecondDerivative(float time)
+	public unsafe override Vector4 GetCurrentSecondDerivative(float time)
 	{
 		if (times.Count == 1)
 			return values[0] - values[0];
@@ -1450,13 +1446,13 @@ public class Curve_UniformCubicBSpline_Vector3 : Curve_BSpline_Vector3
 	}
 }
 
-public class Curve_NonUniformBSpline_Vector3 : Curve_BSpline_Vector3
+public class Curve_NonUniformBSpline_Vector4 : Curve_BSpline_Vector4
 {
 	/// <summary>
 	/// get the value for the given time
 	/// </summary>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentValue(float time)
+	public unsafe override Vector4 GetCurrentValue(float time)
 	{
 		if (times.Count == 1)
 			return values[0];
@@ -1477,7 +1473,7 @@ public class Curve_NonUniformBSpline_Vector3 : Curve_BSpline_Vector3
 	/// get the first derivative for the given time
 	/// </summary>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentFirstDerivative(float time)
+	public unsafe override Vector4 GetCurrentFirstDerivative(float time)
 	{
 		if (times.Count == 1)
 			return values[0] - values[0];
@@ -1498,7 +1494,7 @@ public class Curve_NonUniformBSpline_Vector3 : Curve_BSpline_Vector3
 	/// get the second derivative for the given time
 	/// </summary>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentSecondDerivative(float time)
+	public unsafe override Vector4 GetCurrentSecondDerivative(float time)
 	{
 		if (times.Count == 1)
 			return values[0] - values[0];
@@ -1577,7 +1573,7 @@ public class Curve_NonUniformBSpline_Vector3 : Curve_BSpline_Vector3
 	}
 }
 
-public class Curve_NURBS_Vector3 : Curve_NonUniformBSpline_Vector3
+public class Curve_NURBS_Vector4 : Curve_NonUniformBSpline_Vector4
 {
 	/// <summary>
 	/// add a timed/value pair to the spline
@@ -1586,7 +1582,7 @@ public class Curve_NURBS_Vector3 : Curve_NonUniformBSpline_Vector3
 	/// <param name="time">The time.</param>
 	/// <param name="value">The value.</param>
 	/// <returns></returns>
-	public override int AddValue(float time, Vector3 value)
+	public override int AddValue(float time, Vector4 value)
 	{
 		var i = IndexForTime(time);
 		times.Insert(i, time);
@@ -1603,7 +1599,7 @@ public class Curve_NURBS_Vector3 : Curve_NonUniformBSpline_Vector3
 	/// <param name="value">The value.</param>
 	/// <param name="weight">The weight.</param>
 	/// <returns></returns>
-	public virtual int AddValue(float time, Vector3 value, float weight)
+	public virtual int AddValue(float time, Vector4 value, float weight)
 	{
 		var i = IndexForTime(time);
 		times.Insert(i, time);
@@ -1621,7 +1617,7 @@ public class Curve_NURBS_Vector3 : Curve_NonUniformBSpline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentValue(float time)
+	public unsafe override Vector4 GetCurrentValue(float time)
 	{
 		if (times.Count == 1)
 			return values[0];
@@ -1647,7 +1643,7 @@ public class Curve_NURBS_Vector3 : Curve_NonUniformBSpline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentFirstDerivative(float time)
+	public unsafe override Vector4 GetCurrentFirstDerivative(float time)
 	{
 		if (times.Count == 1)
 			return values[0];
@@ -1658,7 +1654,7 @@ public class Curve_NURBS_Vector3 : Curve_NonUniformBSpline_Vector3
 		var i = IndexForTime(clampedTime);
 		Basis(i - 1, order, clampedTime, bvals);
 		BasisFirstDerivative(i - 1, order, clampedTime, d1vals);
-		Vector3 vb, vd1; vb = vd1 = values[0] - values[0];
+		Vector4 vb, vd1; vb = vd1 = values[0] - values[0];
 		float wb, wd1; wb = wd1 = 0f;
 		for (var j = 0; j < order; j++)
 		{
@@ -1680,7 +1676,7 @@ public class Curve_NURBS_Vector3 : Curve_NonUniformBSpline_Vector3
 	/// </summary>
 	/// <param name="time">The time.</param>
 	/// <returns></returns>
-	public unsafe override Vector3 GetCurrentSecondDerivative(float time)
+	public unsafe override Vector4 GetCurrentSecondDerivative(float time)
 	{
 		if (times.Count == 1)
 			return values[0];
@@ -1693,7 +1689,7 @@ public class Curve_NURBS_Vector3 : Curve_NonUniformBSpline_Vector3
 		Basis(i - 1, order, clampedTime, bvals);
 		BasisFirstDerivative(i - 1, order, clampedTime, d1vals);
 		BasisSecondDerivative(i - 1, order, clampedTime, d2vals);
-		Vector3 vb, vd1, vd2; vb = vd1 = vd2 = values[0] - values[0];
+		Vector4 vb, vd1, vd2; vb = vd1 = vd2 = values[0] - values[0];
 		float wb, wd1, wd2; wb = wd1 = wd2 = 0f;
 		for (var j = 0; j < order; j++)
 		{

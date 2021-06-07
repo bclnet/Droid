@@ -8,7 +8,7 @@ namespace Droid.Core
     {
         internal float[] p = new float[6];
 
-        //public Pluecker() { }
+        public Pluecker() { }
         public unsafe Pluecker(float[] a)
         {
             fixed (float* p = this.p, a_ = a)

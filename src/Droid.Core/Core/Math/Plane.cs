@@ -37,10 +37,10 @@ namespace Droid.Core
         public float c;
         public float d;
 
-        //public const int SIDE_FRONT = 0;
-        //public const int SIDE_BACK = 1;
-        //public const int SIDE_ON = 2;
-        //public const int SIDE_CROSS = 3;
+        public const int SIDE_FRONT = 0;
+        public const int SIDE_BACK = 1;
+        public const int SIDE_ON = 2;
+        public const int SIDE_CROSS = 3;
 
         public Plane(float a, float b, float c, float d)
         {
