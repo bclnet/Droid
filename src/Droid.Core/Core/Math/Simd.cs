@@ -1,3 +1,6 @@
+using Droid.Sys;
+using static Droid.Core.Lib;
+
 namespace Droid.Core
 {
     public partial class SIMD
@@ -18,7 +21,7 @@ namespace Droid.Core
         {
             ISIMDProcessor newProcessor;
 
-            var cpuid = Lib.sys.GetProcessorId();
+            var cpuid = Lib.sys.ProcessorId;
 
             if (forceGeneric)
                 newProcessor = generic;
@@ -41,13 +44,13 @@ namespace Droid.Core
             if (newProcessor != Processor)
             {
                 Processor = newProcessor;
-                Lib.Printf($"{module} using {Processor.Name} for SIMD processing\n");
+                common.Printf($"{module} using {Processor.Name} for SIMD processing\n");
             }
 
             if ((cpuid & CPUID.SSE) != 0)
             {
-                Lib.sys.FPU_SetFTZ(true);
-                Lib.sys.FPU_SetDAZ(true);
+                sys.FPU_SetFTZ(true);
+                sys.FPU_SetDAZ(true);
             }
         }
 

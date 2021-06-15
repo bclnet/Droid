@@ -1,8 +1,10 @@
+using Droid.Sys;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using static Droid.Core.Lib;
 
 namespace Droid.Core
 {
@@ -138,11 +140,11 @@ namespace Droid.Core
         public void WriteBits(int value, int numBits) // write the specified number of bits
         {
             if (writeData == null)
-                Lib.Error("BitMsg::WriteBits: cannot write to message");
+                common.Error("BitMsg::WriteBits: cannot write to message");
 
             // check if the number of bits is valid
             if (numBits == 0 || numBits < -31 || numBits > 32)
-                Lib.Error($"BitMsg::WriteBits: bad numBits {numBits}");
+                common.Error($"BitMsg::WriteBits: bad numBits {numBits}");
 
             // check for value overflows
             // this should be an error really, as it can go unnoticed and cause either bandwidth or corrupted data transmitted
@@ -150,14 +152,14 @@ namespace Droid.Core
             {
                 if (numBits > 0)
                 {
-                    if (value > (1 << numBits) - 1) Lib.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
-                    else if (value < 0) Lib.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
+                    if (value > (1 << numBits) - 1) common.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
+                    else if (value < 0) common.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
                 }
                 else
                 {
                     var r = 1 << (-1 - numBits);
-                    if (value > r - 1) Lib.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
-                    else if (value < -r) Lib.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
+                    if (value > r - 1) common.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
+                    else if (value < -r) common.Warning($"BitMsg::WriteBits: value overflow {value} {numBits}");
                 }
             }
 
@@ -336,11 +338,11 @@ namespace Droid.Core
         public int ReadBits(int numBits)            // read the specified number of bits
         {
             if (readData == null)
-                Lib.FatalError("BitMsg::ReadBits: cannot read from message");
+                common.FatalError("BitMsg::ReadBits: cannot read from message");
 
             // check if the number of bits is valid
             if (numBits == 0 || numBits < -31 || numBits > 32)
-                Lib.FatalError($"BitMsg::ReadBits: bad numBits {numBits}");
+                common.FatalError($"BitMsg::ReadBits: bad numBits {numBits}");
 
             bool sgn;
             if (numBits < 0) { numBits = -numBits; sgn = true; }
@@ -538,10 +540,10 @@ namespace Droid.Core
             if (numBits > RemainingWriteBits)
             {
                 if (!allowOverflow)
-                    Lib.FatalError("BitMsg: overflow without allowOverflow set");
+                    common.FatalError("BitMsg: overflow without allowOverflow set");
                 if (numBits > (maxSize << 3))
-                    Lib.FatalError($"BitMsg: {numBits} bits is > full message size");
-                Lib.Printf("BitMsg: overflow\n");
+                    common.FatalError($"BitMsg: {numBits} bits is > full message size");
+                common.Printf("BitMsg: overflow\n");
                 BeginWriting();
                 overflowed = true;
                 return true;
@@ -552,7 +554,7 @@ namespace Droid.Core
         Span<byte> GetByteSpace(int length)
         {
             if (writeData == null)
-                Lib.FatalError("BitMsg::GetByteSpace: cannot write to message");
+                common.FatalError("BitMsg::GetByteSpace: cannot write to message");
 
             // round up to the next byte
             WriteByteAlign();

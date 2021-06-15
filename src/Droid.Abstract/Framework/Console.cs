@@ -10,7 +10,7 @@ namespace Droid.Framework
         // can't be combined with Init, because Init happens before renderer is started
         void LoadGraphics();
 
-        bool ProcessEvent(sysEvent e, bool forceAccept);
+        bool ProcessEvent(SysEvent e, bool forceAccept);
 
         // the system code can release the mouse pointer when the console is active
         bool Active { get; }

@@ -1,6 +1,6 @@
 using System;
 
-namespace Droid.Framework
+namespace Droid.Core
 {
     // command flags
     [Flags]
@@ -26,7 +26,7 @@ namespace Droid.Framework
     // command function
     public delegate void CmdFunction(CmdArgs args);
 
-    public interface CmdSystem
+    public interface ICmdSystem
     {
         // Registers a command and the function to call for it.
         void AddCommand(string cmdName, CmdFunction function, CMD_FL flags, string description, ArgCompletion argCompletion = null);
@@ -57,30 +57,5 @@ namespace Droid.Framework
         // Setup a reloadEngine to happen on next command run, and give a command to execute after reload
         void SetupReloadEngine(CmdArgs args);
         bool PostReloadEngine();
-    }
-
-    public static class CmdSystemX
-    {
-        public static void ArgCompletion_Decl(CmdArgs args, Action<string> callback, int type) =>
-            G.cmdSystem.ArgCompletion_DeclName(args, callback, type);
-        public static void ArgCompletion_FileName(CmdArgs args, Action<string> callback) =>
-            G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "/", true, "", null);
-
-        public static void ArgCompletion_MapName(CmdArgs args, Action<string> callback) =>
-            G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "maps/", true, ".map", null);
-        public static void ArgCompletion_ModelName(CmdArgs args, Action<string> callback) =>
-            G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "models/", false, ".lwo", ".ase", ".md5mesh", ".ma", null);
-        public static void ArgCompletion_SoundName(CmdArgs args, Action<string> callback) =>
-            G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "sound/", false, ".wav", ".ogg", null);
-        public static void ArgCompletion_ImageName(CmdArgs args, Action<string> callback) =>
-            G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "/", false, ".tga", ".dds", ".jpg", ".pcx", null);
-        public static void ArgCompletion_VideoName(CmdArgs args, Action<string> callback) =>
-            G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "video/", false, ".roq", null);
-        public static void ArgCompletion_ConfigName(CmdArgs args, Action<string> callback) =>
-            G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "/", true, ".cfg", null);
-        public static void ArgCompletion_SaveGame(CmdArgs args, Action<string> callback) =>
-            G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "SaveGames/", true, ".save", null);
-        public static void ArgCompletion_DemoName(CmdArgs args, Action<string> callback) =>
-            G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "demos/", true, ".demo", null);
     }
 }

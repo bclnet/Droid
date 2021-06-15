@@ -1,6 +1,7 @@
 //#define MATX_SIMD
 using System;
 using System.Diagnostics;
+using static Droid.Core.Lib;
 
 namespace Droid.Core
 {
@@ -29,7 +30,7 @@ namespace Droid.Core
             m1.LowerTriangularInverse();
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::LowerTriangularInverse failed");
+                common.Warning("MatrixX::LowerTriangularInverse failed");
 
             //  MatrixX::UpperTriangularInverse
 
@@ -41,7 +42,7 @@ namespace Droid.Core
             m1.UpperTriangularInverse();
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::UpperTriangularInverse failed");
+                common.Warning("MatrixX::UpperTriangularInverse failed");
 
             //    MatrixX::Inverse_GaussJordan
 
@@ -51,7 +52,7 @@ namespace Droid.Core
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
-                Lib.Warning("MatrixX::Inverse_GaussJordan failed");
+                common.Warning("MatrixX::Inverse_GaussJordan failed");
 
             //    MatrixX::Inverse_UpdateRankOne
 
@@ -73,7 +74,7 @@ namespace Droid.Core
             m1.Inverse_UpdateRankOne(v, w, 1f);
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::Inverse_UpdateRankOne failed");
+                common.Warning("MatrixX::Inverse_UpdateRankOne failed");
 
             // MatrixX::Inverse_UpdateRowColumn
 
@@ -98,7 +99,7 @@ namespace Droid.Core
                 m1.Inverse_UpdateRowColumn(v, w, offset);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    Lib.Warning("MatrixX::Inverse_UpdateRowColumn failed");
+                    common.Warning("MatrixX::Inverse_UpdateRowColumn failed");
             }
 
             //    MatrixX::Inverse_UpdateIncrement
@@ -122,7 +123,7 @@ namespace Droid.Core
             m1.Inverse_UpdateIncrement(v, w);
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::Inverse_UpdateIncrement failed");
+                common.Warning("MatrixX::Inverse_UpdateIncrement failed");
 
             //    MatrixX::Inverse_UpdateDecrement
 
@@ -151,7 +152,7 @@ namespace Droid.Core
                 m1.Inverse_UpdateDecrement(v, w, offset);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    Lib.Warning("MatrixX::Inverse_UpdateDecrement failed");
+                    common.Warning("MatrixX::Inverse_UpdateDecrement failed");
             }
 
             //    MatrixX::LU_Factor
@@ -163,7 +164,7 @@ namespace Droid.Core
             m1 = m2 * m3;
 
             if (!original.Compare(m1, 1e-4f))
-                Lib.Warning("MatrixX::LU_Factor failed");
+                common.Warning("MatrixX::LU_Factor failed");
 
             //    MatrixX::LU_UpdateRankOne
 
@@ -189,7 +190,7 @@ namespace Droid.Core
             m1 = new MatrixX(m1);
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::LU_UpdateRankOne failed");
+                common.Warning("MatrixX::LU_UpdateRankOne failed");
 
             //    MatrixX::LU_UpdateRowColumn
 
@@ -218,7 +219,7 @@ namespace Droid.Core
                 m1 = new MatrixX(m1);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    Lib.Warning("MatrixX::LU_UpdateRowColumn failed");
+                    common.Warning("MatrixX::LU_UpdateRowColumn failed");
             }
 
             //    MatrixX::LU_UpdateIncrement
@@ -246,7 +247,7 @@ namespace Droid.Core
             m1 = new MatrixX(m1);
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::LU_UpdateIncrement failed");
+                common.Warning("MatrixX::LU_UpdateIncrement failed");
 
             //    MatrixX::LU_UpdateDecrement
 
@@ -283,7 +284,7 @@ namespace Droid.Core
                 m1 = new MatrixX(m1);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    Lib.Warning("MatrixX::LU_UpdateDecrement failed");
+                    common.Warning("MatrixX::LU_UpdateDecrement failed");
             }
 
             //    MatrixX::LU_Inverse
@@ -295,7 +296,7 @@ namespace Droid.Core
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
-                Lib.Warning("MatrixX::LU_Inverse failed");
+                common.Warning("MatrixX::LU_Inverse failed");
 
             //    MatrixX::QR_Factor
 
@@ -309,7 +310,7 @@ namespace Droid.Core
             m1 = q1 * r1;
 
             if (!original.Compare(m1, 1e-4f))
-                Lib.Warning("MatrixX::QR_Factor failed");
+                common.Warning("MatrixX::QR_Factor failed");
 
             //    MatrixX::QR_UpdateRankOne
 
@@ -338,7 +339,7 @@ namespace Droid.Core
             m1 = q1 * r1;
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::QR_UpdateRankOne failed");
+                common.Warning("MatrixX::QR_UpdateRankOne failed");
 
             //    MatrixX::QR_UpdateRowColumn
 
@@ -370,7 +371,7 @@ namespace Droid.Core
                 m1 = q1 * r1;
 
                 if (!m1.Compare(m2, 1e-3f))
-                    Lib.Warning("MatrixX::QR_UpdateRowColumn failed");
+                    common.Warning("MatrixX::QR_UpdateRowColumn failed");
             }
 
             //    MatrixX::QR_UpdateIncrement
@@ -401,7 +402,7 @@ namespace Droid.Core
             m1 = q1 * r1;
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::QR_UpdateIncrement failed");
+                common.Warning("MatrixX::QR_UpdateIncrement failed");
 
             //    MatrixX::QR_UpdateDecrement
 
@@ -437,7 +438,7 @@ namespace Droid.Core
                 m1 = q1 * r1;
 
                 if (!m1.Compare(m2, 1e-3f))
-                    Lib.Warning("MatrixX::QR_UpdateDecrement failed");
+                    common.Warning("MatrixX::QR_UpdateDecrement failed");
             }
 
             //    MatrixX::QR_Inverse
@@ -449,7 +450,7 @@ namespace Droid.Core
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
-                Lib.Warning("MatrixX::QR_Inverse failed");
+                common.Warning("MatrixX::QR_Inverse failed");
 
             //    MatrixX::SVD_Factor
 
@@ -463,7 +464,7 @@ namespace Droid.Core
             m1 = m1 * m2 * m3;
 
             if (!original.Compare(m1, 1e-4f))
-                Lib.Warning("MatrixX::SVD_Factor failed");
+                common.Warning("MatrixX::SVD_Factor failed");
 
             //    MatrixX::SVD_Inverse
 
@@ -474,7 +475,7 @@ namespace Droid.Core
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
-                Lib.Warning("MatrixX::SVD_Inverse failed");
+                common.Warning("MatrixX::SVD_Inverse failed");
 
             //    MatrixX::Cholesky_Factor
 
@@ -484,7 +485,7 @@ namespace Droid.Core
             m1.Cholesky_MultiplyFactors(m2);
 
             if (!original.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::Cholesky_Factor failed");
+                common.Warning("MatrixX::Cholesky_Factor failed");
 
             //    MatrixX::Cholesky_UpdateRankOne
 
@@ -507,7 +508,7 @@ namespace Droid.Core
             m1.Cholesky_UpdateRankOne(w, 1f, 0);
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::Cholesky_UpdateRankOne failed");
+                common.Warning("MatrixX::Cholesky_UpdateRankOne failed");
 
             //    MatrixX::Cholesky_UpdateRowColumn
 
@@ -534,7 +535,7 @@ namespace Droid.Core
                 m1.Cholesky_UpdateRowColumn(w, offset);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    Lib.Warning("MatrixX::Cholesky_UpdateRowColumn failed");
+                    common.Warning("MatrixX::Cholesky_UpdateRowColumn failed");
             }
 
             //    MatrixX::Cholesky_UpdateIncrement
@@ -564,7 +565,7 @@ namespace Droid.Core
             m2.ClearUpperTriangle();
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::Cholesky_UpdateIncrement failed");
+                common.Warning("MatrixX::Cholesky_UpdateIncrement failed");
 
             //    MatrixX::Cholesky_UpdateDecrement
 
@@ -589,7 +590,7 @@ namespace Droid.Core
                 m1.Cholesky_UpdateDecrement(v, offset);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    Lib.Warning("MatrixX::Cholesky_UpdateDecrement failed");
+                    common.Warning("MatrixX::Cholesky_UpdateDecrement failed");
             }
 
             //    MatrixX::Cholesky_Inverse
@@ -601,7 +602,7 @@ namespace Droid.Core
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
-                Lib.Warning("MatrixX::Cholesky_Inverse failed");
+                common.Warning("MatrixX::Cholesky_Inverse failed");
 
             //    MatrixX::LDLT_Factor
 
@@ -611,13 +612,13 @@ namespace Droid.Core
             m1.LDLT_MultiplyFactors(m2);
 
             if (!original.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::LDLT_Factor failed");
+                common.Warning("MatrixX::LDLT_Factor failed");
 
             m1.LDLT_UnpackFactors(m2, m3);
             m2 = m2 * m3 * m2.Transpose();
 
             if (!original.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::LDLT_Factor failed");
+                common.Warning("MatrixX::LDLT_Factor failed");
 
             //    MatrixX::LDLT_UpdateRankOne
 
@@ -640,7 +641,7 @@ namespace Droid.Core
             m1.LDLT_UpdateRankOne(w, 1f, 0);
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::LDLT_UpdateRankOne failed");
+                common.Warning("MatrixX::LDLT_UpdateRankOne failed");
 
             //    MatrixX::LDLT_UpdateRowColumn
 
@@ -665,7 +666,7 @@ namespace Droid.Core
                 m1.LDLT_UpdateRowColumn(w, offset);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    Lib.Warning("MatrixX::LDLT_UpdateRowColumn failed");
+                    common.Warning("MatrixX::LDLT_UpdateRowColumn failed");
             }
 
             //    MatrixX::LDLT_UpdateIncrement
@@ -695,7 +696,7 @@ namespace Droid.Core
             m2.ClearUpperTriangle();
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::LDLT_UpdateIncrement failed");
+                common.Warning("MatrixX::LDLT_UpdateIncrement failed");
 
             //    MatrixX::LDLT_UpdateDecrement
 
@@ -720,7 +721,7 @@ namespace Droid.Core
                 m1.LDLT_UpdateDecrement(v, offset);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    Lib.Warning("MatrixX::LDLT_UpdateDecrement failed");
+                    common.Warning("MatrixX::LDLT_UpdateDecrement failed");
             }
 
             //    MatrixX::LDLT_Inverse
@@ -732,7 +733,7 @@ namespace Droid.Core
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
-                Lib.Warning("MatrixX::LDLT_Inverse failed");
+                common.Warning("MatrixX::LDLT_Inverse failed");
 
             //    MatrixX::Eigen_SolveSymmetricTriDiagonal
 
@@ -751,7 +752,7 @@ namespace Droid.Core
                     m1[i][j] *= v[j];
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::Eigen_SolveSymmetricTriDiagonal failed");
+                common.Warning("MatrixX::Eigen_SolveSymmetricTriDiagonal failed");
 
             //    MatrixX::Eigen_SolveSymmetric
 
@@ -769,7 +770,7 @@ namespace Droid.Core
                     m1[i][j] *= v[j];
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::Eigen_SolveSymmetric failed");
+                common.Warning("MatrixX::Eigen_SolveSymmetric failed");
 
             //    MatrixX::Eigen_Solve
 
@@ -788,7 +789,7 @@ namespace Droid.Core
                     m1[i][j] *= v[j];
 
             if (!m1.Compare(m2, 1e-4f))
-                Lib.Warning("MatrixX::Eigen_Solve failed");
+                common.Warning("MatrixX::Eigen_Solve failed");
         }
     }
 }

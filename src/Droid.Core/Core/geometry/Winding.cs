@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using static Droid.Core.Lib;
 using static Droid.Core.Plane;
 
 namespace Droid.Core
@@ -269,7 +270,7 @@ namespace Droid.Core
                 }
 
             if (f.numPoints > maxpts || b.numPoints > maxpts)
-                Lib.FatalError("Winding::Split: points exceeded estimate.");
+                common.FatalError("Winding::Split: points exceeded estimate.");
 
             return SIDE_CROSS;
         }
@@ -533,7 +534,7 @@ namespace Droid.Core
         public unsafe void RemovePoint(int point)
         {
             if (point < 0 || point >= numPoints)
-                Lib.FatalError("Winding::removePoint: point out of range");
+                common.FatalError("Winding::removePoint: point out of range");
             if (point < numPoints - 1)
                 fixed (Vector5* p = this.p)
                     UnsafeX.MoveBlock(&p[point], &p[point + 1], (uint)((numPoints - point - 1) * sizeof(Vector5)));
@@ -545,10 +546,10 @@ namespace Droid.Core
             int i;
 
             if (spot > numPoints)
-                Lib.FatalError("Winding::insertPoint: spot > numPoints");
+                common.FatalError("Winding::insertPoint: spot > numPoints");
 
             if (spot < 0)
-                Lib.FatalError("Winding::insertPoint: spot < 0");
+                common.FatalError("Winding::insertPoint: spot < 0");
 
             EnsureAlloced(numPoints + 1, true);
             for (i = numPoints; i > spot; i--)
@@ -885,7 +886,7 @@ namespace Droid.Core
             if (numPoints < 3)
             {
                 if (print)
-                    Lib.Printf($"Winding::Check: only {numPoints} points.");
+                    common.Printf($"Winding::Check: only {numPoints} points.");
                 return false;
             }
 
@@ -893,7 +894,7 @@ namespace Droid.Core
             if (area < 1f)
             {
                 if (print)
-                    Lib.Printf($"Winding::Check: tiny area: {area}");
+                    common.Printf($"Winding::Check: tiny area: {area}");
                 return false;
             }
 
@@ -908,7 +909,7 @@ namespace Droid.Core
                     if (p1[j] >= Platform.MAX_WORLD_COORD || p1[j] <= Platform.MIN_WORLD_COORD)
                     {
                         if (print)
-                            Lib.Printf($"Winding::Check: point {i} outside world {'X' + j}-axis: {p1[j]}");
+                            common.Printf($"Winding::Check: point {i} outside world {'X' + j}-axis: {p1[j]}");
                         return false;
                     }
 
@@ -919,7 +920,7 @@ namespace Droid.Core
                 if (d < -ON_EPSILON || d > ON_EPSILON)
                 {
                     if (print)
-                        Lib.Printf($"Winding::Check: point {i} off plane.");
+                        common.Printf($"Winding::Check: point {i} off plane.");
                     return false;
                 }
 
@@ -930,7 +931,7 @@ namespace Droid.Core
                 if (dir.Length < ON_EPSILON)
                 {
                     if (print)
-                        Lib.Printf($"Winding::Check: edge {i} is degenerate.");
+                        common.Printf($"Winding::Check: edge {i} is degenerate.");
                     return false;
                 }
 
@@ -949,7 +950,7 @@ namespace Droid.Core
                     if (d > edgedist)
                     {
                         if (print)
-                            Lib.Printf("Winding::Check: non-convex.");
+                            common.Printf("Winding::Check: non-convex.");
                         return false;
                     }
                 }
@@ -1086,7 +1087,7 @@ namespace Droid.Core
         public void Print()
         {
             for (var i = 0; i < numPoints; i++)
-                Lib.Printf($"({p[i].x:5.1}, {p[i].y:5.1}, {p[i].z:5.1})\n");
+                common.Printf($"({p[i].x:5.1}, {p[i].y:5.1}, {p[i].z:5.1})\n");
         }
 
         public float PlaneDistance(Plane plane)
@@ -1456,7 +1457,7 @@ namespace Droid.Core
 
             if (n > MAX_POINTS_ON_WINDING)
             {
-                Lib.Printf("WARNING: FixedWinding . MAX_POINTS_ON_WINDING overflowed\n");
+                common.Printf("WARNING: FixedWinding . MAX_POINTS_ON_WINDING overflowed\n");
                 return false;
             }
             return true;

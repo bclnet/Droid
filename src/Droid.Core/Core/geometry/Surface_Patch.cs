@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using static Droid.Core.Lib;
 
 namespace Droid.Core
 {
@@ -31,9 +32,9 @@ namespace Droid.Core
         public void SetSize(int patchWidth, int patchHeight)
         {
             if (patchWidth < 1 || patchWidth > maxWidth)
-                Lib.FatalError("Surface_Patch::SetSize: invalid patchWidth");
+                common.FatalError("Surface_Patch::SetSize: invalid patchWidth");
             if (patchHeight < 1 || patchHeight > maxHeight)
-                Lib.FatalError("Surface_Patch::SetSize: invalid patchHeight");
+                common.FatalError("Surface_Patch::SetSize: invalid patchHeight");
             width = patchWidth;
             height = patchHeight;
             verts.SetNum(width * height, false);
@@ -325,7 +326,7 @@ namespace Droid.Core
             int i, j;
 
             if (expanded)
-                Lib.FatalError("Surface_Patch::Expand: patch alread expanded");
+                common.FatalError("Surface_Patch::Expand: patch alread expanded");
             expanded = true;
             verts.SetNum(maxWidth * maxHeight, false);
             if (width != maxWidth)
@@ -340,7 +341,7 @@ namespace Droid.Core
             int i, j;
 
             if (!expanded)
-                Lib.FatalError("Surface_Patch::Collapse: patch not expanded");
+                common.FatalError("Surface_Patch::Collapse: patch not expanded");
             expanded = false;
             if (width != maxWidth)
                 for (j = 0; j < height; j++)

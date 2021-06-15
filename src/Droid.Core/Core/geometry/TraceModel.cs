@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using TraceModelVert = Droid.Core.Vector3;
+using static Droid.Core.Lib;
 
 namespace Droid.Core
 {
@@ -553,17 +554,17 @@ namespace Droid.Core
                 n = 3;
             if (n * 2 > MAX_TRACEMODEL_VERTS)
             {
-                Lib.Printf("WARNING: TraceModel::SetupCylinder: too many vertices\n");
+                common.Printf("WARNING: TraceModel::SetupCylinder: too many vertices\n");
                 n = MAX_TRACEMODEL_VERTS / 2;
             }
             if (n * 3 > MAX_TRACEMODEL_EDGES)
             {
-                Lib.Printf("WARNING: TraceModel::SetupCylinder: too many sides\n");
+                common.Printf("WARNING: TraceModel::SetupCylinder: too many sides\n");
                 n = MAX_TRACEMODEL_EDGES / 3;
             }
             if (n + 2 > MAX_TRACEMODEL_POLYS)
             {
-                Lib.Printf("WARNING: TraceModel::SetupCylinder: too many polygons\n");
+                common.Printf("WARNING: TraceModel::SetupCylinder: too many polygons\n");
                 n = MAX_TRACEMODEL_POLYS - 2;
             }
 
@@ -661,17 +662,17 @@ namespace Droid.Core
                 n = 3;
             if (n + 1 > MAX_TRACEMODEL_VERTS)
             {
-                Lib.Printf("WARNING: TraceModel::SetupCone: too many vertices\n");
+                common.Printf("WARNING: TraceModel::SetupCone: too many vertices\n");
                 n = MAX_TRACEMODEL_VERTS - 1;
             }
             if (n * 2 > MAX_TRACEMODEL_EDGES)
             {
-                Lib.Printf("WARNING: TraceModel::SetupCone: too many edges\n");
+                common.Printf("WARNING: TraceModel::SetupCone: too many edges\n");
                 n = MAX_TRACEMODEL_EDGES / 2;
             }
             if (n + 1 > MAX_TRACEMODEL_POLYS)
             {
-                Lib.Printf("WARNING: TraceModel::SetupCone: too many polygons\n");
+                common.Printf("WARNING: TraceModel::SetupCone: too many polygons\n");
                 n = MAX_TRACEMODEL_POLYS - 1;
             }
 
@@ -858,7 +859,7 @@ namespace Droid.Core
             // times three because we need to be able to turn the polygon into a volume
             if (numVerts * 3 > MAX_TRACEMODEL_EDGES)
             {
-                Lib.Printf("WARNING: TraceModel::SetupPolygon: too many vertices\n");
+                common.Printf("WARNING: TraceModel::SetupPolygon: too many vertices\n");
                 numVerts = MAX_TRACEMODEL_EDGES / 3;
             }
 

@@ -87,12 +87,12 @@ namespace Droid.Core
         public string[] ValueStrings => valueStrings;
         public ArgCompletion GetValueCompletion() => valueCompletion;
 
-        public bool Modified
-        {
-            get => (internalVar.flags & CVAR.MODIFIED) != 0;
-            set => internalVar.flags |= CVAR.MODIFIED;
-        }
-        public void ClearModified() => internalVar.flags &= ~CVAR.MODIFIED;
+        public bool IsModified
+            => (internalVar.flags & CVAR.MODIFIED) != 0;
+        public void SetModified()
+            => internalVar.flags |= CVAR.MODIFIED;
+        public void ClearModified()
+            => internalVar.flags &= ~CVAR.MODIFIED;
 
         public string String
         {

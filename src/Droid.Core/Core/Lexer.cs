@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using static Droid.Core.Lib;
 
 namespace Droid.Core
 {
@@ -249,7 +250,7 @@ namespace Droid.Core
         {
             if (loaded)
             {
-                Lib.Error("Lexer::LoadFile: another script already loaded");
+                common.Error("Lexer::LoadFile: another script already loaded");
                 return false;
             }
 
@@ -292,7 +293,7 @@ namespace Droid.Core
         {
             if (loaded)
             {
-                Lib.Error("Lexer::LoadMemory: another script already loaded");
+                common.Error("Lexer::LoadMemory: another script already loaded");
                 return false;
             }
             filename = name;
@@ -340,7 +341,7 @@ namespace Droid.Core
             token = new Token(string.Empty);
             if (!loaded)
             {
-                Lib.Error("Lexer::ReadToken: no file loaded");
+                common.Error("Lexer::ReadToken: no file loaded");
                 return false;
             }
 
@@ -669,7 +670,7 @@ namespace Droid.Core
         public void UnreadToken(Token token)
         {
             if (tokenavailable)
-                Lib.FatalError("Lexer::unreadToken, unread token twice\n");
+                common.FatalError("Lexer::unreadToken, unread token twice\n");
             this.token = token;
             tokenavailable = true;
         }
@@ -1068,8 +1069,8 @@ namespace Droid.Core
                 return;
 
             var text = str;
-            if ((flags & LEXFL.NOFATALERRORS) != 0) Lib.Warning($"file {filename}, line {line}: {text}");
-            else Lib.Error($"file {filename}, line {line}: {text}");
+            if ((flags & LEXFL.NOFATALERRORS) != 0) common.Warning($"file {filename}, line {line}: {text}");
+            else common.Error($"file {filename}, line {line}: {text}");
         }
 
         /// <summary>
@@ -1082,7 +1083,7 @@ namespace Droid.Core
                 return;
 
             var text = str;
-            Lib.Warning($"file {filename}, line {line}: {text}");
+            common.Warning($"file {filename}, line {line}: {text}");
         }
 
         /// <summary>

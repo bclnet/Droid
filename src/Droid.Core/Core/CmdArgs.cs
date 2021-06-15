@@ -153,10 +153,35 @@ namespace Droid.Core
                 callback($"{args[0]} {i}");
         };
 
-        public static void ArgCompletion_String(CmdArgs args, Action<string> callback, string[] strings)
+        public static ArgCompletion ArgCompletion_String(string[] strings) => (CmdArgs args, Action<string> callback) =>
         {
             for (var i = 0; i < strings.Length; i++)
                 callback($"{args[0]} {strings[i]}");
-        }
+        };
     }
+
+    //public static class CmdArgsX
+    //{
+    //    public static void ArgCompletion_Decl(CmdArgs args, Action<string> callback, int type) =>
+    //        G.cmdSystem.ArgCompletion_DeclName(args, callback, type);
+    //    public static void ArgCompletion_FileName(CmdArgs args, Action<string> callback) =>
+    //        G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "/", true, "", null);
+
+    //    public static void ArgCompletion_MapName(CmdArgs args, Action<string> callback) =>
+    //        G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "maps/", true, ".map", null);
+    //    public static void ArgCompletion_ModelName(CmdArgs args, Action<string> callback) =>
+    //        G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "models/", false, ".lwo", ".ase", ".md5mesh", ".ma", null);
+    //    public static void ArgCompletion_SoundName(CmdArgs args, Action<string> callback) =>
+    //        G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "sound/", false, ".wav", ".ogg", null);
+    //    public static void ArgCompletion_ImageName(CmdArgs args, Action<string> callback) =>
+    //        G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "/", false, ".tga", ".dds", ".jpg", ".pcx", null);
+    //    public static void ArgCompletion_VideoName(CmdArgs args, Action<string> callback) =>
+    //        G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "video/", false, ".roq", null);
+    //    public static void ArgCompletion_ConfigName(CmdArgs args, Action<string> callback) =>
+    //        G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "/", true, ".cfg", null);
+    //    public static void ArgCompletion_SaveGame(CmdArgs args, Action<string> callback) =>
+    //        G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "SaveGames/", true, ".save", null);
+    //    public static void ArgCompletion_DemoName(CmdArgs args, Action<string> callback) =>
+    //        G.cmdSystem.ArgCompletion_FolderExtension(args, callback, "demos/", true, ".demo", null);
+    //}
 }

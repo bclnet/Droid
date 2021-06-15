@@ -1,3 +1,4 @@
+using Droid.Sys;
 using System;
 using System.Buffers.Binary;
 using System.Diagnostics;
@@ -7,15 +8,11 @@ namespace Droid.Core
     public static class Lib
     {
         public static ISystem sys;
-        //public static Common      common;
+        public static ICommon common;
         public static ICVarSystem cvarSystem;
         public static IVFileSystem fileSystem;
+        public static ICmdSystem cmdSystem;
         public static int frameNumber = 0;
-
-        public static Action<string> FatalError;
-        public static Action<string> Error;
-        public static Action<string> Warning;
-        public static Action<string> Printf;
 
         static unsafe void Init()
         {

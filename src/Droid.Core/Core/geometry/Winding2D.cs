@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using static Droid.Core.Lib;
 using static Droid.Core.Plane;
 
 namespace Droid.Core
@@ -410,7 +411,7 @@ namespace Droid.Core
         public void Print()
         {
             for (var i = 0; i < numPoints; i++)
-                Lib.Printf($"({p[i].x:5.1}, {p[i].y:5.1})\n");
+                common.Printf($"({p[i].x:5.1}, {p[i].y:5.1})\n");
         }
 
         public float PlaneDistance(Vector3 plane)
