@@ -410,7 +410,7 @@ namespace Droid.Sys
         static void SetHighDPIMode()
             => SetProcessDpiAwareness(PROCESS_DPI_AWARENESS.D3_PROCESS_PER_MONITOR_DPI_AWARE);
 
-        public static int main(int argc, string[] argv)
+        public static int Main(string[] args)
         {
             //var hcurSave = SetCursor(LoadCursor(0, IDC_WAIT));
 
@@ -434,7 +434,7 @@ namespace Droid.Sys
             //_CrtSetDbgFlag(0);
 #endif
 
-            if (argc > 1) common.Init(argc - 1, argv.AsSpan(1));
+            if (args.Length > 1) common.Init(args.Length - 1, args.AsSpan(1));
             else common.Init(0, null);
 
             // hide or show the early console as necessary
@@ -446,16 +446,16 @@ namespace Droid.Sys
             SetThreadAffinityMask(GetCurrentThread(), 1);
 #endif
 
-            // ::SetCursor( hcurSave ); // DG: I think SDL handles the cursor fine..
+            //::SetCursor(hcurSave); // DG: I think SDL handles the cursor fine..
 
             // Launch the script debugger
             if (Environment.CommandLine.Contains("+debugger"))
             {
-                // DebuggerClientInit( lpCmdLine );
+                //DebuggerClientInit(lpCmdLine);
                 return 0;
             }
 
-            // ::SetFocus( win32.hWnd ); // DG: let SDL handle focus, otherwise input is fucked up! (#100)
+            //::SetFocus(SysX.hWnd); // DG: let SDL handle focus, otherwise input is fucked up! (#100)
 
             // main game loop
             while (true)

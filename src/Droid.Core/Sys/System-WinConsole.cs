@@ -64,7 +64,7 @@ namespace Droid.Sys
             public IEditField consoleField;
         }
 
-        static WinConData s_wcd;
+        static WinConData s_wcd = new();
 
         const ushort WA_INACTIVE = 0;
         const int LOGPIXELSY = 90;
