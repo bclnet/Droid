@@ -1,8 +1,8 @@
 namespace Droid.UI
 {
-    public interface ListGUI
+    public interface IListGUI
     {
-        void Config(UserInterface pGUI, string name);
+        void Config(IUserInterface pGUI, string name);
         void Add(int id, string s);
         // use the element count as index for the ids
         void Push(string s);

@@ -3,7 +3,7 @@ using static Droid.K;
 
 namespace Droid.Sys
 {
-    public static partial class SysX
+    public static partial class SysW
     {
         static readonly byte[] s_scantokey = {
         //	 0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F

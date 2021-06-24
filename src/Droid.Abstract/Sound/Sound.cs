@@ -30,7 +30,7 @@ namespace Droid.Sound
     }
 
     // these options can be overriden from sound shader defaults on a per-emitter and per-channel basis
-    public struct soundShaderParms
+    public struct SoundShaderParms
     {
         public float minDistance;
         public float maxDistance;
@@ -40,8 +40,7 @@ namespace Droid.Sound
         public int soundClass;              // for global fading of sounds
     }
 
-    // it is somewhat tempting to make this a virtual class to hide the private
-    // details here, but that doesn't fit easily with the decl manager at the moment.
+    // it is somewhat tempting to make this a virtual class to hide the private details here, but that doesn't fit easily with the decl manager at the moment.
     public class SoundShader : Decl
     {
         const int SOUND_MAX_LIST_WAVS = 32;
@@ -49,16 +48,16 @@ namespace Droid.Sound
         // sound classes are used to fade most sounds down inside cinematics, leaving dialog flagged with a non-zero class full volume
         const int SOUND_MAX_CLASSES = 4;
 
-        //idSoundShader();
+        //SoundShader();
 
-        public virtual int Size() => throw new NotImplementedException();
-        public virtual bool SetDefaultText() => throw new NotImplementedException();
-        public virtual string DefaultDefinition() => throw new NotImplementedException();
-        public virtual bool Parse(string text, int textLength) => throw new NotImplementedException();
-        public virtual void FreeData() => throw new NotImplementedException();
-        public virtual void List() => throw new NotImplementedException();
+        public override int Size() => throw new NotImplementedException();
+        public override bool SetDefaultText() => throw new NotImplementedException();
+        public override string DefaultDefinition() => throw new NotImplementedException();
+        public override bool Parse(string text, int textLength) => throw new NotImplementedException();
+        public override void FreeData() => throw new NotImplementedException();
+        public override void List() => throw new NotImplementedException();
 
-        public virtual string GetDescription() => throw new NotImplementedException();
+        public virtual string Description() => throw new NotImplementedException();
 
         // so the editor can draw correct default sound spheres this is currently defined as meters, which sucks, IMHO.
         public virtual float GetMinDistance() => throw new NotImplementedException();       // FIXME: replace this with a GetSoundShaderParms()
@@ -70,14 +69,14 @@ namespace Droid.Sound
 
         public virtual bool HasDefaultSound() => throw new NotImplementedException();
 
-        public virtual soundShaderParms GetParms() => throw new NotImplementedException();
+        public virtual SoundShaderParms GetParms() => throw new NotImplementedException();
         public virtual int GetNumSounds() => throw new NotImplementedException();
         public virtual string GetSound(int index) => throw new NotImplementedException();
 
         public virtual bool CheckShakesAndOgg() => throw new NotImplementedException();
 
         // options from sound shader text
-        soundShaderParms parms;                       // can be overriden on a per-channel basis
+        SoundShaderParms parms;                       // can be overriden on a per-channel basis
 
         bool onDemand;                  // only load when played, and free when finished
         int speakerMask;
@@ -95,21 +94,15 @@ namespace Droid.Sound
         bool ParseShader(Lexer src) => throw new NotImplementedException();
     }
 
-    /*
-    ===============================================================================
-
-        SOUND EMITTER
-
-    ===============================================================================
-    */
 
     // sound channels
-    public enum SCHANNEL {
+    public enum SCHANNEL
+    {
         ANY = 0,  // used in queries and commands to effect every channel at once, in startSound to have it not override any other channel
         ONE = 1,  // any following integer can be used as a channel number
     }
 
-    public interface SoundEmitter
+    public interface ISoundEmitter
     {
         // a non-immediate free will let all currently playing sounds complete soundEmitters are not actually deleted, they are just marked as
         // reusable by the soundWorld
@@ -117,13 +110,13 @@ namespace Droid.Sound
 
         // the parms specified will be the default overrides for all sounds started on this emitter.
         // NULL is acceptable for parms
-        void UpdateEmitter(Vector3 origin, int listenerId, soundShaderParms parms);
+        void UpdateEmitter(Vector3 origin, int listenerId, SoundShaderParms parms);
 
         // returns the length of the started sound in msec
         int StartSound(SoundShader shader, SCHANNEL channel, float diversity = 0, int shaderFlags = 0, bool allowSlow = true);
 
         // pass SCHANNEL_ANY to effect all channels
-        void ModifySound(SCHANNEL channel, soundShaderParms parms);
+        void ModifySound(SCHANNEL channel, SoundShaderParms parms);
         void StopSound(SCHANNEL channel);
         // to is in Db (sigh), over is in seconds
         void FadeSound(SCHANNEL channel, float to, float over);
@@ -140,17 +133,17 @@ namespace Droid.Sound
         int Index();
     }
 
-    public interface SoundWorld
+    public interface ISoundWorld
     {
         // call at each map start
         void ClearAllSoundEmitters();
         void StopAllSounds();
 
         // get a new emitter that can play sounds in this world
-        SoundEmitter AllocSoundEmitter();
+        ISoundEmitter AllocSoundEmitter();
 
         // for load games, index 0 will return NULL
-        SoundEmitter EmitterForIndex(int index);
+        ISoundEmitter EmitterForIndex(int index);
 
         // query sound samples from all emitters reaching a given position
         float CurrentShakeAmplitudeForPosition(int time, Vector3 listenerPosition);
@@ -169,26 +162,23 @@ namespace Droid.Sound
         void PlayShaderDirectly(string name, int channel = -1);
 
         // dumps the current state and begins archiving commands
-        void StartWritingDemo(DemoFile demo);
+        void StartWritingDemo(VFileDemo demo);
         void StopWritingDemo();
 
         // read a sound command from a demo file
-        void ProcessDemoCommand(DemoFile demo);
+        void ProcessDemoCommand(VFileDemo demo);
 
         // pause and unpause the sound world
         void Pause();
         void UnPause();
         bool IsPaused();
 
-        // Write the sound output to multiple wav files.  Note that this does not use the
-        // work done by AsyncUpdate, it mixes explicitly in the foreground every PlaceOrigin(),
-        // under the assumption that we are rendering out screenshots and the gameTime is going
-        // much slower than real time.
+        // Write the sound output to multiple wav files.  Note that this does not use the work done by AsyncUpdate, it mixes explicitly in the foreground every PlaceOrigin(),
+        // under the assumption that we are rendering out screenshots and the gameTime is going much slower than real time.
         // path should not include an extension, and the generated filenames will be:
         // <path>_left.raw, <path>_right.raw, or <path>_51left.raw, <path>_51right.raw,
         // <path>_51center.raw, <path>_51lfe.raw, <path>_51backleft.raw, <path>_51backright.raw,
-        // If only two channel mixing is enabled, the left and right .raw files will also be
-        // combined into a stereo .wav file.
+        // If only two channel mixing is enabled, the left and right .raw files will also be combined into a stereo .wav file.
         void AVIOpen(string path, string name);
         void AVIClose();
 
@@ -201,7 +191,7 @@ namespace Droid.Sound
         void SetEnviroSuit(bool active);
     }
 
-    public class soundDecoderInfo
+    public class SoundDecoderInfo
     {
         public string name;
         public string format;
@@ -215,7 +205,7 @@ namespace Droid.Sound
         public int current44kHzTime;
     }
 
-    public interface SoundSystem
+    public interface ISoundSystem
     {
         // all non-hardware initialization
         void Init();
@@ -242,17 +232,17 @@ namespace Droid.Sound
         cinData ImageForTime(int milliseconds, bool waveform);
 
         // get sound decoder info
-        int GetSoundDecoderInfo(int index, out soundDecoderInfo decoderInfo);
+        int GetSoundDecoderInfo(int index, out SoundDecoderInfo decoderInfo);
 
         // if rw == NULL, no portal occlusion or rendered debugging is available
-        SoundWorld AllocSoundWorld(RenderWorld rw);
+        ISoundWorld AllocSoundWorld(IRenderWorld rw);
 
         // specifying NULL will cause silence to be played
-        void SetPlayingSoundWorld(SoundWorld soundWorld);
+        void SetPlayingSoundWorld(ISoundWorld soundWorld);
 
         // some tools, like the sound dialog, may be used in both the game and the editor
         // This can return NULL, so check!
-        SoundWorld GetPlayingSoundWorld();
+        ISoundWorld GetPlayingSoundWorld();
 
         // Mark all soundSamples as currently unused,
         // but don't free anything.

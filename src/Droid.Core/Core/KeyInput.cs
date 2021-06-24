@@ -1,9 +1,10 @@
 using System;
 using System.IO;
 using System.Text;
+using static Droid.Core.Lib;
 using static Droid.K;
 
-namespace Droid.Framework
+namespace Droid.Core
 {
     internal struct Key
     {
@@ -15,6 +16,32 @@ namespace Droid.Framework
 
     public static class KeyInput
     {
+//        static const char* cheatCodes[] = {
+//        "iddqd",		// Invincibility
+//        "idkfa",		// All weapons, keys, ammo, and 200% armor
+//        "idfa",			// Reset ammunition
+//        "idspispopd",	// Walk through walls
+//        "idclip",		// Walk through walls
+//        "idchoppers",	// Chainsaw
+///*
+//	"idbeholds",	// Berserker strength
+//	"idbeholdv",	// Temporary invincibility
+//	"idbeholdi",	// Temporary invisibility
+//	"idbeholda",	// Full automap
+//	"idbeholdr",	// Anti-radiation suit
+//	"idbeholdl",	// Light amplification visor
+//	"idclev",		// Level select
+//	"iddt",			// Toggle full map; full map and objects; normal map
+//	"idmypos",		// Display coordinates and heading
+//	"idmus",		// Change music to indicated level
+//	"fhhall",		// Kill all enemies in level
+//	"fhshh",		// Invisible to enemies until attack
+//*/
+//        NULL
+//};
+//        char lastKeys[32];
+//        int lastKeyIndex;
+
         // keys that can be set without a special name
         static string unnamedkeys = "*,-=./[\\]1234567890abcdefghijklmnopqrstuvwxyz";
 
@@ -161,16 +188,15 @@ namespace Droid.Framework
             keys = new Key[MAX_KEYS];
 
             // register our functions
-            G.cmdSystem.AddCommand("bind", Key_Bind_f, CMD_FL.SYSTEM, "binds a command to a key", ArgCompletion_KeyName);
-            G.cmdSystem.AddCommand("bindunbindtwo", Key_BindUnBindTwo_f, CMD_FL.SYSTEM, "binds a key but unbinds it first if there are more than two binds");
-            G.cmdSystem.AddCommand("unbind", Key_Unbind_f, CMD_FL.SYSTEM, "unbinds any command from a key", ArgCompletion_KeyName);
-            G.cmdSystem.AddCommand("unbindall", Key_Unbindall_f, CMD_FL.SYSTEM, "unbinds any commands from all keys");
-            G.cmdSystem.AddCommand("listBinds", Key_ListBinds_f, CMD_FL.SYSTEM, "lists key bindings");
+            cmdSystem.AddCommand("bind", Key_Bind_f, CMD_FL.SYSTEM, "binds a command to a key", ArgCompletion_KeyName);
+            cmdSystem.AddCommand("bindunbindtwo", Key_BindUnBindTwo_f, CMD_FL.SYSTEM, "binds a key but unbinds it first if there are more than two binds");
+            cmdSystem.AddCommand("unbind", Key_Unbind_f, CMD_FL.SYSTEM, "unbinds any command from a key", ArgCompletion_KeyName);
+            cmdSystem.AddCommand("unbindall", Key_Unbindall_f, CMD_FL.SYSTEM, "unbinds any commands from all keys");
+            cmdSystem.AddCommand("listBinds", Key_ListBinds_f, CMD_FL.SYSTEM, "lists key bindings");
         }
+
         public static void Shutdown()
-        {
-            keys = null;
-        }
+            => keys = null;
 
         public static void ArgCompletion_KeyName(CmdArgs args, Action<string> callback)
         {
@@ -202,7 +228,7 @@ namespace Droid.Framework
                     assert(l <= 16);
                     if (idStr::Icmpn(lastKeys + 16 + (lastKeyIndex & 15) - l, cheatCodes[i], l) == 0)
                     {
-                        G.common.Printf("your memory serves you well!\n");
+                        common.Printf("your memory serves you well!\n");
                         break;
                     }
                 }
@@ -210,9 +236,11 @@ namespace Droid.Framework
 #endif
         }
 
-        public static bool IsDown(int keyNum) => keyNum != -1 && keys[keyNum].down;
+        public static bool IsDown(K keyNum)
+            => (int)keyNum != -1 && keys[(int)keyNum].down;
 
-        public static int GetUsercmdAction(int keyNum) => keys[keyNum].usercmdAction;
+        public static int GetUsercmdAction(int keyNum)
+            => keys[keyNum].usercmdAction;
 
         public static bool OverstrikeMode
         {
@@ -230,7 +258,7 @@ namespace Droid.Framework
             }
 
             // clear the usercommand states
-            G.usercmdGen.Clear();
+            usercmdGen.Clear();
         }
 
         /// <summary>
@@ -274,7 +302,7 @@ namespace Droid.Framework
         /// <param name="keyNum">The key number.</param>
         /// <param name="localized">if set to <c>true</c> [localized].</param>
         /// <returns></returns>
-        static char[] tinystr = new char[5];
+        static char[] KeyNumToString_tinystr = new char[5];
         public static string KeyNumToString(int keyNum, bool localized = false)
         {
             if (keyNum == -1)
@@ -285,9 +313,9 @@ namespace Droid.Framework
             // check for printable ascii (don't use quote)
             if (keyNum > 32 && keyNum < 127 && keyNum != '"' && keyNum != ';' && keyNum != '\'')
             {
-                tinystr[0] = (char)keyNum;
-                tinystr[1] = (char)0;
-                return new string(tinystr);
+                KeyNumToString_tinystr[0] = (char)keyNum;
+                KeyNumToString_tinystr[1] = (char)0;
+                return new string(KeyNumToString_tinystr);
             }
 
             // check for a key string
@@ -306,10 +334,10 @@ namespace Droid.Framework
                             case K_ALT:
                             case K_INS:
                             case K_PRINT_SCR: return OSX_GetLocalizedString(n);
-                            default: return G.common.LanguageDict[si];
+                            default: return common.LanguageDict[si];
                         }
 #else
-                        return G.common.LanguageDict[si];
+                        return common.LanguageDict[si];
 #endif
                     }
                 }
@@ -317,21 +345,21 @@ namespace Droid.Framework
             // check for European high-ASCII characters
             if (localized && keyNum >= 161 && keyNum <= 255)
             {
-                tinystr[0] = (char)keyNum;
-                tinystr[1] = (char)0;
-                return new string(tinystr);
+                KeyNumToString_tinystr[0] = (char)keyNum;
+                KeyNumToString_tinystr[1] = (char)0;
+                return new string(KeyNumToString_tinystr);
             }
 
             // make a hex string
             var i = keyNum >> 4;
             var j = keyNum & 15;
 
-            tinystr[0] = '0';
-            tinystr[1] = 'x';
-            tinystr[2] = (char)(i > 9 ? i - 10 + 'a' : i + '0');
-            tinystr[3] = (char)(j > 9 ? j - 10 + 'a' : j + '0');
-            tinystr[4] = (char)0;
-            return new string(tinystr);
+            KeyNumToString_tinystr[0] = '0';
+            KeyNumToString_tinystr[1] = 'x';
+            KeyNumToString_tinystr[2] = (char)(i > 9 ? i - 10 + 'a' : i + '0');
+            KeyNumToString_tinystr[3] = (char)(j > 9 ? j - 10 + 'a' : j + '0');
+            KeyNumToString_tinystr[4] = (char)0;
+            return new string(KeyNumToString_tinystr);
         }
 
         public static void SetBinding(int keyNum, string binding)
@@ -340,17 +368,17 @@ namespace Droid.Framework
                 return;
 
             // Clear out all button states so we aren't stuck forever thinking this key is held down
-            G.usercmdGen.Clear();
+            usercmdGen.Clear();
 
             // allocate memory for new binding
             keys[keyNum].binding = binding;
 
             // find the action for the async command generation
-            keys[keyNum].usercmdAction = G.usercmdGen.CommandStringUsercmdData(binding);
+            keys[keyNum].usercmdAction = usercmdGen.CommandStringUsercmdData(binding);
 
             // consider this like modifying an archived cvar, so the
             // file write will be triggered at the next oportunity
-            G.cvarSystem.SetModifiedFlags(CVAR.ARCHIVE);
+            cvarSystem.SetModifiedFlags(CVAR.ARCHIVE);
         }
 
         public static string GetBinding(int keyNum) => keyNum == -1 ? string.Empty : keys[keyNum].binding;
@@ -387,8 +415,8 @@ namespace Droid.Framework
             // send the bound action
             if (keys[keyNum].binding.Length != 0)
             {
-                G.cmdSystem.BufferCommandText(CMD_EXEC.APPEND, keys[keyNum].binding);
-                G.cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "\n");
+                cmdSystem.BufferCommandText(CMD_EXEC.APPEND, keys[keyNum].binding);
+                cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "\n");
             }
             return true;
         }
@@ -406,11 +434,11 @@ namespace Droid.Framework
                     if (string.Equals(keys[i].binding, bind, StringComparison.OrdinalIgnoreCase))
                     {
                         if (b.Length > 0)
-                            b.Append(G.common.LanguageDict["#str_07183"]);
+                            b.Append(common.LanguageDict["#str_07183"]);
                         b.Append(KeyNumToString(i, true));
                     }
             return b.Length == 0
-                ? G.common.LanguageDict["#str_07133"].ToLowerInvariant()
+                ? common.LanguageDict["#str_07133"].ToLowerInvariant()
                 : b.ToString().ToLowerInvariant();
         }
 
@@ -425,7 +453,8 @@ namespace Droid.Framework
             return keyNum < 0 || keyNum >= MAX_KEYS ? null : keys[keyNum].binding;
         }
 
-        public static bool KeyIsBoundTo(int keyNum, string binding) => keyNum >= 0 && keyNum < MAX_KEYS && string.Equals(keys[keyNum].binding, binding, StringComparison.OrdinalIgnoreCase);
+        public static bool KeyIsBoundTo(int keyNum, string binding)
+            => keyNum >= 0 && keyNum < MAX_KEYS && string.Equals(keys[keyNum].binding, binding, StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Writes lines containing "bind key value"
@@ -446,16 +475,11 @@ namespace Droid.Framework
                 }
         }
 
-        /*
-        ===================
-        Key_Unbind_f
-        ===================
-        */
         static void Key_Unbind_f(CmdArgs args)
         {
             if (args.Count != 2)
             {
-                G.common.Printf("unbind <key> : remove commands from a key\n");
+                common.Printf("unbind <key> : remove commands from a key\n");
                 return;
             }
 
@@ -464,46 +488,36 @@ namespace Droid.Framework
             {
                 // If it wasn't a key, it could be a command
                 if (!UnbindBinding(args[1]))
-                    G.common.Printf($"\"{args[1]}\" isn't a valid key\n");
+                    common.Printf($"\"{args[1]}\" isn't a valid key\n");
             }
             else SetBinding(b, string.Empty);
         }
 
-        /*
-        ===================
-        Key_Unbindall_f
-        ===================
-        */
         static void Key_Unbindall_f(CmdArgs args)
         {
             for (var i = 0; i < MAX_KEYS; i++)
                 SetBinding(i, string.Empty);
         }
 
-        /*
-        ===================
-        Key_Bind_f
-        ===================
-        */
         static void Key_Bind_f(CmdArgs args)
         {
             var c = args.Count;
             if (c < 2)
             {
-                G.common.Printf("bind <key> [command] : attach a command to a key\n");
+                common.Printf("bind <key> [command] : attach a command to a key\n");
                 return;
             }
             var b = StringToKeyNum(args[1]);
             if (b == -1)
             {
-                G.common.Printf($"\"{args[1]}\" isn't a valid key\n");
+                common.Printf($"\"{args[1]}\" isn't a valid key\n");
                 return;
             }
 
             if (c == 2)
             {
-                if (keys[b].binding.Length != 0) G.common.Printf($"\"{args[1]}\" = \"{keys[b].binding}\"\n");
-                else G.common.Printf($"\"{args[1]}\" is not bound\n");
+                if (keys[b].binding.Length != 0) common.Printf($"\"{args[1]}\" = \"{keys[b].binding}\"\n");
+                else common.Printf($"\"{args[1]}\" is not bound\n");
                 return;
             }
 
@@ -518,18 +532,13 @@ namespace Droid.Framework
             SetBinding(b, sb.ToString());
         }
 
-        /*
-        ============
-        Key_BindUnBindTwo_f
-        binds keynum to bindcommand and unbinds if there are already two binds on the key
-        ============
-        */
+        // binds keynum to bindcommand and unbinds if there are already two binds on the key
         static void Key_BindUnBindTwo_f(CmdArgs args)
         {
             var c = args.Count;
             if (c < 3)
             {
-                G.common.Printf("bindunbindtwo <keynum> [command]\n");
+                common.Printf("bindunbindtwo <keynum> [command]\n");
                 return;
             }
             var key = int.TryParse(args[1], out var z) ? z : 0;
@@ -540,16 +549,11 @@ namespace Droid.Framework
         }
 
 
-        /*
-        ============
-        Key_ListBinds_f
-        ============
-        */
         static void Key_ListBinds_f(CmdArgs args)
         {
             for (var i = 0; i < MAX_KEYS; i++)
                 if (keys[i].binding.Length != 0)
-                    G.common.Printf($"{KeyNumToString(i)} \"{keys[i].binding}\"\n");
+                    common.Printf($"{KeyNumToString(i)} \"{keys[i].binding}\"\n");
         }
     }
 }

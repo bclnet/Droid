@@ -1,8 +1,8 @@
 using Droid.Sys;
 
-namespace Droid.Framework
+namespace Droid.Core
 {
-    public interface Console
+    public interface IConsole
     {
         void Init();
         void Shutdown();

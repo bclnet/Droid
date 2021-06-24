@@ -1,12 +1,9 @@
-using Droid.Render;
-using Droid.Sound;
 using Droid.Sys;
-using Droid.UI;
 
-namespace Droid.Framework
+namespace Droid.Core
 {
     // needed by the gui system for the load game menu
-    struct LogStats
+    public struct LogStats
     {
         public short health;
         public short heartRate;
@@ -28,96 +25,93 @@ namespace Droid.Framework
 
     public delegate string HandleGuiCommand(string s);
 
-    public abstract class Session
+    public interface ISession
     {
-        const int MAX_LOGGED_STATS = 60 * 120;       // log every half second
+        //const int MAX_LOGGED_STATS = 60 * 120;       // log every half second
+        //// The render world and sound world used for this session.
+        //RenderWorld rw;
+        //SoundWorld sw;
+        //// The renderer and sound system will write changes to writeDemo.
+        //// Demos can be recorded and played at the same time when splicing.
+        //DemoFile readDemo;
+        //DemoFile writeDemo;
+        //int renderdemoVersion;
 
         // Called in an orderly fashion at system startup, so commands, cvars, files, etc are all available.
-        public abstract void Init();
+        void Init();
 
         // Shut down the session.
-        public abstract void Shutdown();
+        void Shutdown();
 
         // Called on errors and game exits.
-        public abstract void Stop();
+        void Stop();
 
         // Redraws the screen, handling games, guis, console, etc during normal once-a-frame updates, outOfSequence will be false,
         // but when the screen is updated in a modal manner, as with utility output, the mouse cursor will be released if running windowed.
-        public abstract void UpdateScreen(bool outOfSequence = true);
+        void UpdateScreen(bool outOfSequence = true);
 
-        // Called when console prints happen, allowing the loading screen
-        // to redraw if enough time has passed.
-        public abstract void PacifierUpdate();
+        // Called when console prints happen, allowing the loading screen to redraw if enough time has passed.
+        void PacifierUpdate();
 
         // Called every frame, possibly spinning in place if we are above maxFps, or we haven't advanced at least one demo frame.
         // Returns the number of milliseconds since the last frame.
-        public abstract void Frame();
+        void Frame();
 
         // Returns true if a multiplayer game is running.
         // CVars and commands are checked differently in multiplayer mode.
-        public abstract bool IsMultiplayer();
+        bool IsMultiplayer { get; }
 
         // Processes the given event.
-        public abstract bool ProcessEvent(sysEvent event_);
+        bool ProcessEvent(SysEvent event_);
 
         // Activates the main menu
-        public abstract void StartMenu(bool playIntro = false);
+        void StartMenu(bool playIntro = false);
 
-        public abstract void SetGUI(UserInterface gui, HandleGuiCommand handle);
+        void SetGUI(object gui, HandleGuiCommand handle);
 
         // Updates gui and dispatched events to it
-        public abstract void GuiFrameEvents();
+        void GuiFrameEvents();
 
         // fires up the optional GUI event, also returns them if you set wait to true
         // if MSG_PROMPT and wait, returns the prompt string or NULL if aborted
         // if MSG_CDKEY and want, returns the cd key or NULL if aborted
         // network tells wether one should still run the network loop in a wait dialog
-        public abstract string MessageBox(MSG type, string message, string title = null, bool wait = false, string fire_yes = null, string fire_no = null, bool network = false);
-        public abstract void StopBox();
+        string MessageBox(MSG type, string message, string title = null, bool wait = false, string fire_yes = null, string fire_no = null, bool network = false);
+        void StopBox();
         // monitor this download in a progress box to either abort or completion
-        public abstract void DownloadProgressBox(backgroundDownload bgl, string title, int progress_start = 0, int progress_end = 100);
+        void DownloadProgressBox(BackgroundDownload bgl, string title, int progress_start = 0, int progress_end = 100);
 
-        public abstract void SetPlayingSoundWorld();
+        void SetPlayingSoundWorld();
 
         // this is used by the sound system when an OnDemand sound is loaded, so the game action doesn't advance and get things out of sync
-        public abstract void TimeHitch(int msec);
+        void TimeHitch(int msec);
 
         // read and write the cd key data to files
         // doesn't perform any validity checks
-        public abstract void ReadCDKey();
-        public abstract void WriteCDKey();
+        void ReadCDKey();
+        void WriteCDKey();
 
         // returns NULL for if xp is true and xp key is not valid or not present
-        public abstract string GetCDKey(bool xp);
+        string GetCDKey(bool xp);
 
         // check keys for validity when typed in by the user ( with checksum verification ) store the new set of keys if they are found valid
-        public abstract bool CheckKey(string key, bool netConnect, bool[] offline_valid);
+        bool CheckKey(string key, bool netConnect, bool[] offline_valid);
 
         // verify the current set of keys for validity strict -> keys in state CDKEY_CHECKING state are not ok
-        public abstract bool CDKeysAreValid(bool strict);
+        bool CDKeysAreValid(bool strict);
         // wipe the key on file if the network check finds it invalid
-        public abstract void ClearCDKey(bool[] valid);
+        void ClearCDKey(bool[] valid);
 
         // configure gui variables for mainmenu.gui and cd key state
-        public abstract void SetCDKeyGuiVars();
+        void SetCDKeyGuiVars();
 
-        public abstract bool WaitingForGameAuth();
+        bool WaitingForGameAuth();
 
         // got reply from master about the keys. if !valid, auth_msg given
-        public abstract void CDKeysAuthReply(bool valid, string auth_msg);
+        void CDKeysAuthReply(bool valid, string auth_msg);
 
-        public abstract string GetCurrentMapName();
+        string CurrentMapName { get; }
 
-        public abstract int GetSaveGameVersion();
-
-        // The render world and sound world used for this session.
-        RenderWorld rw;
-        SoundWorld sw;
-
-        // The renderer and sound system will write changes to writeDemo.
-        // Demos can be recorded and played at the same time when splicing.
-        DemoFile readDemo;
-        DemoFile writeDemo;
-        int renderdemoVersion;
+        int SaveGameVersion();
     }
 }

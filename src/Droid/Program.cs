@@ -8,9 +8,6 @@ namespace Droid
         static void Main(string[] args)
         {
             Console.WriteLine("Hello World!");
-            MathX.Init();
-            //MatrixX.Test();
-            Polynomial.Test();
         }
     }
 }

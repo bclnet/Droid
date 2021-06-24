@@ -7,11 +7,11 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using static Droid.Core.Lib;
-using static Droid.Sys.WinNative;
+using static Droid.Sys.NativeW;
 
 namespace Droid.Sys
 {
-    public static partial class SysX
+    public static partial class SysW
     {
         static IntPtr hWnd;
         internal static IntPtr hInstance;
@@ -41,11 +41,11 @@ namespace Droid.Sys
                 dwOSVersionInfoSize = Marshal.SizeOf<OSVERSIONINFOEX>(),
             };
             if (!GetVersionEx(ref osversion))
-                SysX.Error("Couldn't get OS info");
+                Error("Couldn't get OS info");
             if (osversion.dwMajorVersion < 4)
-                SysX.Error($"{Config.GAME_NAME} requires Windows version 4 (NT) or greater");
+                Error($"{Config.GAME_NAME} requires Windows version 4 (NT) or greater");
             if (osversion.dwPlatformId == VER_PLATFORM_WIN32s)
-                SysX.Error($"{Config.GAME_NAME} doesn't run on Win32s");
+                Error($"{Config.GAME_NAME} doesn't run on Win32s");
 
             common.Printf($"{SystemRam} MB System Memory\n");
         }
@@ -61,10 +61,10 @@ namespace Droid.Sys
 
             Console.Write(fmt);
 
-            ConX.AppendText(fmt);
-            ConX.AppendText("\n");
+            ConW.AppendText(fmt);
+            ConW.AppendText("\n");
 
-            ConX.SetErrorText(fmt);
+            ConW.SetErrorText(fmt);
             ShowConsole(1, true);
 
             TimeEndPeriod(1);
@@ -82,7 +82,7 @@ namespace Droid.Sys
                 DispatchMessage(ref msg);
             }
 
-            ConX.DestroyConsole();
+            ConW.DestroyConsole();
 
             Environment.Exit(1);
         }
@@ -91,7 +91,7 @@ namespace Droid.Sys
         {
             TimeEndPeriod(1);
             ShutdownInput();
-            ConX.DestroyConsole();
+            ConW.DestroyConsole();
             Environment.Exit(0);
         }
 
@@ -103,7 +103,7 @@ namespace Droid.Sys
             if (OpenClipboard(IntPtr.Zero))
             {
                 IntPtr hClipboardData;
-                if ((hClipboardData = WinNative.GetClipboardData(CF_TEXT)) != IntPtr.Zero)
+                if ((hClipboardData = NativeW.GetClipboardData(CF_TEXT)) != IntPtr.Zero)
                     if ((cliptext = GlobalLock(hClipboardData)) != IntPtr.Zero)
                     {
                         data = Marshal.PtrToStringAnsi(cliptext, (int)GlobalSize(hClipboardData));
@@ -144,7 +144,7 @@ namespace Droid.Sys
             // remove current Clipboard contents
             EmptyClipboard();
             // supply the memory handle to the Clipboard
-            WinNative.SetClipboardData(CF_TEXT, HMem);
+            NativeW.SetClipboardData(CF_TEXT, HMem);
             // close Clipboard
             CloseClipboard();
         }
@@ -158,7 +158,7 @@ namespace Droid.Sys
             if (win_outputDebugString.Bool)
                 OutputDebugString(fmt);
             if (win_outputEditString.Bool)
-                ConX.AppendText(fmt);
+                ConW.AppendText(fmt);
         }
 
         // guaranteed to be thread-safe
@@ -234,7 +234,7 @@ namespace Droid.Sys
                 var loadedPath = loadedPathBuf?.ToString();
                 if (string.Equals(dllName, loadedPath, StringComparison.OrdinalIgnoreCase))
                 {
-                    SysX.Printf($"ERROR: LoadLibrary '{dllName}' wants to load '{loadedPath}'\n");
+                    SysW.Printf($"ERROR: LoadLibrary '{dllName}' wants to load '{loadedPath}'\n");
                     DLL_Unload(libHandle);
                     return IntPtr.Zero;
                 }
@@ -252,7 +252,7 @@ namespace Droid.Sys
             {
                 var lastError = Marshal.GetLastWin32Error();
                 var msg = new Win32Exception(Marshal.GetLastWin32Error()).Message;
-                SysX.Error($"Sys_DLL_Unload: FreeLibrary failed - {msg} ({lastError})");
+                SysW.Error($"Sys_DLL_Unload: FreeLibrary failed - {msg} ({lastError})");
             }
         }
 
@@ -260,9 +260,9 @@ namespace Droid.Sys
         public static string ConsoleInput() => throw new NotImplementedException();
 
         public static void ShowWindow(bool show)
-            => WinNative.ShowWindow(hWnd, show ? ShowWindowCmdShow.SW_SHOW : ShowWindowCmdShow.SW_HIDE);
+            => NativeW.ShowWindow(hWnd, show ? ShowWindowCmdShow.SW_SHOW : ShowWindowCmdShow.SW_HIDE);
         public static bool IsWindowVisible()
-            => WinNative.IsWindowVisible(hWnd);
+            => NativeW.IsWindowVisible(hWnd);
         public static void ShowConsole(int visLevel, bool quitOnClose) => throw new NotImplementedException();
 
         public static void Mkdir(string path)
@@ -424,7 +424,7 @@ namespace Droid.Sys
             hInstance = GetModuleHandle(null);
 
             // done before Com/Sys_Init since we need this for error output
-            ConX.CreateConsole();
+            ConW.CreateConsole();
 
             // no abort/retry/fail errors
             SetErrorMode(ErrorModes.SEM_FAILCRITICALERRORS);

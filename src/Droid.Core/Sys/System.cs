@@ -130,7 +130,7 @@ namespace Droid.Sys
         int fd;             // OS specific socket
     }
 
-    static partial class SysX
+    static partial class SysW
     {
         // parses the port number, can also do DNS resolve if you ask for it.
         // NOTE: DNS resolve is a slow/blocking call, think before you use (could be exploited for server DoS)
@@ -170,7 +170,7 @@ namespace Droid.Sys
         EVENT_IMAGES_PROCESSES
     }
 
-    static partial class SysX
+    static partial class SysW
     {
         public static void CreateThread(object function, object parms, out XThreadInfo info, string name) => throw new NotImplementedException();
         public static void DestroyThread(ref XThreadInfo info) => throw new NotImplementedException(); // sets threadHandle back to 0

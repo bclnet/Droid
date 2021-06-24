@@ -12,7 +12,6 @@ namespace Droid.Framework
 
     public class DeclSkin : Decl
     {
-
         public override int Size() => throw new NotImplementedException();
         public override bool SetDefaultText() => throw new NotImplementedException();
         public override string DefaultDefinition() => throw new NotImplementedException();

@@ -1,7 +1,5 @@
-using Droid.Framework;
+using Droid.Core;
 using System;
-using System.IO;
-using System.Numerics;
 
 namespace Droid.Render
 {
@@ -34,7 +32,7 @@ namespace Droid.Render
         public void Invalidate() => throw new NotImplementedException();
     }
 
-    public struct megaTextureHeader
+    public struct MegaTextureHeader
     {
         public int tileSize;
         public int tilesWide;
@@ -50,7 +48,7 @@ namespace Droid.Render
 
         //static	void MakeMegaTexture_f( const idCmdArgs &args );
         void SetViewOrigin(Vector3 origin) => throw new NotImplementedException();
-        static void GenerateMegaMipMaps(megaTextureHeader header, VFile file) => throw new NotImplementedException();
+        static void GenerateMegaMipMaps(MegaTextureHeader header, VFile file) => throw new NotImplementedException();
         static void GenerateMegaPreview(string fileName) => throw new NotImplementedException();
 
         VFile fileHandle;
@@ -63,7 +61,7 @@ namespace Droid.Render
 
         int numLevels;
         TextureLevel[] levels = new TextureLevel[TextureLevel.MAX_LEVELS];                // 0 is the highest resolution
-        megaTextureHeader header;
+        MegaTextureHeader header;
 
         static CVar r_megaTextureLevel;
         static CVar r_showMegaTexture;

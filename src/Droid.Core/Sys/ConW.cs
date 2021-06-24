@@ -1,15 +1,15 @@
-// Top
 using Droid.Core;
 using System;
 using System.Runtime.InteropServices;
 using static Droid.Core.Lib;
-using static Droid.Sys.WinNative;
+using static Droid.Sys.NativeW;
 using static Droid.K;
 using System.Text;
+using System.Linq;
 
 namespace Droid.Sys
 {
-    public class ConX
+    public class ConW
     {
         const int COPY_ID = 1;
         const int QUIT_ID = 2;
@@ -56,12 +56,12 @@ namespace Droid.Sys
 
             public WndProcDelegate SysInputLineWndProc;
 
-            public IEditField[] historyEditLines = new IEditField[COMMAND_HISTORY];
+            public EditField[] historyEditLines = Enumerable.Repeat(new EditField(), COMMAND_HISTORY).ToArray();
 
             public int nextHistoryLine;// the last line in the history buffer, not masked
             public int historyLine;    // the line being displayed from history buffer will be <= nextHistoryLine
 
-            public IEditField consoleField;
+            public EditField consoleField = new();
         }
 
         static WinConData s_wcd = new();
@@ -85,8 +85,6 @@ namespace Droid.Sys
 
         static bool ConWndProc_timePolarity;
 
-        //static IntPtr StringEmptyPtr = Marshal.StringToHGlobalAnsi("");
-
         static IntPtr ConWndProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam)
         {
             switch (uMsg)
@@ -100,7 +98,7 @@ namespace Droid.Sys
                     if (cvarSystem.IsInitialized())
                     {
 #else
-                    if (cvarSystem.IsInitialized() && SysX.com_skipRenderer.Bool)
+                    if (cvarSystem.IsInitialized() && SysW.com_skipRenderer.Bool)
                     {
 #endif
                         cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "quit\n");
@@ -109,8 +107,8 @@ namespace Droid.Sys
                         PostQuitMessage(0);
                     else
                     {
-                        SysX.ShowConsole(0, false);
-                        SysX.win_viewlog.Bool = false;
+                        SysW.ShowConsole(0, false);
+                        SysW.win_viewlog.Bool = false;
                     }
                     return IntPtr.Zero;
 
@@ -196,7 +194,7 @@ namespace Droid.Sys
                     break;
 
                 case WM_KEYDOWN:
-                    key = SysX.Win_MapKey((int)lParam);
+                    key = SysW.Win_MapKey((int)lParam);
 
                     // command history
                     if (key == K_UPARROW || key == K_KP_UPARROW)
@@ -224,7 +222,7 @@ namespace Droid.Sys
                     break;
 
                 case WM_CHAR:
-                    key = SysX.Win_MapKey((int)lParam);
+                    key = SysW.Win_MapKey((int)lParam);
 
                     GetWindowText(s_wcd.hwndInputLine, s_wcd.consoleField.Buffer, MAX_EDIT_LINE);
                     var cursor = 0;
@@ -237,10 +235,10 @@ namespace Droid.Sys
                         s_wcd.consoleText += $"{s_wcd.consoleField.Buffer}\n";
                         SetWindowText(s_wcd.hwndInputLine, string.Empty);
 
-                        SysX.Printf("]%s\n", s_wcd.consoleField.Buffer);
+                        SysW.Printf($"]{s_wcd.consoleField.Buffer}\n");
 
                         // copy line to history buffer
-                        s_wcd.historyEditLines[s_wcd.nextHistoryLine % COMMAND_HISTORY] = s_wcd.consoleField;
+                        s_wcd.historyEditLines[s_wcd.nextHistoryLine % COMMAND_HISTORY].Set(s_wcd.consoleField);
                         s_wcd.nextHistoryLine++;
                         s_wcd.historyLine = s_wcd.nextHistoryLine;
 
@@ -283,15 +281,16 @@ namespace Droid.Sys
                 lpfnWndProc = Marshal.GetFunctionPointerForDelegate<WndProcDelegate>(ConWndProc),
                 cbClsExtra = 0,
                 cbWndExtra = 0,
-                hInstance = SysX.hInstance,
-                hIcon = LoadIcon(SysX.hInstance, (int)SystemIcons.IDI_APPLICATION),
+                hInstance = SysW.hInstance,
+                hIcon = LoadIcon(SysW.hInstance, (int)SystemIcons.IDI_APPLICATION),
                 hCursor = LoadCursor(IntPtr.Zero, (int)IDC_STANDARD_CURSORS.IDC_ARROW),
                 hbrBackground = (IntPtr)ColorType.COLOR_WINDOW,
                 lpszMenuName = null,
                 lpszClassName = DEDCLASS
             };
 
-            if (RegisterClassEx(ref wc) == 0)
+            var regResult = RegisterClassEx(ref wc);
+            if (regResult == 0)
                 return;
 
             RECT rect;
@@ -311,9 +310,9 @@ namespace Droid.Sys
             //s_wcd.hbmLogo = LoadBitmap( win32.hInstance, MAKEINTRESOURCE( IDB_BITMAP_LOGO) );
 
             s_wcd.hWnd = CreateWindowEx(0,
-                DEDCLASS, Config.GAME_NAME, DEDSTYLE,
+                regResult, Config.GAME_NAME, DEDSTYLE,
                 (swidth - 600) / 2, (sheight - 450) / 2, rect.right - rect.left + 1, rect.bottom - rect.top + 1,
-                IntPtr.Zero, IntPtr.Zero, SysX.hInstance, IntPtr.Zero);
+                IntPtr.Zero, IntPtr.Zero, SysW.hInstance, IntPtr.Zero);
             if (s_wcd.hWnd == IntPtr.Zero)
                 return;
 
@@ -335,7 +334,7 @@ namespace Droid.Sys
                 6, 400, 528, 20,
                 s_wcd.hWnd,
                 (IntPtr)INPUT_ID,  // child window ID
-                SysX.hInstance, IntPtr.Zero);
+                SysW.hInstance, IntPtr.Zero);
 
             //
             // create the buttons
@@ -343,19 +342,19 @@ namespace Droid.Sys
             s_wcd.hwndButtonCopy = CreateWindowEx(0, "button", null, WindowStyle.BS_PUSHBUTTON | WindowStyle.WS_VISIBLE | WindowStyle.WS_CHILD | WindowStyle.BS_DEFPUSHBUTTON,
                 5, 425, 72, 24,
                 s_wcd.hWnd, (IntPtr)COPY_ID,   // child window ID
-                SysX.hInstance, IntPtr.Zero);
+                SysW.hInstance, IntPtr.Zero);
             SendMessage(s_wcd.hwndButtonCopy, WM_SETTEXT, 0, "copy");
 
             s_wcd.hwndButtonClear = CreateWindowEx(0, "button", null, WindowStyle.BS_PUSHBUTTON | WindowStyle.WS_VISIBLE | WindowStyle.WS_CHILD | WindowStyle.BS_DEFPUSHBUTTON,
                 82, 425, 72, 24,
                 s_wcd.hWnd, (IntPtr)CLEAR_ID,  // child window ID
-                SysX.hInstance, IntPtr.Zero);
+                SysW.hInstance, IntPtr.Zero);
             SendMessage(s_wcd.hwndButtonClear, WM_SETTEXT, 0, "clear");
 
             s_wcd.hwndButtonQuit = CreateWindowEx(0, "button", null, WindowStyle.BS_PUSHBUTTON | WindowStyle.WS_VISIBLE | WindowStyle.WS_CHILD | WindowStyle.BS_DEFPUSHBUTTON,
                 462, 425, 72, 24,
                 s_wcd.hWnd, (IntPtr)QUIT_ID,   // child window ID
-                SysX.hInstance, IntPtr.Zero);
+                SysW.hInstance, IntPtr.Zero);
             SendMessage(s_wcd.hwndButtonQuit, WM_SETTEXT, 0, "quit");
 
 
@@ -365,13 +364,13 @@ namespace Droid.Sys
             s_wcd.hwndBuffer = CreateWindowEx(0, "edit", null, WindowStyle.WS_CHILD | WindowStyle.WS_VISIBLE | WindowStyle.WS_VSCROLL | WindowStyle.WS_BORDER | WindowStyle.ES_LEFT | WindowStyle.ES_MULTILINE | WindowStyle.ES_AUTOVSCROLL | WindowStyle.ES_READONLY,
                 6, 40, 526, 354,
                 s_wcd.hWnd, (IntPtr)EDIT_ID,   // child window ID
-                SysX.hInstance, IntPtr.Zero);
+                SysW.hInstance, IntPtr.Zero);
             SendMessage(s_wcd.hwndBuffer, WM_SETFONT, s_wcd.hfBufferFont, IntPtr.Zero);
             s_wcd.SysInputLineWndProc = Marshal.GetDelegateForFunctionPointer<WndProcDelegate>(SetWindowLongPtr(s_wcd.hwndInputLine, WindowFieldOffset.GWLP_WNDPROC, Marshal.GetFunctionPointerForDelegate<WndProcDelegate>(InputLineWndProc)));
             SendMessage(s_wcd.hwndInputLine, WM_SETFONT, s_wcd.hfBufferFont, IntPtr.Zero);
 
             // don't show it now that we have a splash screen up
-            if (SysX.win_viewlog.Bool)
+            if (SysW.win_viewlog.Bool)
             {
                 ShowWindow(s_wcd.hWnd, ShowWindowCmdShow.SW_SHOWDEFAULT);
                 UpdateWindow(s_wcd.hWnd);
@@ -415,7 +414,7 @@ namespace Droid.Sys
                     ShowWindow(s_wcd.hWnd, ShowWindowCmdShow.SW_MINIMIZE);
                     break;
                 default:
-                    SysX.Error($"Invalid visLevel {visLevel} sent to SysX.ShowConsole\n");
+                    SysW.Error($"Invalid visLevel {visLevel} sent to SysX.ShowConsole\n");
                     break;
             }
         }
@@ -432,8 +431,6 @@ namespace Droid.Sys
         }
 
         static long AppendText_totalChars;
-        static bool AppendText_IsColor(byte[] s, int offset)
-            => s[offset + 0] == '^' && s[offset + 1] != '\0' && s[offset + 1] != ' ';
         public static unsafe void AppendText(string pMsg)
         {
             const int CONSOLE_BUFFER_SIZE = 16384;
@@ -453,7 +450,7 @@ namespace Droid.Sys
                 if (msg[i] == '\n' && msg[i + 1] == '\r') { b[0] = '\r'; b[1] = '\n'; b += 2; i++; }
                 else if (msg[i] == '\r') { b[0] = '\r'; b[1] = '\n'; b += 2; }
                 else if (msg[i] == '\n') { b[0] = '\r'; b[1] = '\n'; b += 2; }
-                else if (AppendText_IsColor(msg, i)) { i++; }
+                else if (StringX.IsColor(msg, i)) { i++; }
                 else { *b = (char)msg[i]; b++; }
                 i++;
             }
@@ -483,7 +480,7 @@ namespace Droid.Sys
                 s_wcd.hwndErrorBox = CreateWindowEx(0, "static", null, WindowStyle.WS_CHILD | WindowStyle.WS_VISIBLE | WindowStyle.SS_SUNKEN,
                     6, 5, 526, 30,
                     s_wcd.hWnd, (IntPtr)ERRORBOX_ID, // child window ID
-                    SysX.hInstance, IntPtr.Zero);
+                    SysW.hInstance, IntPtr.Zero);
                 SendMessage(s_wcd.hwndErrorBox, WM_SETFONT, s_wcd.hfBufferFont, IntPtr.Zero);
                 SetWindowText(s_wcd.hwndErrorBox, s_wcd.errorString);
 

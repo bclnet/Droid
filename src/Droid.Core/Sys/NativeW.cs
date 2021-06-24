@@ -5,7 +5,7 @@ using System.Text;
 namespace Droid.Sys
 {
     // http://pinvoke.net/default.aspx/user32/OpenClipboard.html
-    public static class WinNative
+    public static class NativeW
     {
         public static ushort LOWORD(uint l) => (ushort)(l & 0xffff);
         public static ushort LOWORD(IntPtr l) => (ushort)((uint)l & 0xffff);
@@ -149,7 +149,7 @@ namespace Droid.Sys
         }
 
         [DllImport("user32.dll")] public static extern IntPtr SetTimer(IntPtr hWnd, uint nIDEvent, uint uElapse, TimerProc lpTimerFunc);
-        [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.U2)] public static extern short RegisterClassEx(ref WNDCLASSEX lpwcx);
+        [DllImport("user32.dll")] public static extern ushort RegisterClassEx(ref WNDCLASSEX lpwcx); //[return: MarshalAs(UnmanagedType.U2)]
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
         public struct WNDCLASSEX
         {
@@ -167,6 +167,7 @@ namespace Droid.Sys
             public IntPtr hIconSm;
         }
         [DllImport("user32.dll", SetLastError = true)] public static extern IntPtr CreateWindowEx(WindowStyleEx dwExStyle, string lpClassName, string lpWindowName, WindowStyle dwStyle, int x, int y, int nWidth, int nHeight, IntPtr hWndParent, IntPtr hMenu, IntPtr hInstance, IntPtr lpParam);
+        [DllImport("user32.dll", SetLastError = true)] public static extern IntPtr CreateWindowEx(WindowStyleEx dwExStyle, ushort regResult, string lpWindowName, WindowStyle dwStyle, int x, int y, int nWidth, int nHeight, IntPtr hWndParent, IntPtr hMenu, IntPtr hInstance, IntPtr lpParam);
         [DllImport("user32.dll")] public static extern IntPtr DefWindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
         [DllImport("user32.dll")] public static extern IntPtr CallWindowProc(WndProcDelegate lpPrevWndFunc, IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
         [DllImport("user32.dll")] public static extern bool AdjustWindowRectEx(ref RECT lpRect, WindowStyle dwStyle, bool bMenu, uint dwExStyle);

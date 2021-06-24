@@ -48,10 +48,10 @@ namespace Droid.Framework
         Z
     }
 
-    public struct particleGen
+    public struct ParticleGen
     {
-        public renderEntity renderEnt;          // for shaderParms, etc
-        public renderView renderView;
+        public RenderEntity renderEnt;          // for shaderParms, etc
+        public RenderView renderView;
         public int index;               // particle number in the system
         public float frac;              // 0.0 to 1.0
         public Random random;
@@ -72,12 +72,12 @@ namespace Droid.Framework
 
         public void Default() => throw new NotImplementedException();
         public virtual int NumQuadsPerParticle() => throw new NotImplementedException();    // includes trails and cross faded animations returns the number of verts created, which will range from 0 to 4*NumQuadsPerParticle()
-        public virtual int CreateParticle(particleGen g, DrawVert[] verts) => throw new NotImplementedException();
+        public virtual int CreateParticle(ParticleGen g, DrawVert[] verts) => throw new NotImplementedException();
 
-        public void ParticleOrigin(particleGen g, Vector3 origin) => throw new NotImplementedException();
-        public int ParticleVerts(particleGen g, Vector3 origin, DrawVert[] verts) => throw new NotImplementedException();
-        public void ParticleTexCoords(particleGen g, DrawVert[] verts) => throw new NotImplementedException();
-        public void ParticleColors(particleGen g, DrawVert[] verts) => throw new NotImplementedException();
+        public void ParticleOrigin(ParticleGen g, Vector3 origin) => throw new NotImplementedException();
+        public int ParticleVerts(ParticleGen g, Vector3 origin, DrawVert[] verts) => throw new NotImplementedException();
+        public void ParticleTexCoords(ParticleGen g, DrawVert[] verts) => throw new NotImplementedException();
+        public void ParticleColors(ParticleGen g, DrawVert[] verts) => throw new NotImplementedException();
 
         public string GetCustomPathName() => throw new NotImplementedException();
         public string GetCustomPathDesc() => throw new NotImplementedException();

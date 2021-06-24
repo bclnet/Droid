@@ -1,11 +1,13 @@
-namespace Droid.Framework
+using static Droid.Core.Lib;
+
+namespace Droid.Core
 {
-    public class usercmd
+    public class Usercmd
     {
         //const int USERCMD_HZ			= 60;
         //const int USERCMD_MSEC			= 1000 / USERCMD_HZ;
 
-        static int USERCMD_MSEC() => (1000 / (G.renderSystem != null ? G.renderSystem.GetRefresh() : 60));
+        //static int USERCMD_MSEC() => (1000 / (renderSystem != null ? renderSystem.GetRefresh() : 60));
 
         // usercmd_t->button bits
         const int BUTTON_ATTACK = 1 << 0;
@@ -97,7 +99,7 @@ namespace Droid.Framework
         }
         public override bool Equals(object obj)
         {
-            var rhs = (usercmd)obj;
+            var rhs = (Usercmd)obj;
             return buttons == rhs.buttons &&
                 forwardmove == rhs.forwardmove &&
                 rightmove == rhs.rightmove &&
@@ -121,54 +123,54 @@ namespace Droid.Framework
         ASYNC
     }
 
-    public abstract class UsercmdGen
+    public interface IUsercmdGen
     {
         protected const int MAX_BUFFERED_USERCMD = 64;
 
         // Sets up all the cvars and console commands.
-        public abstract void Init();
+        void Init();
 
         // Prepares for a new map.
-        public abstract void InitForNewMap();
+        void InitForNewMap();
 
         // Shut down.
-        public abstract void Shutdown();
+        void Shutdown();
 
         // Clears all key states and face straight.
-        public abstract void Clear();
+        void Clear();
 
         // Clears view angles.
-        public abstract void ClearAngles();
+        void ClearAngles();
 
         // When the console is down or the menu is up, only emit default usercmd, so the player isn't moving around.
         // Each subsystem (session and game) may want an inhibit will OR the requests.
-        public abstract void InhibitUsercmd(INHIBIT subsystem, bool inhibit);
+        void InhibitUsercmd(INHIBIT subsystem, bool inhibit);
 
         // Returns a buffered command for the given game tic.
-        public abstract usercmd TicCmd(int ticNumber);
+        Usercmd TicCmd(int ticNumber);
 
         // Called async at regular intervals.
-        public abstract void UsercmdInterrupt();
+        void UsercmdInterrupt();
 
         // Set a value that can safely be referenced by UsercmdInterrupt() for each key binding.
-        public abstract int CommandStringUsercmdData(string cmdString);
+        int CommandStringUsercmdData(string cmdString);
 
         // Returns the number of user commands.
-        public abstract int GetNumUserCommands();
+        int GetNumUserCommands();
 
         // Returns the name of a user command via index.
-        public abstract string GetUserCommandName(int index);
+        string GetUserCommandName(int index);
 
         // Continuously modified, never reset. For full screen guis.
-        public abstract void MouseState(out int x, out int y, out int button, out bool down);
+        void MouseState(out int x, out int y, out int button, out bool down);
 
         // Directly sample a button.
-        public abstract int ButtonState(int key);
+        int ButtonState(int key);
 
         // Directly sample a keystate.
-        public abstract int KeyState(int key);
+        int KeyState(int key);
 
         // Directly sample a usercmd.
-        public abstract usercmd GetDirectUsercmd();
+        Usercmd GetDirectUsercmd();
     }
 }

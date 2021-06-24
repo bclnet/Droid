@@ -195,7 +195,7 @@ namespace Droid.Render
 
         // background loading information
         public bool backgroundLoadInProgress;  // true if another thread is reading the complete d3t file
-        public backgroundDownload bgl;
+        public BackgroundDownload bgl;
         public Image bglNext;               // linked from tr.backgroundImageLoads
 
         // parameters that define this image

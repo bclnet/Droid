@@ -1,6 +1,8 @@
 using Droid.Core;
 using Droid.Framework;
+using Droid.Sound;
 using Droid.UI;
+using System;
 
 namespace Droid.Render
 {
@@ -43,17 +45,18 @@ namespace Droid.Render
         public const int MAX_RENDERENTITY_GUI = 3;
 
         public static int SIMD_ROUND_JOINTS(int numJoints) => (numJoints + 1) & ~1;
-        public static void SIMD_INIT_LAST_JOINT(JointMat joints, int numJoints)
+        public static void SIMD_INIT_LAST_JOINT(JointMat[] joints, int numJoints)
         {
-            if ((numJoints & 1) != 0) joints[numJoints] = joints[numJoints - 1];
+            if ((numJoints & 1) != 0)
+                joints[numJoints] = joints[numJoints - 1];
         }
     }
 
-    public delegate bool deferredEntityCallback(renderEntity e, renderView v);
+    public delegate bool DeferredEntityCallback(RenderEntity e, RenderView v);
 
-    public class renderEntity
+    public class RenderEntity
     {
-        public RenderModel hModel;              // this can only be null if callback is set
+        public IRenderModel hModel;              // this can only be null if callback is set
 
         public int entityNum;
         public int bodyId;
@@ -64,7 +67,7 @@ namespace Droid.Render
         // The callback function should clear renderEntity->callback if it doesn't want to be called again next time the entity is referenced (ie, if the
         // callback has now made the entity valid until the next updateEntity)
         public Bounds bounds;                    // only needs to be set for deferred models and md5s
-        public deferredEntityCallback callback;
+        public DeferredEntityCallback callback;
 
         public byte[] callbackData;         // used for whatever the callback wants
 
@@ -90,13 +93,13 @@ namespace Droid.Render
         public Material customShader;         // if non-0, all surfaces will use this
         public Material referenceShader;      // used so flares can reference the proper light shader
         public DeclSkin customSkin;               // 0 for no remappings
-        public SoundEmitter referenceSound;         // for shader sound tables, allowing effects to vary with sounds
-        public float[] shaderParms = new float[MAX_ENTITY_SHADER_PARMS]; // can be used in any way by shader or model generation
+        public ISoundEmitter referenceSound;         // for shader sound tables, allowing effects to vary with sounds
+        public float[] shaderParms = new float[Material.MAX_ENTITY_SHADER_PARMS]; // can be used in any way by shader or model generation
 
         // networking: see WriteGUIToSnapshot / ReadGUIFromSnapshot
-        public UserInterface[] gui = new UserInterface[MAX_RENDERENTITY_GUI];
+        public IUserInterface[] gui = new IUserInterface[RenderWorldX.MAX_RENDERENTITY_GUI];
 
-        public renderView remoteRenderView;     // any remote camera surfaces will use this
+        public RenderView remoteRenderView;     // any remote camera surfaces will use this
 
         public int numJoints;
         public JointMat joints;                 // array of joints that will modify vertices.
@@ -117,7 +120,7 @@ namespace Droid.Render
         public int xrayIndex;
     }
 
-    public class renderLight
+    public class RenderLight
     {
         public Matrix3x3 axis;                // rotation vectors, must be unit length
         public Vector3 origin;
@@ -148,17 +151,17 @@ namespace Droid.Render
 
         // Dmap will generate an optimized shadow volume named _prelight_<lightName> for the light against all the _area* models in the map.  The renderer will
         // ignore this value if the light has been moved after initial creation
-        public RenderModel prelightModel;
+        public IRenderModel prelightModel;
 
         // muzzle flash lights will not cast shadows from player and weapon world models
         public int lightId;
 
         public Material shader;               // NULL = either lights/defaultPointLight or lights/defaultProjectedLight
-        public float[] shaderParms = new float[MAX_ENTITY_SHADER_PARMS];     // can be used in any way by shader
-        public SoundEmitter referenceSound;     // for shader sound tables, allowing effects to vary with sounds
+        public float[] shaderParms = new float[Material.MAX_ENTITY_SHADER_PARMS];     // can be used in any way by shader
+        public ISoundEmitter referenceSound;     // for shader sound tables, allowing effects to vary with sounds
     }
 
-    public class renderView
+    public class RenderView
     {
         // player views will set this to a non-zero integer for model suppress / allow subviews (mirrors, cameras, etc) will always clear it to zero
         public int viewID;
@@ -176,21 +179,21 @@ namespace Droid.Render
 
         // time in milliseconds for shader effects and other time dependent rendering issues
         public int time;
-        public float[] shaderParms = new float[MAX_GLOBAL_SHADER_PARMS];     // can be used in any way by shader
+        public float[] shaderParms = new float[RenderWorldX.MAX_GLOBAL_SHADER_PARMS];     // can be used in any way by shader
         public Material globalMaterial;                           // used to override everything draw
     }
 
     // exitPortal_t is returned by idRenderWorld::GetPortal()
-    public struct exitPortal
+    public struct ExitPortal
     {
         public int[] areas;       // areas connected by this portal
         public Winding w;             // winding points have counter clockwise ordering seen from areas[0]
         public int blockingBits;   // PS_BLOCK_VIEW, PS_BLOCK_AIR, etc
-        public qhandle portalHandle;
+        public IntPtr portalHandle;
     }
 
     // guiPoint_t is returned by idRenderWorld::GuiTrace()
-    public struct guiPoint
+    public struct GuiPoint
     {
         public float x, y;         // 0.0 to 1.0 range if trace hit a gui, otherwise -1
         public int guiId;          // id of gui ( 0, 1, or 2 ) that the trace happened against
@@ -198,22 +201,22 @@ namespace Droid.Render
     }
 
     // modelTrace_t is for tracing vs. visual geometry
-    public struct modelTrace
+    public struct ModelTrace
     {
         public float fraction;         // fraction of trace completed
         public Vector3 point;               // end point of trace in global space
         public Vector3 normal;              // hit triangle normal vector in global space
         public Material material;         // material of hit surface
-        public renderEntity entity;               // render entity that was hit
+        public RenderEntity entity;               // render entity that was hit
         public int jointNumber;     // md5 joint nearest to the hit triangle
     }
 
     static partial class RenderWorldX
     {
-        public static const int NUM_PORTAL_ATTRIBUTES = 3;
+        public const int NUM_PORTAL_ATTRIBUTES = 3;
     }
 
-    enum portalConnection
+    public enum PortalConnection
     {
         PS_BLOCK_NONE = 0,
 
@@ -224,7 +227,7 @@ namespace Droid.Render
         PS_BLOCK_ALL = (1 << RenderWorldX.NUM_PORTAL_ATTRIBUTES) - 1
     }
 
-    public interface RenderWorld
+    public interface IRenderWorld
     {
         // The same render world can be reinitialized as often as desired a NULL or empty mapName will create an empty, single area world
         bool InitFromMap(string mapName);
@@ -233,18 +236,17 @@ namespace Droid.Render
 
         // entityDefs and lightDefs are added to a given world to determine what will be drawn for a rendered scene.  Most update work is defered
         // until it is determined that it is actually needed for a given view.
-        qhandle AddEntityDef(renderEntity re);
-        void UpdateEntityDef(qhandle entityHandle, renderEntity re);
-        void FreeEntityDef(qhandle entityHandle);
-        renderEntity GetRenderEntity(qhandle entityHandle);
+        IntPtr AddEntityDef(RenderEntity re);
+        void UpdateEntityDef(IntPtr entityHandle, RenderEntity re);
+        void FreeEntityDef(IntPtr entityHandle);
+        RenderEntity GetRenderEntity(IntPtr entityHandle);
 
-        qhandle AddLightDef(renderLight rlight);
-        void UpdateLightDef(qhandle lightHandle, renderLight rlight);
-        void FreeLightDef(qhandle lightHandle);
-        renderLight GetRenderLight(qhandle lightHandle);
+        IntPtr AddLightDef(RenderLight rlight);
+        void UpdateLightDef(IntPtr lightHandle, RenderLight rlight);
+        void FreeLightDef(IntPtr lightHandle);
+        RenderLight GetRenderLight(IntPtr lightHandle);
 
-        // Force the generation of all light / surface interactions at the start of a level
-        // If this isn't called, they will all be dynamically generated
+        // Force the generation of all light / surface interactions at the start of a level If this isn't called, they will all be dynamically generated
         void GenerateAllInteractions();
 
         // returns true if this area model needs portal sky to draw
@@ -252,30 +254,28 @@ namespace Droid.Render
 
         //-------------- Decals and Overlays  -----------------
 
-        // Creates decals on all world surfaces that the winding projects onto.
-        // The projection origin should be infront of the winding plane.
-        // The decals are projected onto world geometry between the winding plane and the projection origin.
-        // The decals are depth faded from the winding plane to a certain distance infront of the
+        // Creates decals on all world surfaces that the winding projects onto. The projection origin should be infront of the winding plane.
+        // The decals are projected onto world geometry between the winding plane and the projection origin. The decals are depth faded from the winding plane to a certain distance infront of the
         // winding plane and the same distance from the projection origin towards the winding.
         void ProjectDecalOntoWorld(out FixedWinding winding, out Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
 
         // Creates decals on static models.
-        void ProjectDecal(qhandle entityHandle, out FixedWinding winding, out Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
+        void ProjectDecal(IntPtr entityHandle, out FixedWinding winding, out Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
 
         // Creates overlays on dynamic models.
-        void ProjectOverlay(qhandle entityHandle, Plane[] localTextureAxis, Material material);
+        void ProjectOverlay(IntPtr entityHandle, Plane[] localTextureAxis, Material material);
 
         // Removes all decals and overlays from the given entity def.
-        void RemoveDecals(qhandle entityHandle);
+        void RemoveDecals(IntPtr entityHandle);
 
         //-------------- Scene Rendering -----------------
 
         // some calls to material functions use the current renderview time when servicing cinematics.  this function ensures that any parms accessed (such as time) are properly set.
-        void SetRenderView(renderView renderView);
+        void SetRenderView(RenderView renderView);
 
         // rendering a scene may actually render multiple subviews for mirrors and portals, and may render composite textures for gui console screens and light projections
         // It would also be acceptable to render a scene multiple times, for "rear view mirrors", etc
-        void RenderScene(renderView renderView);
+        void RenderScene(RenderView renderView);
 
         //-------------- Portal Area Information -----------------
 
@@ -285,15 +285,15 @@ namespace Droid.Render
         // returns 0 if no portal contacts the bounds
         // This is used by the game to identify portals that are contained inside doors, so the connection between areas can be topologically
         // terminated when the door shuts.
-        qhandle FindPortal(out Bounds b);
+        IntPtr FindPortal(out Bounds b);
 
         // doors explicitly close off portals when shut
         // multiple bits can be set to block multiple things, ie: ( PS_VIEW | PS_LOCATION | PS_AIR )
-        void SetPortalState(qhandle portal, int blockingBits);
-        int GetPortalState(qhandle portal);
+        void SetPortalState(IntPtr portal, int blockingBits);
+        int GetPortalState(IntPtr portal);
 
         // returns true only if a chain of portals without the given connection bits set exists between the two areas (a door doesn't separate them, etc)
-        bool AreasAreConnected(int areaNum1, int areaNum2, portalConnection connection);
+        bool AreasAreConnected(int areaNum1, int areaNum2, PortalConnection connection);
 
         // returns the number of portal areas in a map, so game code can build information tables for the different areas
         int NumAreas();
@@ -309,34 +309,34 @@ namespace Droid.Render
         int NumPortalsInArea(int areaNum);
 
         // returns one portal from an area
-        exitPortal GetPortal(int areaNum, int portalNum);
+        ExitPortal GetPortal(int areaNum, int portalNum);
 
         //-------------- Tracing  -----------------
 
         // Checks a ray trace against any gui surfaces in an entity, returning the fraction location of the trace on the gui surface, or -1,-1 if no hit.
         // This doesn't do any occlusion testing, simply ignoring non-gui surfaces. start / end are in global world coordinates.
-        guiPoint GuiTrace(qhandle entityHandle, Animator animator, Vector3 start, Vector3 end); // Koz added animator
+        GuiPoint GuiTrace(IntPtr entityHandle, object animator, Vector3 start, Vector3 end); // Koz added animator
 
         // Traces vs the render model, possibly instantiating a dynamic version, and returns true if something was hit
-        bool ModelTrace(out modelTrace trace, qhandle entityHandle, out Vector3 start, out Vector3 end, float radius);
+        bool ModelTrace(out ModelTrace trace, IntPtr entityHandle, out Vector3 start, out Vector3 end, float radius);
 
         // Traces vs the whole rendered world. FIXME: we need some kind of material flags.
-        bool Trace(out modelTrace trace, out Vector3 start, out Vector3 end, float radius, bool skipDynamic = true, bool skipPlayer = false);
+        bool Trace(out ModelTrace trace, out Vector3 start, out Vector3 end, float radius, bool skipDynamic = true, bool skipPlayer = false);
 
         // Traces vs the world model bsp tree.
-        bool FastWorldTrace(out modelTrace trace, out Vector3 start, out Vector3 end);
+        bool FastWorldTrace(out ModelTrace trace, out Vector3 start, out Vector3 end);
 
         //-------------- Demo Control  -----------------
 
         // Writes a loadmap command to the demo, and clears archive counters.
-        void StartWritingDemo(DemoFile demo);
+        void StartWritingDemo(VFileDemo demo);
         void StopWritingDemo();
 
         // Returns true when demoRenderView has been filled in.
         // adds/updates/frees entityDefs and lightDefs based on the current demo file and returns the renderView to be used to render this frame.
         // a demo file may need to be advanced multiple times if the framerate is less than 30hz
         // demoTimeOffset will be set if a new map load command was processed before the next renderScene
-        bool ProcessDemoCommand(DemoFile readDemo, renderView demoRenderView, out int demoTimeOffset);
+        bool ProcessDemoCommand(VFileDemo readDemo, RenderView demoRenderView, out int demoTimeOffset);
 
         // this is used to regenerate all interactions ( which is currently only done during influences ), there may be a less expensive way to do it
         void RegenerateWorld();
@@ -350,7 +350,7 @@ namespace Droid.Render
         void DebugWinding(Vector4 color, Winding w, Vector3 origin, Matrix3x3 axis, int lifetime = 0, bool depthTest = false);
         void DebugCircle(Vector4 color, Vector3 origin, Vector3 dir, float radius, int numSteps, int lifetime = 0, bool depthTest = false);
         void DebugSphere(Vector4 color, Sphere sphere, int lifetime = 0, bool depthTest = false);
-        void DebugBounds(Vector4 color, Bounds bounds, Vector3 org = vec3_origin, int lifetime = 0);
+        void DebugBounds(Vector4 color, Bounds bounds, Vector3 org = default, int lifetime = 0);
         void DebugBox(Vector4 color, Box box, int lifetime = 0);
         void DebugFrustum(Vector4 color, Frustum frustum, bool showFromOrigin = false, int lifetime = 0);
         void DebugCone(Vector4 color, Vector3 apex, Vector3 dir, float radius1, float radius2, int lifetime = 0);

@@ -1,4 +1,5 @@
 using Droid.Core;
+using Droid.Framework;
 using Droid.Sound;
 using Droid.UI;
 using System;
@@ -26,7 +27,7 @@ namespace Droid.Render
                             // set AFTER image format selection
     }
 
-    public unsafe struct decalInfo
+    public unsafe struct DecalInfo
     {
         public int stayTime;        // msec for no change
         public int fadeTime;        // msec to fade vertex colors over
@@ -107,13 +108,13 @@ namespace Droid.Render
         NUM_PREDEFINED
     }
 
-    public struct expOp
+    public struct ExpOp
     {
         public OP_TYPE opType;
         public int a, b, c;
     }
 
-    public unsafe struct colorStage
+    public unsafe struct ColorStage
     {
         public fixed int registers[4];
     }
@@ -130,7 +131,7 @@ namespace Droid.Render
         GLASSWARP
     }
 
-    public struct textureStage
+    public struct TextureStage
     {
         public Cinematic cinematic;
         public Image image;
@@ -161,7 +162,7 @@ namespace Droid.Render
         INVERSE_MODULATE
     }
 
-    public class newShaderStage
+    public class NewShaderStage
     {
         const int MAX_FRAGMENT_IMAGES = 8;
         const int MAX_VERTEX_PARMS = 4;
@@ -177,20 +178,20 @@ namespace Droid.Render
         public MegaTexture megaTexture;        // handles all the binding and parameter setting
     }
 
-    public struct shaderStage
+    public struct ShaderStage
     {
         public int conditionRegister;  // if registers[conditionRegister] == 0, skip stage
         public SL lighting;           // determines which passes interact with lights
         public int drawStateBits;
-        public colorStage color;
+        public ColorStage color;
         public bool hasAlphaTest;
         public int alphaTestRegister;
-        public textureStage texture;
+        public TextureStage texture;
         public SVC vertexColor;
         public bool ignoreAlphaTest;   // this stage should act as translucent, even if the surface is alpha tested
         public float privatePolygonOffset; // a per-stage polygon offset
 
-        public newShaderStage newStage;         // vertex / fragment program based stage
+        public NewShaderStage newStage;         // vertex / fragment program based stage
     }
 
     public enum MC
@@ -328,12 +329,12 @@ namespace Droid.Render
 
         //public Material();
 
-        public virtual int Size() => throw new NotImplementedException();
-        public virtual bool SetDefaultText() => throw new NotImplementedException();
-        public virtual string DefaultDefinition() => throw new NotImplementedException();
-        public virtual bool Parse(string text, int textLength) => throw new NotImplementedException();
-        public virtual void FreeData() => throw new NotImplementedException();
-        public virtual void Print() => throw new NotImplementedException();
+        public override int Size() => throw new NotImplementedException();
+        public override bool SetDefaultText() => throw new NotImplementedException();
+        public override string DefaultDefinition() => throw new NotImplementedException();
+        public override bool Parse(string text, int textLength) => throw new NotImplementedException();
+        public override void FreeData() => throw new NotImplementedException();
+        public override void Print() => throw new NotImplementedException();
 
         //BSM Nerve: Added for material editor
         public bool Save(string fileName = null) => throw new NotImplementedException();
@@ -348,14 +349,14 @@ namespace Droid.Render
         public int GetNumStages() => numStages;
 
         // get a specific stage
-        public shaderStage GetStage(int index)
+        public ShaderStage GetStage(int index)
         {
             Debug.Assert(index >= 0 && index < numStages);
             return stages[index];
         }
 
         // get the first bump map stage, or NULL if not present. used for bumpy-specular
-        public shaderStage GetBumpStage() => throw new NotImplementedException();
+        public ShaderStage GetBumpStage() => throw new NotImplementedException();
 
         // returns true if the material will draw anything at all.  Triggers, portals, etc, will not have anything to draw.  A not drawn surface can still castShadow,
         // which can be used to make a simplified shadow hull for a complex object set as noShadow
@@ -405,7 +406,7 @@ namespace Droid.Render
         public bool HasHigherDmapPriority(Material other) => (IsDrawn() && !other.IsDrawn()) || (Coverage() < other.Coverage());
 
         // returns a idUserInterface if it has a global gui, or NULL if no gui
-        public UserInterface GlobalGui() => gui;
+        public IUserInterface GlobalGui() => gui;
 
         // a discrete surface will never be merged with other surfaces by dmap, which is necessary to prevent mutliple gui surfaces, mirrors, autosprites, and some other
         // special effects from being combined into a single surface guis, merging sprites or other effects, mirrors and remote views are always discrete
@@ -496,7 +497,7 @@ namespace Droid.Render
 
         public int GetEntityGui() => entityGui;
 
-        public decalInfo GetDecalInfo() => this.decalInfo;
+        public DecalInfo GetDecalInfo() => this.decalInfo;
 
         // spectrums are used for "invisible writing" that can only be illuminated by a light of matching spectrum
         public int Spectrum() => spectrum;
@@ -536,7 +537,7 @@ namespace Droid.Render
         public int GetNumRegisters() => numRegisters;
 
         // regs should point to a float array large enough to hold GetNumRegisters() floats
-        public void EvaluateRegisters(float[] regs, float[] entityParms, viewDef view, SoundEmitter soundEmitter = null) => throw new NotImplementedException();
+        public void EvaluateRegisters(float[] regs, float[] entityParms, ViewDef view, ISoundEmitter soundEmitter = null) => throw new NotImplementedException();
 
         // if a material only uses constants (no entityParm or globalparm references), this will return a pointer to an internal table, and EvaluateRegisters will not need
         // to be called.  If NULL is returned, EvaluateRegisters must be used.
@@ -551,25 +552,25 @@ namespace Droid.Render
         void ParseMaterial(Lexer src) => throw new NotImplementedException();
         bool MatchToken(Lexer src, string match) => throw new NotImplementedException();
         void ParseSort(Lexer src) => throw new NotImplementedException();
-        void ParseBlend(Lexer src, shaderStage stage) => throw new NotImplementedException();
-        void ParseVertexParm(Lexer src, newShaderStage newStage) => throw new NotImplementedException();
-        void ParseFragmentMap(Lexer src, newShaderStage newStage) => throw new NotImplementedException();
+        void ParseBlend(Lexer src, ShaderStage stage) => throw new NotImplementedException();
+        void ParseVertexParm(Lexer src, NewShaderStage newStage) => throw new NotImplementedException();
+        void ParseFragmentMap(Lexer src, NewShaderStage newStage) => throw new NotImplementedException();
         void ParseStage(Lexer src, TR trpDefault = TR.REPEAT) => throw new NotImplementedException();
         void ParseDeform(Lexer src) => throw new NotImplementedException();
         void ParseDecalInfo(Lexer src) => throw new NotImplementedException();
         bool CheckSurfaceParm(Token token) => throw new NotImplementedException();
         int GetExpressionConstant(float f) => throw new NotImplementedException();
         int GetExpressionTemporary() => throw new NotImplementedException();
-        expOp GetExpressionOp() => throw new NotImplementedException();
+        ExpOp GetExpressionOp() => throw new NotImplementedException();
         int EmitOp(int a, int b, OP_TYPE opType) => throw new NotImplementedException();
         int ParseEmitOp(Lexer src, int a, OP_TYPE opType, int priority) => throw new NotImplementedException();
         int ParseTerm(Lexer src) => throw new NotImplementedException();
         int ParseExpressionPriority(Lexer src, int priority) => throw new NotImplementedException();
         int ParseExpression(Lexer src) => throw new NotImplementedException();
-        void ClearStage(shaderStage ss) => throw new NotImplementedException();
+        void ClearStage(ShaderStage ss) => throw new NotImplementedException();
         int NameToSrcBlendMode(string name) => throw new NotImplementedException();
         int NameToDstBlendMode(string name) => throw new NotImplementedException();
-        void MultiplyTextureMatrix(textureStage ts, int[,] registers) => throw new NotImplementedException();   // FIXME: for some reason the const is bad for gcc and Mac
+        void MultiplyTextureMatrix(TextureStage ts, int[,] registers) => throw new NotImplementedException();   // FIXME: for some reason the const is bad for gcc and Mac
         void SortInteractionStages() => throw new NotImplementedException();
         void AddImplicitStages(TR trpDefault = TR.REPEAT) => throw new NotImplementedException();
         void CheckForConstantRegisters() => throw new NotImplementedException();
@@ -582,7 +583,7 @@ namespace Droid.Render
 
         int entityGui;          // draw a gui with the idUserInterface from the renderEntity_t
                                 // non zero will draw gui, gui2, or gui3 from renderEnitty_t
-        UserInterface gui;           // non-custom guis are shared by all users of a material
+        IUserInterface gui;           // non-custom guis are shared by all users of a material
 
         bool noFog;             // surface does not create fog interactions
 
@@ -594,7 +595,7 @@ namespace Droid.Render
         SURF surfaceFlags;       // surface flags
         MF materialFlags;      // material flags
 
-        decalInfo decalInfo;
+        DecalInfo decalInfo;
 
 
         float sort;             // lower numbered shaders draw before higher numbered
@@ -616,7 +617,7 @@ namespace Droid.Render
         bool allowOverlays;
 
         int numOps;
-        expOp ops;               // evaluate to make expressionRegisters
+        ExpOp ops;               // evaluate to make expressionRegisters
 
         int numRegisters;                                                                           //
         float[] expressionRegisters;
@@ -626,7 +627,7 @@ namespace Droid.Render
         int numStages;
         int numAmbientStages;
 
-        shaderStage[] stages;
+        ShaderStage[] stages;
 
         object pd;            // only used during parsing
 

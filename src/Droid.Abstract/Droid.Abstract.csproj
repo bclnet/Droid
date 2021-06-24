@@ -28,4 +28,8 @@
     <Folder Include="CollisionModel\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="WaveEngine.Bindings.OpenGLES" Version="1.0.4998" />
+  </ItemGroup>
+
 </Project>

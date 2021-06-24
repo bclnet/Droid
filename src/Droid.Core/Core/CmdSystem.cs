@@ -1,8 +1,68 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using static Droid.Core.Lib;
 
-namespace Droid.Framework
+namespace Droid.Core
 {
+    // command flags
+    [Flags]
+    public enum CMD_FL
+    {
+        ALL = -1,
+        CHEAT = 1 << 0,    // command is considered a cheat
+        SYSTEM = 1 << 1,   // system command
+        RENDERER = 1 << 2, // renderer command
+        SOUND = 1 << 3,    // sound command
+        GAME = 1 << 4, // game command
+        TOOL = 1 << 5, // tool command
+    }
+
+    // parameters for command buffer stuffing
+    public enum CMD_EXEC
+    {
+        NOW,                        // don't return until completed
+        INSERT,                 // insert at current position, but don't run yet
+        APPEND                      // add to end of the command buffer (normal case)
+    }
+
+    // command function
+    public delegate void CmdFunction(CmdArgs args);
+
+    public interface ICmdSystem
+    {
+        // Registers a command and the function to call for it.
+        void AddCommand(string cmdName, CmdFunction function, CMD_FL flags, string description, ArgCompletion argCompletion = null);
+        // Removes a command.
+        void RemoveCommand(string cmdName);
+        // Remove all commands with one of the flags set.
+        void RemoveFlaggedCommands(CMD_FL flags);
+
+        // Command and argument completion using callback for each valid string.
+        void CommandCompletion(Action<string> callback);
+        void ArgCompletion(string cmdString, Action<string> callback);
+
+        // Adds command text to the command buffer, does not add a final \n
+        void BufferCommandText(CMD_EXEC exec, string text);
+        // Pulls off \n \r or ; terminated lines of text from the command buffer and
+        // executes the commands. Stops when the buffer is empty.
+        // Normally called once per frame, but may be explicitly invoked.
+        void ExecuteCommandBuffer();
+
+        // Base for path/file auto-completion.
+        void ArgCompletion_FolderExtension(CmdArgs args, Action<string> callback, string folder, bool stripFolder, params string[] extensions);
+        // Base for decl name auto-completion.
+        //void ArgCompletion_DeclName(CmdArgs args, Action<string> callback, int type);
+
+        // Adds to the command buffer in tokenized form ( CMD_EXEC_NOW or CMD_EXEC_APPEND only )
+        void BufferCommandArgs(CMD_EXEC exec, CmdArgs args);
+
+        // Setup a reloadEngine to happen on next command run, and give a command to execute after reload
+        void SetupReloadEngine(CmdArgs args);
+        bool PostReloadEngine();
+    }
+
     class CommandDef
     {
         public CommandDef next;
@@ -13,8 +73,25 @@ namespace Droid.Framework
         public string description;
     }
 
-    class CmdSystemLocal : CmdSystem
+    internal class CmdSystemLocal : ICmdSystem
     {
+        //const int MAX_CMD_BUFFER = 0x10000;
+
+        CommandDef commands;
+
+        int wait;
+        //int textLength;
+        StringBuilder textBuf = new();
+
+        string completionString = "*";
+        List<string> completionParms = new();
+
+        // piggybacks on the text buffer, avoids tokenize again and screwing it up
+        List<CmdArgs> tokenizedCmds = new();
+
+        // a command stored to be executed after a reloadEngine and all associated commands have been processed
+        CmdArgs postReload;
+
         public CmdSystemLocal()
         {
             AddCommand("listCmds", List_f, CMD_FL.SYSTEM, "lists commands");
@@ -23,20 +100,16 @@ namespace Droid.Framework
             AddCommand("listSoundCmds", SoundList_f, CMD_FL.SYSTEM, "lists sound commands");
             AddCommand("listGameCmds", GameList_f, CMD_FL.SYSTEM, "lists game commands");
             AddCommand("listToolCmds", ToolList_f, CMD_FL.SYSTEM, "lists tool commands");
-            AddCommand("exec", Exec_f, CMD_FL.SYSTEM, "executes a config file", ArgCompletion_ConfigName);
+            AddCommand("exec", Exec_f, CMD_FL.SYSTEM, "executes a config file", CmdArgsX.ArgCompletion_ConfigName);
             AddCommand("vstr", Vstr_f, CMD_FL.SYSTEM, "inserts the current value of a cvar as command text");
             AddCommand("echo", Echo_f, CMD_FL.SYSTEM, "prints text");
             AddCommand("parse", Parse_f, CMD_FL.SYSTEM, "prints tokenized string");
             AddCommand("wait", Wait_f, CMD_FL.SYSTEM, "delays remaining buffered commands one or more frames");
-
-            completionString = "*";
-
-            textLength = 0;
         }
 
         public void Dispose() { }
 
-        public override void AddCommand(string cmdName, CmdFunction function, CMD_FL flags, string description, ArgCompletion argCompletion = null)
+        public void AddCommand(string cmdName, CmdFunction function, CMD_FL flags, string description, ArgCompletion argCompletion = null)
         {
             CommandDef cmd;
 
@@ -44,7 +117,7 @@ namespace Droid.Framework
             for (cmd = commands; cmd != null; cmd = cmd.next)
                 if (cmdName == cmd.name && function != cmd.function)
                 {
-                    G.common.Printf($"CmdSystemLocal::AddCommand: {cmdName} already defined\n");
+                    common.Printf($"CmdSystemLocal::AddCommand: {cmdName} already defined\n");
                     return;
                 }
 
@@ -59,9 +132,11 @@ namespace Droid.Framework
             };
             commands = cmd;
         }
-        public override void RemoveCommand(string cmdName)
+
+        public void RemoveCommand(string cmdName)
         {
             CommandDef cmd; ref CommandDef last = ref commands;
+
             for (cmd = last; cmd != null; cmd = last)
             {
                 if (cmdName == cmd.name)
@@ -72,9 +147,11 @@ namespace Droid.Framework
                 last = cmd.next;
             }
         }
-        public override void RemoveFlaggedCommands(CMD_FL flags)
+
+        public void RemoveFlaggedCommands(CMD_FL flags)
         {
             CommandDef cmd; ref CommandDef last = ref commands;
+
             for (cmd = last; cmd != null; cmd = last)
             {
                 if ((cmd.flags & flags) != 0)
@@ -86,16 +163,17 @@ namespace Droid.Framework
             }
         }
 
-        public override void CommandCompletion(Action<string> callback)
+        public void CommandCompletion(Action<string> callback)
         {
             CommandDef cmd;
+
             for (cmd = commands; cmd != null; cmd = cmd.next)
                 callback(cmd.name);
         }
-        public override void ArgCompletion(string cmdString, Action<string> callback)
+
+        public void ArgCompletion(string cmdString, Action<string> callback)
         {
-            CommandDef cmd;
-            CmdArgs args;
+            CommandDef cmd; CmdArgs args = new();
 
             args.TokenizeString(cmdString, false);
 
@@ -111,26 +189,23 @@ namespace Droid.Framework
             }
         }
 
-        public override void BufferCommandText(CMD_EXEC exec, string text)
+        public void BufferCommandText(CMD_EXEC exec, string text)
         {
             switch (exec)
             {
                 case CMD_EXEC.NOW: ExecuteCommandText(text); break;
                 case CMD_EXEC.INSERT: InsertCommandText(text); break;
                 case CMD_EXEC.APPEND: AppendCommandText(text); break;
-                default: G.common.FatalError("CmdSystemLocal::BufferCommandText: bad exec type"); break;
+                default: common.FatalError("CmdSystemLocal::BufferCommandText: bad exec type"); break;
             }
         }
-        public override void ExecuteCommandBuffer()
+
+        public void ExecuteCommandBuffer()
         {
-            int i;
-            string text;
-            int quotes;
-            var args = new CmdArgs();
+            int i; string text; int quotes; CmdArgs args = new();
 
-            while (textLength != 0)
+            while (textBuf.Length != 0)
             {
-
                 if (wait != 0)
                 {
                     // skip out while text still remains in buffer, leaving it for next frame
@@ -139,17 +214,15 @@ namespace Droid.Framework
                 }
 
                 // find a \n or ; line break
-                text = textBuf;
-
                 quotes = 0;
-                for (i = 0; i < textLength; i++)
+                for (i = 0; i < textBuf.Length; i++)
                 {
-                    if (text[i] == '"') quotes++;
-                    if ((quotes & 1) == 0 && text[i] == ';') break;  // don't break if inside a quoted string
-                    if (text[i] == '\n' || text[i] == '\r') break;
+                    if (textBuf[i] == '"') quotes++;
+                    if ((quotes & 1) == 0 && textBuf[i] == ';') break;  // don't break if inside a quoted string
+                    if (textBuf[i] == '\n' || textBuf[i] == '\r') break;
                 }
 
-                text[i] = 0;
+                text = textBuf.ToString(0, i);
 
                 if (text == "_execTokenized")
                 {
@@ -162,13 +235,12 @@ namespace Droid.Framework
                 // this is necessary because commands (exec) can insert data at the
                 // beginning of the text buffer
 
-                if (i == textLength)
-                    textLength = 0;
+                if (i == textBuf.Length)
+                    textBuf.Length = 0;
                 else
                 {
                     i++;
-                    textLength -= i;
-                    memmove(text, text + i, textLength);
+                    textBuf.Remove(0, i);
                 }
 
                 // execute the command line that we have already tokenized
@@ -176,91 +248,82 @@ namespace Droid.Framework
             }
         }
 
-        public override void ArgCompletion_FolderExtension(CmdArgs args, Action<string> callback, string folder, bool stripFolder, params string[] extensions)
+        public void ArgCompletion_FolderExtension(CmdArgs args, Action<string> callback, string folder, bool stripFolder, params string[] extensions)
         {
             int i;
-            string extension;
 
             var s = $"{args[0]} {args[1]}";
 
             if (!string.Equals(s, completionString, StringComparison.OrdinalIgnoreCase))
             {
-                string parm, path;
-                FileList names;
+                string parm, path; FileList names;
 
                 completionString = s;
                 completionParms.Clear();
 
                 parm = args[1];
-                parm.ExtractFilePath(path);
+                path = Path.GetFileName(parm);
                 if (stripFolder || path.Length == 0)
                     path = folder + path;
-                path.TrimEnd('/');
+                path = path.TrimEnd('/');
 
                 // list folders
-                names = G.fileSystem.ListFiles(path, "/", true, true);
-                for (i = 0; i < names.GetNumFiles(); i++)
+                names = fileSystem.ListFiles(path, "/", true, true);
+                for (i = 0; i < names.NumFiles; i++)
                 {
                     var name = names.GetFile(i);
-                    name.Strip(stripFolder ? folder : "/");
-                    name = $"{args.Argv(0)} {name}/";
+                    name = name.Trim(stripFolder ? folder : "/");
+                    name = $"{args[0]} {name}/";
                     completionParms.Add(name);
                 }
-                G.fileSystem.FreeFileList(names);
+                fileSystem.FreeFileList(ref names);
 
                 // list files
-                va_start(argPtr, stripFolder);
-                for (extension = va_arg(argPtr, string); extension; extension = va_arg(argPtr, string))
+                foreach (var extension in extensions)
                 {
                     names = fileSystem.ListFiles(path, extension, true, true);
-                    for (i = 0; i < names.GetNumFiles(); i++)
+                    for (i = 0; i < names.NumFiles; i++)
                     {
-                        idStr name = names.GetFile(i);
-                        if (stripFolder)
-                        {
-                            name.Strip(folder);
-                        }
-                        else
-                        {
-                            name.Strip("/");
-                        }
-                        name = args.Argv(0) + (" " + name);
-                        completionParms.Append(name);
+                        var name = names.GetFile(i);
+                        name = name.Trim(stripFolder ? folder : "/");
+                        name = $"{args[0]} {name}";
+                        completionParms.Add(name);
                     }
-                    fileSystem.FreeFileList(names);
+                    fileSystem.FreeFileList(ref names);
                 }
-                va_end(argPtr);
             }
             for (i = 0; i < completionParms.Count; i++)
                 callback(completionParms[i]);
         }
-        public override void ArgCompletion_DeclName(CmdArgs args, Action<string> callback, int type)
-        {
-            int i, num;
-            if (declManager == null)
-                return;
-            num = declManager.GetNumDecls((declType_t)type);
-            for (i = 0; i < num; i++)
-                callback($"{args.Argv(0)} {declManager.DeclByIndex((declType_t)type, i, false).GetName()}");
-        }
 
-        public override void BufferCommandArgs(CMD_EXEC exec, CmdArgs args)
+        //public void ArgCompletion_DeclName(CmdArgs args, Action<string> callback, int type)
+        //{
+        //    int i, num;
+
+        //    if (declManager == null)
+        //        return;
+        //    num = declManager.GetNumDecls((declType_t)type);
+        //    for (i = 0; i < num; i++)
+        //        callback($"{args[0]} {declManager.DeclByIndex((declType_t)type, i, false).GetName()}");
+        //}
+
+        public void BufferCommandArgs(CMD_EXEC exec, CmdArgs args)
         {
             switch (exec)
             {
                 case CMD_EXEC.NOW: ExecuteTokenizedString(args); break;
                 case CMD_EXEC.APPEND: AppendCommandText("_execTokenized\n"); tokenizedCmds.Add(args); break;
-                default: G.common.FatalError("CmdSystemLocal::BufferCommandArgs: bad exec type"); break;
+                default: common.FatalError("CmdSystemLocal::BufferCommandArgs: bad exec type"); break;
             }
         }
 
-        public override void SetupReloadEngine(CmdArgs args)
+        public void SetupReloadEngine(CmdArgs args)
         {
             BufferCommandText(CMD_EXEC.APPEND, "reloadEngine\n");
             postReload = args;
         }
 
-        public override bool PostReloadEngine()
+        public bool PostReloadEngine()
         {
             if (postReload.Count == 0)
                 return false;
@@ -269,25 +332,11 @@ namespace Droid.Framework
             return true;
         }
 
-        public void SetWait(int numFrames) => wait = numFrames;
-        public CommandDef Commands => commands;
+        public void SetWait(int numFrames)
+            => wait = numFrames;
 
-        const int MAX_CMD_BUFFER = 0x10000;
-
-        CommandDef commands;
-
-        int wait;
-        int textLength;
-        byte[] textBuf = new byte[MAX_CMD_BUFFER];
-
-        string completionString;
-        List<string> completionParms = new List<string>();
-
-        // piggybacks on the text buffer, avoids tokenize again and screwing it up
-        List<CmdArgs> tokenizedCmds;
-
-        // a command stored to be executed after a reloadEngine and all associated commands have been processed
-        CmdArgs postReload;
+        public CommandDef Commands
+            => commands;
 
         void ExecuteTokenizedString(CmdArgs args)
         {
@@ -308,9 +357,9 @@ namespace Droid.Framework
                     cmd.next = commands;
                     commands = cmd;
 
-                    if ((cmd.flags & (CMD_FL.CHEAT | CMD_FL.TOOL)) != 0 && G.session != null && G.session.IsMultiplayer() && !G.cvarSystem.GetCVarBool("net_allowCheats"))
+                    if ((cmd.flags & (CMD_FL.CHEAT | CMD_FL.TOOL)) != 0 && session != null && session.IsMultiplayer && !cvarSystem.GetCVarBool("net_allowCheats"))
                     {
-                        G.common.Printf("Command '%s' not valid in multiplayer mode.\n", cmd.name);
+                        common.Printf($"Command '{cmd.name}' not valid in multiplayer mode.\n");
                         return;
                     }
                     // perform the action
@@ -322,81 +371,33 @@ namespace Droid.Framework
             }
 
             // check cvars
-            if (G.cvarSystem.Command(args))
+            if (cvarSystem.Command(args))
                 return;
 
-            G.common.Printf($"Unknown command '{args[0]}'\n");
+            common.Printf($"Unknown command '{args[0]}'\n");
         }
 
         void ExecuteCommandText(string text) => ExecuteTokenizedString(new CmdArgs(text, false));
 
         void InsertCommandText(string text)
-        {
-            int len;
-            int i;
-
-            len = text.Length + 1;
-            if (len + textLength > (int)sizeof(textBuf))
-            {
-                G.common.Printf("CmdSystemLocal::InsertText: buffer overflow\n");
-                return;
-            }
-
-            // move the existing command text
-            for (i = textLength - 1; i >= 0; i--)
-            {
-                textBuf[i + len] = textBuf[i];
-            }
-
-            // copy the new text in
-            memcpy(textBuf, text, len - 1);
-
-            // add a \n
-            textBuf[len - 1] = '\n';
-
-            textLength += len;
-        }
+            => textBuf.Insert(0, $"{text}\n");
 
         void AppendCommandText(string text)
-        {
-            int l;
-
-            l = strlen(text);
-
-            if (textLength + l >= (int)sizeof(textBuf))
-            {
-                G.common.Printf("CmdSystemLocal::AppendText: buffer overflow\n");
-                return;
-            }
-            memcpy(textBuf + textLength, text, l);
-            textLength += l;
-        }
-
-        // NOTE: the const wonkyness is required to make msvc happy
-        //    template<>
-        //    ID_INLINE int idListSortCompare(const commandDef_t* const* a, const commandDef_t* const* b)
-        //{
-        //    return idStr::Icmp((* a).name, (* b).name);
-        //}
+            => textBuf.Append(text);
 
         static void ListByFlags(CmdArgs args, CMD_FL flags)
         {
-            string match;
-            if (args.Count > 1)
-            {
-                match = args[1, -1];
-                match.Replace(" ", "");
-            }
-            else
-                match = string.Empty;
+            var match = args.Count > 1
+                ? args.Args(1, -1).Replace(" ", "")
+                : string.Empty;
 
             CommandDef cmd;
             var cmdList = new List<CommandDef>();
-            for (cmd = G.cmdSystemLocal.Commands; cmd != null; cmd = cmd.next)
+            for (cmd = cmdSystemLocal.Commands; cmd != null; cmd = cmd.next)
             {
                 if ((cmd.flags & flags) == 0)
                     continue;
-                if (match.Length != 0 && cmd.name.Filter(match, StringComparison.OrdinalIgnoreCase))
+                if (match.Length != 0 && cmd.name.Filter(match, false))
                     continue;
 
                 cmdList.Add(cmd);
@@ -408,11 +409,12 @@ namespace Droid.Framework
             {
                 cmd = cmdList[i];
 
-                G.common.Printf($"  {cmd.name:-21} {cmd.description}\n");
+                common.Printf($"  {cmd.name:-21} {cmd.description}\n");
             }
 
-            G.common.Printf($"{cmdList.Count} commands\n");
+            common.Printf($"{cmdList.Count} commands\n");
         }
+
         static void List_f(CmdArgs args) => ListByFlags(args, CMD_FL.ALL);
         static void SystemList_f(CmdArgs args) => ListByFlags(args, CMD_FL.SYSTEM);
         static void RendererList_f(CmdArgs args) => ListByFlags(args, CMD_FL.RENDERER);
@@ -424,50 +426,53 @@ namespace Droid.Framework
         {
             if (args.Count != 2)
             {
-                G.common.Printf("exec <filename> : execute a script file\n");
+                common.Printf("exec <filename> : execute a script file\n");
                 return;
             }
 
             var filename = args[1];
-            filename.DefaultFileExtension(".cfg");
-            byte[] f;
-            G.fileSystem.ReadFile(filename, out f, null);
+            filename = Path.GetExtension(filename).Length != 0 ? filename : $"{filename}.cfg";
+            fileSystem.ReadFile(filename, out var f, out var _);
             if (f == null)
             {
-                G.common.Printf($"couldn't exec {args[1]}\n");
+                common.Printf($"couldn't exec {args[1]}\n");
                 return;
             }
-            G.common.Printf($"execing {args[1]}\n");
+            common.Printf($"execing {args[1]}\n");
 
-            G.cmdSystemLocal.BufferCommandText(CMD_EXEC.INSERT, f);
+            cmdSystemLocal.BufferCommandText(CMD_EXEC.INSERT, Encoding.ASCII.GetString(f));
 
-            G.fileSystem.FreeFile(f);
+            fileSystem.FreeFile(f);
         }
+
         static void Vstr_f(CmdArgs args)
         {
             if (args.Count != 2)
             {
-                G.common.Printf("vstr <variablename> : execute a variable command\n");
+                common.Printf("vstr <variablename> : execute a variable command\n");
                 return;
             }
 
-            var v = G.cvarSystem.GetCVarString(args[1]);
+            var v = cvarSystem.GetCVarString(args[1]);
 
-            G.cmdSystemLocal.BufferCommandText(CMD_EXEC.APPEND, $"{v}\n");
+            cmdSystemLocal.BufferCommandText(CMD_EXEC.APPEND, $"{v}\n");
         }
         static void Echo_f(CmdArgs args)
         {
             for (var i = 1; i < args.Count; i++)
-                G.common.Printf($"{args[i]} ");
-            G.common.Printf("\n");
+                common.Printf($"{args[i]} ");
+            common.Printf("\n");
         }
+
         static void Parse_f(CmdArgs args)
         {
             for (var i = 0; i < args.Count; i++)
-                G.common.Printf($"{i}: {args[i]}\n");
+                common.Printf($"{i}: {args[i]}\n");
         }
-        static void Wait_f(CmdArgs args) => G.cmdSystemLocal.SetWait(args.Count == 2 ? int.TryParse(args[1], out var z) ? z : 1 : 1);
+
+        static void Wait_f(CmdArgs args)
+            => cmdSystemLocal.SetWait(args.Count == 2 ? int.TryParse(args[1], out var z) ? z : 1 : 1);
+
         static void PrintMemInfo_f(CmdArgs args) { }
     }
-
 }

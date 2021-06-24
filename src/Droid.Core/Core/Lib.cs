@@ -1,5 +1,4 @@
 using Droid.Sys;
-using System;
 using System.Buffers.Binary;
 using System.Diagnostics;
 
@@ -7,12 +6,18 @@ namespace Droid.Core
 {
     public static class Lib
     {
-        public static ISystem sys;
+        public static ISystem sys = new SystemLocal();
         public static ICommon common;
-        public static ICVarSystem cvarSystem;
+        public static IConsole console;
+        internal static CVarSystemLocal cvarSystemLocal = new(); public static ICVarSystem cvarSystem = cvarSystemLocal;
+        internal static CmdSystemLocal cmdSystemLocal = new(); public static ICmdSystem cmdSystem = cmdSystemLocal;
         public static IVFileSystem fileSystem;
-        public static ICmdSystem cmdSystem;
+        public static ISession session;
+        public static IUsercmdGen usercmdGen; //internal static CmdSystemLocal usercmdGenLocal = new(); public static IUsercmdGen usercmdGen = cmdSystemLocal;
+
         public static int frameNumber = 0;
+
+        public static volatile int com_ticNumber;	//: sky (attach)		// 60 hz tics, incremented by async function
 
         static unsafe void Init()
         {
@@ -27,7 +32,7 @@ namespace Droid.Core
             MathX.Init();
 
             // test idMatX
-            //MathX.Test();
+            //MatrixX.Test();
 
             // test idPolynomial
             Polynomial.Test();
@@ -55,8 +60,32 @@ namespace Droid.Core
         public static readonly Vector4 colorLtGrey = new(0.75f, 0.75f, 0.75f, 1.00f);
         public static readonly Vector4 colorMdGrey = new(0.50f, 0.50f, 0.50f, 1.00f);
         public static readonly Vector4 colorDkGrey = new(0.25f, 0.25f, 0.25f, 1.00f);
-
         public static readonly uint[] colorMask = new[] { 255U, 0U };
+
+        // color escape character
+        public const int C_COLOR_ESCAPE = '^';
+        public const int C_COLOR_DEFAULT = '0';
+        public const int C_COLOR_RED = '1';
+        public const int C_COLOR_GREEN = '2';
+        public const int C_COLOR_YELLOW = '3';
+        public const int C_COLOR_BLUE = '4';
+        public const int C_COLOR_CYAN = '5';
+        public const int C_COLOR_MAGENTA = '6';
+        public const int C_COLOR_WHITE = '7';
+        public const int C_COLOR_GRAY = '8';
+        public const int C_COLOR_BLACK = '9';
+
+        // color escape string
+        public const string S_COLOR_DEFAULT = "^0";
+        public const string S_COLOR_RED = "^1";
+        public const string S_COLOR_GREEN = "^2";
+        public const string S_COLOR_YELLOW = "^3";
+        public const string S_COLOR_BLUE = "^4";
+        public const string S_COLOR_CYAN = "^5";
+        public const string S_COLOR_MAGENTA = "^6";
+        public const string S_COLOR_WHITE = "^7";
+        public const string S_COLOR_GRAY = "^8";
+        public const string S_COLOR_BLACK = "^9";
 
         static byte ColorFloatToByte(float c)
             => (byte)(((uint)(c * 255.0f)) & colorMask[MathX.FLOATSIGNBITSET(c) ? 1 : 0]);
@@ -245,30 +274,5 @@ namespace Droid.Core
 #else
             => RevBitFieldSwap(bp, elsize);
 #endif
-
-        //// color escape character
-        //internal const int C_COLOR_ESCAPE = '^';
-        //internal const int C_COLOR_DEFAULT = '0';
-        //internal const int C_COLOR_RED = '1';
-        //internal const int C_COLOR_GREEN = '2';
-        //internal const int C_COLOR_YELLOW = '3';
-        //internal const int C_COLOR_BLUE = '4';
-        //internal const int C_COLOR_CYAN = '5';
-        //internal const int C_COLOR_MAGENTA = '6';
-        //internal const int C_COLOR_WHITE = '7';
-        //internal const int C_COLOR_GRAY = '8';
-        //internal const int C_COLOR_BLACK = '9';
-
-        //// color escape string
-        //internal const string S_COLOR_DEFAULT = "^0";
-        //internal const string S_COLOR_RED = "^1";
-        //internal const string S_COLOR_GREEN = "^2";
-        //internal const string S_COLOR_YELLOW = "^3";
-        //internal const string S_COLOR_BLUE = "^4";
-        //internal const string S_COLOR_CYAN = "^5";
-        //internal const string S_COLOR_MAGENTA = "^6";
-        //internal const string S_COLOR_WHITE = "^7";
-        //internal const string S_COLOR_GRAY = "^8";
-        //internal const string S_COLOR_BLACK = "^9";
     }
 }

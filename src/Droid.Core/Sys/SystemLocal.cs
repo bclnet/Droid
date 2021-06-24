@@ -1,6 +1,6 @@
 using Droid.Core;
 using System;
-using static Droid.Sys.WinNative;
+using static Droid.Sys.NativeW;
 
 namespace Droid.Sys
 {
@@ -17,34 +17,34 @@ namespace Droid.Sys
         static CVar sys_lang = new("sys_lang", "english", CVAR.SYSTEM | CVAR.ARCHIVE, "", sysLanguageNames, CmdArgsX.ArgCompletion_String(sysLanguageNames));
 
         public void DebugPrintf(string fmt, params object[] args)
-            => SysX.DebugPrintf(fmt, args);
+            => SysW.DebugPrintf(fmt, args);
 
         public uint Milliseconds
-            => SysX.Milliseconds;
+            => SysW.Milliseconds;
 
         public CPUID ProcessorId
-            => SysX.ProcessorId;
+            => SysW.ProcessorId;
 
         public void FPU_SetFTZ(bool enable)
-            => SysX.FPU_SetFTZ(enable);
+            => SysW.FPU_SetFTZ(enable);
 
         public void FPU_SetDAZ(bool enable)
-            => SysX.FPU_SetDAZ(enable);
+            => SysW.FPU_SetDAZ(enable);
 
         public unsafe bool LockMemory(void* ptr, int bytes)
-            => SysX.LockMemory(ptr, bytes);
+            => SysW.LockMemory(ptr, bytes);
 
         public unsafe bool UnlockMemory(void* ptr, int bytes)
-            => SysX.UnlockMemory(ptr, bytes);
+            => SysW.UnlockMemory(ptr, bytes);
 
         public IntPtr DLL_Load(string dllName)
-            => SysX.DLL_Load(dllName);
+            => SysW.DLL_Load(dllName);
 
         public IntPtr DLL_GetProcAddress(IntPtr dllHandle, string procName)
-            => SysX.DLL_GetProcAddress(dllHandle, procName);
+            => SysW.DLL_GetProcAddress(dllHandle, procName);
 
         public void DLL_Unload(IntPtr dllHandle)
-            => SysX.DLL_Unload(dllHandle);
+            => SysW.DLL_Unload(dllHandle);
 
         public string DLL_GetFileName(string baseName)
             => $"{baseName}{Config.BUILD_LIBRARY_SUFFIX}";

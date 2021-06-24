@@ -14,6 +14,6 @@ namespace Droid.Framework
 
         bool clamp;
         bool snap;
-        List<float> values;
+        List<float> values = new();
     }
 }

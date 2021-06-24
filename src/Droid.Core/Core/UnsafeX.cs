@@ -1,8 +1,7 @@
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Security;
 
-namespace Droid
+namespace Droid.Core
 {
     public unsafe delegate T FloatPtr<T>(float* ptr);
     public unsafe delegate void FloatPtr(float* ptr);

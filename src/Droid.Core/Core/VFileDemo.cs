@@ -1,6 +1,7 @@
+using System.Collections.Generic;
 using System.IO;
 
-namespace Droid.Framework
+namespace Droid.Core
 {
     public enum DS
     {
@@ -10,13 +11,13 @@ namespace Droid.Framework
         VERSION
     }
 
-    public class DemoFile : VFile
+    public class VFileDemo : VFile
     {
-        //idDemoFile();
+        VFileDemo() { }
         //~idDemoFile();
 
-        //public schar *	GetName( void ) { return (f?f->GetName():""); }
-        //public char *	GetFullPath( void ) { return (f?f->GetFullPath():""); }
+        //public string Name => f?f->GetName():"");
+        //public string FullPath => f?f->GetFullPath():"");
 
         //public void			SetLog( bool b, const char *p );
         //public void			Log( const char *p );
@@ -36,17 +37,17 @@ namespace Droid.Framework
         //static idCompressor* AllocCompressor(int type);
 
         //bool writing;
-        //byte* fileImage;
-        //idFile* f;
-        //idCompressor* compressor;
+        //byte[] fileImage;
+        //VFile f;
+        ////idCompressor* compressor;
 
-        //idList<idStr*> demoStrings;
-        //idFile* fLog;
+        //List<string> demoStrings;
+        //VFile fLog;
         //bool log;
-        //idStr logStr;
+        //string logStr;
 
-        //static idCVar com_logDemos;
-        //static idCVar com_compressDemos;
-        //static idCVar com_preloadDemos;
+        //static CVar com_logDemos;
+        //static CVar com_compressDemos;
+        //static CVar com_preloadDemos;
     }
 }

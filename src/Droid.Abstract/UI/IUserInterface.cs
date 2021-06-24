@@ -1,11 +1,11 @@
+using Droid.Core;
 using Droid.Framework;
 using Droid.Sys;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Droid.UI
 {
-    public interface UserInterface
+    public interface IUserInterface
     {
         // Returns the name of the gui.
         string Name();
@@ -22,7 +22,7 @@ namespace Droid.UI
         bool InitFromFile(string qpath, bool rebuild = true, bool cache = true);
 
         // handles an event, can return an action string, the caller interprets any return and acts accordingly
-        string HandleEvent(sysEvent e, int time, out bool updateVisuals);
+        string HandleEvent(SysEvent e, int time, out bool updateVisuals);
 
         // handles a named event
         void HandleNamedEvent(string eventName);
@@ -60,8 +60,8 @@ namespace Droid.UI
         // Triggers the gui and runs the onTrigger scripts.
         void Trigger(int time);
 
-        void ReadFromDemoFile(DemoFile f);
-        void WriteToDemoFile(DemoFile f);
+        void ReadFromDemoFile(VFileDemo f);
+        void WriteToDemoFile(VFileDemo f);
 
         bool WriteToSaveGame(VFile savefile);
         bool ReadFromSaveGame(VFile savefile);
@@ -72,7 +72,7 @@ namespace Droid.UI
         float CursorY();
     }
 
-    public interface UserInterfaceManager
+    public interface IUserInterfaceManager
     {
         void Init();
         void Shutdown();
@@ -95,21 +95,21 @@ namespace Droid.UI
         bool CheckGui(string qpath);
 
         // Allocates a new gui.
-        UserInterface Alloc();
+        IUserInterface Alloc();
 
         // De-allocates a gui.. ONLY USE FOR PRECACHING
-        void DeAlloc(UserInterface gui);
+        void DeAlloc(IUserInterface gui);
 
         // Returns NULL if gui by that name does not exist.
-        UserInterface FindGui(string qpath, bool autoLoad = false, bool needUnique = false, bool forceUnique = false);
+        IUserInterface FindGui(string qpath, bool autoLoad = false, bool needUnique = false, bool forceUnique = false);
 
         // Returns NULL if gui by that name does not exist.
-        UserInterface FindDemoGui(string qpath);
+        IUserInterface FindDemoGui(string qpath);
 
         // Allocates a new GUI list handler
-        ListGUI AllocListGUI();
+        IListGUI AllocListGUI();
 
         // De-allocates a list gui
-        void FreeListGUI(ListGUI listgui);
+        void FreeListGUI(IListGUI listgui);
     }
 }

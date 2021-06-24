@@ -22,7 +22,7 @@ namespace Droid.Framework
         BOTH
     }
 
-    public delegate bool getJointTransform(object model, JointMat frame, string jointName, Vector3 origin, Matrix3x3 axis);
+    public delegate bool GetJointTransform(object model, JointMat frame, string jointName, Vector3 origin, Matrix3x3 axis);
 
     public class AFVector
     {
@@ -40,7 +40,7 @@ namespace Droid.Framework
         //public AFVector();
 
         public bool Parse(Lexer src) => throw new NotImplementedException();
-        public bool Finish(string fileName, getJointTransform GetJointTransform, JointMat frame, object model) => throw new NotImplementedException();
+        public bool Finish(string fileName, GetJointTransform GetJointTransform, JointMat frame, object model) => throw new NotImplementedException();
         public bool Write(VFile f) => throw new NotImplementedException();
         public string ToString(string s, int precision = 8) => throw new NotImplementedException();
         public Vector3 ToVec3() => vec;
@@ -113,7 +113,7 @@ namespace Droid.Framework
         public override bool Parse(string text, int textLength) => throw new NotImplementedException();
         public override void FreeData() => throw new NotImplementedException();
 
-        public virtual void Finish(getJointTransform GetJointTransform, JointMat frame, object model) => throw new NotImplementedException();
+        public virtual void Finish(GetJointTransform GetJointTransform, JointMat frame, object model) => throw new NotImplementedException();
 
         public bool Save() => throw new NotImplementedException();
 

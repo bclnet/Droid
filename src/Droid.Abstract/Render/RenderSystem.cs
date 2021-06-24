@@ -1,12 +1,12 @@
+using Droid.Core;
 using Droid.Framework;
 using System;
-using System.Numerics;
 
 namespace Droid.Render
 {
     // Contains variables specific to the OpenGL configuration being run right now.
     // These are constant once the OpenGL subsystem is initialized.
-    class glconfig
+    class Glconfig
     {
         public string renderer_string;
         public string vendor_string;
@@ -36,7 +36,7 @@ namespace Droid.Render
         public bool isInitialized;
     }
 
-    public struct glyphInfo
+    public struct GlyphInfo
     {
         public int height;          // number of scan lines
         public int top;         // top of glyph in buffer
@@ -53,18 +53,18 @@ namespace Droid.Render
         public string shaderName;
     }
 
-    public class fontInfo
+    public class FontInfo
     {
-        public glyphInfo[] glyphs = new glyphInfo[R.GLYPHS_PER_FONT];
+        public GlyphInfo[] glyphs = new GlyphInfo[R.GLYPHS_PER_FONT];
         public float glyphScale;
         public string name;
     }
 
     public struct fontInfoEx
     {
-        public fontInfo fontInfoSmall;
-        public fontInfo fontInfoMedium;
-        public fontInfo fontInfoLarge;
+        public FontInfo fontInfoSmall;
+        public FontInfo fontInfoMedium;
+        public FontInfo fontInfoLarge;
         public int maxHeight;
         public int maxWidth;
         public int maxHeightSmall;
@@ -99,7 +99,7 @@ namespace Droid.Render
         //
 
         // returns the frustum planes in world space
-        public static void RenderLightFrustum(renderLight renderLight, Plane[] lightFrustum) => throw new NotImplementedException();
+        public static void RenderLightFrustum(RenderLight renderLight, Plane[] lightFrustum) => throw new NotImplementedException();
 
         // for use by dmap to do the carving-on-light-boundaries and for the editor for display
         public static void LightProjectionMatrix(Vector3 origin, Plane rearPlane, Vector4[] mat) => throw new NotImplementedException();
@@ -108,7 +108,7 @@ namespace Droid.Render
         public static void ScreenshotFilename(out int lastNumber, string base_, string fileName) => throw new NotImplementedException();
     }
 
-    public interface RenderSystem
+    public interface IRenderSystem
     {
         // set up cvars and basic data structures, but don't init OpenGL, so it can also be used for dedicated servers
         void Init();
@@ -129,8 +129,8 @@ namespace Droid.Render
         int GetRefresh();
 
         // allocate a renderWorld to be used for drawing
-        RenderWorld AllocRenderWorld();
-        void FreeRenderWorld(ref RenderWorld rw);
+        IRenderWorld AllocRenderWorld();
+        void FreeRenderWorld(ref IRenderWorld rw);
 
         // All data that will be used in a level should be registered before rendering any frames to prevent disk hits,
         // but they can still be registered at a later time if necessary.
@@ -178,7 +178,7 @@ namespace Droid.Render
         // If ref == NULL, session->updateScreen will be used
         // This will perform swapbuffers, so it is NOT an approppriate way to generate image files that happen during gameplay, as for savegame
         // markers.  Use WriteRender() instead.
-        void TakeScreenshot(int width, int height, string fileName, int samples, renderView ref_);
+        void TakeScreenshot(int width, int height, string fileName, int samples, RenderView ref_);
 
         // the render output can be cropped down to a subset of the real screen, as for save-game reviews and split-screen multiplayer.  Users of the renderer
         // will not know the actual pixel size of the area they are rendering to

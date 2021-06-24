@@ -28,7 +28,7 @@ namespace Droid.Sys
         }
     }
 
-    public partial class SysX
+    public partial class SysW
     {
         static readonly string[] kbdNames = {
             "english", "french", "german", "italian", "spanish", "turkish", "norwegian", "brazilian", null
@@ -287,7 +287,7 @@ namespace Droid.Sys
 
         public static void GenerateEvents()
         {
-            var s = SysX.ConsoleInput();
+            var s = SysW.ConsoleInput();
             if (s != null)
                 PushConsoleEvent(s);
 
