@@ -705,5 +705,16 @@ namespace Droid.Core
         const int LOOKUP_MASK = SQRT_TABLE_SIZE - 1;
         static readonly uint[] iSqrt = new uint[SQRT_TABLE_SIZE];		// inverse square root lookup table
         static bool initialized = false;
+
+
+        // Old 3D vector macros, should no longer be used.
+
+        //#define DotProduct( a, b)			((a)[0]*(b)[0]+(a)[1]*(b)[1]+(a)[2]*(b)[2])
+        public static void VectorSubtract(ref Vector3 a, ref Vector3 b, float[] c) { c[0] = a.x - b.x; c[1] = a.y - b.y; c[2] = a.z - b.z; }
+        public static void VectorAdd(ref Vector3 a, ref Vector3 b, float[] c) { c[0] = a.x + b.x; c[1] = a.y + b.y; c[2] = a.z + b.z; }
+        //#define VectorScale( v, s, o )		((o)[0]=(v)[0]*(s),(o)[1]=(v)[1]*(s),(o)[2]=(v)[2]*(s))
+        public static void VectorMA(ref Vector3 v, float s, ref Vector3 b, ref Vector3 o) { o.x = v.x + b.x * s; o.y = v.y + b.y * s; o.z = v.z + b.z * s; }
+        //#define VectorCopy( a, b )			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2])
+
     }
 }

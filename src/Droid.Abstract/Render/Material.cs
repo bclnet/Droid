@@ -346,7 +346,7 @@ namespace Droid.Render
         public void ReloadImages(bool force) => throw new NotImplementedException();
 
         // returns number of stages this material contains
-        public int GetNumStages() => numStages;
+        public int NumStages => numStages;
 
         // get a specific stage
         public ShaderStage GetStage(int index)
@@ -360,90 +360,89 @@ namespace Droid.Render
 
         // returns true if the material will draw anything at all.  Triggers, portals, etc, will not have anything to draw.  A not drawn surface can still castShadow,
         // which can be used to make a simplified shadow hull for a complex object set as noShadow
-        public bool IsDrawn() => numStages > 0 || entityGui != 0 || gui != null;
+        public bool IsDrawn => numStages > 0 || entityGui != 0 || gui != null;
 
         // returns true if the material will draw any non light interaction stages
-        public bool HasAmbient() => numAmbientStages > 0;
+        public bool HasAmbient => numAmbientStages > 0;
 
         // returns true if material has a gui
-        public bool HasGui() => entityGui != 0 || gui != null;
+        public bool HasGui => entityGui != 0 || gui != null;
 
         // returns true if the material will generate another view, either as a mirror or dynamic rendered image
-        public bool HasSubview() => hasSubview;
+        public bool HasSubview => hasSubview;
 
         // returns true if the material will generate shadows, not making a distinction between global and no-self shadows
-        public bool SurfaceCastsShadow() => TestMaterialFlag(MF.FORCESHADOWS) || !TestMaterialFlag(MF.NOSHADOWS);
+        public bool SurfaceCastsShadow => TestMaterialFlag(MF.FORCESHADOWS) || !TestMaterialFlag(MF.NOSHADOWS);
 
         // returns true if the material will generate interactions with fog/blend lights All non-translucent surfaces receive fog unless they are explicitly noFog
-        public bool ReceivesFog() => IsDrawn() && !noFog && coverage != MC.TRANSLUCENT;
+        public bool ReceivesFog => IsDrawn && !noFog && coverage != MC.TRANSLUCENT;
 
         // returns true if the material will generate interactions with normal lights Many special effect surfaces don't have any bump/diffuse/specular
         // stages, and don't interact with lights at all
-        public bool ReceivesLighting() => numAmbientStages != numStages;
+        public bool ReceivesLighting => numAmbientStages != numStages;
 
         // returns true if the material should generate interactions on sides facing away from light centers, as with noshadow and noselfshadow options
-        public bool ReceivesLightingOnBackSides() => (materialFlags & (MF.NOSELFSHADOW | MF.NOSHADOWS)) != 0;
+        public bool ReceivesLightingOnBackSides => (materialFlags & (MF.NOSELFSHADOW | MF.NOSHADOWS)) != 0;
 
         // Standard two-sided triangle rendering won't work with bump map lighting, because the normal and tangent vectors won't be correct for the back sides.  When two
         // sided lighting is desired. typically for alpha tested surfaces, this is addressed by having CleanupModelSurfaces() create duplicates of all the triangles
         // with apropriate order reversal.
-        public bool ShouldCreateBackSides() => shouldCreateBackSides;
+        public bool ShouldCreateBackSides => shouldCreateBackSides;
 
         // characters and models that are created by a complete renderbump can use a faster method of tangent and normal vector generation than surfaces which have a flat
         // renderbump wrapped over them.
-        public bool UseUnsmoothedTangents() => unsmoothedTangents;
+        public bool UseUnsmoothedTangents => unsmoothedTangents;
 
         // by default, monsters can have blood overlays placed on them, but this can be overrided on a per-material basis with the "noOverlays" material command.
         // This will always return false for translucent surfaces
-        public bool AllowOverlays() => allowOverlays;
+        public bool AllowOverlays => allowOverlays;
 
         // MC_OPAQUE, MC_PERFORATED, or MC_TRANSLUCENT, for interaction list linking and dmap flood filling
         // The depth buffer will not be filled for MC_TRANSLUCENT surfaces
         // FIXME: what do nodraw surfaces return?
-        public MC Coverage() => coverage;
+        public MC Coverage => coverage;
 
         // returns true if this material takes precedence over other in coplanar cases
-        public bool HasHigherDmapPriority(Material other) => (IsDrawn() && !other.IsDrawn()) || (Coverage() < other.Coverage());
+        public bool HasHigherDmapPriority(Material other) => (IsDrawn && !other.IsDrawn) || (Coverage < other.Coverage);
 
         // returns a idUserInterface if it has a global gui, or NULL if no gui
-        public IUserInterface GlobalGui() => gui;
+        public IUserInterface GlobalGui => gui;
 
         // a discrete surface will never be merged with other surfaces by dmap, which is necessary to prevent mutliple gui surfaces, mirrors, autosprites, and some other
         // special effects from being combined into a single surface guis, merging sprites or other effects, mirrors and remote views are always discrete
-        public bool IsDiscrete() => entityGui != 0 || gui != null || deform != DFRM.NONE || sort == (float)SS.SUBVIEW || (surfaceFlags & SURF.DISCRETE) != 0;
+        public bool IsDiscrete => entityGui != 0 || gui != null || deform != DFRM.NONE || sort == (float)SS.SUBVIEW || (surfaceFlags & SURF.DISCRETE) != 0;
 
         // Normally, dmap chops each surface by every BSP boundary, then reoptimizes. For gigantic polygons like sky boxes, this can cause a huge number of planar
         // triangles that make the optimizer take forever to turn back into a single triangle.  The "noFragment" option causes dmap to only break the polygons at
         // area boundaries, instead of every BSP boundary.  This has the negative effect of not automatically fixing up interpenetrations, so when this is used, you
         // should manually make the edges of your sky box exactly meet, instead of poking into each other.
-        public bool NoFragment() => (surfaceFlags & SURF.NOFRAGMENT) != 0;
+        public bool NoFragment => (surfaceFlags & SURF.NOFRAGMENT) != 0;
 
         //------------------------------------------------------------------
-        // light shader specific functions, only called for light entities
-        // lightshader option to fill with fog from viewer instead of light from center
-        public bool IsFogLight() => fogLight;
+        // light shader specific functions, only called for light entities. lightshader option to fill with fog from viewer instead of light from center
+        public bool IsFogLight => fogLight;
 
         // perform simple blending of the projection, instead of interacting with bumps and textures
-        public bool IsBlendLight() => blendLight;
+        public bool IsBlendLight => blendLight;
 
         // an ambient light has non-directional bump mapping and no specular
-        public bool IsAmbientLight() => ambientLight;
+        public bool IsAmbientLight => ambientLight;
 
         // implicitly no-shadows lights (ambients, fogs, etc) will never cast shadows but individual light entities can also override this value
-        public bool LightCastsShadows() => TestMaterialFlag(MF.FORCESHADOWS) || (!fogLight && !ambientLight && !blendLight && !TestMaterialFlag(MF.NOSHADOWS));
+        public bool LightCastsShadows => TestMaterialFlag(MF.FORCESHADOWS) || (!fogLight && !ambientLight && !blendLight && !TestMaterialFlag(MF.NOSHADOWS));
 
         // fog lights, blend lights, ambient lights, etc will all have to have interaction triangles generated for sides facing away from the light as well as those
         // facing towards the light.  It is debatable if noshadow lights should effect back sides, making everything "noSelfShadow", but that would make noshadow lights
         // potentially slower than normal lights, which detracts from their optimization ability, so they currently do not.
-        public bool LightEffectsBackSides() => fogLight || ambientLight || blendLight;
+        public bool LightEffectsBackSides => fogLight || ambientLight || blendLight;
 
         // NULL unless an image is explicitly specified in the shader with "lightFalloffShader <image>"
-        public Image LightFalloffImage() => lightFalloffImage;
+        public Image LightFalloffImage => lightFalloffImage;
 
         //------------------------------------------------------------------
 
         // returns the renderbump command line for this shader, or an empty string if not present
-        public string GetRenderBump() => renderBump;
+        public string RenderBump => renderBump;
 
         // set specific material flag(s)
         public void SetMaterialFlag(MF flag) => materialFlags |= flag;
@@ -455,16 +454,16 @@ namespace Droid.Render
         public bool TestMaterialFlag(MF flag) => (materialFlags & flag) != 0;
 
         // get content flags
-        public CONTENTS GetContentFlags() => contentFlags;
+        public CONTENTS ContentFlags => contentFlags;
 
         // get surface flags
-        public SURF GetSurfaceFlags() => surfaceFlags;
+        public SURF SurfaceFlags => surfaceFlags;
 
         // gets name for surface type (stone, metal, flesh, etc.)
-        public SURFTYPE GetSurfaceType() => (SURFTYPE)(surfaceFlags & SURF.TYPE_MASK);
+        public SURFTYPE SurfaceType => (SURFTYPE)(surfaceFlags & SURF.TYPE_MASK);
 
         // get material description
-        public string GetDescription() => desc;
+        public string Description => desc;
 
         // get sort order
         public float Sort
@@ -482,29 +481,29 @@ namespace Droid.Render
         public int GetDeformRegister(int index) => deformRegisters[index];
 
         // particle system to emit from surface and table for turbulent
-        public Decl GetDeformDecl() => deformDecl;
+        public Decl DeformDecl => deformDecl;
 
         // currently a surface can only have one unique texgen for all the stages
         public TG Texgen() => throw new NotImplementedException();
 
         // wobble sky parms
-        public int[] GetTexGenRegisters() => texGenRegisters;
+        public int[] TexGenRegisters => texGenRegisters;
 
         // get cull type
-        public CT GetCullType() => cullType;
+        public CT CullType => cullType;
 
-        public float GetEditorAlpha() => editorAlpha;
+        public float EditorAlpha => editorAlpha;
 
-        public int GetEntityGui() => entityGui;
+        public int EntityGui => entityGui;
 
-        public DecalInfo GetDecalInfo() => this.decalInfo;
+        public DecalInfo DecalInfo => this.decalInfo;
 
         // spectrums are used for "invisible writing" that can only be illuminated by a light of matching spectrum
-        public int Spectrum() => spectrum;
+        public int Spectrum => spectrum;
 
-        public float GetPolygonOffset() => polygonOffset;
+        public float PolygonOffset => polygonOffset;
 
-        public float GetSurfaceArea() => surfaceArea;
+        public float SurfaceArea => surfaceArea;
 
         public void AddToSurfaceArea(float area) => surfaceArea += area;
 
@@ -534,7 +533,7 @@ namespace Droid.Render
         //------------------------------------------------------------------
 
         // returns number of registers this material contains
-        public int GetNumRegisters() => numRegisters;
+        public int NumRegisters => numRegisters;
 
         // regs should point to a float array large enough to hold GetNumRegisters() floats
         public void EvaluateRegisters(float[] regs, float[] entityParms, ViewDef view, ISoundEmitter soundEmitter = null) => throw new NotImplementedException();
@@ -544,7 +543,7 @@ namespace Droid.Render
         public float[] ConstantRegisters() => throw new NotImplementedException();
 
         public bool SuppressInSubview() => suppressInSubview;
-        public bool IsPortalSky() => portalSky;
+        public bool IsPortalSky => portalSky;
         public void AddReference() => throw new NotImplementedException();
 
         // parse the entire material
@@ -575,7 +574,6 @@ namespace Droid.Render
         void AddImplicitStages(TR trpDefault = TR.REPEAT) => throw new NotImplementedException();
         void CheckForConstantRegisters() => throw new NotImplementedException();
 
-
         string desc;             // description
         string renderBump;           // renderbump command options, without the "renderbump" at the start
 
@@ -596,7 +594,6 @@ namespace Droid.Render
         MF materialFlags;      // material flags
 
         DecalInfo decalInfo;
-
 
         float sort;             // lower numbered shaders draw before higher numbered
         DFRM deform;

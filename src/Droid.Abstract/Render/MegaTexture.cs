@@ -42,7 +42,7 @@ namespace Droid.Render
     public class MegaTexture
     {
         public bool InitFromMegaFile(string fileBase) => throw new NotImplementedException();
-        public void SetMappingForSurface(srfTriangles[] tri) => throw new NotImplementedException();   // analyzes xyz and st to create a mapping
+        public void SetMappingForSurface(SrfTriangles[] tri) => throw new NotImplementedException();   // analyzes xyz and st to create a mapping
         public void BindForViewOrigin(Vector3 origin) => throw new NotImplementedException();  // binds images and sets program parameters
         public void Unbind() => throw new NotImplementedException();                               // removes texture bindings
 
@@ -53,7 +53,7 @@ namespace Droid.Render
 
         VFile fileHandle;
 
-        srfTriangles[] currentTriMapping;
+        SrfTriangles[] currentTriMapping;
 
         Vector3 currentViewOrigin;
 

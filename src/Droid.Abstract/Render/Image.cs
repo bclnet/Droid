@@ -2,17 +2,19 @@ using Droid.Core;
 using Droid.Framework;
 using System;
 using System.Collections.Generic;
+using GLuint = System.Int32;
+using GLenum = System.Int32;
 
 namespace Droid.Render
 {
-    public enum imageState
+    public enum ImageState
     {
         IS_UNLOADED,   // no gl texture number
         IS_PARTIAL,        // has a texture number and the low mip levels loaded
         IS_LOADED      // has a texture number and the full mip hierarchy
     }
 
-    public static partial class ImageEx
+    public static partial class ImageX
     {
         const int MAX_TEXTURE_LEVELS = 14;
 
@@ -44,7 +46,7 @@ namespace Droid.Render
         static uint DDS_MAKEFOURCC(uint a, uint b, uint c, uint d) => ((a) | ((b) << 8) | ((c) << 16) | ((d) << 24));
     }
 
-    struct ddsFilePixelFormat
+    struct DdsFilePixelFormat
     {
         public uint dwSize;
         public uint dwFlags;
@@ -56,7 +58,7 @@ namespace Droid.Render
         public uint dwABitMask;
     }
 
-    unsafe struct ddsFileHeader
+    unsafe struct DdsFileHeader
     {
         public uint dwSize;
         public uint dwFlags;
@@ -66,7 +68,7 @@ namespace Droid.Render
         public uint dwDepth;
         public uint dwMipMapCount;
         public fixed uint dwReserved1[11];
-        public ddsFilePixelFormat ddspf;
+        public DdsFilePixelFormat ddspf;
         public uint dwCaps1;
         public uint dwCaps2;
         public fixed uint dwReserved2[3];
@@ -226,8 +228,7 @@ namespace Droid.Render
 
         public int refCount;               // overall ref count
 
-
-        //If bound to a cinematic
+        // If bound to a cinematic
         public Cinematic cinematic;
         public int cinmaticNextTime;
 
@@ -254,7 +255,7 @@ namespace Droid.Render
         // Will automatically resample non-power-of-two images and execute image programs if needed.
         public Image ImageFromFile(string name,
                                 TF filter, bool allowDownSize,
-                                TR repeat, TD depth, CF cubeMap = CF._2D ) => throw new NotImplementedException();
+                                TR repeat, TD depth, CF cubeMap = CF._2D) => throw new NotImplementedException();
 
         // look for a loaded image, whatever the parameters
         public Image GetImage(string name) => throw new NotImplementedException();
@@ -353,7 +354,7 @@ namespace Droid.Render
 
         public List<Image> images = new List<Image>();
         public List<string> ddsList = new List<string>();
-        public HashIndex ddsHash;
+        //public HashIndex ddsHash;
 
         public List<Image> imagesAlloc = new List<Image>(); //List for the backend thread
         public List<Image> imagesPurge = new List<Image>(); //List for the backend thread
@@ -368,7 +369,7 @@ namespace Droid.Render
         public GLenum textureMaxFilter;
         public float textureAnisotropy;
 
-        public Image[] imageHashTable = new Image[FILE_HASH_SIZE];
+        //public Image[] imageHashTable = new Image[FILE_HASH_SIZE];
 
         public Image backgroundImageLoads;      // chain of images that have background file loads active
         public Image cacheLRU;                   // head/tail of doubly linked list
@@ -380,16 +381,12 @@ namespace Droid.Render
 
     partial class R
     {
+        public static ImageManager globalImages = new();
+
         public static int _MakePowerOfTwo(int num) => throw new NotImplementedException();
 
-        /*
-        ====================================================================
-
-        IMAGEPROCESS
-
-        FIXME: make an "imageBlock" type to hold byte*,width,height?
-        ====================================================================
-        */
+        #region IMAGEPROCESS
+        // FIXME: make an "imageBlock" type to hold byte*,width,height?
 
         public static byte[] Dropsample(byte[] i, int inwidth, int inheight, int outwidth, int outheight) => throw new NotImplementedException();
         public static byte[] ResampleTexture(byte[] i, int inwidth, int inheight, int outwidth, int outheight) => throw new NotImplementedException();
@@ -405,27 +402,21 @@ namespace Droid.Render
         public static void VerticalFlip(byte[] data, int width, int height) => throw new NotImplementedException();
         public static void RotatePic(byte[] data, int width) => throw new NotImplementedException();
 
-        /*
-        ====================================================================
+        #endregion
 
-        IMAGEFILES
-
-        ====================================================================
-        */
+        #region IMAGEFILES
 
         public static void LoadImage(string name, out byte[] pic, out int width, out int height, out DateTime timestamp, bool makePowerOf2) => throw new NotImplementedException();
         // pic is in top to bottom raster format
         public static bool LoadCubeImages(string cname, CF extensions, out byte[] pic, out int size, out DateTime timestamp) => throw new NotImplementedException();
 
-        /*
-        ====================================================================
+        #endregion
 
-        IMAGEPROGRAM
-
-        ====================================================================
-        */
+        #region IMAGEPROGRAM
 
         public static void LoadImageProgram(string name, out byte[] pic, out int width, out int height, out DateTime timestamp, out TD depth) => throw new NotImplementedException();
         public static string ParsePastImageProgram(Lexer src) => throw new NotImplementedException();
+
+        #endregion
     }
 }

@@ -112,4 +112,9 @@ namespace Droid.UI
         // De-allocates a list gui
         void FreeListGUI(IListGUI listgui);
     }
+
+    public static partial class UIX
+    {
+        public static IUserInterfaceManager uiManager;
+    }
 }

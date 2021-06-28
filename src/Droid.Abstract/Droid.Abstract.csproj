@@ -9,6 +9,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Render\ModelDecal.cs" />
+    <Compile Remove="Render\ModelManager.cs" />
+    <Compile Remove="Render\ModelOverlay.cs" />
+    <Compile Remove="Render\Model_ase.cs" />
+    <Compile Remove="Render\Model_local.cs" />
+    <Compile Remove="Render\Model_lwo.cs" />
+    <Compile Remove="Render\Model_ma.cs" />
+    <Compile Remove="Render\Model_md3.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Framework\Console.cpp" />
     <None Remove="Framework\Console.h" />
     <None Remove="Framework\EventLoop.cpp" />

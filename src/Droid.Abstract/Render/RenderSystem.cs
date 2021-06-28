@@ -1,6 +1,7 @@
 using Droid.Core;
 using Droid.Framework;
 using System;
+using GlIndex = System.Int32;
 
 namespace Droid.Render
 {
@@ -145,7 +146,7 @@ namespace Droid.Render
         void SetColor4(float r, float g, float b, float a);
         void SetHudOpacity(float opacity);
 
-        void DrawStretchPic(DrawVert verts, glIndex indexes, int vertCount, int indexCount, Material material,
+        void DrawStretchPic(DrawVert verts, GlIndex indexes, int vertCount, int indexCount, Material material,
                                             bool clip = true, float min_x = 0.0f, float min_y = 0.0f, float max_x = 640.0f, float max_y = 480.0f);
         void DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, Material material);
 

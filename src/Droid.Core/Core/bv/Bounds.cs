@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Droid.Core
 {
-    public class Bounds
+    public struct Bounds
     {
         Vector3[] b;
 
@@ -11,10 +11,10 @@ namespace Droid.Core
         {
             b = (Vector3[])a.b.Clone();
         }
-        internal Bounds()
-        {
-            b = new Vector3[2];
-        }
+        //internal Bounds()
+        //{
+        //    b = new Vector3[2];
+        //}
         public Bounds(Vector3 mins, Vector3 maxs)
         {
             b = new Vector3[2];

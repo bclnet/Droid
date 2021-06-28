@@ -70,7 +70,7 @@ namespace Droid.Render
 
         bool tempOverflow;      // had to alloc a temp in static memory
 
-        BlockAlloc<VertCache, 1024> headerAllocator;
+        //BlockAlloc<VertCache, 1024> headerAllocator;
 
         VertCache freeStaticHeaders;    // head of doubly linked list
         VertCache freeStaticIndexHeaders;    // head of doubly linked list
@@ -99,7 +99,7 @@ namespace Droid.Render
             if (block.user != null)
             {
                 // let the owner know we have purged it
-                *block.user = null;
+                //block.user = null;
                 block.user = null;
             }
 

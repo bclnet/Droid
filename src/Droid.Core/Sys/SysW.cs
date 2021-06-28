@@ -175,7 +175,7 @@ namespace Droid.Sys
 
         // Sys_Milliseconds should only be used for profiling purposes,
         // any game related timing information should come from event timestamps
-        public static uint Milliseconds => throw new NotImplementedException();
+        public static int Milliseconds => throw new NotImplementedException();
 
         // returns a selection of the CPUID_* flags
         public static CPUID ProcessorId => throw new NotImplementedException();
