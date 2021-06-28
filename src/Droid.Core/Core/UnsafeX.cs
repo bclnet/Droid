@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using System.Security;
 
@@ -19,6 +20,21 @@ namespace Droid.Core
             var c = a;
             a = b;
             b = c;
+        }
+
+        public static T ReadT<T>(byte[] buffer, int offset = 0)
+        {
+            throw new NotImplementedException();
+        }
+        public static T ReadTSize<T>(int sizeOf, byte[] buffer, int offset = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public static T[] ReadTArray<T>(byte[] buffer, int offset, int count)
+        {
+            throw new NotImplementedException();
         }
     }
 }

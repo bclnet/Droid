@@ -105,54 +105,54 @@ namespace Droid.Core
         const int P_PARMS = 3;
         const int P_PRECOMPMERGE = 4;
 
-        const int P_LOGIC_AND = 5;
-        const int P_LOGIC_OR = 6;
-        const int P_LOGIC_GEQ = 7;
-        const int P_LOGIC_LEQ = 8;
-        const int P_LOGIC_EQ = 9;
-        const int P_LOGIC_UNEQ = 10;
+        internal const int P_LOGIC_AND = 5;
+        internal const int P_LOGIC_OR = 6;
+        internal const int P_LOGIC_GEQ = 7;
+        internal const int P_LOGIC_LEQ = 8;
+        internal const int P_LOGIC_EQ = 9;
+        internal const int P_LOGIC_UNEQ = 10;
 
         const int P_MUL_ASSIGN = 11;
         const int P_DIV_ASSIGN = 12;
         const int P_MOD_ASSIGN = 13;
         const int P_ADD_ASSIGN = 14;
         const int P_SUB_ASSIGN = 15;
-        const int P_INC = 16;
-        const int P_DEC = 17;
+        internal const int P_INC = 16;
+        internal const int P_DEC = 17;
 
         const int P_BIN_AND_ASSIGN = 18;
         const int P_BIN_OR_ASSIGN = 19;
         const int P_BIN_XOR_ASSIGN = 20;
-        const int P_RSHIFT = 21;
-        const int P_LSHIFT = 22;
+        internal const int P_RSHIFT = 21;
+        internal const int P_LSHIFT = 22;
 
         const int P_POINTERREF = 23;
         const int P_CPP1 = 24;
         const int P_CPP2 = 25;
-        const int P_MUL = 26;
-        const int P_DIV = 27;
-        const int P_MOD = 28;
-        const int P_ADD = 29;
-        const int P_SUB = 30;
+        internal const int P_MUL = 26;
+        internal const int P_DIV = 27;
+        internal const int P_MOD = 28;
+        internal const int P_ADD = 29;
+        internal const int P_SUB = 30;
         const int P_ASSIGN = 31;
 
-        const int P_BIN_AND = 32;
-        const int P_BIN_OR = 33;
-        const int P_BIN_XOR = 34;
-        const int P_BIN_NOT = 35;
+        internal const int P_BIN_AND = 32;
+        internal const int P_BIN_OR = 33;
+        internal const int P_BIN_XOR = 34;
+        internal const int P_BIN_NOT = 35;
 
-        const int P_LOGIC_NOT = 36;
-        const int P_LOGIC_GREATER = 37;
-        const int P_LOGIC_LESS = 38;
+        internal const int P_LOGIC_NOT = 36;
+        internal const int P_LOGIC_GREATER = 37;
+        internal const int P_LOGIC_LESS = 38;
 
         const int P_REF = 39;
         const int P_COMMA = 40;
         const int P_SEMICOLON = 41;
-        const int P_COLON = 42;
-        const int P_QUESTIONMARK = 43;
+        internal const int P_COLON = 42;
+        internal const int P_QUESTIONMARK = 43;
 
-        const int P_PARENTHESESOPEN = 44;
-        const int P_PARENTHESESCLOSE = 45;
+        internal const int P_PARENTHESESOPEN = 44;
+        internal const int P_PARENTHESESCLOSE = 45;
         const int P_BRACEOPEN = 46;
         const int P_BRACECLOSE = 47;
         const int P_SQBRACKETOPEN = 48;
@@ -165,8 +165,8 @@ namespace Droid.Core
         bool loaded;                 // set when a script file is loaded from file or memory
         string filename;            // file name of the script
         bool allocated;              // true if buffer memory was allocated
-        string buffer;              // buffer containing the script
-        int script_p;               // current pointer in the script
+        internal string buffer;              // buffer containing the script
+        internal int script_p;               // current pointer in the script
         int end_p;                  // pointer to the end of the script
         int lastScript_p;           // script pointer before reading token
         int whiteSpaceStart_p;      // start of last white space
@@ -181,7 +181,7 @@ namespace Droid.Core
         int[] punctuationtable;     // ASCII table with punctuations
         int[] nextpunctuation;      // next punctuation in chain
         Token token;                // available token
-        Lexer next;                 // next script in a chain
+        internal Lexer next;                 // next script in a chain
         bool hadError;              // set by Error, even if the error is supressed
 
         static int[] default_punctuationtable = new int[256];
@@ -222,7 +222,7 @@ namespace Droid.Core
             next = null;
             hadError = false;
         }
-        public Lexer(string filename, LEXFL flags = 0, bool OSPath = false)
+        public Lexer(string filename, LEXFL flags = 0, bool osPath = false)
         {
             loaded = false;
             this.flags = flags;
@@ -231,7 +231,7 @@ namespace Droid.Core
             token = new Token(string.Empty);
             next = null;
             hadError = false;
-            LoadFile(filename, OSPath);
+            LoadFile(filename, osPath);
         }
         public Lexer(string ptr, int length, string name, LEXFL flags = 0)
         {
@@ -246,7 +246,7 @@ namespace Droid.Core
         }
 
         // load a script from the given file at the given offset with the given length
-        public bool LoadFile(string filename, bool OSPath = false)
+        public bool LoadFile(string filename, bool osPath = false)
         {
             if (loaded)
             {
@@ -254,10 +254,10 @@ namespace Droid.Core
                 return false;
             }
 
-            var pathname = !OSPath && (baseFolder[0] != '\0') ? $"{baseFolder}/{filename}" : filename;
-            var fp = OSPath
-                ? Lib.fileSystem.OpenExplicitFileRead(pathname)
-                : Lib.fileSystem.OpenFileRead(pathname);
+            var pathname = !osPath && (baseFolder[0] != '\0') ? $"{baseFolder}/{filename}" : filename;
+            var fp = osPath
+                ? fileSystem.OpenExplicitFileRead(pathname)
+                : fileSystem.OpenFileRead(pathname);
             if (fp == null)
                 return false;
 
@@ -266,8 +266,8 @@ namespace Droid.Core
             buf[length] = 0;
             fp.Read(buf, length);
             fileTime = fp.Timestamp;
-            filename = fp.FullPath;
-            Lib.fileSystem.CloseFile(fp);
+            this.filename = fp.FullPath;
+            fileSystem.CloseFile(fp);
 
             buffer = Encoding.ASCII.GetString(buf);
             this.length = length;

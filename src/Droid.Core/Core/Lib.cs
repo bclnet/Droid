@@ -225,11 +225,23 @@ namespace Droid.Core
 #else
             => l;
 #endif
+        public static short BigShort(ref short l)
+#if !BIG_ENDIAN
+            => l = BinaryPrimitives.ReverseEndianness(l);
+#else
+        { }
+#endif
         public static short LittleShort(short l)
 #if !BIG_ENDIAN
             => l;
 #else
             => BinaryPrimitives.ReverseEndianness(l);
+#endif
+        public static void LittleShort(ref short l)
+#if !BIG_ENDIAN
+        { }
+#else
+            => l = BinaryPrimitives.ReverseEndianness(l);
 #endif
         public static int BigInt(int l)
 #if !BIG_ENDIAN
@@ -237,9 +249,21 @@ namespace Droid.Core
 #else
             => l;
 #endif
+        public static void BigInt(ref int l)
+#if !BIG_ENDIAN
+            => l = BinaryPrimitives.ReverseEndianness(l);
+#else
+        { }
+#endif
         public static int LittleInt(int l)
 #if !BIG_ENDIAN
             => l;
+#else
+            => BinaryPrimitives.ReverseEndianness(l);
+#endif
+        public static void LittleInt(ref int l)
+#if !BIG_ENDIAN
+        { }
 #else
             => BinaryPrimitives.ReverseEndianness(l);
 #endif
@@ -249,12 +273,31 @@ namespace Droid.Core
 #else
 	        => l;
 #endif
+        public static void BigFloat(ref float l)
+#if !BIG_ENDIAN
+            => l = FloatSwap(l);
+#else
+        { }
+#endif
         public static float LittleFloat(float l)
 #if !BIG_ENDIAN
             => l;
 #else
 	        => FloatSwap(l);
 #endif
+        public static void LittleFloat(ref float l)
+#if !BIG_ENDIAN
+        { }
+#else
+	        => l = FloatSwap(l);
+#endif
+        public static void LittleVector3(ref Vector3 l)
+        {
+#if !BIG_ENDIAN
+#else
+            l.x = FloatSwap(l.x); l.y = FloatSwap(l.y); l.z = FloatSwap(l.z);
+#endif
+        }
         public static unsafe void BigRevBytes(void* bp, int elsize, int elcount)
 #if !BIG_ENDIAN
            => RevBytesSwap(bp, elsize, elcount);

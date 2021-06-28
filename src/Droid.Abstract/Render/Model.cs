@@ -98,11 +98,11 @@ namespace Droid.Render
 
     //List<SrfTriangles> TriList;
 
-    public struct ModelSurface
+    public class ModelSurface
     {
         public int id;
         public Material shader;
-        public SrfTriangles[] geometry;
+        public SrfTriangles geometry;
     }
 
     public enum DynamicModel
@@ -165,7 +165,7 @@ namespace Droid.Render
         void FreeVertexCache();
 
         // returns the name of the model
-        string Name();
+        string Name { get; }
 
         // prints a detailed report on the model for printModel
         void Print();

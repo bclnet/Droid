@@ -171,6 +171,7 @@ namespace Droid.Core
         // A 0 byte will always be appended at the end, so string ops are safe.
         // The buffer should be considered read-only, because it may be cached for other uses.
         int ReadFile(string relativePath, out byte[] buffer, out DateTime timestamp);
+        int ReadFile(string relativePath, out DateTime timestamp);
         // Frees the memory allocated by ReadFile.
         void FreeFile(byte[] buffer);
         // Writes a complete file, will create any needed subdirectories.

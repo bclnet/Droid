@@ -18,12 +18,13 @@ namespace Droid.Core
         internal double floatvalue;                         // floating point value
         internal int whiteSpaceStart_p;                     // start of white space before token, only used by Lexer
         internal int whiteSpaceEnd_p;                       // end of white space before token, only used by Lexer
-        //internal Token next;                                // next token in chain, only used by Parser
+        internal Token next;                                // next token in chain, only used by Parser
 
         public static implicit operator Token(string s) => new(s);
         public static implicit operator string(Token t) => t.val;
         public override string ToString() => val;
 
+        internal Token() => val = string.Empty;
         public Token(string s) => val = s;
         public char this[int index] => val[index];
 

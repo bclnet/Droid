@@ -28,6 +28,10 @@ namespace Droid.Core
         {
         }
 
+        public static void Resize<T>(this List<T> source, int newSize, int newGranularity)
+        {
+        }
+
         public static void AssureSize<T>(this List<T> source, int newSize)
         {
         }
