@@ -2,26 +2,30 @@ using Droid.Core;
 using System;
 using WaveEngine.Bindings.OpenGLES;
 using static Droid.Core.Lib;
+using static Droid.G;
 using static WaveEngine.Bindings.OpenGLES.GL;
+using static Droid.Render.QGL;
+using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 // vertex cache calls should only be made by the front end
 namespace Droid.Render
 {
-    public unsafe class VertCache
+    public class VertCache
     {
-        public int vbo;
+        public uint vbo;
         public bool indexBuffer;        // holds indexes instead of vertexes
-        public IntPtr offset;
+        public nint offset;
         public int size;                // may be larger than the amount asked for, due to round up and minimum fragment sizes
         public VertexCacheX.TAG tag;                 // a tag of 0 is a free block
         public VertCache user;         // will be set to zero when purged
         public VertCache next, prev;   // may be on the static list or one of the frame lists
         public int frameUsed;           // it can't be purged if near the current frame
-        public void* frontEndMemory;
+        public IntPtr frontEndMemory;
         public bool frontEndMemoryDirty;
     }
 
-    public class VertexCacheX
+    public unsafe class VertexCacheX
     {
         public enum TAG : int
         {
@@ -42,8 +46,6 @@ namespace Droid.Render
         void R_ListVertexCache_f(CmdArgs args)
             => vertexCache.List();
 
-        static readonly VertexCacheX vertexCache = new VertexCacheX();
-
         int staticCountTotal;
         int staticAllocTotal;    // for end of frame purging
 
@@ -63,14 +65,14 @@ namespace Droid.Render
         int dynamicAllocMaximum;
         int dynamicAllocMaximum_Index;
 
-        int vboMax;
+        uint vboMax;
 
         VertCache[] tempBuffers = new VertCache[NUM_VERTEX_FRAMES];    // allocated at startup
         VertCache[] tempIndexBuffers = new VertCache[NUM_VERTEX_FRAMES];    // allocated at startup (for Index buffers)
 
         bool tempOverflow;      // had to alloc a temp in static memory
 
-        //BlockAlloc<VertCache, 1024> headerAllocator;
+        BlockAlloc<VertCache> headerAllocator = new BlockAlloc<VertCache>(1024);
 
         VertCache freeStaticHeaders;    // head of doubly linked list
         VertCache freeStaticIndexHeaders;    // head of doubly linked list
@@ -88,13 +90,13 @@ namespace Droid.Render
 
         int frameBytes;        // for each of NUM_VERTEX_FRAMES frames
 
-        int currentBoundVBO;
-        int currentBoundVBO_Index;
+        uint currentBoundVBO;
+        uint currentBoundVBO_Index;
 
         unsafe void ActuallyFree(VertCache block)
         {
             if (block == null)
-                common.Error("idVertexCache Free: NULL pointer");
+                common.Error("VertexCache Free: NULL pointer");
 
             if (block.user != null)
             {
@@ -109,37 +111,37 @@ namespace Droid.Render
                 staticAllocTotal -= block.size;
                 staticCountTotal--;
 
-                if (block.vbo != -1 && r_freeVertexBuffer.Bool)
+                if (block.vbo != VBOEmpty && r_freeVertexBuffer.Bool)
                 {
                     if (block.indexBuffer)
                     {
                         if (block.vbo != currentBoundVBO_Index)
                             qglBindBuffer(BufferTargetARB.ElementArrayBuffer, block.vbo);
-                        glBindBuffer(BufferTargetARB.ElementArrayBuffer, (uint)block.vbo);
+                        glBindBuffer(BufferTargetARB.ElementArrayBuffer, block.vbo);
                         glBufferData(BufferTargetARB.ElementArrayBuffer, 0, null, BufferUsageARB.StreamDraw);
                         glBindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
-                        //glDeleteBuffers(1, &block.vbo); block.vbo = -1; // Doing this makes it slow AF
-                        currentBoundVBO_Index = -1;
+                        //glDeleteBuffers(1, &block.vbo); block.vbo = VBOEmpty; // Doing this makes it slow AF
+                        currentBoundVBO_Index = VBOEmpty;
                     }
                     else
                     {
                         if (block.vbo != currentBoundVBO)
                             qglBindBuffer(BufferTargetARB.ArrayBuffer, block.vbo);
-                        glBindBuffer(BufferTargetARB.ArrayBuffer, (uint)block.vbo);
+                        glBindBuffer(BufferTargetARB.ArrayBuffer, block.vbo);
                         glBufferData(BufferTargetARB.ArrayBuffer, 0, null, BufferUsageARB.StreamDraw);
                         glBindBuffer(BufferTargetARB.ArrayBuffer, 0);
-                        //glDeleteBuffers(1, &block.vbo); block.vbo = -1; // Doing this makes it slow AF
-                        currentBoundVBO = -1;
+                        //glDeleteBuffers(1, &block.vbo); block.vbo = VBOEmpty; // Doing this makes it slow AF
+                        currentBoundVBO = VBOEmpty;
                     }
                 }
             }
 
             block.tag = TAG.FREE;      // mark as free
 
-            if (block.frontEndMemory != null)
+            if (block.frontEndMemory != IntPtr.Zero)
             {
-                free(block.frontEndMemory);
-                block.frontEndMemory = null;
+                Marshal.FreeHGlobal(block.frontEndMemory);
+                block.frontEndMemory = IntPtr.Zero;
             }
 
             block.frontEndMemoryDirty = true;
@@ -170,8 +172,8 @@ namespace Droid.Render
 
             cmdSystem.AddCommand("listVertexCache", R_ListVertexCache_f, CMD_FL.RENDERER, "lists vertex cache");
 
-            currentBoundVBO = -1;
-            currentBoundVBO_Index = -1;
+            currentBoundVBO = VBOEmpty;
+            currentBoundVBO_Index = VBOEmpty;
 
             if (r_vertexBufferMegs.Integer < 8)
                 r_vertexBufferMegs.Integer = 8;
@@ -215,8 +217,8 @@ namespace Droid.Render
 
             headerAllocator.Shutdown();
 
-            currentBoundVBO = -1;
-            currentBoundVBO_Index = -1;
+            currentBoundVBO = VBOEmpty;
+            currentBoundVBO_Index = VBOEmpty;
         }
 
         // called when vertex programs are enabled or disabled, because the cached data is no longer valid
@@ -228,8 +230,8 @@ namespace Droid.Render
             while (staticIndexHeaders.next != staticIndexHeaders)
                 ActuallyFree(staticIndexHeaders.next);
 
-            currentBoundVBO = -1;
-            currentBoundVBO_Index = -1;
+            currentBoundVBO = VBOEmpty;
+            currentBoundVBO_Index = VBOEmpty;
         }
 
         // Tries to allocate space for the given data in fast vertex memory, and copies it over.
@@ -256,25 +258,25 @@ namespace Droid.Render
                         block.prev = freeStaticIndexHeaders;
                         block.next.prev = block;
                         block.prev.next = block;
-                        block.frontEndMemory = null;
+                        block.frontEndMemory = IntPtr.Zero;
                         block.frontEndMemoryDirty = true;
-                        block.vbo = -1;
+                        block.vbo = VBOEmpty;
                     }
             }
             else
             {
                 // if we don't have any remaining unused headers, allocate some more
                 if (freeStaticHeaders.next == freeStaticHeaders)
-                    for (int i = 0; i < EXPAND_HEADERS; i++)
+                    for (var i = 0; i < EXPAND_HEADERS; i++)
                     {
                         block = headerAllocator.Alloc();
                         block.next = freeStaticHeaders.next;
                         block.prev = freeStaticHeaders;
                         block.next.prev = block;
                         block.prev.next = block;
-                        block.frontEndMemory = null;
+                        block.frontEndMemory = IntPtr.Zero;
                         block.frontEndMemoryDirty = true;
-                        block.vbo = -1;
+                        block.vbo = VBOEmpty;
                     }
             }
 
@@ -332,12 +334,12 @@ namespace Droid.Render
             block.indexBuffer = indexBuffer;
 
             // TODO, make this more efficient...
-            if (block.frontEndMemory != null)
-                free(block.frontEndMemory);
-            block.frontEndMemory = malloc(size + 16);
+            if (block.frontEndMemory != IntPtr.Zero)
+                Marshal.FreeHGlobal(block.frontEndMemory);
+            block.frontEndMemory = Marshal.AllocHGlobal(size + 16);
             block.size = size;
-
-            memcpy(block.frontEndMemory, data, size);
+            fixed (byte* data_ = data)
+                Unsafe.CopyBlock((byte*)block.frontEndMemory, data_, (uint)size);
             block.frontEndMemoryDirty = true;
 
             //Position(block);
@@ -346,28 +348,29 @@ namespace Droid.Render
         // This will be a real pointer with virtual memory, but it will be an int offset cast to a pointer of ARB_vertex_buffer_object
         // this will be a real pointer with virtual memory, but it will be an int offset cast to a pointer with ARB_vertex_buffer_object
         // The ARB_vertex_buffer_object will be bound
-        public unsafe byte* Position(VertCache buffer)
+        public void* Position(VertCache buffer)
         {
             if (buffer == null || buffer.tag == TAG.FREE)
                 common.FatalError("VertexCache::Position: bad vertCache_t");
 
-            if (buffer.indexBuffer && !r_useIndexVBO.Bool)
+            if (buffer.indexBuffer && !R.r_useIndexVBO.Bool)
             {
                 UnbindIndex();
                 return (byte*)buffer.frontEndMemory + buffer.offset;
             }
-            else if (!buffer.indexBuffer && !r_useVertexVBO.Bool)
+            else if (!buffer.indexBuffer && !R.r_useVertexVBO.Bool)
             {
                 UnbindVertex();
                 return (byte*)buffer.frontEndMemory + buffer.offset;
             }
 
             // Create VBO if does not exist
-            if (buffer.vbo == -1)
+            if (buffer.vbo == VBOEmpty)
             {
-                if (buffer.frontEndMemory == null)
-                    LOGI("MEMORY NULL");
-                qglGenBuffers(1, &buffer.vbo);
+                if (buffer.frontEndMemory == IntPtr.Zero)
+                    Console.WriteLine("MEMORY NULL");
+                fixed (uint* vbo = &buffer.vbo)
+                    qglGenBuffers(1, vbo);
 
                 if (buffer.vbo > vboMax)
                     vboMax = buffer.vbo;
@@ -382,7 +385,7 @@ namespace Droid.Render
             {
                 if (buffer.vbo != currentBoundVBO_Index)
                 {
-                    qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.vbo);
+                    qglBindBuffer(BufferTargetARB.ElementArrayBuffer, buffer.vbo);
                     currentBoundVBO_Index = buffer.vbo;
                 }
             }
@@ -390,7 +393,7 @@ namespace Droid.Render
             {
                 if (buffer.vbo != currentBoundVBO)
                 {
-                    qglBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+                    qglBindBuffer(BufferTargetARB.ArrayBuffer, buffer.vbo);
                     currentBoundVBO = buffer.vbo;
                 }
             }
@@ -398,45 +401,46 @@ namespace Droid.Render
             // Update any new data
             if (buffer.frontEndMemoryDirty)
             {
-                //LOGI("Uploading Static vertex");
-                if (buffer.indexBuffer) qglBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer.size, buffer.frontEndMemory, GL_STATIC_DRAW);
-                else qglBufferData(GL_ARRAY_BUFFER, buffer.size, buffer.frontEndMemory, GL_STATIC_DRAW);
+                //Console.Write("Uploading Static vertex");
+                if (buffer.indexBuffer) qglBufferData(BufferTargetARB.ElementArrayBuffer, buffer.size, (void*)buffer.frontEndMemory, BufferUsageARB.StaticDraw);
+                else qglBufferData(BufferTargetARB.ArrayBuffer, buffer.size, (void*)buffer.frontEndMemory, BufferUsageARB.StaticDraw);
                 buffer.frontEndMemoryDirty = false;
             }
 
             return (void*)buffer.offset;
         }
 
-        public VertCache CreateTempVbo(int bytes, bool indexBuffer)
+        public unsafe VertCache CreateTempVbo(int bytes, bool indexBuffer)
         {
-            VertCache_ block = headerAllocator.Alloc();
+            VertCache block = headerAllocator.Alloc();
 
-            block->next = null;
-            block->prev = null;
-            block->frontEndMemory = null;
-            block->offset = 0;
-            block->tag = TAG.FIXED;
-            block->indexBuffer = indexBuffer;
-            block->frontEndMemoryDirty = false;
+            block.next = null;
+            block.prev = null;
+            block.frontEndMemory = IntPtr.Zero;
+            block.offset = IntPtr.Zero;
+            block.tag = TAG.FIXED;
+            block.indexBuffer = indexBuffer;
+            block.frontEndMemoryDirty = false;
 
 #if USE_MAP
 #else
-            block->frontEndMemory = malloc(bytes + 16);
+            block.frontEndMemory = Marshal.AllocHGlobal(bytes + 16);
 #endif
 
-            qglGenBuffers(1, &block->vbo);
+            fixed (uint* vbo = &block.vbo)
+                qglGenBuffers(1, vbo);
 
             if (indexBuffer)
             {
-                qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, block->vbo);
-                currentBoundVBO_Index = block->vbo;
-                qglBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)bytes, 0, GL_STREAM_DRAW);
+                qglBindBuffer(BufferTargetARB.ElementArrayBuffer, block.vbo);
+                currentBoundVBO_Index = block.vbo;
+                qglBufferData(BufferTargetARB.ElementArrayBuffer, bytes, null, BufferUsageARB.StaticDraw);
             }
             else
             {
-                qglBindBuffer(GL_ARRAY_BUFFER, block->vbo);
-                currentBoundVBO = block->vbo;
-                qglBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)bytes, 0, GL_STREAM_DRAW);
+                qglBindBuffer(BufferTargetARB.ArrayBuffer, block.vbo);
+                currentBoundVBO = block.vbo;
+                qglBufferData(BufferTargetARB.ArrayBuffer, bytes, null, BufferUsageARB.StaticDraw);
             }
 
             return block;
@@ -459,7 +463,7 @@ namespace Droid.Render
             {
                 if (dynamicAllocThisFrame_Index[listNum] + size > frameBytes)
                 {
-                    LOGI("WARNING DYNAMIC OVERFLOW!!");
+                    Console.WriteLine("WARNING DYNAMIC OVERFLOW!!");
                     // if we don't have enough room in the temp block, allocate a static block, but immediately free it so it will get freed at the next frame
                     tempOverflow = true;
                     Alloc(data, size, out block, indexBuffer);
@@ -471,7 +475,7 @@ namespace Droid.Render
             {
                 if (dynamicAllocThisFrame[listNum] + size > frameBytes)
                 {
-                    LOGI("WARNING DYNAMIC OVERFLOW!!");
+                    Console.WriteLine("WARNING DYNAMIC OVERFLOW!!");
                     // if we don't have enough room in the temp block, allocate a static block, but immediately free it so it will get freed at the next frame
                     tempOverflow = true;
                     Alloc(data, size, out block, indexBuffer);
@@ -533,12 +537,15 @@ namespace Droid.Render
                 block.prev.next = block;
             }
 
-            block.frontEndMemory = null;
+            block.frontEndMemory = IntPtr.Zero;
             block.frontEndMemoryDirty = false;
 
             // Try to align, might be faster
-            size += 16;
-            size &= 0xFFFFFFF0;
+            unchecked
+            {
+                size += 16;
+                size &= (int)0xFFFFFFF0;
+            }
 
             block.size = size;
 
@@ -564,13 +571,15 @@ namespace Droid.Render
             if (indexBuffer)
             {
                 block.vbo = tempIndexBuffers[listNum].vbo;
-                memcpy((char*)tempIndexBuffers[listNum].frontEndMemory + block.offset, data, size);
+                fixed (byte* data_ = data)
+                    Unsafe.CopyBlock((byte*)tempIndexBuffers[listNum].frontEndMemory + block.offset, data_, (uint)size);
                 block.frontEndMemory = tempIndexBuffers[listNum].frontEndMemory;
             }
             else
             {
                 block.vbo = tempBuffers[listNum].vbo;
-                memcpy((char*)tempBuffers[listNum].frontEndMemory + block.offset, data, size);
+                fixed (byte* data_ = data)
+                    Unsafe.CopyBlock((byte*)tempBuffers[listNum].frontEndMemory + block.offset, data_, (uint)size);
                 block.frontEndMemory = tempBuffers[listNum].frontEndMemory;
             }
 
@@ -668,7 +677,7 @@ namespace Droid.Render
             // if our total static count is above our working memory limit, start purging things
             while (staticAllocTotal > r_vertexBufferMegs.Integer * 1024 * 1024) { } // free the least recently used
 #endif
-            currentFrame = tr.frameCount;
+            currentFrame = R.frameCount;
 
             listNum = currentFrame % NUM_VERTEX_FRAMES;
 
@@ -718,25 +727,25 @@ namespace Droid.Render
         const uint GL_MAP_INVALIDATE_RANGE_BIT = 0x0004;
         const uint GL_MAP_UNSYNCHRONIZED_BIT = 0x0020;
         const uint GL_MAP_WRITE_BIT = 0x0002;
-        public void BeginBackEnd(int which)
+        public unsafe void BeginBackEnd(int which)
         {
             //LOGI("BeginBackEnd list = %d, size index = %d, size = %d", listNum,dynamicAllocThisFrame_Index,dynamicAllocThisFrame);
 
 #if USE_MAP
-            qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tempIndexBuffers[which].vbo);
+            qglBindBuffer(BufferTargetARB.ElementArrayBuffer, tempIndexBuffers[which].vbo);
             currentBoundVBO_Index = tempIndexBuffers[which].vbo;
-            qglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+            qglUnmapBuffer(BufferTargetARB.ElementArrayBuffer);
 
             currentBoundVBO_Index = tempIndexBuffers[(which + 1) % NUM_VERTEX_FRAMES].vbo;
-            qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, currentBoundVBO_Index);
+            qglBindBuffer(BufferTargetARB.ElementArrayBuffer, currentBoundVBO_Index);
             tempIndexBuffers[(which + 1) % NUM_VERTEX_FRAMES].frontEndMemory = qglMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, FRAME_MEMORY_BYTES, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 #else
-            if (r_useIndexVBO.Bool)
+            if (R.r_useIndexVBO.Bool)
             {
-                qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tempIndexBuffers[which].vbo);
+                qglBindBuffer(BufferTargetARB.ElementArrayBuffer, tempIndexBuffers[which].vbo);
                 currentBoundVBO_Index = tempIndexBuffers[which].vbo;
-                //qglBufferSubData(GL_ELEMENT_ARRAY_BUFFER,0, dynamicAllocThisFrame_Index[which], tempIndexBuffers[which].frontEndMemory);
-                qglBufferData(GL_ELEMENT_ARRAY_BUFFER, dynamicAllocThisFrame_Index[which], tempIndexBuffers[which].frontEndMemory, GL_STREAM_DRAW);
+                //qglBufferSubData(BufferTargetARB.ElementArrayBuffer, 0, dynamicAllocThisFrame_Index[which], tempIndexBuffers[which].frontEndMemory);
+                qglBufferData(BufferTargetARB.ElementArrayBuffer, dynamicAllocThisFrame_Index[which], (void*)tempIndexBuffers[which].frontEndMemory, BufferUsageARB.StreamDraw);
             }
 #endif
 
@@ -749,12 +758,12 @@ namespace Droid.Render
             qglBindBuffer(GL_ARRAY_BUFFER, currentBoundVBO);
             tempBuffers[(which + 1) % NUM_VERTEX_FRAMES].frontEndMemory = qglMapBufferRange(GL_ARRAY_BUFFER, 0, FRAME_MEMORY_BYTES, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 #else
-            if (r_useVertexVBO.Bool)
+            if (R.r_useVertexVBO.Bool)
             {
-                qglBindBuffer(GL_ARRAY_BUFFER, tempBuffers[which].vbo);
+                qglBindBuffer(BufferTargetARB.ArrayBuffer, tempBuffers[which].vbo);
                 currentBoundVBO = tempBuffers[which].vbo;
-                //qglBufferSubData(GL_ARRAY_BUFFER,0, dynamicAllocThisFrame[which], tempBuffers[which].frontEndMemory);
-                qglBufferData(GL_ARRAY_BUFFER, dynamicAllocThisFrame[which], tempBuffers[which].frontEndMemory, GL_STREAM_DRAW);
+                //qglBufferSubData(BufferTargetARB.ArrayBuffer, 0, dynamicAllocThisFrame[which], tempBuffers[which].frontEndMemory);
+                qglBufferData(BufferTargetARB.ArrayBuffer, dynamicAllocThisFrame[which], (void*)tempBuffers[which].frontEndMemory, BufferUsageARB.StreamDraw);
             }
 #endif
 
@@ -767,19 +776,19 @@ namespace Droid.Render
 
         public void UnbindIndex()
         {
-            if (currentBoundVBO_Index != -1)
+            if (currentBoundVBO_Index != VBOEmpty)
             {
-                qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-                currentBoundVBO_Index = -1;
+                qglBindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
+                currentBoundVBO_Index = VBOEmpty;
             }
         }
 
         public void UnbindVertex()
         {
-            if (currentBoundVBO != -1)
+            if (currentBoundVBO != VBOEmpty)
             {
-                qglBindBuffer(GL_ARRAY_BUFFER, 0);
-                currentBoundVBO = -1;
+                qglBindBuffer(BufferTargetARB.ArrayBuffer, 0);
+                currentBoundVBO = VBOEmpty;
             }
         }
 

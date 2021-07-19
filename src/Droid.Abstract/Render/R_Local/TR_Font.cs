@@ -1,3 +1,4 @@
+//#define BUILD_FREETYPE
 using System;
 using static Droid.Core.Lib;
 
@@ -7,186 +8,196 @@ namespace Droid.Render
     {
         const int FILESIZE_fontInfo_t = 20548;
 
-//#if BUILD_FREETYPE
-//# include "../ft2/fterrors.h"
-//# include "../ft2/ftsystem.h"
-//# include "../ft2/ftimage.h"
-//# include "../ft2/freetype.h"
-//# include "../ft2/ftoutln.h"
-
-        //#define _FLOOR(x)  ((x) & -64)
-        //#define _CEIL(x)   (((x)+63) & -64)
-        //#define _TRUNC(x)  ((x) >> 6)
-
-        //		FT_Library ftLibrary = NULL;
-        //#endif
+#if BUILD_FREETYPE
+        static int _FLOOR(int x) => x & -64;
+        static int _CEIL(int x) => (x + 63) & -64;
+        static int _TRUNC(int x) => x >> 6;
+        static FT_Library ftLibrary;
+#endif
 
 
 #if BUILD_FREETYPE
 
-void R_GetGlyphInfo(FT_GlyphSlot glyph, int *left, int *right, int *width, int *top, int *bottom, int *height, int *pitch) {
-	*left  = _FLOOR( glyph.metrics.horiBearingX );
-	*right = _CEIL( glyph.metrics.horiBearingX + glyph.metrics.width );
-	*width = _TRUNC(*right - *left);
+        void R_GetGlyphInfo(FT_GlyphSlot glyph, out int left, out int right, out int width, out int top, out int bottom, out int height, out int pitch)
+        {
+            left = _FLOOR(glyph.metrics.horiBearingX);
+            right = _CEIL(glyph.metrics.horiBearingX + glyph.metrics.width);
+            width = _TRUNC(right - left);
 
-	*top    = _CEIL( glyph.metrics.horiBearingY );
-	*bottom = _FLOOR( glyph.metrics.horiBearingY - glyph.metrics.height );
-	*height = _TRUNC( *top - *bottom );
-	*pitch  = ( qtrue ? (*width+3) & -4 : (*width+7) >> 3 );
-}
+            top = _CEIL(glyph.metrics.horiBearingY);
+            bottom = _FLOOR(glyph.metrics.horiBearingY - glyph.metrics.height);
+            height = _TRUNC(top - bottom);
+            pitch = qtrue ? (width + 3) & -4 : (width + 7) >> 3;
+        }
 
-FT_Bitmap *R_RenderGlyph(FT_GlyphSlot glyph, glyphInfo_t* glyphOut) {
-	FT_Bitmap  *bit2;
-	int left, right, width, top, bottom, height, pitch, size;
+        FT_Bitmap R_RenderGlyph(FT_GlyphSlot glyph, GlyphInfo glyphOut)
+        {
+            FT_Bitmap bit2;
 
-	R_GetGlyphInfo(glyph, &left, &right, &width, &top, &bottom, &height, &pitch);
+            R_GetGlyphInfo(glyph, out var left, out var right, out var width, out var top, out var bottom, out var height, out var pitch);
 
-	if ( glyph.format == ft_glyph_format_outline ) {
-		size   = pitch*height;
+            if (glyph.format == ft_glyph_format_outline)
+            {
+                size = pitch * height;
 
-		bit2 = Mem_Alloc(sizeof(FT_Bitmap));
+                bit2 = Mem_Alloc(sizeof(FT_Bitmap));
 
-		bit2.width      = width;
-		bit2.rows       = height;
-		bit2.pitch      = pitch;
-		bit2.pixel_mode = ft_pixel_mode_grays;
-		//bit2.pixel_mode = ft_pixel_mode_mono;
-		bit2.buffer     = Mem_Alloc(pitch*height);
-		bit2.num_grays = 256;
+                bit2.width = width;
+                bit2.rows = height;
+                bit2.pitch = pitch;
+                bit2.pixel_mode = ft_pixel_mode_grays;
+                //bit2.pixel_mode = ft_pixel_mode_mono;
+                bit2.buffer = Mem_Alloc(pitch * height);
+                bit2.num_grays = 256;
 
-		memset( bit2.buffer, 0, size );
+                memset(bit2.buffer, 0, size);
 
-		FT_Outline_Translate( &glyph.outline, -left, -bottom );
+                FT_Outline_Translate(&glyph.outline, -left, -bottom);
 
-		FT_Outline_Get_Bitmap( ftLibrary, &glyph.outline, bit2 );
+                FT_Outline_Get_Bitmap(ftLibrary, &glyph.outline, bit2);
 
-		glyphOut.height = height;
-		glyphOut.pitch = pitch;
-		glyphOut.top = (glyph.metrics.horiBearingY >> 6) + 1;
-		glyphOut.bottom = bottom;
+                glyphOut.height = height;
+                glyphOut.pitch = pitch;
+                glyphOut.top = (glyph.metrics.horiBearingY >> 6) + 1;
+                glyphOut.bottom = bottom;
 
-		return bit2;
-	} else {
-		common.Printf( "Non-outline fonts are not supported\n" );
-	}
-	return NULL;
-}
+                return bit2;
+            }
+            else common.Printf("Non-outline fonts are not supported\n");
+            return null;
+        }
 
-glyphInfo_t *RE_ConstructGlyphInfo( unsigned char *imageOut, int *xOut, int *yOut, int *maxHeight, FT_Face face, const unsigned char c, qboolean calcHeight ) {
-	int i;
-	static glyphInfo_t glyph;
-	unsigned char *src, *dst;
-	float scaled_width, scaled_height;
-	FT_Bitmap *bitmap = NULL;
+        GlyphInfo RE_ConstructGlyphInfo(byte[] imageOut, out int xOut, out int yOut, out int maxHeight, FT_Face face, char c, bool calcHeight)
+        {
+            int i;
+            static glyphInfo_t glyph;
+            unsigned char* src, *dst;
+            float scaled_width, scaled_height;
+            FT_Bitmap* bitmap = NULL;
 
-	memset(&glyph, 0, sizeof(glyphInfo_t));
-	// make sure everything is here
-	if (face != NULL) {
-		FT_Load_Glyph(face, FT_Get_Char_Index( face, c), FT_LOAD_DEFAULT );
-		bitmap = R_RenderGlyph(face.glyph, &glyph);
-		if (bitmap) {
-			glyph.xSkip = (face.glyph.metrics.horiAdvance >> 6) + 1;
-		} else {
-			return &glyph;
-		}
+            memset(&glyph, 0, sizeof(glyphInfo_t));
+            // make sure everything is here
+            if (face != NULL)
+            {
+                FT_Load_Glyph(face, FT_Get_Char_Index(face, c), FT_LOAD_DEFAULT);
+                bitmap = R_RenderGlyph(face.glyph, &glyph);
+                if (bitmap)
+                    glyph.xSkip = (face.glyph.metrics.horiAdvance >> 6) + 1;
+                else
+                    return &glyph;
 
-		if (glyph.height > *maxHeight) {
-			*maxHeight = glyph.height;
-		}
+                if (glyph.height > *maxHeight)
+                    maxHeight = glyph.height;
 
-		if (calcHeight) {
-			Mem_Free(bitmap.buffer);
-			Mem_Free(bitmap);
-			return &glyph;
-		}
+                if (calcHeight)
+                {
+                    Mem_Free(bitmap.buffer);
+                    Mem_Free(bitmap);
+                    return &glyph;
+                }
 
-		/*
-				// need to convert to power of 2 sizes so we do not get
-				// any scaling from the gl upload
-				for (scaled_width = 1 ; scaled_width < glyph.pitch ; scaled_width<<=1)
-					;
-				for (scaled_height = 1 ; scaled_height < glyph.height ; scaled_height<<=1)
-					;
-		*/
+                /*
+                        // need to convert to power of 2 sizes so we do not get
+                        // any scaling from the gl upload
+                        for (scaled_width = 1 ; scaled_width < glyph.pitch ; scaled_width<<=1)
+                            ;
+                        for (scaled_height = 1 ; scaled_height < glyph.height ; scaled_height<<=1)
+                            ;
+                */
 
-		scaled_width = glyph.pitch;
-		scaled_height = glyph.height;
+                scaled_width = glyph.pitch;
+                scaled_height = glyph.height;
 
-		// we need to make sure we fit
-		if (*xOut + scaled_width + 1 >= 255) {
-			if (*yOut + *maxHeight + 1 >= 255) {
-				*yOut = -1;
-				*xOut = -1;
-				Mem_Free(bitmap.buffer);
-				Mem_Free(bitmap);
-				return &glyph;
-			} else {
-				*xOut = 0;
-				*yOut += *maxHeight + 1;
-			}
-		} else if (*yOut + *maxHeight + 1 >= 255) {
-			*yOut = -1;
-			*xOut = -1;
-			Mem_Free(bitmap.buffer);
-			Mem_Free(bitmap);
-			return &glyph;
-		}
+                // we need to make sure we fit
+                if (*xOut + scaled_width + 1 >= 255)
+                {
+                    if (*yOut + *maxHeight + 1 >= 255)
+                    {
+                        *yOut = -1;
+                        *xOut = -1;
+                        Mem_Free(bitmap.buffer);
+                        Mem_Free(bitmap);
+                        return &glyph;
+                    }
+                    else
+                    {
+                        *xOut = 0;
+                        *yOut += *maxHeight + 1;
+                    }
+                }
+                else if (*yOut + *maxHeight + 1 >= 255)
+                {
+                    *yOut = -1;
+                    *xOut = -1;
+                    Mem_Free(bitmap.buffer);
+                    Mem_Free(bitmap);
+                    return &glyph;
+                }
 
-		src = bitmap.buffer;
-		dst = imageOut + (*yOut * 256) + *xOut;
+                src = bitmap.buffer;
+                dst = imageOut + (*yOut * 256) + *xOut;
 
-		if (bitmap.pixel_mode == ft_pixel_mode_mono) {
-			for (i = 0; i < glyph.height; i++) {
-				int j;
-				unsigned char *_src = src;
-				unsigned char *_dst = dst;
-				unsigned char mask = 0x80;
-				unsigned char val = *_src;
-				for (j = 0; j < glyph.pitch; j++) {
-					if (mask == 0x80) {
-						val = *_src++;
-					}
-					if (val & mask) {
-						*_dst = 0xff;
-					}
-					mask >>= 1;
+                if (bitmap.pixel_mode == ft_pixel_mode_mono)
+                {
+                    for (i = 0; i < glyph.height; i++)
+                    {
+                        int j;
+                        unsigned char* _src = src;
+                        unsigned char* _dst = dst;
+                        unsigned char mask = 0x80;
+                        unsigned char val = *_src;
+                        for (j = 0; j < glyph.pitch; j++)
+                        {
+                            if (mask == 0x80)
+                            {
+                                val = *_src++;
+                            }
+                            if (val & mask)
+                            {
+                                *_dst = 0xff;
+                            }
+                            mask >>= 1;
 
-					if ( mask == 0 ) {
-						mask = 0x80;
-					}
-					_dst++;
-				}
+                            if (mask == 0)
+                            {
+                                mask = 0x80;
+                            }
+                            _dst++;
+                        }
 
-				src += glyph.pitch;
-				dst += 256;
+                        src += glyph.pitch;
+                        dst += 256;
 
-			}
-		} else {
-			for (i = 0; i < glyph.height; i++) {
-				memcpy( dst, src, glyph.pitch );
-				src += glyph.pitch;
-				dst += 256;
-			}
-		}
+                    }
+                }
+                else
+                {
+                    for (i = 0; i < glyph.height; i++)
+                    {
+                        memcpy(dst, src, glyph.pitch);
+                        src += glyph.pitch;
+                        dst += 256;
+                    }
+                }
 
-		// we now have an 8 bit per pixel grey scale bitmap
-		// that is width wide and pf.ftSize.metrics.y_ppem tall
+                // we now have an 8 bit per pixel grey scale bitmap
+                // that is width wide and pf.ftSize.metrics.y_ppem tall
 
-		glyph.imageHeight = scaled_height;
-		glyph.imageWidth = scaled_width;
-		glyph.s = (float)*xOut / 256;
-		glyph.t = (float)*yOut / 256;
-		glyph.s2 = glyph.s + (float)scaled_width / 256;
-		glyph.t2 = glyph.t + (float)scaled_height / 256;
+                glyph.imageHeight = scaled_height;
+                glyph.imageWidth = scaled_width;
+                glyph.s = (float)*xOut / 256;
+                glyph.t = (float)*yOut / 256;
+                glyph.s2 = glyph.s + (float)scaled_width / 256;
+                glyph.t2 = glyph.t + (float)scaled_height / 256;
 
-		*xOut += scaled_width + 1;
-	}
+                *xOut += scaled_width + 1;
+            }
 
-	Mem_Free(bitmap.buffer);
-	Mem_Free(bitmap);
+            Mem_Free(bitmap.buffer);
+            Mem_Free(bitmap);
 
-	return &glyph;
-}
+            return &glyph;
+        }
 
 #endif
 
@@ -220,17 +231,17 @@ glyphInfo_t *RE_ConstructGlyphInfo( unsigned char *imageOut, int *xOut, int *yOu
         }
 
         // Loads 3 point sizes, 12, 24, and 48
-        bool RenderSystemLocal::RegisterFont(string fontName, FontInfoEx font)
+        bool RegisterFont(string fontName, FontInfoEx font)
         {
 #if BUILD_FREETYPE
-        FT_Face face;
-        int j, k, xOut, yOut, lastStart, imageNumber;
-        int scaledSize, newSize, maxHeight, left, satLevels;
-        unsigned char*out, *imageBuff;
-        glyphInfo_t* glyph;
-        idImage* image;
-        idMaterial* h;
-        float max;
+            FT_Face face;
+            int j, k, xOut, yOut, lastStart, imageNumber;
+            int scaledSize, newSize, maxHeight, left, satLevels;
+            unsigned char*out, *imageBuff;
+            glyphInfo_t* glyph;
+            idImage* image;
+            idMaterial* h;
+            float max;
 #endif
             void* faceData;
             DateTime ftime;
@@ -344,7 +355,7 @@ glyphInfo_t *RE_ConstructGlyphInfo( unsigned char *imageOut, int *xOut, int *yOu
             return true;
 
 #if !BUILD_FREETYPE
-            common.Warning($"RegisterFont: couldn't load FreeType code {name}");
+    common.Warning($"RegisterFont: couldn't load FreeType code {name}");
 #else
 
             if (ftLibrary == NULL)
@@ -477,26 +488,26 @@ Mem_Free(out );
 
 fileSystem.FreeFile(faceData);
 #endif
-            return true;
-        }
+return true;
+}
 
-        static void R_InitFreeType()
-        {
+static void R_InitFreeType()
+{
 #if BUILD_FREETYPE
-            if (FT_Init_FreeType(&ftLibrary))
-                common.Printf("R_InitFreeType: Unable to initialize FreeType.\n");
+    if (FT_Init_FreeType(&ftLibrary))
+        common.Printf("R_InitFreeType: Unable to initialize FreeType.\n");
 #endif
-        }
+}
 
-        public static void R_DoneFreeType()
-        {
+public static void R_DoneFreeType()
+{
 #if BUILD_FREETYPE
-            if (ftLibrary)
-            {
-                FT_Done_FreeType(ftLibrary);
-                ftLibrary = NULL;
-            }
+    if (ftLibrary)
+    {
+        FT_Done_FreeType(ftLibrary);
+        ftLibrary = NULL;
+    }
 #endif
-        }
+}
     }
 }

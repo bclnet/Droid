@@ -381,8 +381,6 @@ namespace Droid.Render
 
     partial class R
     {
-        public static ImageManager globalImages = new();
-
         public static int _MakePowerOfTwo(int num) => throw new NotImplementedException();
 
         #region IMAGEPROCESS

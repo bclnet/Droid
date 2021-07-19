@@ -5,6 +5,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Framework\SessionLocal-CDKey.cs" />
+    <Compile Remove="Framework\SessionLocal-CVar.cs" />
+    <Compile Remove="Framework\SessionLocal-Util.cs" />
+    <Compile Remove="Framework\SessionLocal.cs" />
+    <Compile Remove="Framework\UsercmdGenLocal.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Framework\CommonLocal.cpp" />
     <None Remove="Framework\Console.cpp" />
     <None Remove="Framework\Console.h" />
     <None Remove="Framework\EventLoop.cpp" />
@@ -14,6 +23,10 @@
     <None Remove="Framework\Session.cpp" />
     <None Remove="Framework\Session.h" />
     <None Remove="Framework\Session_local.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Droid.Abstract\Droid.Abstract.csproj" />
   </ItemGroup>
 
 </Project>

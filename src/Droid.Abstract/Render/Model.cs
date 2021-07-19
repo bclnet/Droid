@@ -2,8 +2,6 @@ using Droid.Core;
 using System;
 using GL_INDEX_TYPE = System.UInt32; // GL_UNSIGNED_INT
 using GlIndex = System.Int32;
-// using shorts for triangle indexes can save a significant amount of traffic, but
-// to support the large models that renderBump loads, they need to be 32 bits
 
 namespace Droid.Render
 {

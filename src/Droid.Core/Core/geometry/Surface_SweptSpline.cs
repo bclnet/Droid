@@ -55,8 +55,8 @@ namespace Droid.Core
                 splinePos = sweptSpline.GetCurrentValue(t);
                 splineD1 = sweptSpline.GetCurrentFirstDerivative(t);
                 verts[baseOffset + i].xyz = splinePos.ToVec3();
-                verts[baseOffset + i].st[0] = splinePos.w;
-                verts[baseOffset + i].tangents[0] = splineD1.ToVec3();
+                verts[baseOffset + i].st.x = splinePos.w;
+                verts[baseOffset + i].tangents0 = splineD1.ToVec3();
             }
 
             // sweep the spline
@@ -77,12 +77,9 @@ namespace Droid.Core
                 {
                     var v = verts[offset + j];
                     v.xyz = splinePos.ToVec3() + verts[baseOffset + j].xyz * splineMat;
-                    v.st[0] = verts[baseOffset + j].st[0];
-                    v.st[1] = splinePos.w;
-                    v.tangents[0] = verts[baseOffset + j].tangents[0] * splineMat;
-                    v.tangents[1] = splineD1.ToVec3();
-                    v.normal = v.tangents[1].Cross(v.tangents[0]);
-                    v.normal.Normalize();
+                    v.st.x = verts[baseOffset + j].st[0]; v.st.y = splinePos.w;
+                    v.tangents0 = verts[baseOffset + j].tangents0 * splineMat; v.tangents1 = splineD1.ToVec3();
+                    v.normal = v.tangents1.Cross(v.tangents0); v.normal.Normalize();
                     v.color = 0;
                 }
             }
@@ -168,12 +165,9 @@ namespace Droid.Core
 
             newFrame = previousFrame * axis;
 
-            newFrame[2] = dir;
-            newFrame[2].Normalize();
-            newFrame[1].Cross(newFrame[2], newFrame[0]);
-            newFrame[1].Normalize();
-            newFrame[0].Cross(newFrame[1], newFrame[2]);
-            newFrame[0].Normalize();
+            newFrame[2] = dir; newFrame[2].Normalize();
+            newFrame[1].Cross(newFrame[2], newFrame[0]); newFrame[1].Normalize();
+            newFrame[0].Cross(newFrame[1], newFrame[2]); newFrame[0].Normalize();
         }
     }
 }

@@ -450,7 +450,7 @@ namespace Droid.Render
         public EmptyCommand cmdHead, cmdTail;     // may be of other command type based on commandId
     }
 
-    partial class TRX
+    unsafe partial class TRX
     {
         //public static readonly FrameData frameData = new();
 
@@ -716,7 +716,7 @@ namespace Droid.Render
     static partial class TRX
     {
         //public static readonly BackEndState backEnd;
-        public static readonly RenderSystemLocal tr;
+        //public static readonly RenderSystemLocal tr;
         public static readonly Glconfig glConfig;     // outside of TR since it shouldn't be cleared during ref re-init
 
         // cvars
@@ -729,15 +729,15 @@ namespace Droid.Render
         public static readonly CVar r_ignore2;                // used for random debugging without defining new vars
         public static readonly CVar r_znear;                  // near Z clip plane
 
-        extern CVar r_finish;                 // force a call to glFinish() every frame
-        extern CVar r_swapInterval;           // changes the GL swap interval
-        extern CVar r_offsetFactor;           // polygon offset parameter
-        extern CVar r_offsetUnits;            // polygon offset parameter
-        extern CVar r_clear;                  // force screen clear every frame
-        extern CVar r_shadows;                // enable shadows
-        extern CVar r_subviewOnly;            // 1 = don't render main view, allowing subviews to be debugged
-        extern CVar r_lightScale;             // all light intensities are multiplied by this, which is normally 2
-        extern CVar r_flareSize;              // scale the flare deforms from the material def
+        //extern CVar r_finish;                 // force a call to glFinish() every frame
+        //extern CVar r_swapInterval;           // changes the GL swap interval
+        //extern CVar r_offsetFactor;           // polygon offset parameter
+        //extern CVar r_offsetUnits;            // polygon offset parameter
+        //extern CVar r_clear;                  // force screen clear every frame
+        //extern CVar r_shadows;                // enable shadows
+        //extern CVar r_subviewOnly;            // 1 = don't render main view, allowing subviews to be debugged
+        //extern CVar r_lightScale;             // all light intensities are multiplied by this, which is normally 2
+        //extern CVar r_flareSize;              // scale the flare deforms from the material def
 
         public static CVar r_gamma;                  // changes gamma tables
         public static CVar r_brightness;             // changes gamma tables
@@ -1260,16 +1260,18 @@ namespace Droid.Render
         public static void R_ShutdownFrameData();
         public static int R_CountFrameData();
         public static void R_ToggleSmpFrame();
-        public static void* R_FrameAlloc(int bytes);
-        public static void* R_ClearedFrameAlloc(int bytes);
-        public static void R_FrameFree(void* data);
+        public static T R_FrameAlloc<T>();
+        public static T[] R_FrameAllocMany<T>(int count);
+        public static T R_ClearedFrameAlloc<T>();
+        public static T[] R_ClearedFrameAllocMany<T>(int count);
+        public static void R_FrameFree<T>(ref T data);
 
         public static void R_DirectFrameBufferStart();
         public static void R_DirectFrameBufferEnd();
 
-        public static void* R_StaticAlloc(int bytes);     // just malloc with error checking
-        public static void* R_ClearedStaticAlloc(int bytes);  // with memset
-        public static void R_StaticFree(void* data);
+        public static T R_StaticAlloc<T>();     // just malloc with error checking
+        public static T R_ClearedStaticAlloc<T>();  // with memset
+        public static void R_StaticFree<T>(ref T data);
 
         #endregion
 

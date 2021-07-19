@@ -1,11 +1,16 @@
+using Droid.Core;
+using Droid.Render;
+using Droid.Sys;
 using System;
+using static Droid.Core.Lib;
+using static Droid.G;
 
 namespace Droid.Framework
 {
     /// <summary>
     /// the console will query the cvar and command systems for command completion information
     /// </summary>
-    internal partial class ConsoleLocal : Console
+    internal partial class ConsoleLocal : IConsole
     {
         const int LINE_WIDTH = 78;
         const int NUM_CON_TIMES = 4;
@@ -16,10 +21,45 @@ namespace Droid.Framework
 
         const int COMMAND_HISTORY = 64;
 
-        public override void Init()
-        {
-            int i;
+        bool keyCatching;
 
+        short[] text = new short[CON_TEXTSIZE];
+        int current;        // line where next message will be printed
+        int x;              // offset in current line for next print
+        int display;        // bottom of console displays this line
+        int lastKeyEvent;   // time of last key event for scroll delay
+        int nextKeyEvent;   // keyboard repeat rate
+
+        float displayFrac;  // approaches finalFrac at scr_conspeed
+        float finalFrac;        // 0.0 to 1.0 lines of console to display
+        int fracTime;       // time of last displayFrac update
+
+        int vislines;       // in scanlines
+
+        int[] times = new int[NUM_CON_TIMES];   // cls.realtime time the line was generated
+                                                // for transparent notify lines
+        Vector4 color;
+
+        EditField[] historyEditLines = new EditField[COMMAND_HISTORY];
+
+        int nextHistoryLine;// the last line in the history buffer, not masked
+        int historyLine;    // the line being displayed from history buffer will be <= nextHistoryLine
+
+        EditField consoleField;
+
+        static CVar con_speed = new("con_speed", "3", CVAR.SYSTEM, "speed at which the console moves up and down");
+        static CVar con_notifyTime = new("con_notifyTime", "3", CVAR.SYSTEM, "time messages are displayed onscreen when console is pulled up");
+#if DEBUG
+        static CVar con_noPrint = new("con_noPrint", "0", CVAR.BOOL | CVAR.SYSTEM | CVAR.NOCHEAT, "print on the console but not onscreen when console is pulled up");
+#else
+        static CVar con_noPrint = new("con_noPrint", "1", CVAR.BOOL | CVAR.SYSTEM | CVAR.NOCHEAT, "print on the console but not onscreen when console is pulled up");
+#endif
+
+        Material whiteShader;
+        Material consoleShader;
+
+        public void Init()
+        {
             keyCatching = false;
 
             lastKeyEvent = -1;
@@ -29,30 +69,33 @@ namespace Droid.Framework
 
             consoleField.SetWidthInChars(LINE_WIDTH);
 
-            for (i = 0; i < COMMAND_HISTORY; i++)
+            for (var i = 0; i < COMMAND_HISTORY; i++)
             {
                 historyEditLines[i].Clear();
                 historyEditLines[i].SetWidthInChars(LINE_WIDTH);
             }
 
-            G.cmdSystem.AddCommand("clear", Con_Clear_f, CMD_FL.SYSTEM, "clears the console");
-            G.cmdSystem.AddCommand("conDump", Con_Dump_f, CMD_FL.SYSTEM, "dumps the console text to a file");
+            cmdSystem.AddCommand("clear", Con_Clear_f, CMD_FL.SYSTEM, "clears the console");
+            cmdSystem.AddCommand("conDump", Con_Dump_f, CMD_FL.SYSTEM, "dumps the console text to a file");
         }
-        public override void Shutdown()
+
+        public void Shutdown()
         {
-            G.cmdSystem.RemoveCommand("clear");
-            G.cmdSystem.RemoveCommand("conDump");
+            cmdSystem.RemoveCommand("clear");
+            cmdSystem.RemoveCommand("conDump");
         }
+
         /// <summary>
         /// Can't be combined with init, because init happens before the renderSystem is initialized
         /// </summary>
-        public override void LoadGraphics()
+        public void LoadGraphics()
         {
-            charSetShader = G.declManager.FindMaterial("textures/bigchars");
-            whiteShader = G.declManager.FindMaterial("_white");
-            consoleShader = G.declManager.FindMaterial("console");
+            charSetShader = declManager.FindMaterial("textures/bigchars");
+            whiteShader = declManager.FindMaterial("_white");
+            consoleShader = declManager.FindMaterial("console");
         }
-        public override bool ProcessEvent(sysEvent e, bool forceAccept)
+
+        public bool ProcessEvent(SysEvent e, bool forceAccept)
         {
             bool consoleKey = false;
             if (e.evType == SE_KEY)
@@ -119,20 +162,26 @@ namespace Droid.Framework
             // we don't handle things like mouse, joystick, and network packets
             return false;
         }
-        public override bool Active => keyCatching;
-        public override void ClearNotifyLines() => Array.Clear(times, 0, NUM_CON_TIMES);
-        public override void Close()
+
+        public bool Active
+            => keyCatching;
+
+        public void ClearNotifyLines()
+            => Array.Clear(times, 0, NUM_CON_TIMES);
+
+        public void Close()
         {
             keyCatching = false;
             SetDisplayFraction(0);
             displayFrac = 0;    // don't scroll to that point, go immediately
             ClearNotifyLines();
         }
+
         /// <summary>
         /// Handles cursor positioning, line wrapping, etc
         /// </summary>
         /// <param name="text">The text.</param>
-        public override void Print(string text)
+        public void Print(string text)
         {
             int y;
             int c, l;
@@ -221,7 +270,7 @@ namespace Droid.Framework
         /// ForceFullScreen is used by the editor
         /// </summary>
         /// <param name="forceFullScreen">if set to <c>true</c> [force full screen].</param>
-        public override void Draw(bool forceFullScreen)
+        public void Draw(bool forceFullScreen)
         {
             var y = 0.0f;
 
@@ -310,6 +359,7 @@ namespace Droid.Framework
 
             fileSystem.CloseFile(f);
         }
+
         public void Clear()
         {
             for (var i = 0; i < CON_TEXTSIZE; i++)
@@ -317,7 +367,7 @@ namespace Droid.Framework
             Bottom();       // go to end
         }
 
-        public override void SaveHistory()
+        public void SaveHistory()
         {
             var f = fileSystem.OpenFileWrite("consolehistory.dat");
             for (int i = 0; i < COMMAND_HISTORY; ++i)
@@ -332,7 +382,8 @@ namespace Droid.Framework
             }
             fileSystem.CloseFile(f);
         }
-        public override void LoadHistory()
+
+        public void LoadHistory()
         {
             var f = fileSystem.OpenFileRead("consolehistory.dat");
             if (f == null) // file doesn't exist
@@ -536,6 +587,7 @@ namespace Droid.Framework
 
             consoleField.Draw(2 * SMALLCHAR_WIDTH, y, SCREEN_WIDTH - 3 * SMALLCHAR_WIDTH, true, charSetShader);
         }
+
         /// <summary>
         /// Draws the last few lines of output transparently over the game top
         /// </summary>
@@ -593,6 +645,7 @@ namespace Droid.Framework
 
             renderSystem.SetColor(colorCyan);
         }
+
         /// <summary>
         /// Draws the console with the solid background
         /// </summary>
@@ -609,15 +662,11 @@ namespace Droid.Framework
 
             lines = idMath::FtoiFast(SCREEN_HEIGHT * frac);
             if (lines <= 0)
-            {
                 return;
-            }
-
+            
             if (lines > SCREEN_HEIGHT)
-            {
                 lines = SCREEN_HEIGHT;
-            }
-
+            
             // draw the background
             y = frac * SCREEN_HEIGHT - 2;
             if (y < 1.0f)
@@ -641,12 +690,7 @@ namespace Droid.Framework
             i = version.Length();
 
             for (x = 0; x < i; x++)
-            {
-                renderSystem.DrawSmallChar(SCREEN_WIDTH - (i - x) * SMALLCHAR_WIDTH,
-                    (lines - (SMALLCHAR_HEIGHT + SMALLCHAR_HEIGHT / 2)), version[x], localConsole.charSetShader);
-
-            }
-
+                renderSystem.DrawSmallChar(SCREEN_WIDTH - (i - x) * SMALLCHAR_WIDTH, (lines - (SMALLCHAR_HEIGHT + SMALLCHAR_HEIGHT / 2)), version[x], localConsole.charSetShader);
 
             // draw the text
             vislines = lines;
@@ -670,9 +714,7 @@ namespace Droid.Framework
             row = display;
 
             if (x == 0)
-            {
                 row--;
-            }
 
             currentColor = idStr::ColorIndex(C_COLOR_WHITE);
             renderSystem.SetColor(idStr::ColorForIndex(currentColor));
@@ -680,23 +722,17 @@ namespace Droid.Framework
             for (i = 0; i < rows; i++, y -= SMALLCHAR_HEIGHT, row--)
             {
                 if (row < 0)
-                {
                     break;
-                }
                 if (current - row >= TOTAL_LINES)
-                {
                     // past scrollback wrap point
                     continue;
-                }
 
                 text_p = text + (row % TOTAL_LINES) * LINE_WIDTH;
 
                 for (x = 0; x < LINE_WIDTH; x++)
                 {
                     if ((text_p[x] & 0xff) == ' ')
-                    {
                         continue;
-                    }
 
                     if (idStr::ColorIndex(text_p[x] >> 8) != currentColor)
                     {
@@ -735,6 +771,7 @@ namespace Droid.Framework
                 return;
             }
         }
+
         /// <summary>
         /// Causes the console to start opening the desired amount.
         /// </summary>
@@ -744,12 +781,13 @@ namespace Droid.Framework
             finalFrac = frac;
             fracTime = com_frameTime;
         }
+
         /// <summary>
         /// Scrolls the console up or down based on conspeed
         /// </summary>
         void UpdateDisplayFraction()
         {
-            if (con_speed.GetFloat() <= 0.1f)
+            if (con_speed.Float <= 0.1f)
             {
                 fracTime = com_frameTime;
                 displayFrac = finalFrac;
@@ -759,7 +797,7 @@ namespace Droid.Framework
             // scroll towards the destination height
             if (finalFrac < displayFrac)
             {
-                displayFrac -= con_speed.GetFloat() * (com_frameTime - fracTime) * 0.001f;
+                displayFrac -= con_speed.Float * (com_frameTime - fracTime) * 0.001f;
                 if (finalFrac > displayFrac)
                 {
                     displayFrac = finalFrac;
@@ -768,7 +806,7 @@ namespace Droid.Framework
             }
             else if (finalFrac > displayFrac)
             {
-                displayFrac += con_speed.GetFloat() * (com_frameTime - fracTime) * 0.001f;
+                displayFrac += con_speed.Float * (com_frameTime - fracTime) * 0.001f;
                 if (finalFrac < displayFrac)
                 {
                     displayFrac = finalFrac;
@@ -776,45 +814,5 @@ namespace Droid.Framework
                 fracTime = com_frameTime;
             }
         }
-
-        //============================
-
-        bool keyCatching;
-
-        short[] text = new short[CON_TEXTSIZE];
-        int current;        // line where next message will be printed
-        int x;              // offset in current line for next print
-        int display;        // bottom of console displays this line
-        int lastKeyEvent;   // time of last key event for scroll delay
-        int nextKeyEvent;   // keyboard repeat rate
-
-        float displayFrac;  // approaches finalFrac at scr_conspeed
-        float finalFrac;        // 0.0 to 1.0 lines of console to display
-        int fracTime;       // time of last displayFrac update
-
-        int vislines;       // in scanlines
-
-        int[] times = new int[NUM_CON_TIMES];   // cls.realtime time the line was generated
-                                                // for transparent notify lines
-        idVec4 color;
-
-        EditField[] historyEditLines = new EditField[COMMAND_HISTORY];
-
-        int nextHistoryLine;// the last line in the history buffer, not masked
-        int historyLine;    // the line being displayed from history buffer
-                            // will be <= nextHistoryLine
-
-        EditField consoleField;
-
-        static CVar con_speed = new("con_speed", "3", CVAR.SYSTEM, "speed at which the console moves up and down");
-        static CVar con_notifyTime = new("con_notifyTime", "3", CVAR.SYSTEM, "time messages are displayed onscreen when console is pulled up");
-#if DEBUG
-        static CVar con_noPrint = new("con_noPrint", "0", CVAR.BOOL | CVAR.SYSTEM | CVAR.NOCHEAT, "print on the console but not onscreen when console is pulled up");
-#else
-        static CVar con_noPrint = new("con_noPrint", "1", CVAR.BOOL | CVAR.SYSTEM | CVAR.NOCHEAT, "print on the console but not onscreen when console is pulled up");
-#endif
-
-        Material whiteShader;
-        Material consoleShader;
     }
 }

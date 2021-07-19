@@ -948,7 +948,7 @@ namespace Droid.Core
         }
 
 #if FRUSTUM_DEBUG
-        static readonly CVar r_showInteractionScissors_0 = new("r_showInteractionScissors", "0", CVAR.RENDERER | CVAR.INTEGER, "", 0, 2, CmdArgsX.ArgCompletion_Integer(0, 2));
+        static readonly CVar r_showInteractionScissors_0 = new("r_showInteractionScissors", "0", CVAR.RENDERER | CVAR.INTEGER, "", 0, 2, CmdArgs.ArgCompletion_Integer(0, 2));
 #endif
         void AddLocalLineToProjectionBoundsSetCull(Vector3 start, Vector3 end, out int startCull, out int endCull, Bounds bounds)
         {
@@ -1090,7 +1090,7 @@ namespace Droid.Core
         }
 
 #if FRUSTUM_DEBUG
-        static readonly CVar r_showInteractionScissors_1 = new("r_showInteractionScissors", "0", CVAR.RENDERER | CVAR.INTEGER, "", 0, 2, CmdArgsX.ArgCompletion_Integer(0, 2));
+        static readonly CVar r_showInteractionScissors_1 = new("r_showInteractionScissors", "0", CVAR.RENDERER | CVAR.INTEGER, "", 0, 2, CmdArgs.ArgCompletion_Integer(0, 2));
 #endif
         void AddLocalLineToProjectionBoundsUseCull(Vector3 start, Vector3 end, int startCull, int endCull, Bounds bounds)
         {

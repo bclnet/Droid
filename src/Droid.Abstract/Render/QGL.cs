@@ -6,6 +6,7 @@ namespace Droid.Render
 {
     public unsafe static class QGL
     {
+        public const uint VBOEmpty = unchecked((uint)-1);
         public static void qglActiveTexture(TextureUnit texture) => glActiveTexture(texture);
         public static void qglAttachShader(uint program, uint shader) => glAttachShader(program, shader);
         public static void qglBindAttribLocation(uint program, uint index, char* name) => glBindAttribLocation(program, index, name);

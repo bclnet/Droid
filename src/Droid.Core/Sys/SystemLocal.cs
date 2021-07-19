@@ -14,7 +14,7 @@ namespace Droid.Sys
             "polish", "korean", "japanese", "chinese", null
         };
 
-        static CVar sys_lang = new("sys_lang", "english", CVAR.SYSTEM | CVAR.ARCHIVE, "", sysLanguageNames, CmdArgsX.ArgCompletion_String(sysLanguageNames));
+        static CVar sys_lang = new("sys_lang", "english", CVAR.SYSTEM | CVAR.ARCHIVE, "", sysLanguageNames, CmdArgs.ArgCompletion_String(sysLanguageNames));
 
         public void DebugPrintf(string fmt, params object[] args)
             => SysW.DebugPrintf(fmt, args);

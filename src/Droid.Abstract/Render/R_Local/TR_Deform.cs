@@ -1,9 +1,12 @@
 using Droid.Core;
+using System.Runtime.CompilerServices;
 using static Droid.Core.Lib;
+using static Droid.G;
+using GlIndex = System.Int32;
 
 namespace Droid.Render
 {
-    partial class TRX
+    unsafe partial class TRX
     {
         // The ambientCache is on the stack, so we don't want to leave a reference to it that would try to be freed later.  Create the ambientCache immediately.
         static void R_FinishDeform(DrawSurf drawSurf, SrfTriangles newTri, DrawVert[] ac)
@@ -21,8 +24,8 @@ namespace Droid.Render
                 newTri.verts = null;
             }
 
-            newTri.ambientCache = vertexCache.AllocFrameTemp(ac, newTri.numVerts * sizeof(DrawVert), false);
-            newTri.indexCache = vertexCache.AllocFrameTemp(newTri.indexes, newTri.numIndexes * sizeof(GlIndex), true);
+            newTri.ambientCache = VertexCacheX.AllocFrameTemp(ac, newTri.numVerts * DrawVert.SizeOf, false);
+            newTri.indexCache = VertexCacheX.AllocFrameTemp(newTri.indexes, newTri.numIndexes * sizeof(GlIndex), true);
 
             drawSurf.geoFrontEnd = newTri;
             drawSurf.ambientCache = newTri.ambientCache;
@@ -36,7 +39,7 @@ namespace Droid.Render
         // Assuming all the triangles for this shader are independant quads, rebuild them as forward facing sprites
         static void R_AutospriteDeform(DrawSurf surf)
         {
-            int i; float radius; DrawVert v;
+            int i; float radius;
             Vector3 mid, delta, left, up;
             SrfTriangles tri, newTri;
 
@@ -60,40 +63,34 @@ namespace Droid.Render
                 leftDir = Vector3.origin - leftDir;
 
             // this srfTriangles_t and all its indexes and caches are in frame memory, and will be automatically disposed of
-            newTri = (SrfTriangles)R_ClearedFrameAlloc(sizeof(SrfTriangles));
+            newTri = R_ClearedFrameAlloc<SrfTriangles>();
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
-            newTri.indexes = (GlIndex)R_FrameAlloc(newTri.numIndexes * sizeof(newTri.indexes[0]));
+            newTri.indexes = R_FrameAllocMany<GlIndex>(newTri.numIndexes);
 
-            DrawVert ac = (DrawVert)_alloca16(newTri.numVerts * sizeof(DrawVert));
-
+            var ac = stackalloc DrawVert[newTri.numVerts];
+            var vt = tri.verts;
             for (i = 0; i < tri.numVerts; i += 4)
             {
                 // find the midpoint
-                v = &tri.verts[i];
+                mid.x = 0.25f * (vt[i + 0].xyz.x + vt[i + 1].xyz.x + vt[i + 2].xyz.x + vt[i + 3].xyz.x);
+                mid.y = 0.25f * (vt[i + 0].xyz.y + vt[i + 1].xyz.y + vt[i + 2].xyz.y + vt[i + 3].xyz.y);
+                mid.z = 0.25f * (vt[i + 0].xyz.z + vt[i + 1].xyz.z + vt[i + 2].xyz.z + vt[i + 3].xyz.z);
 
-                mid[0] = 0.25 * (v.xyz[0] + (v + 1).xyz[0] + (v + 2).xyz[0] + (v + 3).xyz[0]);
-                mid[1] = 0.25 * (v.xyz[1] + (v + 1).xyz[1] + (v + 2).xyz[1] + (v + 3).xyz[1]);
-                mid[2] = 0.25 * (v.xyz[2] + (v + 1).xyz[2] + (v + 2).xyz[2] + (v + 3).xyz[2]);
-
-                delta = v.xyz - mid;
-                radius = delta.Length * 0.707;        // / sqrt(2)
+                delta = vt[i + 0].xyz - mid;
+                radius = delta.Length * 0.707f;        // / sqrt(2)
 
                 left = leftDir * radius;
                 up = upDir * radius;
 
                 ac[i + 0].xyz = mid + left + up;
-                ac[i + 0].st[0] = 0;
-                ac[i + 0].st[1] = 0;
+                ac[i + 0].st.x = 0; ac[i + 0].st.y = 0;
                 ac[i + 1].xyz = mid - left + up;
-                ac[i + 1].st[0] = 1;
-                ac[i + 1].st[1] = 0;
+                ac[i + 1].st.x = 1; ac[i + 1].st.y = 0;
                 ac[i + 2].xyz = mid - left - up;
-                ac[i + 2].st[0] = 1;
-                ac[i + 2].st[1] = 1;
+                ac[i + 2].st.x = 1; ac[i + 2].st.y = 1;
                 ac[i + 3].xyz = mid + left - up;
-                ac[i + 3].st[0] = 0;
-                ac[i + 3].st[1] = 1;
+                ac[i + 3].st.x = 0; ac[i + 3].st.y = 1;
 
                 newTri.indexes[6 * (i >> 2) + 0] = i;
                 newTri.indexes[6 * (i >> 2) + 1] = i + 1;
@@ -111,12 +108,13 @@ namespace Droid.Render
         // Note that a geometric tube with even quite a few sides tube will almost certainly render much faster than this, so this should only be for faked volumetric tubes.
         // Make sure this is used with twosided translucent shaders, because the exact side order may not be correct.
         static (int x, int y)[] edgeVerts = {
-            ( 0, 1),
-            ( 1, 2),
-            ( 2, 0),
-            ( 3, 4),
-            ( 4, 5),
-            ( 5, 3)};
+            (0, 1),
+            (1, 2),
+            (2, 0),
+            (3, 4),
+            (4, 5),
+            (5, 3)
+        };
 
         static void R_TubeDeform(DrawSurf surf)
         {
@@ -135,17 +133,16 @@ namespace Droid.Render
             R_GlobalPointToLocal(surf.space.modelMatrix, tr.viewDef.renderView.vieworg, out var localView);
 
             // this srfTriangles_t and all its indexes and caches are in frame memory, and will be automatically disposed of
-            var newTri = (SrfTriangles)R_ClearedFrameAlloc(sizeof(SrfTriangles));
+            var newTri = R_ClearedFrameAlloc<SrfTriangles>();
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
-            newTri.indexes = (GlIndex)R_FrameAlloc(newTri.numIndexes * sizeof(newTri.indexes[0]));
-            memcpy(newTri.indexes, tri.indexes, newTri.numIndexes * sizeof(newTri.indexes[0]));
+            newTri.indexes = R_FrameAllocMany<GlIndex>(newTri.numIndexes);
+            fixed (void* d = newTri.indexes, s = tri.indexes)
+                Unsafe.CopyBlock(d, s, (uint)(newTri.numIndexes * sizeof(GlIndex)));
 
-            DrawVert ac = (DrawVert)_alloca16(newTri.numVerts * sizeof(DrawVert));
-            memset(ac, 0, sizeof(DrawVert) * newTri.numVerts);
+            var ac = stackalloc DrawVert[newTri.numVerts];
 
-            // this is a lot of work for two triangles...
-            // we could precalculate a lot if it is an issue, but it would mess up the shader abstraction
+            // this is a lot of work for two triangles... we could precalculate a lot if it is an issue, but it would mess up the shader abstraction
             for (i = 0, indexes = 0; i < tri.numVerts; i += 4, indexes += 6)
             {
                 float lengths[2];
@@ -305,12 +302,6 @@ namespace Droid.Render
             return numIndexes;
         }
 
-        /*
-        =====================
-        R_FlareDeform
-
-        =====================
-        */
         /*
         static void R_FlareDeform( drawSurf_t *surf ) {
             const srfTriangles_t *tri;
@@ -478,12 +469,12 @@ namespace Droid.Render
             }
 
             // this srfTriangles_t and all its indexes and caches are in frame memory, and will be automatically disposed of
-            newTri = (SrfTriangles)R_ClearedFrameAlloc(sizeof(SrfTriangles));
+            newTri = R_ClearedFrameAlloc<SrfTriangles>();
             newTri.numVerts = 16;
             newTri.numIndexes = 18 * 3;
-            newTri.indexes = (GlIndex)R_FrameAlloc(newTri.numIndexes * sizeof(newTri.indexes[0]));
+            newTri.indexes = R_FrameAllocMany<GlIndex>(newTri.numIndexes);
 
-            var ac = new DrawVert[newTri.numVerts];
+            var ac = stackalloc DrawVert[newTri.numVerts];
 
             // find the plane
             if (!plane.FromPoints(tri.verts[tri.indexes[0]].xyz, tri.verts[tri.indexes[1]].xyz, tri.verts[tri.indexes[2]].xyz))
@@ -533,7 +524,7 @@ namespace Droid.Render
 
             int i;
             // calculate vector directions
-            for ( i = 0; i < 4; i++)
+            for (i = 0; i < 4; i++)
             {
                 ac[i].xyz = tri.verts[indexes[i]].xyz;
                 ac[i].st.x = ac[i].st.y = 0.5f;
@@ -576,7 +567,7 @@ namespace Droid.Render
             ac[9].st.x = 1f; ac[9].st.y = 0.5f;
 
             ac[10].xyz = tri.verts[indexes[2]].xyz + spread * edgeDir[2][0];
-            ac[10].st.x = 1f;            ac[10].st.y = 0.5f;
+            ac[10].st.x = 1f; ac[10].st.y = 0.5f;
 
             ac[11].xyz = tri.verts[indexes[2]].xyz + spread * edgeDir[2][2];
             ac[11].st.x = 1f; ac[11].st.y = 1f;
@@ -605,7 +596,8 @@ namespace Droid.Render
                 ac[i].st.x = 0f; ac[i].st.y = 0.5f;
             }
 
-            memcpy(newTri.indexes, triIndexes, sizeof(triIndexes));
+            fixed (void* d = newTri.indexes, s = triIndexes)
+                Unsafe.CopyBlock(d, s, sizeof(triIndexes));
 
             R_FinishDeform(surf, newTri, ac);
         }
@@ -618,12 +610,12 @@ namespace Droid.Render
             tri = surf.geoFrontEnd;
 
             // this srfTriangles_t and all its indexes and caches are in frame memory, and will be automatically disposed of
-            newTri = (SrfTriangles)R_ClearedFrameAlloc(sizeof(SrfTriangles));
+            newTri = R_ClearedFrameAlloc<SrfTriangles>();
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
             newTri.indexes = tri.indexes;
 
-            var ac = new DrawVert[newTri.numVerts];
+            var ac = stackalloc DrawVert[newTri.numVerts];
 
             var dist = surf.shaderRegisters[surf.material.GetDeformRegister(0)];
             for (i = 0; i < tri.numVerts; i++)
@@ -635,34 +627,25 @@ namespace Droid.Render
             R_FinishDeform(surf, newTri, ac);
         }
 
-        /*
-        =====================
-        R_MoveDeform
-
-        Moves the surface along the X axis, mostly just for demoing the deforms
-        =====================
-        */
-        static void R_MoveDeform(drawSurf_t* surf)
+        // Moves the surface along the X axis, mostly just for demoing the deforms
+        static void R_MoveDeform(DrawSurf surf)
         {
-            int i;
-            const srfTriangles_t* tri;
-            srfTriangles_t* newTri;
+            int i; SrfTriangles tri, newTri;
 
             tri = surf.geoFrontEnd;
 
-            // this srfTriangles_t and all its indexes and caches are in frame
-            // memory, and will be automatically disposed of
-            newTri = (srfTriangles_t*)R_ClearedFrameAlloc(sizeof( *newTri) );
+            // this SrfTriangles and all its indexes and caches are in frame memory, and will be automatically disposed of
+            newTri = R_ClearedFrameAlloc<SrfTriangles>();
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
             newTri.indexes = tri.indexes;
 
-            idDrawVert* ac = (idDrawVert*)_alloca16(newTri.numVerts * sizeof(idDrawVert));
+            var ac = stackalloc DrawVert[newTri.numVerts];
 
-            float dist = surf.shaderRegisters[surf.material.GetDeformRegister(0)];
+            var dist = surf.shaderRegisters[surf.material.GetDeformRegister(0)];
             for (i = 0; i < tri.numVerts; i++)
             {
-                ac[i] = *(idDrawVert*)&tri.verts[i];
+                ac[i] = tri.verts[i];
                 ac[i].xyz[0] += dist;
             }
 
@@ -671,29 +654,20 @@ namespace Droid.Render
 
         //=====================================================================================
 
-        /*
-        =====================
-        R_TurbulentDeform
-
-        Turbulently deforms the XYZ, S, and T values
-        =====================
-        */
-        static void R_TurbulentDeform(drawSurf_t* surf)
+        // Turbulently deforms the XYZ, S, and T values
+        static void R_TurbulentDeform(DrawSurf surf)
         {
-            int i;
-            const srfTriangles_t* tri;
-            srfTriangles_t* newTri;
+            int i; SrfTriangles tri, newTri;
 
             tri = surf.geoFrontEnd;
 
-            // this srfTriangles_t and all its indexes and caches are in frame
-            // memory, and will be automatically disposed of
-            newTri = (srfTriangles_t*)R_ClearedFrameAlloc(sizeof( *newTri) );
+            // this SrfTriangles and all its indexes and caches are in frame memory, and will be automatically disposed of
+            newTri = R_ClearedFrameAlloc<SrfTriangles>();
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
             newTri.indexes = tri.indexes;
 
-            idDrawVert* ac = (idDrawVert*)_alloca16(newTri.numVerts * sizeof(idDrawVert));
+            var ac = stackalloc DrawVert[newTri.numVerts];
 
             idDeclTable* table = (idDeclTable*)surf.material.GetDeformDecl();
             float range = surf.shaderRegisters[surf.material.GetDeformRegister(0)];

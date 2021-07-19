@@ -1,14 +1,10 @@
+using Droid.Core;
 using System;
 
 namespace Droid.Framework
 {
     partial class ConsoleLocal
     {
-        /*
-        ==================
-        SCR_DrawTextLeftAlign
-        ==================
-        */
         void SCR_DrawTextLeftAlign(ref float y, string text, params string[] args)
         {
             char string[MAX_STRING_CHARS];
@@ -20,11 +16,6 @@ namespace Droid.Framework
             y += SMALLCHAR_HEIGHT + 4;
         }
 
-        /*
-        ==================
-        SCR_DrawTextRightAlign
-        ==================
-        */
         void SCR_DrawTextRightAlign(ref float y, string text, params string[] args)
         {
             char string[MAX_STRING_CHARS];
@@ -36,11 +27,6 @@ namespace Droid.Framework
             y += SMALLCHAR_HEIGHT + 4;
         }
 
-        /*
-        ==================
-        SCR_DrawFPS
-        ==================
-        */
         const int FPS_FRAMES = 5;
         float SCR_DrawFPS(float y)
         {
@@ -81,18 +67,12 @@ namespace Droid.Framework
                 s = va("%ifps", fps);
                 w = strlen(s) * SMALLCHAR_WIDTH;
 
-                renderSystem.DrawSmallStringExt((634 / 2) - w, new_y, s, colorWhite, true,
-                                               localConsole.charSetShader);
+                renderSystem.DrawSmallStringExt((634 / 2) - w, new_y, s, colorWhite, true, localConsole.charSetShader);
             }
 
             return y + BIGCHAR_HEIGHT + 4;
         }
 
-        /*
-        ==================
-        SCR_DrawMemoryUsage
-        ==================
-        */
         float SCR_DrawMemoryUsage(float y)
         {
             memoryStats_t allocs, frees;
@@ -108,11 +88,6 @@ namespace Droid.Framework
             return y;
         }
 
-        /*
-        ==================
-        SCR_DrawAsyncStats
-        ==================
-        */
         float SCR_DrawAsyncStats(float y)
         {
             int i, outgoingRate, incomingRate;
@@ -120,7 +95,6 @@ namespace Droid.Framework
 
             if (idAsyncNetwork::server.IsActive())
             {
-
                 SCR_DrawTextRightAlign(y, "server delay = %d msec", idAsyncNetwork::server.GetDelay());
                 SCR_DrawTextRightAlign(y, "total outgoing rate = %d KB/s", idAsyncNetwork::server.GetOutgoingRate() >> 10);
                 SCR_DrawTextRightAlign(y, "total incoming rate = %d KB/s", idAsyncNetwork::server.GetIncomingRate() >> 10);
@@ -134,46 +108,30 @@ namespace Droid.Framework
                     incomingCompression = idAsyncNetwork::server.GetClientIncomingCompression(i);
 
                     if (outgoingRate != -1 && incomingRate != -1)
-                    {
-                        SCR_DrawTextRightAlign(y, "client %d: out rate = %d B/s (% -2.1f%%), in rate = %d B/s (% -2.1f%%)",
-                                                    i, outgoingRate, outgoingCompression, incomingRate, incomingCompression);
-                    }
+                        SCR_DrawTextRightAlign(y, "client %d: out rate = %d B/s (% -2.1f%%), in rate = %d B/s (% -2.1f%%)", i, outgoingRate, outgoingCompression, incomingRate, incomingCompression);
                 }
 
                 idStr msg;
                 idAsyncNetwork::server.GetAsyncStatsAvgMsg(msg);
                 SCR_DrawTextRightAlign(y, msg.c_str());
-
             }
             else if (idAsyncNetwork::client.IsActive())
             {
-
                 outgoingRate = idAsyncNetwork::client.GetOutgoingRate();
                 incomingRate = idAsyncNetwork::client.GetIncomingRate();
                 outgoingCompression = idAsyncNetwork::client.GetOutgoingCompression();
                 incomingCompression = idAsyncNetwork::client.GetIncomingCompression();
 
                 if (outgoingRate != -1 && incomingRate != -1)
-                {
-                    SCR_DrawTextRightAlign(y, "out rate = %d B/s (% -2.1f%%), in rate = %d B/s (% -2.1f%%)",
-                                                outgoingRate, outgoingCompression, incomingRate, incomingCompression);
-                }
+                    SCR_DrawTextRightAlign(y, "out rate = %d B/s (% -2.1f%%), in rate = %d B/s (% -2.1f%%)", outgoingRate, outgoingCompression, incomingRate, incomingCompression);
 
-                SCR_DrawTextRightAlign(y, "packet loss = %d%%, client prediction = %d",
-                                            (int)idAsyncNetwork::client.GetIncomingPacketLoss(), idAsyncNetwork::client.GetPrediction());
-
+                SCR_DrawTextRightAlign(y, "packet loss = %d%%, client prediction = %d", (int)idAsyncNetwork::client.GetIncomingPacketLoss(), idAsyncNetwork::client.GetPrediction());
                 SCR_DrawTextRightAlign(y, "predicted frames: %d", idAsyncNetwork::client.GetPredictedFrames());
-
             }
 
             return y;
         }
 
-        /*
-        ==================
-        SCR_DrawSoundDecoders
-        ==================
-        */
         float SCR_DrawSoundDecoders(float y)
         {
             int index, numActiveDecoders;
@@ -185,54 +143,32 @@ namespace Droid.Framework
             {
                 int localTime = decoderInfo.current44kHzTime - decoderInfo.start44kHzTime;
                 int sampleTime = decoderInfo.num44kHzSamples / decoderInfo.numChannels;
-                int percent;
-                if (localTime > sampleTime)
-                {
-                    if (decoderInfo.looping)
-                    {
-                        percent = (localTime % sampleTime) * 100 / sampleTime;
-                    }
-                    else
-                    {
-                        percent = 100;
-                    }
-                }
-                else
-                {
-                    percent = localTime * 100 / sampleTime;
-                }
+                int percent = localTime > sampleTime
+                    ? decoderInfo.looping ? (localTime % sampleTime) * 100 / sampleTime : 100
+                    : localTime * 100 / sampleTime;
                 SCR_DrawTextLeftAlign(y, "%3d: %3d%% (%1.2f) %s: %s (%dkB)", numActiveDecoders, percent, decoderInfo.lastVolume, decoderInfo.format.c_str(), decoderInfo.name.c_str(), decoderInfo.numBytes >> 10);
                 numActiveDecoders++;
             }
             return y;
         }
 
-        /*
-        ==============
-        Con_Clear_f
-        ==============
-        */
-        static void Con_Clear_f(CmdArgs args) => G.localConsole.Clear();
+        static void Con_Clear_f(CmdArgs args)
+            => localConsole.Clear();
 
-        /*
-        ==============
-        Con_Dump_f
-        ==============
-        */
         static void Con_Dump_f(CmdArgs args)
         {
             if (args.Count != 2)
             {
-                G.common.Printf("usage: conDump <filename>\n");
+                common.Printf("usage: conDump <filename>\n");
                 return;
             }
 
             var fileName = args[1];
             fileName.DefaultFileExtension(".txt");
 
-            G.common.Printf($"Dumped console text to {fileName}.\n");
+            common.Printf($"Dumped console text to {fileName}.\n");
 
-            G.localConsole.Dump(fileName);
+            localConsole.Dump(fileName);
         }
     }
 }

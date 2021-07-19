@@ -103,8 +103,7 @@ namespace Droid.Core
             {
                 verts[i].xyz *= rotation;
                 verts[i].normal *= rotation;
-                verts[i].tangents[0] *= rotation;
-                verts[i].tangents[1] *= rotation;
+                verts[i].tangents0 *= rotation; verts[i].tangents1 *= rotation;
             }
         }
 

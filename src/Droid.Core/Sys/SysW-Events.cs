@@ -34,7 +34,7 @@ namespace Droid.Sys
             "english", "french", "german", "italian", "spanish", "turkish", "norwegian", "brazilian", null
         };
 
-        static readonly CVar in_kbd = new("in_kbd", "english", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.NOCHEAT, "keyboard layout", kbdNames, CmdArgsX.ArgCompletion_String(kbdNames));
+        static readonly CVar in_kbd = new("in_kbd", "english", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.NOCHEAT, "keyboard layout", kbdNames, CmdArgs.ArgCompletion_String(kbdNames));
 
         static readonly List<KbdPoll> kbd_polls = new();
         static readonly List<MousePoll> mouse_polls = new();

@@ -100,7 +100,7 @@ namespace Droid.Core
             AddCommand("listSoundCmds", SoundList_f, CMD_FL.SYSTEM, "lists sound commands");
             AddCommand("listGameCmds", GameList_f, CMD_FL.SYSTEM, "lists game commands");
             AddCommand("listToolCmds", ToolList_f, CMD_FL.SYSTEM, "lists tool commands");
-            AddCommand("exec", Exec_f, CMD_FL.SYSTEM, "executes a config file", CmdArgsX.ArgCompletion_ConfigName);
+            AddCommand("exec", Exec_f, CMD_FL.SYSTEM, "executes a config file", CmdArgs.ArgCompletion_ConfigName);
             AddCommand("vstr", Vstr_f, CMD_FL.SYSTEM, "inserts the current value of a cvar as command text");
             AddCommand("echo", Echo_f, CMD_FL.SYSTEM, "prints text");
             AddCommand("parse", Parse_f, CMD_FL.SYSTEM, "prints tokenized string");

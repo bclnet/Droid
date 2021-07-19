@@ -54,7 +54,7 @@ namespace Droid.Core
         public CVar(string name, string value, CVAR flags, string description, ArgCompletion valueCompletion = null)
         {
             if (valueCompletion == null && (flags & CVAR.BOOL) != 0)
-                valueCompletion = CmdArgsX.ArgCompletion_Boolean;
+                valueCompletion = CmdArgs.ArgCompletion_Boolean;
             Init(name, value, flags, description, 1, -1, null, valueCompletion);
         }
         public CVar(string name, string value, CVAR flags, string description, float valueMin, float valueMax, ArgCompletion valueCompletion = null)

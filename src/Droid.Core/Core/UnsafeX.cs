@@ -1,14 +1,16 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 
+// https://benbowen.blog/post/fun_with_makeref/
 namespace Droid.Core
 {
     public unsafe delegate T FloatPtr<T>(float* ptr);
     public unsafe delegate void FloatPtr(float* ptr);
 
     [SuppressUnmanagedCodeSecurity]
-    public static class UnsafeX
+    public unsafe static class UnsafeX
     {
         [DllImport("msvcrt.dll", EntryPoint = "memmove", SetLastError = false)] public static unsafe extern void MoveBlock(void* destination, void* source, uint byteCount);
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", SetLastError = false)] public static unsafe extern void CopyBlock(void* destination, void* source, uint byteCount);
@@ -35,6 +37,32 @@ namespace Droid.Core
         public static T[] ReadTArray<T>(byte[] buffer, int offset, int count)
         {
             throw new NotImplementedException();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteGenericToPtr<T>(IntPtr dest, T value, int sizeOfT) where T : struct
+        {
+            var bytePtr = (byte*)dest;
+
+            var valueref = __makeref(value);
+            var valuePtr = (byte*)*((IntPtr*)&valueref);
+            for (var i = 0; i < sizeOfT; ++i)
+                bytePtr[i] = valuePtr[i];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T ReadGenericFromPtr<T>(IntPtr source, int sizeOfT) where T : struct
+        {
+            var bytePtr = (byte*)source;
+
+            T result = default;
+            var resultRef = __makeref(result);
+            var resultPtr = (byte*)*((IntPtr*)&resultRef);
+
+            for (var i = 0; i < sizeOfT; ++i)
+                resultPtr[i] = bytePtr[i];
+
+            return result;
         }
     }
 }

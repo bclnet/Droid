@@ -137,10 +137,7 @@ namespace Droid.Core
             argc = this.argc;
             return argv;
         }
-    }
-
-    public static class CmdArgsX
-    {
+    
         // Default argument completion functions.
         public static void ArgCompletion_Boolean(CmdArgs args, Action<string> callback)
         {

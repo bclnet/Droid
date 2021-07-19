@@ -1,7 +1,10 @@
+using Droid.Sys;
 using System;
-using static Droid.Framework.UB;
+using static Droid.Core.Lib;
+using static Droid.Core.UB;
+using static Droid.K;
 
-namespace Droid.Framework
+namespace Droid.Core
 {
     enum UB
     {
@@ -116,7 +119,7 @@ namespace Droid.Framework
         }
     }
 
-    internal class UsercmdGenLocal : UsercmdGen
+    internal class UsercmdGenLocal : IUsercmdGen
     {
         const int KEY_MOVESPEED = 127;
 
@@ -223,9 +226,10 @@ namespace Droid.Framework
             InitForNewMap();
         }
 
-        public override void Init() => initialized = true;
+        public void Init()
+            => initialized = true;
 
-        public override void InitForNewMap()
+        public void InitForNewMap()
         {
             flags = 0;
             impulse = 0;
@@ -239,60 +243,54 @@ namespace Droid.Framework
             Clear();
         }
 
-        public override void Shutdown() { }
+        public void Shutdown() { }
 
-        public override void Clear()
+        public void Clear()
         {
             // clears all key states
             Array.Clear(buttonState, 0, buttonState.Length);
             Array.Clear(keyState, 0, keyState.Length);
 
-            inhibitCommands = false;
+            inhibitCommands = 0;
 
             mouseDx = mouseDy = 0;
             mouseButton = 0;
             mouseDown = false;
         }
 
-        public override void ClearAngles()
+        public void ClearAngles()
+            => viewangles.Zero();
+
+        public void InhibitUsercmd(INHIBIT subsystem, bool inhibit)
         {
-            viewangles.Zero();
+            if (inhibit) inhibitCommands |= 1 << (int)subsystem;
+            else inhibitCommands &= (int)(0xffffffff ^ (1 << (int)subsystem));
         }
 
-        public override usercmd TicCmd(int ticNumber)
+        public Usercmd TicCmd(int ticNumber)
         {
             // the packetClient code can legally ask for com_ticNumber+1, because it is in the async code and com_ticNumber hasn't been updated yet,
             // but all other code should never ask for anything > com_ticNumber
             if (ticNumber > com_ticNumber + 1)
-                G.common.Error("UsercmdGenLocal::TicCmd ticNumber > com_ticNumber");
+                common.Error("UsercmdGenLocal::TicCmd ticNumber > com_ticNumber");
 
-            if (ticNumber <= com_ticNumber - MAX_BUFFERED_USERCMD)
+            if (ticNumber <= com_ticNumber - IUsercmdGen.MAX_BUFFERED_USERCMD)
             {
                 // this can happen when something in the game code hitches badly, allowing the async code to overflow the buffers
-                //G.common.Printf("warning: idUsercmdGenLocal::TicCmd ticNumber <= com_ticNumber - MAX_BUFFERED_USERCMD\n");
+                //common.Printf("warning: idUsercmdGenLocal::TicCmd ticNumber <= com_ticNumber - MAX_BUFFERED_USERCMD\n");
             }
 
-            return buffered[ticNumber & (MAX_BUFFERED_USERCMD - 1)];
-        }
-
-        public override void InhibitUsercmd(INHIBIT subsystem, bool inhibit)
-        {
-            if (inhibit)
-                inhibitCommands |= 1 << (int)subsystem;
-            else
-                inhibitCommands &= (0xffffffff ^ (1 << (int)subsystem));
+            return buffered[ticNumber & (IUsercmdGen.MAX_BUFFERED_USERCMD - 1)];
         }
 
         /// <summary>
         /// Called asyncronously
         /// </summary>
-        public override void UsercmdInterrupt()
+        public void UsercmdInterrupt()
         {
             // dedicated servers won't create usercmds
             if (!initialized)
-            {
                 return;
-            }
 
             // init the usercmd for com_ticNumber+1
             InitCurrent();
@@ -312,7 +310,7 @@ namespace Droid.Framework
             // save a number for debugging cmdDemos and networking
             cmd.sequence = com_ticNumber + 1;
 
-            buffered[(com_ticNumber + 1) & (MAX_BUFFERED_USERCMD - 1)] = cmd;
+            buffered[(com_ticNumber + 1) & (IUsercmdGen.MAX_BUFFERED_USERCMD - 1)] = cmd;
         }
 
         /// <summary>
@@ -320,19 +318,21 @@ namespace Droid.Framework
         /// </summary>
         /// <param name="cmdString">The command string.</param>
         /// <returns></returns>
-        public override int CommandStringUsercmdData(string cmdString)
+        public int CommandStringUsercmdData(string cmdString)
         {
-            for (userCmdString_t* ucs = userCmdStrings; ucs->string ; ucs++ ) {
-                if (idStr::Icmp(cmdString, ucs->string) == 0)
-                    return ucs->button;
-                return UB_NONE;
-            }
+            foreach (var (s, ub) in userCmdStrings)
+                if (string.Equals(cmdString, s, StringComparison.OrdinalIgnoreCase))
+                    return (int)ub;
+            return (int)UB_NONE;
+        }
 
-        public override int GetNumUserCommands() => NUM_USER_COMMANDS;
+        public int GetNumUserCommands()
+            => userCmdStrings.Length;
 
-        public override string GetUserCommandName(int index) => index >= 0 && index < NUM_USER_COMMANDS ? userCmdStrings[index].string : string.Empty;
+        public string GetUserCommandName(int index)
+            => index >= 0 && index < userCmdStrings.Length ? userCmdStrings[index].s : string.Empty;
 
-        public override void MouseState(out int x, out int y, out int button, out bool down)
+        public void MouseState(out int x, out int y, out int button, out bool down)
         {
             x = continuousMouseX;
             y = continuousMouseY;
@@ -345,16 +345,18 @@ namespace Droid.Framework
         /// </summary>
         /// <param name="key">The key.</param>
         /// <returns></returns>
-        public override int ButtonState(int key) => key < 0 || key >= UB_MAX_BUTTONS ? -1 : buttonState[key] > 0 || Android_GetButton(key) ? 1 : 0;
+        public int ButtonState(int key)
+            => key < 0 || key >= (int)UB_MAX_BUTTONS ? -1 : buttonState[key] > 0 || Android_GetButton(key) ? 1 : 0;
 
         /// <summary>
         /// Returns (the fraction of the frame) that the key was down bk20060111
         /// </summary>
         /// <param name="key">The key.</param>
         /// <returns></returns>
-        public override int KeyState(int key) => key < 0 || key >= K_LAST_KEY ? -1 : keyState[key] ? 1 : 0;
+        public int KeyState(int key)
+            => key < 0 || key >= (int)K_LAST_KEY ? -1 : keyState[key] ? 1 : 0;
 
-        public override (string s, UB ub) GetDirectUsercmd()
+        public (string s, UB ub) GetDirectUsercmd()
         {
             // initialize current usercmd
             InitCurrent();
@@ -371,9 +373,9 @@ namespace Droid.Framework
             int imp = Android_GetNextImpulse();
             if (imp)
             {
-                if (!Inhibited())
+                if (!Inhibited)
                 {
-                    if (imp >= UB_IMPULSE0 && imp <= UB_IMPULSE61)
+                    if (imp >= (int)UB_IMPULSE0 && imp <= UB_IMPULSE61)
                     {
                         cmd.impulse = imp - UB_IMPULSE0;
                         cmd.flags ^= UCF_IMPULSE_SEQUENCE;
@@ -392,21 +394,23 @@ namespace Droid.Framework
         /// <summary>
         /// creates the current command for this frame
         /// </summary>
+        static uint MakeCurrent_thirdPersonTime;
+        static float MakeCurrent_prevYaw;
         void MakeCurrent()
         {
-            idVec3 oldAngles = viewangles;
-            static int thirdPersonTime = Sys_Milliseconds();
+            var oldAngles = viewangles;
+            MakeCurrent_thirdPersonTime = SysW.Milliseconds;
             int i;
-            static float prevYaw = 0;
+            MakeCurrent_prevYaw = 0f;
 
             oldAngles = viewangles;
 
             if (!Inhibited)
             {
                 // update toggled key states
-                toggled_crouch.SetKeyState(ButtonState(UB_DOWN), in_toggleCrouch.GetBool());
-                toggled_run.SetKeyState(ButtonState(UB_SPEED), in_toggleRun.GetBool() && idAsyncNetwork::IsActive());
-                toggled_zoom.SetKeyState(ButtonState(UB_ZOOM), in_toggleZoom.GetBool());
+                toggled_crouch.SetKeyState(ButtonState((int)UB_DOWN), in_toggleCrouch.Bool);
+                toggled_run.SetKeyState(ButtonState((int)UB_SPEED), in_toggleRun.Bool && AsyncNetwork.IsActive);
+                toggled_zoom.SetKeyState(ButtonState((int)UB_ZOOM), in_toggleZoom.Bool);
 
                 // keyboard angle adjustment
                 AdjustAngles();
@@ -418,68 +422,30 @@ namespace Droid.Framework
                 KeyMove();
 
                 //Call game specific VR stuff and gubbins
-                int buttonCurrentlyClicked = ButtonState(UB_IMPULSE41);
+                int buttonCurrentlyClicked = ButtonState((int)UB_IMPULSE41);
 
-                //Dr Beefs Code
-                float forward, strafe;
-                float hmd_forward, hmd_strafe;
-                float up = 0;
-                float yaw = 0;
-                float pitch = 0;
-                float roll = 0;
+                // Dr Beefs Code
                 VR_GetMove(out var forward, out var strafe, out var hmd_forward, out var hmd_strafe, out var up, out var yaw, out var pitch, out var roll);
 
-                //Maybe this is right as long as I don't include HMD
-                cmd.rightmove = idMath::ClampChar(cmd.rightmove + strafe);
-                cmd.forwardmove = idMath::ClampChar(cmd.forwardmove + forward);
+                // Maybe this is right as long as I don't include HMD
+                cmd.rightmove = MathX.ClampChar(cmd.rightmove + strafe);
+                cmd.forwardmove = MathX.ClampChar(cmd.forwardmove + forward);
 
-                game->EvaluateVRMoveMode(viewangles, cmd, buttonCurrentlyClicked, yaw);
+                game.EvaluateVRMoveMode(viewangles, cmd, buttonCurrentlyClicked, yaw);
 
                 // check to make sure the angles haven't wrapped
-                if (viewangles[PITCH] - oldAngles[PITCH] > 90)
-                    viewangles[PITCH] = oldAngles[PITCH] + 90;
-                else if (oldAngles[PITCH] - viewangles[PITCH] > 90)
-                    viewangles[PITCH] = oldAngles[PITCH] - 90;
-
+                if (viewangles[Angles.PITCH] - oldAngles[Angles.PITCH] > 90)
+                    viewangles[Angles.PITCH] = oldAngles[Angles.PITCH] + 90;
+                else if (oldAngles[Angles.PITCH] - viewangles[Angles.PITCH] > 90)
+                    viewangles[Angles.PITCH] = oldAngles[Angles.PITCH] - 90;
 
 #if false
-		// get basic movement from mouse
-		MouseMove();
+                // get basic movement from mouse
+                MouseMove();
 
-		// get basic movement from joystick
-		JoystickMove();
+                // get basic movement from joystick
+                JoystickMove();
 #endif
-
-                /*float forward,strafe;
-                float hmd_forward,hmd_strafe;
-                float up = 0;
-                float yaw = 0;
-                float pitch = 0;
-                float roll = 0;
-
-                static int previous = 0;
-                int t = Sys_Milliseconds();
-                int frameTime = t - previous;
-                previous = t;
-                if(frameTime > 100)
-                    frameTime = 100;
-
-                VR_GetMove(&forward, &strafe, &hmd_forward, &hmd_strafe, &up, &yaw, &pitch, &roll);
-
-                cmd.rightmove = idMath::ClampChar( cmd.rightmove + strafe + hmd_strafe );
-                cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + forward + hmd_forward);
-                viewangles[YAW] -= prevYaw;
-                viewangles[YAW] += yaw;
-                viewangles[PITCH] = pitch;
-                viewangles[ROLL] = roll;
-                prevYaw = yaw;
-
-                // check to make sure the angles haven't wrapped
-                if ( viewangles[PITCH] - oldAngles[PITCH] > 90 ) {
-                    viewangles[PITCH] = oldAngles[PITCH] + 90;
-                } else if ( oldAngles[PITCH] - viewangles[PITCH] > 90 ) {
-                    viewangles[PITCH] = oldAngles[PITCH] - 90;
-                }*/
             }
             else
             {
@@ -488,7 +454,7 @@ namespace Droid.Framework
             }
 
             for (i = 0; i < 3; i++)
-                cmd.angles[i] = ANGLE2SHORT(viewangles[i]);  // Koz this sets player body
+                cmd.angles[i] = MathX.ANGLE2SHORT(viewangles[i]);  // Koz this sets player body
 
             cmd.mx = continuousMouseX;
             cmd.my = continuousMouseY;
@@ -505,8 +471,8 @@ namespace Droid.Framework
             memset(&cmd, 0, sizeof(cmd));
             cmd.flags = flags;
             cmd.impulse = impulse;
-            cmd.buttons |= (in_alwaysRun.GetBool() && idAsyncNetwork::IsActive()) ? BUTTON_RUN : 0;
-            cmd.buttons |= in_freeLook.GetBool() ? BUTTON_MLOOK : 0;
+            cmd.buttons |= (in_alwaysRun.Bool && AsyncNetwork.IsActive) ? BUTTON_RUN : 0;
+            cmd.buttons |= in_freeLook.Bool ? BUTTON_MLOOK : 0;
         }
 
         /// <summary>
@@ -521,31 +487,27 @@ namespace Droid.Framework
         /// </summary>
         void AdjustAngles()
         {
-            float speed;
-
             var speed = toggled_run.on ^ (in_alwaysRun.Bool && AsyncNetwork.IsActive)
-                ? Math.M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.Float
-                : Math.M_MS2SEC * USERCMD_MSEC;
+                ? MathX.M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.Float
+                : MathX.M_MS2SEC * USERCMD_MSEC;
 
-            if (!ButtonState(UB_STRAFE))
+            if (ButtonState((int)UB_STRAFE) == 0)
             {
-                viewangles[YAW] -= speed * in_yawSpeed.Float * ButtonState(UB_RIGHT);
-                viewangles[YAW] += speed * in_yawSpeed.Float * ButtonState(UB_LEFT);
+                viewangles[Angles.YAW] -= speed * in_yawSpeed.Float * ButtonState((int)UB_RIGHT);
+                viewangles[Angles.YAW] += speed * in_yawSpeed.Float * ButtonState((int)UB_LEFT);
             }
 
-            viewangles[PITCH] -= speed * in_pitchSpeed.Float * ButtonState(UB_LOOKUP);
-            viewangles[PITCH] += speed * in_pitchSpeed.Float * ButtonState(UB_LOOKDOWN);
+            viewangles[Angles.PITCH] -= speed * in_pitchSpeed.Float * ButtonState((int)UB_LOOKUP);
+            viewangles[Angles.PITCH] += speed * in_pitchSpeed.Float * ButtonState((int)UB_LOOKDOWN);
         }
+
         /// <summary>
         /// Sets the usercmd_t based on key states
         /// </summary>
         void KeyMove()
         {
-            int forward, side, up;
-
-            forward = 0;
-            side = 0;
-            up = 0;
+            //int forward = 0, side = 0, up = 0;
+            int up = 0;
             /*	if ( ButtonState( UB_STRAFE ) ) {
                     side += KEY_MOVESPEED * ButtonState( UB_RIGHT );
                     side -= KEY_MOVESPEED * ButtonState( UB_LEFT );
@@ -555,7 +517,7 @@ namespace Droid.Framework
                 side -= KEY_MOVESPEED * ButtonState( UB_MOVELEFT );
             */
             up -= KEY_MOVESPEED * toggled_crouch.on;
-            up += KEY_MOVESPEED * ButtonState(UB_UP);
+            up += KEY_MOVESPEED * ButtonState((int)UB_UP);
 
             /*	forward += KEY_MOVESPEED * ButtonState( UB_FORWARD );
                 forward -= KEY_MOVESPEED * ButtonState( UB_BACK );
@@ -563,8 +525,9 @@ namespace Droid.Framework
                 cmd.forwardmove = idMath::ClampChar( forward );
                 cmd.rightmove = idMath::ClampChar( side );
              */
-            cmd.upmove = Math.ClampChar(up);
+            cmd.upmove = MathX.ClampChar(up);
         }
+
         void JoystickMove()
         {
             float anglespeed;
@@ -587,6 +550,7 @@ namespace Droid.Framework
 
             cmd.upmove = Math.ClampChar(cmd.upmove + joystickAxis[AXIS_UP]);
         }
+
         void MouseMove()
         {
             float mx, my, strafeMx, strafeMy;
@@ -664,7 +628,7 @@ namespace Droid.Framework
             }
 
             if (!ButtonState(UB_STRAFE))
-                viewangles[YAW] -= m_yaw.Float * mx;
+                viewangles[Angles.YAW] -= m_yaw.Float * mx;
             else
                 cmd.rightmove = Math.ClampChar((int)(cmd.rightmove + strafeMx));
 
@@ -673,6 +637,7 @@ namespace Droid.Framework
             else
                 cmd.forwardmove = Math.ClampChar((int)(cmd.forwardmove - strafeMy));
         }
+
         void CmdButtons()
         {
             cmd.buttons = 0;
@@ -773,7 +738,8 @@ namespace Droid.Framework
             Sys_EndKeyboardInputEvents();
         }
 
-        void Joystick() => Array.Clear(joystickAxis, 0, joystickAxis.Length);
+        void Joystick()
+            => Array.Clear(joystickAxis, 0, joystickAxis.Length);
 
         /// <summary>
         /// Handles async mouse/keyboard button actions
@@ -808,7 +774,7 @@ namespace Droid.Framework
             }
         }
 
-        Vec3 viewangles;
+        Vector3 viewangles;
         int flags;
         int impulse;
 

@@ -1,15 +1,21 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Droid.Core
 {
     public class DrawVert
     {
+        public static readonly int SizeOf = Marshal.SizeOf<DrawVert>();
         public Vector3 xyz;
         public Vector2 st;
         public Vector3 normal;
-        public Vector3[] tangents = new Vector3[2];
+        public Vector3 tangents0;
+        public Vector3 tangents1;
         public uint color;
+
+        public DrawVert Clone()
+            => (DrawVert)MemberwiseClone();
 
         public unsafe float this[int index]
         {
@@ -26,8 +32,8 @@ namespace Droid.Core
             xyz.Zero();
             st.Zero();
             normal.Zero();
-            tangents[0].Zero();
-            tangents[1].Zero();
+            tangents0.Zero();
+            tangents1.Zero();
             color = 0;
         }
 
@@ -42,8 +48,8 @@ namespace Droid.Core
             xyz = a.xyz + f * (b.xyz - a.xyz);
             st = a.st + f * (b.st - a.st);
             normal = a.normal + f * (b.normal - a.normal);
-            tangents[0] = a.tangents[0] + f * (b.tangents[0] - a.tangents[0]);
-            tangents[1] = a.tangents[1] + f * (b.tangents[1] - a.tangents[1]);
+            tangents0 = a.tangents0 + f * (b.tangents0 - a.tangents0);
+            tangents1 = a.tangents1 + f * (b.tangents1 - a.tangents1);
             byte* color = (byte*)this.color, a_color = (byte*)a.color, b_color = (byte*)b.color;
             color[0] = (byte)(a_color[0] + f * (b_color[0] - a_color[0]));
             color[1] = (byte)(a_color[1] + f * (b_color[1] - a_color[1]));
@@ -54,10 +60,10 @@ namespace Droid.Core
         public void Normalize()
         {
             normal.Normalize();
-            tangents[1].Cross(normal, tangents[0]);
-            tangents[1].Normalize();
-            tangents[0].Cross(tangents[1], normal);
-            tangents[0].Normalize();
+            tangents1.Cross(normal, tangents0);
+            tangents1.Normalize();
+            tangents0.Cross(tangents1, normal);
+            tangents0.Normalize();
         }
 
         public uint Color
