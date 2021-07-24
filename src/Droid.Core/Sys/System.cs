@@ -83,22 +83,30 @@ namespace Droid.Sys
         public NA type;
         public byte[] ip = new byte[4];
         public ushort port;
+        public void memset()
+        {
+            type = 0;
+            Array.Clear(ip, 0, 4);
+            port = 0;
+        }
+        public override string ToString()
+            => SysW.NetAdrToString(this);
     }
 
-    public class Port
+    public class NetPort
     {
-        const short PORT_ANY = -1;
+        public const short PORT_ANY = -1;
 
-        //public SysPort();               // this just zeros netSocket and port
+        //public NetPort();               // this just zeros netSocket and port
 
         // if the InitForPort fails, the idPort.port field will remain 0
         public bool InitForPort(int portNumber) => throw new NotImplementedException();
-        public int GetPort() => bound_to.port;
-        public Netadr GetAdr() => bound_to;
+        public int Port => bound_to.port;
+        public Netadr Adr => bound_to;
         public void Close() => throw new NotImplementedException();
 
-        public bool GetPacket(Netadr from, byte[] data, int size, int maxSize) => throw new NotImplementedException();
-        public bool GetPacketBlocking(Netadr from, byte[] data, int size, int maxSize, int timeout) => throw new NotImplementedException();
+        public bool GetPacket(out Netadr from, byte[] data, out int size, int maxSize) => throw new NotImplementedException();
+        public bool GetPacketBlocking(out Netadr from, byte[] data, out int size, int maxSize, int timeout) => throw new NotImplementedException();
         public void SendPacket(Netadr to, byte[] data, int size) => throw new NotImplementedException();
 
         public int packetsRead;
@@ -134,7 +142,7 @@ namespace Droid.Sys
     {
         // parses the port number, can also do DNS resolve if you ask for it.
         // NOTE: DNS resolve is a slow/blocking call, think before you use (could be exploited for server DoS)
-        public static bool StringToNetAdr(string s, Netadr a, bool doDNSResolve) => throw new NotImplementedException();
+        public static bool StringToNetAdr(string s, out Netadr a, bool doDNSResolve) => throw new NotImplementedException();
         public static string NetAdrToString(Netadr a) => throw new NotImplementedException();
         public static bool IsLANAddress(Netadr a) => throw new NotImplementedException();
         public static bool CompareNetAdrBase(Netadr a, Netadr b) => throw new NotImplementedException();

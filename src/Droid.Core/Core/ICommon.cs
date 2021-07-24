@@ -205,7 +205,9 @@ namespace Droid.Core
         /// Returns a pointer to the dictionary with language specific strings.
         /// </summary>
         /// <returns></returns>
-        Dictionary<string, string> LanguageDict { get; }
+        //Dictionary<string, string> LanguageDict { get; }
+        string LanguageDictGetString(string key);
+
 
         /// <summary>
         /// Returns key bound to the command

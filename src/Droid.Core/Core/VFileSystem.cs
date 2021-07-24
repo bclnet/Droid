@@ -1,15 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Droid.Core
 {
-    // FIXME: DG: this assumes 32bit time_t, but it's 64bit now, at least on some platforms incl. Win32 in modern VS
-    //            => change it (to -1?) or does that break anything?
-    //public static const ID_TIME_T FILE_NOT_FOUND_TIMESTAMP = 0xFFFFFFFF;
-    //public static const int MAX_PURE_PAKS = 128;
-    //public static const int MAX_OSPATH = FILENAME_MAX;
-
     // modes for OpenFileByMode. used as bit mask internally
     public enum FS
     {
@@ -40,7 +33,7 @@ namespace Droid.Core
         FAILED
     }
 
-    public enum DL_FILE
+    public enum DL_FILE : byte
     {
         EXEC,
         OPEN
@@ -48,8 +41,8 @@ namespace Droid.Core
 
     public enum FIND
     {
-        FINDNO,
-        FINDYES,
+        NO,
+        YES,
         ADDON
     }
 
@@ -89,7 +82,7 @@ namespace Droid.Core
         public List<string> List => list;
 
         string basePath;
-        List<string> list = new List<string>();
+        readonly List<string> list = new();
     }
 
     // mod list
@@ -99,12 +92,18 @@ namespace Droid.Core
         public string GetMod(int index) => mods[index];
         public string GetDescription(int index) => descriptions[index];
 
-        List<string> mods = new List<string>();
-        List<string> descriptions = new List<string>();
+        readonly List<string> mods = new();
+        readonly List<string> descriptions = new();
     }
 
     public interface IVFileSystem
     {
+        // FIXME: DG: this assumes 32bit time_t, but it's 64bit now, at least on some platforms incl. Win32 in modern VS
+        //            => change it (to -1?) or does that break anything?
+        //public static const ID_TIME_T FILE_NOT_FOUND_TIMESTAMP = 0xFFFFFFFF;
+        public const int MAX_PURE_PAKS = 128;
+        //public const int MAX_OSPATH = FILENAME_MAX;
+
         // Initializes the file system.
         void Init();
         // Restarts the file system.
@@ -232,7 +231,8 @@ namespace Droid.Core
         // the decl 'name' is in the "path" entry of the dict
         int GetNumMaps();
         Dictionary<string, object> GetMapDecl(int i);
-        void FindMapScreenshot(string path, byte[] buf, int len);
+        void FindMapScreenshot(string path, out string s);
+        //void FindMapScreenshot(string path, byte[] buf, int len);
 
         // ignore case and seperator char distinctions
         bool FilenameCompare(string s1, string s2);

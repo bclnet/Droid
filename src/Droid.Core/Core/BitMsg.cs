@@ -10,10 +10,10 @@ namespace Droid.Core
 {
     public class BitMsg
     {
-        static readonly byte[] EmptyByte = new byte[0];
+        static readonly byte[] EmptyByte = Array.Empty<byte>();
 
-        byte[] writeData;            // pointer to data for writing
-        byte[] readData;           // pointer to data for reading
+        byte[] writeData;       // pointer to data for writing
+        byte[] readData;        // pointer to data for reading
         int maxSize;            // maximum size of message in bytes
         int curSize;            // current size of message in bytes
         int writeBit;           // number of bits written to the last written byte
@@ -35,18 +35,30 @@ namespace Droid.Core
             overflowed = false;
         }
 
-        public void InitW(byte[] data, int length)
+        public void InitW(byte[] data)
         {
             writeData = data;
             readData = data;
-            maxSize = length;
+            maxSize = data.Length;
+        }
+        public void InitW(byte[] data, int dataLength)
+        {
+            writeData = data;
+            readData = data;
+            maxSize = dataLength;
         }
 
-        public void InitR(byte[] data, int length)
+        public void InitR(byte[] data)
         {
             writeData = null;
             readData = data;
-            maxSize = length;
+            maxSize = data.Length;
+        }
+        public void InitR(byte[] data, int dataLength)
+        {
+            writeData = null;
+            readData = data;
+            maxSize = dataLength;
         }
 
         public byte[] DataW => writeData;                   // get data for writing
@@ -207,7 +219,7 @@ namespace Droid.Core
         public void WriteString(string s, int maxLength = -1, bool make7Bit = true)
         {
             if (s == null)
-                WriteData(EmptyByte, 1);
+                WriteData(EmptyByte, 0, 1);
             else
             {
                 var l = s.Length;
@@ -227,8 +239,8 @@ namespace Droid.Core
                 dataPtr[i] = 0;
             }
         }
-        public void WriteData(byte[] data, int length)
-            => Unsafe.CopyBlock(ref GetByteSpace(length)[0], ref data[0], (uint)length);
+        public void WriteData(byte[] data, int offset, int length)
+            => Unsafe.CopyBlock(ref GetByteSpace(length)[0], ref data[offset], (uint)length);
         public void WriteNetadr(Netadr adr)
         {
             Unsafe.CopyBlock(ref GetByteSpace(4)[0], ref adr.ip[0], 4U);
@@ -378,10 +390,10 @@ namespace Droid.Core
 
             return value;
         }
-        public int ReadChar() => (char)ReadBits(-8);
-        public int ReadByte() => (byte)ReadBits(8);
-        public int ReadShort() => (short)ReadBits(-16);
-        public int ReadUShort() => (ushort)ReadBits(16);
+        public char ReadChar() => (char)ReadBits(-8);
+        public byte ReadByte() => (byte)ReadBits(8);
+        public short ReadShort() => (short)ReadBits(-16);
+        public ushort ReadUShort() => (ushort)ReadBits(16);
         public int ReadInt() => ReadBits(32);
         public float ReadFloat() => reinterpret.cast_int(ReadBits(32));
         public float ReadFloat(int exponentBits, int mantissaBits)
@@ -392,8 +404,9 @@ namespace Droid.Core
         public float ReadAngle8() => MathX.BYTE2ANGLE(ReadByte());
         public float ReadAngle16() => MathX.SHORT2ANGLE(ReadShort());
         public Vector3 ReadDir(int numBits) => BitsToDir(ReadBits(numBits), numBits);
-        public int ReadString(byte[] buffer, int bufferSize, out string s)
+        public unsafe int ReadString(out string s, int bufferSize = Platform.MAX_STRING_CHARS)
         {
+            var buffer = stackalloc byte[bufferSize];
             int l; byte c;
             ReadByteAlign();
             l = 0;
@@ -405,12 +418,30 @@ namespace Droid.Core
                 // translate all fmt spec to avoid crash bugs in string routines
                 if (c == '%') c = (byte)'.';
                 // we will read past any excessively long string, so the following data can be read, but the string will be truncated
-                if (l < bufferSize - 1) { buffer[l] = c; l++; }
+                if (l < bufferSize) { buffer[l] = c; l++; }
             }
-            buffer[l] = 0;
-            s = Encoding.ASCII.GetString(buffer);
+            s = Encoding.ASCII.GetString(buffer, l);
             return l;
         }
+        //public int ReadString(byte[] buffer, int bufferSize, out string s)
+        //{
+        //    int l; byte c;
+        //    ReadByteAlign();
+        //    l = 0;
+        //    while (true)
+        //    {
+        //        c = (byte)ReadByte();
+        //        if (c <= 0 || c >= 255)
+        //            break;
+        //        // translate all fmt spec to avoid crash bugs in string routines
+        //        if (c == '%') c = (byte)'.';
+        //        // we will read past any excessively long string, so the following data can be read, but the string will be truncated
+        //        if (l < bufferSize - 1) { buffer[l] = c; l++; }
+        //    }
+        //    buffer[l] = 0;
+        //    s = Encoding.ASCII.GetString(buffer);
+        //    return l;
+        //}
         public int ReadData(byte[] data, int length)
         {
             ReadByteAlign();
@@ -429,17 +460,18 @@ namespace Droid.Core
             }
             return readCount - cnt;
         }
-        public void ReadNetadr(Netadr adr)
+        public void ReadNetadr(out Netadr adr)
         {
+            adr = new Netadr();
             adr.type = NA.IP;
             for (var i = 0; i < 4; i++)
                 adr.ip[i] = (byte)ReadByte();
             adr.port = (ushort)ReadUShort();
         }
 
-        public int ReadDeltaChar(int oldValue) => (char)ReadDelta(oldValue, -8);
-        public int ReadDeltaByte(int oldValue) => (byte)ReadDelta(oldValue, 8);
-        public int ReadDeltaShort(int oldValue) => (short)ReadDelta(oldValue, -16);
+        public char ReadDeltaChar(int oldValue) => (char)ReadDelta(oldValue, -8);
+        public byte ReadDeltaByte(int oldValue) => (byte)ReadDelta(oldValue, 8);
+        public short ReadDeltaShort(int oldValue) => (short)ReadDelta(oldValue, -16);
         public int ReadDeltaInt(int oldValue) => ReadDelta(oldValue, 32);
         public float ReadDeltaFloat(float oldValue) => reinterpret.cast_int(ReadDelta(reinterpret.cast_int(oldValue), 32));
         public float ReadDeltaFloat(float oldValue, int exponentBits, int mantissaBits)

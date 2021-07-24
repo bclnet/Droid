@@ -77,8 +77,8 @@ namespace Droid.Core
         public int gameTime;                        // game time
         public int duplicateCount;                  // duplication count for networking
         public byte buttons;                        // buttons
-        public sbyte forwardmove;                   // forward/backward movement
-        public sbyte rightmove;                     // left/right movement
+        public char forwardmove;                   // forward/backward movement
+        public char rightmove;                     // left/right movement
         public char upmove;                         // up/down movement
         public short[] angles = new short[3];       // view angles
         public short mx;                            // mouse delta x
@@ -86,6 +86,9 @@ namespace Droid.Core
         public sbyte impulse;                       // impulse command
         public byte flags;                          // additional flags
         public int sequence;                        // just for debugging
+        public void memset()
+        {
+        }
 
         /// <summary>
         /// on big endian systems, byte swap the shorts and ints

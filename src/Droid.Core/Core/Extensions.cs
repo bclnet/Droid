@@ -14,6 +14,9 @@ namespace Droid.Core
         public static int MulDiv(int number, int numerator, int denominator)
             => (int)(((long)number * numerator + (denominator >> 1)) / denominator);
 
+        public static TValue Get<TKey, TValue>(this Dictionary<TKey, TValue> source, TKey key, TValue defaultValue = default)
+            => source.TryGetValue(key, out var z) ? z : defaultValue;
+
         public static int Add_<T>(this List<T> source, T item)
         {
             source.Add(item);
