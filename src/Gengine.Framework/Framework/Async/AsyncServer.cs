@@ -137,8 +137,8 @@ namespace Gengine.Framework.Async
         int localClientNum;             // local client on listen server
 
         Challenge[] challenges = new Challenge[MAX_CHALLENGES]; // to prevent invalid IPs from connecting
-        ServerClient[] clients = new ServerClient[MAX_ASYNC_CLIENTS];   // clients
-        Usercmd[][] userCmds = new Usercmd[MAX_USERCMD_BACKUP][MAX_ASYNC_CLIENTS];
+        ServerClient[] clients = new ServerClient[Config.MAX_ASYNC_CLIENTS];   // clients
+        Usercmd[,] userCmds = new Usercmd[Config.MAX_USERCMD_BACKUP, Config.MAX_ASYNC_CLIENTS];
 
         int gameInitId;                 // game initialization identification
         int gameFrame;                  // local game frame
@@ -287,7 +287,7 @@ namespace Gengine.Framework.Async
             {
                 for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
                     if (clients[i].clientState == ServerClientState.SCS_ZOMBIE)
-                        if (clients[i].channel.UnsentFragmentsLeft()) clients[i].channel.SendNextFragment(serverPort, serverTime);
+                        if (clients[i].channel.UnsentFragmentsLeft) clients[i].channel.SendNextFragment(serverPort, serverTime);
                         else SendEmptyToClient(i, true);
                 SysW.Sleep(10);
             }
@@ -2057,7 +2057,7 @@ namespace Gengine.Framework.Async
                 do
                 {
                     // blocking read with game time residual timeout
-                    newPacket = serverPort.GetPacketBlocking(out var from, msgBuf, out var size, msgBuf.Length, USERCMD_MSEC - gameTimeResidual - 1);
+                    newPacket = serverPort.GetPacketBlocking(out var from, msgBuf, out var size, msgBuf.Length, Usercmd.USERCMD_MSEC - gameTimeResidual - 1);
                     if (newPacket)
                     {
                         msg.InitW(msgBuf);
@@ -2070,7 +2070,7 @@ namespace Gengine.Framework.Async
                     msec = UpdateTime(100);
                     gameTimeResidual += msec;
                 } while (newPacket);
-            } while (gameTimeResidual < USERCMD_MSEC);
+            } while (gameTimeResidual < Usercmd.USERCMD_MSEC);
 
             // send heart beat to master servers
             MasterHeartbeat();
@@ -2114,7 +2114,7 @@ namespace Gengine.Framework.Async
             }
 
             // advance the server game
-            while (gameTimeResidual >= USERCMD_MSEC)
+            while (gameTimeResidual >= Usercmd.USERCMD_MSEC)
             {
                 // sample input for the local client
                 LocalClientInput();
@@ -2129,8 +2129,8 @@ namespace Gengine.Framework.Async
 
                 // update time
                 gameFrame++;
-                gameTime += USERCMD_MSEC;
-                gameTimeResidual -= USERCMD_MSEC;
+                gameTime += Usercmd.USERCMD_MSEC;
+                gameTimeResidual -= Usercmd.USERCMD_MSEC;
             }
 
             // duplicate usercmds so there is always at least one available to send with snapshots
@@ -2152,7 +2152,7 @@ namespace Gengine.Framework.Async
                     continue;
 
                 // send additional message fragments if the last message was too large to send at once
-                if (client.channel.UnsentFragmentsLeft())
+                if (client.channel.UnsentFragmentsLeft)
                 {
                     client.channel.SendNextFragment(serverPort, serverTime);
                     continue;
@@ -2206,7 +2206,7 @@ namespace Gengine.Framework.Async
             for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
                 if (clients[i].clientState >= ServerClientState.SCS_PUREWAIT)
                 {
-                    if (clients[i].channel.UnsentFragmentsLeft()) clients[i].channel.SendNextFragment(serverPort, serverTime);
+                    if (clients[i].channel.UnsentFragmentsLeft) clients[i].channel.SendNextFragment(serverPort, serverTime);
                     else SendEmptyToClient(i);
                 }
         }

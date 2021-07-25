@@ -1,3 +1,5 @@
+using static System.NumericsX.Lib;
+
 namespace Gengine.Framework
 {
     partial class SessionLocal
@@ -16,20 +18,18 @@ namespace Gengine.Framework
 
             var fill = rand() & 255;
             for (var i = 0; i < bytes; i++)
-            {
                 buf[i] = fill;
-            }
         }
 
         void Doom3Quest_setUseScreenLayer(int use);
 
         void setupScreenLayer()
         {
-            int inMenu = (((idSessionLocal*)session)->guiActive != 0);
-            int inGameGui = (game && game->InGameGuiActive());
-            int objectiveActive = (game && game->ObjectiveSystemActive());
-            int cinematic = (game && game->InCinematic());
-            bool loading = (((idSessionLocal*)session)->insideExecuteMapChange);
+            var inMenu = ((SessionLocal)session).guiActive != null;
+            int inGameGui = (game && game.InGameGuiActive());
+            int objectiveActive = (game && game.ObjectiveSystemActive());
+            int cinematic = (game && game.InCinematic());
+            bool loading = (((idSessionLocal*)session).insideExecuteMapChange);
 
             Doom3Quest_setUseScreenLayer(inMenu ? 1 : 0 + inGameGui ? 2 : 0 + objectiveActive ? 4 : 0 + cinematic ? 8 : 0 + loading ? 16 : 0);
         }
@@ -67,7 +67,7 @@ namespace Gengine.Framework
                 fps = 10000 * FPS_FRAMES / total;
                 fps = (fps + 5) / 10;
 
-                //common->Printf( " FPS: %i ", fps );
+                //common.Printf( " FPS: %i ", fps );
             }
 
             return fps;

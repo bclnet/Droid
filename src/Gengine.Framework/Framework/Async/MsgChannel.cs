@@ -143,7 +143,7 @@ namespace Gengine.Framework.Async
         Netadr remoteAddress;   // address of remote host
         int id;             // our identification used instead of port number
         int maxRate;        // maximum number of bytes that may go out per second
-        Compressor compressor;      // compressor used for data compression
+        VCompressor compressor;      // compressor used for data compression
 
         // variables to control the outgoing rate
         int lastSendTime;   // last time data was sent out

@@ -13,6 +13,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="SessionLocal-CDKey.cs" />
+    <Compile Remove="SessionLocal-CVar.cs" />
+    <Compile Remove="SessionLocal-Util.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Framework\Console.cpp" />
     <None Remove="Framework\Console.h" />
     <None Remove="Framework\EventLoop.cpp" />

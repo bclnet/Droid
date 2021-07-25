@@ -113,7 +113,6 @@ namespace System.NumericsX.Core
         public void SetGranularity(int g) { Debug.Assert(g > 0); granularity = g; }
     }
 
-    /*
     public class VFile_BitMsg : VFile
     {
         string name;         // name of the file
@@ -135,7 +134,6 @@ namespace System.NumericsX.Core
         public override void Flush() => throw new NotImplementedException();
         public override int Seek(long offset, FS_SEEK origin) => throw new NotImplementedException();
     }
-    */
 
     public class VFile_Permanent : VFile
     {

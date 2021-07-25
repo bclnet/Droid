@@ -130,7 +130,7 @@ namespace Gengine.Framework
             }
             guiMainMenu_MapList = uiManager.AllocListGUI();
             guiMainMenu_MapList.Config(guiMainMenu, "mapList");
-            idAsyncNetwork.client.serverList.GUIConfig(guiMainMenu, "serverList");
+            AsyncNetwork.client.serverList.GUIConfig(guiMainMenu, "serverList");
             guiRestartMenu = uiManager.FindGui("guis/restart.gui", true, false, true);
             guiGameOver = uiManager.FindGui("guis/gameover.gui", true, false, true);
             guiMsg = uiManager.FindGui("guis/msg.gui", true, false, true);
@@ -280,18 +280,15 @@ namespace Gengine.Framework
 
         public void Frame()
         {
-            if (com_asyncSound.GetInteger() == 0)
-            {
-                soundSystem.AsyncUpdateWrite(Sys_Milliseconds());
-            }
+            if (com_asyncSound.Integer == 0)
+                soundSystem.AsyncUpdateWrite(SysW.Milliseconds);
 
-            // DG: periodically check if sound device is still there and try to reset it if not
-            //     (calling this from idSoundSystem.AsyncUpdate(), which runs in a separate thread
-            //      by default, causes a deadlock when calling idCommon.Warning())
+            // DG: periodically check if sound device is still there and try to reset it if not (calling this from idSoundSystem.AsyncUpdate(), which runs in a separate thread
+            //  by default, causes a deadlock when calling idCommon.Warning())
             CheckOpenALDeviceAndRecoverIfNeeded();
 
             // Editors that completely take over the game
-            if (com_editorActive && (com_editors & (EDITOR_RADIANT | EDITOR_GUI)))
+            if (com_editorActive && (com_editors & (EDITOR.RADIANT | EDITOR.GUI)))
                 return;
 
             // if the console is down, we don't need to hold the mouse cursor
@@ -300,20 +297,18 @@ namespace Gengine.Framework
             // save the screenshot and audio from the last draw if needed
             if (aviCaptureMode)
             {
-                idStr name;
+                var name = $"demos/{aviDemoShortName}/{aviDemoShortName}_{aviTicStart:05}.tga";
 
-                name = va("demos/%s/%s_%05i.tga", aviDemoShortName.c_str(), aviDemoShortName.c_str(), aviTicStart);
-
-                float ratio = 30.0f / (1000.0f / USERCMD_MSEC / com_aviDemoTics.GetInteger());
+                var ratio = 30.0f / (1000.0f / Usercmd.USERCMD_MSEC / com_aviDemoTics.Integer);
                 aviDemoFrameCount += ratio;
                 if (aviTicStart + 1 != (int)aviDemoFrameCount)
                 {
                     // skipped frames so write them out
                     var c = aviDemoFrameCount - aviTicStart;
-                    while (c--)
+                    while (c-- != 0)
                     {
                         renderSystem.TakeScreenshot(com_aviDemoWidth.Integer, com_aviDemoHeight.Integer, name, com_aviDemoSamples.Integer, null);
-                        name = $"demos/{aviDemoShortName}/{aviDemoShortName}_{++aviTicStart:05}.tga");
+                        name = $"demos/{aviDemoShortName}/{aviDemoShortName}_{++aviTicStart:05}.tga";
                     }
                 }
                 aviTicStart = aviDemoFrameCount;
@@ -331,14 +326,14 @@ namespace Gengine.Framework
 
             // se how many tics we should have before continuing
             int minTic = latchedTicNumber + 1;
-            if (com_minTics.GetInteger() > 1)
+            if (com_minTics.Integer > 1)
                 minTic = lastGameTic + com_minTics.Integer;
 
-            if (readDemo)
+            if (readDemo != null)
                 minTic = !timeDemo && numDemoFrames != 1
                     ? lastDemoTic + USERCMD_PER_DEMO_FRAME
                     : latchedTicNumber; // timedemos and demoshots will run as fast as they can, other demos will not run more than 30 hz
-            else if (writeDemo)
+            else if (writeDemo != null)
                 minTic = lastGameTic + USERCMD_PER_DEMO_FRAME;      // demos are recorded at 30 hz
 
             // fixedTic lets us run a forced number of usercmd each frame without timing
@@ -391,7 +386,7 @@ namespace Gengine.Framework
             //------------ single player game tics --------------
 
             if (!mapSpawned || guiActive)
-                if (!com_asyncInput.GetBool())
+                if (!com_asyncInput.Bool)
                     // early exit, won't do RunGameTic .. but still need to update mouse position for GUIs
                     usercmdGen.GetDirectUsercmd();
 
@@ -422,7 +417,7 @@ namespace Gengine.Framework
             // don't let a long onDemand sound load unsync everything
             if (timeHitch)
             {
-                var skip = timeHitch / USERCMD_MSEC;
+                var skip = timeHitch / Usercmd.USERCMD_MSEC;
                 lastGameTic += skip;
                 numCmdsToRun -= skip;
                 timeHitch = 0;
@@ -442,11 +437,11 @@ namespace Gengine.Framework
                 // we may need to dump older commands
                 lastGameTic = latchedTicNumber - fixedTic;
             }
-            else if (com_fixedTic.GetInteger() > 0)
+            else if (com_fixedTic.Integer > 0)
                 // this may cause commands run in a previous frame to be run again if we are going at above the real time rate
-                lastGameTic = latchedTicNumber - com_fixedTic.GetInteger();
+                lastGameTic = latchedTicNumber - com_fixedTic.Integer;
             else if (aviCaptureMode)
-                lastGameTic = latchedTicNumber - com_aviDemoTics.GetInteger();
+                lastGameTic = latchedTicNumber - com_aviDemoTics.Integer;
 
             // force only one game frame update this frame.  the game code requests this after skipping cinematics so we come back immediately after the cinematic is done instead of a few frames later which can
             // cause sounds played right after the cinematic to not play.
@@ -472,11 +467,11 @@ namespace Gengine.Framework
             // The solution is to just skip these extra tics, however if we skip all extra tics and only process
             // one per frame then if the fps drop due to a lot of action, the whole game slows down, which isn't desriable.
             // Therefore we only want to skip isolated instances of a single extra tic if we are maintaining almost max frame rate
-            int fps = calcFPS();
-            bool skipTics = false;
+            var fps = calcFPS();
+            var skipTics = false;
             if (com_skipTics.Bool && gameTicsToRun > 1)
             {
-                int refresh = renderSystem.GetRefresh();
+                var refresh = renderSystem.GetRefresh();
 
                 //Skip extra tics if we are maintaining 95% of the intended refresh rate
                 skipTics = (fps >= (refresh * 0.95F));
@@ -507,13 +502,13 @@ namespace Gengine.Framework
         {
             // hitting escape anywhere brings up the menu
             // DG: but shift-escape should bring up console instead so ignore that
-            if (!guiActive && event_.evType == SE_KEY && event_.evValue2 == 1 && event_.evValue == K_ESCAPE && !idKeyInput.IsDown(K_SHIFT))
+            if (!guiActive && event_.evType == SE_KEY && event_.evValue2 == 1 && event_.evValue == K_ESCAPE && !KeyInput.IsDown(K_SHIFT))
             {
                 console.Close();
                 if (game)
                 {
                     IUserInterface gui = null;
-                    escReply_t op;
+                    EscReply op;
                     op = game.HandleESC(gui);
                     if (op == ESC_IGNORE)
                         return true;
@@ -565,7 +560,7 @@ namespace Gengine.Framework
             // in game, exec bindings for all key downs
             if (event_.evType == SE_KEY && event_.evValue2 == 1)
             {
-                idKeyInput.ExecKeyBinding(event_.evValue);
+                KeyInput.ExecKeyBinding(event_.evValue);
                 return true;
             }
 

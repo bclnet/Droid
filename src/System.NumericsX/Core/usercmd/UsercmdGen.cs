@@ -4,8 +4,8 @@ namespace System.NumericsX.Core
 {
     public class Usercmd
     {
-        //const int USERCMD_HZ			= 60;
-        //const int USERCMD_MSEC			= 1000 / USERCMD_HZ;
+        const int USERCMD_HZ			= 60;
+        public const int USERCMD_MSEC			= 1000 / USERCMD_HZ;
 
         //static int USERCMD_MSEC() => (1000 / (renderSystem != null ? renderSystem.GetRefresh() : 60));
 

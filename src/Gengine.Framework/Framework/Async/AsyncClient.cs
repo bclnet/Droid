@@ -1582,7 +1582,7 @@ namespace Gengine.Framework.Async
                 do
                 {
                     // blocking read with game time residual timeout
-                    newPacket = clientPort.GetPacketBlocking(out from, msgBuf, out size, sizeof(msgBuf), USERCMD_MSEC - (gameTimeResidual + clientPredictTime) - 1);
+                    newPacket = clientPort.GetPacketBlocking(out from, msgBuf, out size, msgBuf.Length, Usercmd.USERCMD_MSEC - (gameTimeResidual + clientPredictTime) - 1);
                     if (newPacket)
                     {
                         msg.InitW(msgBuf);
@@ -1596,7 +1596,7 @@ namespace Gengine.Framework.Async
 
                 } while (newPacket);
 
-            } while (gameTimeResidual + clientPredictTime < USERCMD_MSEC);
+            } while (gameTimeResidual + clientPredictTime < Usercmd.USERCMD_MSEC);
 
             // update server list
             serverList.RunFrame();
@@ -1604,7 +1604,7 @@ namespace Gengine.Framework.Async
             if (clientState == ClientState.CS_DISCONNECTED)
             {
                 usercmdGen.GetDirectUsercmd();
-                gameTimeResidual = USERCMD_MSEC - 1;
+                gameTimeResidual = Usercmd.USERCMD_MSEC - 1;
                 clientPredictTime = 0;
                 return;
             }
@@ -1613,7 +1613,7 @@ namespace Gengine.Framework.Async
             {
                 clientState = ClientState.CS_DISCONNECTED;
                 Reconnect();
-                gameTimeResidual = USERCMD_MSEC - 1;
+                gameTimeResidual = Usercmd.USERCMD_MSEC - 1;
                 clientPredictTime = 0;
                 return;
             }
@@ -1624,7 +1624,7 @@ namespace Gengine.Framework.Async
                 // also need to read mouse for the connecting guis
                 usercmdGen.GetDirectUsercmd();
                 SetupConnection();
-                gameTimeResidual = USERCMD_MSEC - 1;
+                gameTimeResidual = Usercmd.USERCMD_MSEC - 1;
                 clientPredictTime = 0;
                 return;
             }
@@ -1649,19 +1649,19 @@ namespace Gengine.Framework.Async
                 cvarSystem.ClearModifiedFlags(CVAR.USERINFO);
             }
 
-            if (gameTimeResidual + clientPredictTime >= USERCMD_MSEC)
+            if (gameTimeResidual + clientPredictTime >= Usercmd.USERCMD_MSEC)
                 lastFrameDelta = 0;
 
             // generate user commands for the predicted time
-            while (gameTimeResidual + clientPredictTime >= USERCMD_MSEC)
+            while (gameTimeResidual + clientPredictTime >= Usercmd.USERCMD_MSEC)
             {
                 // send the user commands of this client to the server
                 SendUsercmdsToServer();
 
                 // update time
                 gameFrame++;
-                gameTime += USERCMD_MSEC;
-                gameTimeResidual -= USERCMD_MSEC;
+                gameTime += Usercmd.USERCMD_MSEC;
+                gameTimeResidual -= Usercmd.USERCMD_MSEC;
 
                 // run from the snapshot up to the local game frame
                 while (snapshotGameFrame < gameFrame)
@@ -1672,10 +1672,10 @@ namespace Gengine.Framework.Async
                     DuplicateUsercmds(snapshotGameFrame, snapshotGameTime);
 
                     // indicate the last prediction frame before a render
-                    bool lastPredictFrame = (snapshotGameFrame + 1 >= gameFrame && gameTimeResidual + clientPredictTime < USERCMD_MSEC);
+                    bool lastPredictFrame = (snapshotGameFrame + 1 >= gameFrame && gameTimeResidual + clientPredictTime < Usercmd.USERCMD_MSEC);
 
                     // run client prediction
-                    var ret = game.ClientPrediction(clientNum, userCmds[snapshotGameFrame & (MAX_USERCMD_BACKUP - 1)], lastPredictFrame);
+                    var ret = game.ClientPrediction(clientNum, userCmds[snapshotGameFrame & (Config.MAX_USERCMD_BACKUP - 1)], lastPredictFrame);
 
                     AsyncNetwork.ExecuteSessionCommand(ret.sessionCommand);
 
