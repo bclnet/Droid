@@ -334,10 +334,10 @@ namespace Droid.Core
                             case K_ALT:
                             case K_INS:
                             case K_PRINT_SCR: return OSX_GetLocalizedString(n);
-                            default: return common.LanguageDict[si];
+                            default: return common.LanguageDictGetString(si);
                         }
 #else
-                        return common.LanguageDict[si];
+                        return common.LanguageDictGetString(si);
 #endif
                     }
                 }
@@ -434,11 +434,11 @@ namespace Droid.Core
                     if (string.Equals(keys[i].binding, bind, StringComparison.OrdinalIgnoreCase))
                     {
                         if (b.Length > 0)
-                            b.Append(common.LanguageDict["#str_07183"]);
+                            b.Append(common.LanguageDictGetString("#str_07183"));
                         b.Append(KeyNumToString(i, true));
                     }
             return b.Length == 0
-                ? common.LanguageDict["#str_07133"].ToLowerInvariant()
+                ? common.LanguageDictGetString("#str_07133").ToLowerInvariant()
                 : b.ToString().ToLowerInvariant();
         }
 

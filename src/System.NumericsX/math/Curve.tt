@@ -1,0 +1,13 @@
+<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ import namespace="System" #>
+<#@ output extension=".cs" #>
+<# String type = null; #>
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.NumericsX.Core;
+
+namespace System.NumericsX
+{
+<# type = "Vector4"; #>
+<#@ include file="Curve.t4" #>
+}

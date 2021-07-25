@@ -423,25 +423,24 @@ namespace Droid.Core
             s = Encoding.ASCII.GetString(buffer, l);
             return l;
         }
-        //public int ReadString(byte[] buffer, int bufferSize, out string s)
-        //{
-        //    int l; byte c;
-        //    ReadByteAlign();
-        //    l = 0;
-        //    while (true)
-        //    {
-        //        c = (byte)ReadByte();
-        //        if (c <= 0 || c >= 255)
-        //            break;
-        //        // translate all fmt spec to avoid crash bugs in string routines
-        //        if (c == '%') c = (byte)'.';
-        //        // we will read past any excessively long string, so the following data can be read, but the string will be truncated
-        //        if (l < bufferSize - 1) { buffer[l] = c; l++; }
-        //    }
-        //    buffer[l] = 0;
-        //    s = Encoding.ASCII.GetString(buffer);
-        //    return l;
-        //}
+        public int ReadString(out string s, byte[] buffer)
+        {
+            int l; byte c;
+            ReadByteAlign();
+            l = 0;
+            while (true)
+            {
+                c = (byte)ReadByte();
+                if (c <= 0 || c >= 255)
+                    break;
+                // translate all fmt spec to avoid crash bugs in string routines
+                if (c == '%') c = (byte)'.';
+                // we will read past any excessively long string, so the following data can be read, but the string will be truncated
+                if (l < buffer.Length) { buffer[l] = c; l++; }
+            }
+            s = Encoding.ASCII.GetString(buffer, 0, l);
+            return l;
+        }
         public int ReadData(byte[] data, int length)
         {
             ReadByteAlign();
@@ -514,14 +513,14 @@ namespace Droid.Core
             if (@base != null) dict = @base;
             else dict.Clear();
 
-            while (ReadString(keybuf, keybuf.Length, out var key) != 0)
+            while (ReadString(out var key, keybuf) != 0)
             {
-                ReadString(valuebuf, valuebuf.Length, out var value);
+                ReadString(out var value, valuebuf);
                 dict[key] = value;
                 changed = true;
             }
 
-            while (ReadString(keybuf, keybuf.Length, out var key) != 0)
+            while (ReadString(out var key, keybuf) != 0)
             {
                 dict.Remove(key);
                 changed = true;
@@ -697,18 +696,18 @@ namespace Droid.Core
             else
             {
                 var baseString = new byte[MAX_DATA_BUFFER];
-                base_.ReadString(baseString, baseString.Length, out var s2);
+                base_.ReadString(out var s2, baseString);
                 if (s == s2) writeDelta.WriteBits(0, 1);
                 else { writeDelta.WriteBits(1, 1); writeDelta.WriteString(s, maxLength); changed = true; }
             }
         }
-        public unsafe void WriteData(byte[] data, int length)
+        public unsafe void WriteData(byte[] data, int offset, int length)
         {
-            newBase?.WriteData(data, length);
+            newBase?.WriteData(data, offset, length);
 
             if (base_ == null)
             {
-                writeDelta.WriteData(data, length);
+                writeDelta.WriteData(data, offset, length);
                 changed = true;
             }
             else
@@ -718,7 +717,7 @@ namespace Droid.Core
                 base_.ReadData(baseData, length);
                 fixed (void* data_ = data, baseData_ = baseData)
                     if (UnsafeX.CompareBlock(data_, baseData_, length) == 0) writeDelta.WriteBits(0, 1);
-                    else { writeDelta.WriteBits(1, 1); writeDelta.WriteData(data, length); changed = true; }
+                    else { writeDelta.WriteBits(1, 1); writeDelta.WriteData(data, offset, length); changed = true; }
             }
         }
         public void WriteDict(Dictionary<string, string> dict)
@@ -831,23 +830,47 @@ namespace Droid.Core
         public float ReadAngle8() => MathX.BYTE2ANGLE(ReadByte());
         public float ReadAngle16() => MathX.SHORT2ANGLE(ReadShort());
         public Vector3 ReadDir(int numBits) => BitMsg.BitsToDir(ReadBits(numBits), numBits);
-        public void ReadString(byte[] buffer, int bufferSize)
+        public void ReadString(out string s, int bufferSize = Platform.MAX_STRING_CHARS)
         {
             if (base_ == null)
             {
-                readDelta.ReadString(buffer, bufferSize, out var s);
+                readDelta.ReadString(out s, bufferSize);
                 changed = true;
             }
             else
             {
                 var baseString = new byte[MAX_DATA_BUFFER];
-                base_.ReadString(baseString, baseString.Length, out var baseS);
-                if (readDelta == null || readDelta.ReadBits(1) == 0)
-                    StringX.Copynz(buffer, baseString, bufferSize);
-                else { readDelta.ReadString(buffer, bufferSize, out var s); changed = true; }
+                base_.ReadString(out s, baseString);
+                if (readDelta == null || readDelta.ReadBits(1) == 0) { }
+                else
+                {
+                    readDelta.ReadString(out s, bufferSize);
+                    changed = true;
+                }
             }
 
-            newBase?.WriteString(Encoding.ASCII.GetString(buffer));
+            newBase?.WriteString(s);
+        }
+        public void ReadString(out string s, byte[] buffer)
+        {
+            if (base_ == null)
+            {
+                readDelta.ReadString(out s, buffer);
+                changed = true;
+            }
+            else
+            {
+                var baseString = new byte[MAX_DATA_BUFFER];
+                base_.ReadString(out s, baseString);
+                if (readDelta == null || readDelta.ReadBits(1) == 0) { }
+                else
+                {
+                    readDelta.ReadString(out s, buffer);
+                    changed = true;
+                }
+            }
+
+            newBase?.WriteString(s);
         }
         public void ReadData(byte[] data, int length)
         {
@@ -866,7 +889,7 @@ namespace Droid.Core
                 else { readDelta.ReadData(data, length); changed = true; }
             }
 
-            newBase?.WriteData(data, length);
+            newBase?.WriteData(data, 0, length);
         }
         public void ReadDict(Dictionary<string, string> dict)
         {

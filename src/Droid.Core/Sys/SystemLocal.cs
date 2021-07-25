@@ -20,7 +20,7 @@ namespace Droid.Sys
             => SysW.DebugPrintf(fmt, args);
 
         public uint Milliseconds
-            => SysW.Milliseconds;
+            => (uint)SysW.Milliseconds;
 
         public CPUID ProcessorId
             => SysW.ProcessorId;

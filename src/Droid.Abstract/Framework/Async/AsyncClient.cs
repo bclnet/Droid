@@ -491,7 +491,7 @@ namespace Droid.Framework.Async
 
             // duplicate previous user commands if no new commands are available for a client
             for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                AsyncNetwork.DuplicateUsercmd(userCmds[previousIndex][i], userCmds[currentIndex][i], frame, time);
+                AsyncNetwork.DuplicateUsercmd(userCmds[previousIndex, i], userCmds[currentIndex, i], frame, time);
         }
 
         void SendUserInfoToServer()
@@ -570,9 +570,9 @@ namespace Droid.Framework.Async
 
             // generate user command for this client
             index = gameFrame & (Config.MAX_USERCMD_BACKUP - 1);
-            userCmds[index][clientNum] = usercmdGen.GetDirectUsercmd();
-            userCmds[index][clientNum].gameFrame = gameFrame;
-            userCmds[index][clientNum].gameTime = gameTime;
+            userCmds[index, clientNum] = usercmdGen.GetDirectUsercmd();
+            userCmds[index, clientNum].gameFrame = gameFrame;
+            userCmds[index, clientNum].gameTime = gameTime;
 
             // send the user commands to the server
             msg.InitW(msgBuf);
@@ -590,12 +590,12 @@ namespace Droid.Framework.Async
             for (last = null, i = gameFrame - numUsercmds + 1; i <= gameFrame; i++)
             {
                 index = i & (Config.MAX_USERCMD_BACKUP - 1);
-                AsyncNetwork.WriteUserCmdDelta(msg, userCmds[index][clientNum], last);
-                last = userCmds[index][clientNum];
+                AsyncNetwork.WriteUserCmdDelta(msg, userCmds[index,clientNum], last);
+                last = userCmds[index,clientNum];
             }
 
             channel.SendMessage(clientPort, clientTime, msg);
-            while (channel.UnsentFragmentsLeft())
+            while (channel.UnsentFragmentsLeft)
                 channel.SendNextFragment(clientPort, clientTime);
         }
 
@@ -642,7 +642,7 @@ namespace Droid.Framework.Async
                         serverGameFrame = msg.ReadInt();
                         serverGameTime = msg.ReadInt();
                         msg.ReadDeltaDict(serverSI, null);
-                        bool pureWait = serverSI.GetBool("si_pure");
+                        var pureWait = serverSI.Get("si_pure", "0") != "0";
 
                         InitGame(serverGameInitId, serverGameFrame, serverGameTime, serverSI);
 
@@ -703,17 +703,17 @@ namespace Droid.Framework.Async
                             for (j = 0; j < numUsercmds; j++)
                             {
                                 index = (snapshotGameFrame + j) & (Config.MAX_USERCMD_BACKUP - 1);
-                                AsyncNetwork.ReadUserCmdDelta(msg, userCmds[index][i], last);
-                                userCmds[index][i].gameFrame = snapshotGameFrame + j;
-                                userCmds[index][i].duplicateCount = 0;
-                                last = userCmds[index][i];
+                                AsyncNetwork.ReadUserCmdDelta(msg, userCmds[index, i], last);
+                                userCmds[index, i].gameFrame = snapshotGameFrame + j;
+                                userCmds[index, i].duplicateCount = 0;
+                                last = userCmds[index, i];
                             }
                             // clear all user commands after the ones just read from the snapshot
                             for (j = numUsercmds; j < Config.MAX_USERCMD_BACKUP; j++)
                             {
                                 index = (snapshotGameFrame + j) & (Config.MAX_USERCMD_BACKUP - 1);
-                                userCmds[index][i].gameFrame = 0;
-                                userCmds[index][i].gameTime = 0;
+                                userCmds[index, i].gameFrame = 0;
+                                userCmds[index, i].gameTime = 0;
                             }
                         }
 
@@ -879,7 +879,7 @@ namespace Droid.Framework.Async
                             else
                             {
                                 common.Printf("client {clientNum} {s}\n");
-                                cmdSystem.BufferCommandText(CMD_EXEC.NOW, $"addChatLine \"{sessLocal.mapSpawnData.userInfo[clientNum]["ui_name"]}^0 {s}\""));
+                                cmdSystem.BufferCommandText(CMD_EXEC.NOW, $"addChatLine \"{sessLocal.mapSpawnData.userInfo[clientNum]["ui_name"]}^0 {s}\"");
                                 sessLocal.mapSpawnData.userInfo[clientNum].Clear();
                             }
                             break;
@@ -1095,7 +1095,7 @@ namespace Droid.Framework.Async
                 }
                 else if (game_opcode == ALLOW_NO)
                 {
-                    session.MessageBox(MSG_OK, s, common.LanguageDict["#str_04323"], true);
+                    session.MessageBox(MSG_OK, s, common.LanguageDictGetString("#str_04323"), true);
                     ClearPendingPackets();
                     cmdSystem.BufferCommandText(CMD_EXEC.NOW, "disconnect");
                 }
@@ -1256,7 +1256,7 @@ namespace Droid.Framework.Async
                         var checksums = string.Empty;
                         i = 0;
                         while (missingChecksums[i] != 0)
-                            checksums += $"0x{missingChecksums[i++]:x} ");
+                            checksums += $"0x{missingChecksums[i++]:x} ";
                         numMissingChecksums = i;
 
                         if (AsyncNetwork.clientDownload.Integer == 0)
@@ -1539,7 +1539,7 @@ namespace Droid.Framework.Async
             BitMsg outMsg = new(); byte[] msgBuf = new byte[MAX_MESSAGE_SIZE];
             outMsg.InitW(msgBuf);
             outMsg.WriteByte((byte)CLIENT_RELIABLE_MESSAGE.GAME);
-            outMsg.WriteData(msg.DataW, msg.Size);
+            outMsg.WriteData(msg.DataW, 0, msg.Size);
             if (!channel.SendReliableMessage(outMsg))
                 common.Error("client.server reliable messages overflow\n");
         }
@@ -1848,7 +1848,7 @@ namespace Droid.Framework.Async
                         // "Downloading %s"
                         var dltitle = string.Format(common.LanguageDictGetString("#str_07213"), dlList[0].filename);
                         if (numPaks > 1)
-                            dltitle += $" ({pakCount}/{numPaks})");
+                            dltitle += $" ({pakCount}/{numPaks})";
                         if (totalDlSize != 0)
                         {
                             progress_start = (int)((float)currentDlSize * 100.0f / (float)totalDlSize);

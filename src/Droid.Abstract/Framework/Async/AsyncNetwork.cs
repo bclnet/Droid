@@ -304,7 +304,7 @@ namespace Droid.Framework.Async
         public static CVar LANServer = new("net_LANServer", "0", CVAR.SYSTEM | CVAR.BOOL | CVAR.NOCHEAT, "config LAN games only - affects clients and servers");                       // LAN mode
         public static CVar serverReloadEngine = new("net_serverReloadEngine", "0", CVAR.SYSTEM | CVAR.INTEGER | CVAR.NOCHEAT, "perform a full reload on next map restart (including flushing referenced pak files) - decreased if > 0");              // reload engine on map change instead of growing the referenced paks
         //public static CVar serverAllowServerMod = new;            // let a pure server start with a different game code than what is referenced in game code
-        public static CVar idleServer = new("si_idleServer", "0", CVAR.SYSTEM | CVAR.BOOL | CVAR.INIT | CVAR.SERVERINFO, "game clients are idle");;                      // serverinfo reply, indicates all clients are idle
+        public static CVar idleServer = new("si_idleServer", "0", CVAR.SYSTEM | CVAR.BOOL | CVAR.INIT | CVAR.SERVERINFO, "game clients are idle");                      // serverinfo reply, indicates all clients are idle
         public static CVar clientDownload = new("net_clientDownload", "1", CVAR.SYSTEM | CVAR.INTEGER | CVAR.ARCHIVE, "client pk4 downloads policy: 0 - never, 1 - ask, 2 - always (will still prompt for binary code)");                  // preferred download policy
 
         // same message used for offline check and network reply
@@ -418,7 +418,7 @@ namespace Droid.Framework.Async
             }
             var clientNum = int.Parse(clientId);
 
-            if (server.GetLocalClientNum() == clientNum)
+            if (server.LocalClientNum == clientNum)
             {
                 common.Printf("can't kick the host\n");
                 return;

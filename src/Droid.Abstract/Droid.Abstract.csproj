@@ -9,8 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Framework\Async\**" />
     <Compile Remove="Render\R_Local\**" />
+    <EmbeddedResource Remove="Framework\Async\**" />
     <EmbeddedResource Remove="Render\R_Local\**" />
+    <None Remove="Framework\Async\**" />
     <None Remove="Render\R_Local\**" />
   </ItemGroup>
 

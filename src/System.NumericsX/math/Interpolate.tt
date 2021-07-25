@@ -1,0 +1,9 @@
+<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ import namespace="System" #>
+<#@ output extension=".cs" #>
+<# String type = null; #>
+namespace System.NumericsX
+{
+<# type = "float"; #>
+<#@ include file="Interpolate.t4" #>
+}

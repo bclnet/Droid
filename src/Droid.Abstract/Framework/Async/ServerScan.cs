@@ -434,7 +434,7 @@ namespace Droid.Framework.Async
             else if (mod) name += "mtr_doom3Mod";
             else name += "mtr_doom3Icon";
             name += "\t";
-            name += $"{server.clients}/{server.serverInfo.Get("si_maxPlayers")}\t");
+            name += $"{server.clients}/{server.serverInfo.Get("si_maxPlayers")}\t";
             name += server.ping > -1 ? $"{server.ping}\t" : "na\t";
             name += server.serverInfo.Get("si_gametype");
             name += "\t";
