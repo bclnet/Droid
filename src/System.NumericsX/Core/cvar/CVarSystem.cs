@@ -345,9 +345,6 @@ namespace System.NumericsX.Core
 
         static void ListByFlags(CmdArgs args, CVAR flags)
         {
-            int i;
-
-            //CVarLocal cvar;
             var cvarList = new List<CVarLocal>();
 
             var argNum = 1;

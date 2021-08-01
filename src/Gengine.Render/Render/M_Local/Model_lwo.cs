@@ -1,8 +1,7 @@
-using Droid.Core;
 using System;
 using System.Runtime.InteropServices;
 
-namespace Droid.Render
+namespace Gengine.Render
 {
     static partial class ModelXLwo
     {

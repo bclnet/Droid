@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Gengine.Framework\Gengine.Framework.csproj" />
+    <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

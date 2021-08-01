@@ -147,12 +147,12 @@ namespace System.NumericsX.Core
         /// <param name="args">The arguments.</param>
         void Printf(string fmt, params object[] args);
 
-        /// <summary>
-        /// Same as Printf, with a more usable API - Printf pipes to this.
-        /// </summary>
-        /// <param name="fmt">The FMT.</param>
-        /// <param name="arg">The argument.</param>
-        void VPrintf(string fmt, object[] arg);
+        ///// <summary>
+        ///// Same as Printf, with a more usable API - Printf pipes to this.
+        ///// </summary>
+        ///// <param name="fmt">The FMT.</param>
+        ///// <param name="arg">The argument.</param>
+        //void VPrintf(string fmt, object[] arg);
 
         /// <summary>
         /// Prints message that only shows up if the "developer" cvar is set, and NEVER forces a screen update, which could cause reentrancy problems.

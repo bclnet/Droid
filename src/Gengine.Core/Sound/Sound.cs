@@ -51,9 +51,9 @@ namespace Gengine.Sound
 
         //SoundShader();
 
-        public override int Size() => throw new NotImplementedException();
+        public override int Size => throw new NotImplementedException();
         public override bool SetDefaultText() => throw new NotImplementedException();
-        public override string DefaultDefinition() => throw new NotImplementedException();
+        public override string DefaultDefinition => throw new NotImplementedException();
         public override bool Parse(string text, int textLength) => throw new NotImplementedException();
         public override void FreeData() => throw new NotImplementedException();
         public override void List() => throw new NotImplementedException();

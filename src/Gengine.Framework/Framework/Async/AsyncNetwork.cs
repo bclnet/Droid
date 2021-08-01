@@ -3,6 +3,7 @@ using System.NumericsX;
 using System.NumericsX.Core;
 using System.NumericsX.Sys;
 using static System.NumericsX.Lib;
+using static Gengine.Lib;
 
 namespace Gengine.Framework.Async
 {
@@ -206,7 +207,7 @@ namespace Gengine.Framework.Async
 
                 if (currentUserCmd.duplicateCount > Config.MAX_USERCMD_DUPLICATION)
                 {
-                    currentUserCmd.buttons &= ~BUTTON_ATTACK;
+                    currentUserCmd.buttons = unchecked((byte)(currentUserCmd.buttons & ~Usercmd.BUTTON_ATTACK));
                     if (Math.Abs(currentUserCmd.forwardmove) > 2) currentUserCmd.forwardmove >>= 1;
                     if (Math.Abs(currentUserCmd.rightmove) > 2) currentUserCmd.rightmove >>= 1;
                     if (Math.Abs(currentUserCmd.upmove) > 2) currentUserCmd.upmove >>= 1;
@@ -285,7 +286,7 @@ namespace Gengine.Framework.Async
         public static CVar serverSnapshotDelay = new("net_serverSnapshotDelay", "50", CVAR.SYSTEM | CVAR.INTEGER | CVAR.NOCHEAT, "delay between snapshots in milliseconds");         // number of milliseconds between snapshots
         public static CVar serverMaxClientRate = new("net_serverMaxClientRate", "16000", CVAR.SYSTEM | CVAR.INTEGER | CVAR.ARCHIVE | CVAR.NOCHEAT, "maximum rate to a client in bytes/sec");         // maximum outgoing rate to clients
         public static CVar clientMaxRate = new("net_clientMaxRate", "16000", CVAR.SYSTEM | CVAR.INTEGER | CVAR.ARCHIVE | CVAR.NOCHEAT, "maximum rate requested by client from server in bytes/sec");                   // maximum rate from server requested by client
-        public static CVar serverMaxUsercmdRelay = new("net_serverMaxUsercmdRelay", "5", CVAR.SYSTEM | CVAR.INTEGER | CVAR.NOCHEAT, "maximum number of usercmds from other clients the server relays to a client", 1, MAX_USERCMD_RELAY, CmdArgs.ArgCompletion_Integer(1, MAX_USERCMD_RELAY));           // maximum number of usercmds relayed to other clients
+        public static CVar serverMaxUsercmdRelay = new("net_serverMaxUsercmdRelay", "5", CVAR.SYSTEM | CVAR.INTEGER | CVAR.NOCHEAT, "maximum number of usercmds from other clients the server relays to a client", 1, Config.MAX_USERCMD_RELAY, CmdArgs.ArgCompletion_Integer(1, Config.MAX_USERCMD_RELAY));           // maximum number of usercmds relayed to other clients
         public static CVar serverZombieTimeout = new("net_serverZombieTimeout", "5", CVAR.SYSTEM | CVAR.INTEGER | CVAR.NOCHEAT, "disconnected client timeout in seconds");         // time out in seconds for zombie clients
         public static CVar serverClientTimeout = new("net_serverClientTimeout", "40", CVAR.SYSTEM | CVAR.INTEGER | CVAR.NOCHEAT, "client time out in seconds");         // time out in seconds for connected clients
         public static CVar clientServerTimeout = new("net_clientServerTimeout", "40", CVAR.SYSTEM | CVAR.INTEGER | CVAR.NOCHEAT, "server time out in seconds");         // time out in seconds for server
@@ -334,7 +335,7 @@ namespace Gengine.Framework.Async
             // don't let a server spawn with singleplayer game type - it will crash
             if (string.Equals(cvarSystem.GetCVarString("si_gameType"), "singleplayer", StringComparison.OrdinalIgnoreCase))
                 cvarSystem.SetCVarString("si_gameType", "deathmatch");
-            com_asyncInput.Bool = false;
+            C.com_asyncInput.Bool = false;
             // make sure the current system state is compatible with net_serverDedicated
             switch (cvarSystem.GetCVarInteger("net_serverDedicated"))
             {
@@ -373,7 +374,7 @@ namespace Gengine.Framework.Async
                 common.Printf("USAGE: connect <serverName>\n");
                 return;
             }
-            com_asyncInput.Bool = false;
+            C.com_asyncInput.Bool = false;
             client.ConnectToServer(args[1]);
         }
 
@@ -411,7 +412,7 @@ namespace Gengine.Framework.Async
             }
 
             var clientId = args[1];
-            if (!clientId.IsNumeric())
+            if (!StringX.IsNumeric(clientId))
             {
                 common.Printf("usage: kick <client number>\n");
                 return;
@@ -439,7 +440,7 @@ namespace Gengine.Framework.Async
             }
             if (!server.IsActive)
             {
-                common.Warning("idAsyncNetwork::UpdateUI_f: server is not active\n");
+                common.Warning("AsyncNetwork::UpdateUI_f: server is not active\n");
                 return;
             }
             var clientNum = int.Parse(args.Args(1));

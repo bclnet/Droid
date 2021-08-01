@@ -1,7 +1,6 @@
-using Droid.Core;
 using System.Runtime.InteropServices;
 
-namespace Droid.Render
+namespace Gengine.Render
 {
     static class ModelXMd3
     {

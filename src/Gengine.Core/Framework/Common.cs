@@ -1,44 +1,48 @@
+using System.NumericsX.Core;
+
 namespace Gengine.Framework
 {
     //#define STRTABLE_ID				"#str_"
     //#define STRTABLE_ID_LENGTH		5
 
-    //extern idCVar vr_refresh;
-    //extern idCVar vr_supersampling;
-    //extern idCVar vr_msaa;
+    public class C
+    {
+        public static readonly CVar vr_refresh;
+        public static readonly CVar vr_supersampling;
+        public static readonly CVar vr_msaa;
 
+        public static readonly CVar com_version;
+        public static readonly CVar com_skipRenderer;
+        public static readonly CVar com_asyncInput;
+        public static readonly CVar com_asyncSound;
+        public static readonly CVar com_purgeAll;
+        public static readonly CVar com_developer;
+        public static readonly CVar com_allowConsole;
+        public static readonly CVar com_speeds;
+        public static readonly CVar com_showFPS;
+        public static readonly CVar com_showMemoryUsage;
+        public static readonly CVar com_showAsyncStats;
+        public static readonly CVar com_showSoundDecoders;
+        public static readonly CVar com_makingBuild;
+        public static readonly CVar com_updateLoadSize;
 
-    //extern idCVar		com_version;
-    //extern idCVar		com_skipRenderer;
-    //extern idCVar		com_asyncInput;
-    //extern idCVar		com_asyncSound;
-    //extern idCVar		com_purgeAll;
-    //extern idCVar		com_developer;
-    //extern idCVar		com_allowConsole;
-    //extern idCVar		com_speeds;
-    //extern idCVar		com_showFPS;
-    //extern idCVar		com_showMemoryUsage;
-    //extern idCVar		com_showAsyncStats;
-    //extern idCVar		com_showSoundDecoders;
-    //extern idCVar		com_makingBuild;
-    //extern idCVar		com_updateLoadSize;
+        public static int time_gameFrame;          // game logic time
+        public static int time_gameDraw;           // game present time
+        public static int time_frontend;           // renderer frontend time
+        public static int time_backend;            // renderer backend time
 
-    //extern int			time_gameFrame;			// game logic time
-    //extern int			time_gameDraw;			// game present time
-    //extern int			time_frontend;			// renderer frontend time
-    //extern int			time_backend;			// renderer backend time
+        public static int com_frameTime;           // time for the current frame in milliseconds
+        public static volatile int com_ticNumber;          // 60 hz tics, incremented by async function
+        public static int com_editors;         // current active editor(s)
+        public static bool com_editorActive;       // true if an editor has focus
 
-    //extern int			com_frameTime;			// time for the current frame in milliseconds
-    //extern volatile int	com_ticNumber;			// 60 hz tics, incremented by async function
-    //extern int			com_editors;			// current active editor(s)
-    //extern bool			com_editorActive;		// true if an editor has focus
-
-    //#ifdef _WIN32
-    //const char			DMAP_MSGID[] = "DMAPOutput";
-    //const char			DMAP_DONE[] = "DMAPDone";
-    //extern HWND			com_hwndMsg;
-    //extern bool			com_outputMsg;
-    //#endif
+#if _WIN32
+        public const string DMAP_MSGID = "DMAPOutput";
+        public const string DMAP_DONE = "DMAPDone";
+        public static HWND com_hwndMsg;
+        public static bool com_outputMsg;
+#endif
+    }
 
     public struct MemInfo
     {

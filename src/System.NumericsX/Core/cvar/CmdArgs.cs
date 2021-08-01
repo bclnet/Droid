@@ -156,8 +156,6 @@ namespace System.NumericsX.Core
                 callback($"{args[0]} {strings[i]}");
         };
 
-        //public static void ArgCompletion_Decl(CmdArgs args, Action<string> callback, int type) =>
-        //    cmdSystem.ArgCompletion_DeclName(args, callback, type);
         public static void ArgCompletion_FileName(CmdArgs args, Action<string> callback) =>
             cmdSystem.ArgCompletion_FolderExtension(args, callback, "/", true, "", null);
 

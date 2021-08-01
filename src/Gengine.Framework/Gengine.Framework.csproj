@@ -16,21 +16,16 @@
     <Compile Remove="Framework\Async\AsyncClient.cs" />
     <Compile Remove="Framework\Async\AsyncNetwork.cs" />
     <Compile Remove="Framework\Async\AsyncServer.cs" />
-    <Compile Remove="Framework\Async\MsgChannel.cs" />
     <Compile Remove="Framework\Async\NetworkSystem.cs" />
     <Compile Remove="Framework\Async\ServerScan.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
+    <ProjectReference Include="..\Gengine.FrameworkConsole\Gengine.FrameworkConsole.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Framework\Async\" />
   </ItemGroup>
 
 </Project>

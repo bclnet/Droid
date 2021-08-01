@@ -51,8 +51,6 @@ namespace System.NumericsX.Core
 
         // Base for path/file auto-completion.
         void ArgCompletion_FolderExtension(CmdArgs args, Action<string> callback, string folder, bool stripFolder, params string[] extensions);
-        // Base for decl name auto-completion.
-        //void ArgCompletion_DeclName(CmdArgs args, Action<string> callback, int type);
 
         // Adds to the command buffer in tokenized form ( CMD_EXEC_NOW or CMD_EXEC_APPEND only )
         void BufferCommandArgs(CMD_EXEC exec, CmdArgs args);
@@ -275,7 +273,7 @@ namespace System.NumericsX.Core
                     name = $"{args[0]} {name}/";
                     completionParms.Add(name);
                 }
-                fileSystem.FreeFileList(ref names);
+                fileSystem.FreeFileList(names);
 
                 // list files
                 foreach (var extension in extensions)
@@ -288,23 +286,12 @@ namespace System.NumericsX.Core
                         name = $"{args[0]} {name}";
                         completionParms.Add(name);
                     }
-                    fileSystem.FreeFileList(ref names);
+                    fileSystem.FreeFileList(names);
                 }
             }
             for (i = 0; i < completionParms.Count; i++)
                 callback(completionParms[i]);
         }
-
-        //public void ArgCompletion_DeclName(CmdArgs args, Action<string> callback, int type)
-        //{
-        //    int i, num;
-
-        //    if (declManager == null)
-        //        return;
-        //    num = declManager.GetNumDecls((declType_t)type);
-        //    for (i = 0; i < num; i++)
-        //        callback($"{args[0]} {declManager.DeclByIndex((declType_t)type, i, false).GetName()}");
-        //}
 
         public void BufferCommandArgs(CMD_EXEC exec, CmdArgs args)
         {

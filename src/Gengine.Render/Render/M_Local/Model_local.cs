@@ -1,11 +1,10 @@
-using Droid.Core;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using static Droid.Core.Lib;
+using static System.NumericsX.Lib;
 
-namespace Droid.Render
+namespace Gengine.Render
 {
     public class RenderModelStatic : IRenderModel
     {

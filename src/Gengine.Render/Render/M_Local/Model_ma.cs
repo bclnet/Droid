@@ -1,9 +1,8 @@
-using Droid.Core;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace Droid.Render
+namespace Gengine.Render
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     public struct MaNodeHeader

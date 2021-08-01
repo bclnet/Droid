@@ -82,7 +82,7 @@ namespace System.NumericsX
                     v.st.x = verts[baseOffset + j].st[0]; v.st.y = splinePos.w;
                     v.tangents0 = verts[baseOffset + j].tangents0 * splineMat; v.tangents1 = splineD1.ToVec3();
                     v.normal = v.tangents1.Cross(v.tangents0); v.normal.Normalize();
-                    v.color = 0;
+                    v.color0 = v.color1 = v.color2 = v.color3 = 0;
                 }
             }
 

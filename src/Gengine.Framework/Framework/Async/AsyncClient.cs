@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using static System.NumericsX.Lib;
-using static Gengine.Framework.Async.MsgChannel;
-using System.NumericsX.Sys;
-using System.NumericsX.Core;
 using System.NumericsX;
+using System.NumericsX.Core;
+using System.NumericsX.Sys;
+using static Gengine.Framework.Async.MsgChannel;
+using static Gengine.Lib;
+using static System.NumericsX.Lib;
 
 namespace Gengine.Framework.Async
 {
@@ -535,7 +536,7 @@ namespace Gengine.Framework.Async
 
             channel.SendMessage(clientPort, clientTime, msg);
 
-            while (channel.UnsentFragmentsLeft())
+            while (channel.UnsentFragmentsLeft)
                 channel.SendNextFragment(clientPort, clientTime);
 
             lastEmptyTime = realTime;
@@ -556,7 +557,7 @@ namespace Gengine.Framework.Async
             msg.WriteInt(time);
 
             channel.SendMessage(clientPort, clientTime, msg);
-            while (channel.UnsentFragmentsLeft())
+            while (channel.UnsentFragmentsLeft)
                 channel.SendNextFragment(clientPort, clientTime);
         }
 
@@ -590,8 +591,8 @@ namespace Gengine.Framework.Async
             for (last = null, i = gameFrame - numUsercmds + 1; i <= gameFrame; i++)
             {
                 index = i & (Config.MAX_USERCMD_BACKUP - 1);
-                AsyncNetwork.WriteUserCmdDelta(msg, userCmds[index,clientNum], last);
-                last = userCmds[index,clientNum];
+                AsyncNetwork.WriteUserCmdDelta(msg, userCmds[index, clientNum], last);
+                last = userCmds[index, clientNum];
             }
 
             channel.SendMessage(clientPort, clientTime, msg);
@@ -840,7 +841,7 @@ namespace Gengine.Framework.Async
                             msg.ReadDeltaDict(info, haveBase ? info : null);
 
                             // server forces us to a different userinfo
-                            if (clientNum == AsyncClient.clientNum)
+                            if (clientNum == this.clientNum)
                             {
                                 common.DPrintf("local user info modified by server\n");
                                 cvarSystem.SetCVarsFromDict(info);
@@ -870,7 +871,7 @@ namespace Gengine.Framework.Async
 
                             clientNum = msg.ReadInt();
                             ReadLocalizedServerString(msg, out s);
-                            if (clientNum == AsyncClient.clientNum)
+                            if (clientNum == this.clientNum)
                             {
                                 session.Stop();
                                 session.MessageBox(MSG_OK, s, common.LanguageDictGetString("#str_04319"), true);
@@ -1064,7 +1065,7 @@ namespace Gengine.Framework.Async
                     common.Printf($"client {i:2}: {serverInfo.nickname[serverInfo.clients]}, ping = {serverInfo.pings[serverInfo.clients]}, rate = {serverInfo.rate[serverInfo.clients]}\n");
                 serverInfo.clients++;
             }
-            index = serverList.InfoResponse(serverInfo);
+            index = serverList.InfoResponse(serverInfo) ? 1 : 0;
 
             common.Printf($"{index}: server {SysW.NetAdrToString(serverInfo.adr)} - protocol {protocol >> 16}.{protocol & 0xffff} - {serverInfo.serverInfo["si_name"]}\n");
         }
@@ -1680,7 +1681,7 @@ namespace Gengine.Framework.Async
                     AsyncNetwork.ExecuteSessionCommand(ret.sessionCommand);
 
                     snapshotGameFrame++;
-                    snapshotGameTime += USERCMD_MSEC;
+                    snapshotGameTime += Usercmd.USERCMD_MSEC;
                 }
             }
         }

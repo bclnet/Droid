@@ -200,6 +200,7 @@ namespace System.NumericsX
     [StructLayout(LayoutKind.Explicit)]
     public struct Matrix3x3
     {
+        public const int SizeOf = 3 * 3 * sizeof(float);
         public Matrix3x3(Matrix3x3 a)
             => mat = (Vector3[])a.mat.Clone();
         public Matrix3x3(Vector3 x, Vector3 y, Vector3 z)

@@ -52,6 +52,7 @@ namespace System.NumericsX.Sys
 
     public struct SysEvent
     {
+        //public const int SizeOf = sizeof(SysEvent);
         public static readonly SysEvent None = new() { evType = SE.NONE, evValue = 0, evValue2 = 0, evPtrLength = 0, evPtr = IntPtr.Zero };
         public SE evType;
         public int evValue;

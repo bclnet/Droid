@@ -755,15 +755,15 @@ namespace System.NumericsX.Core
         /// </summary>
         /// <param name="errorFlag">if set to <c>true</c> [error flag].</param>
         /// <returns></returns>
-        public float ParseFloat(out bool errorFlag)
+        public float ParseFloat(Action<bool> errorFlag = null)
         {
-            errorFlag = false;
+            var errorFlag_ = false;
             if (!ReadToken(out var token))
             {
-                if (errorFlag)
+                if (errorFlag_)
                 {
                     Warning("couldn't read expected floating point number");
-                    errorFlag = true;
+                    errorFlag_ = true;
                 }
                 else Error("couldn't read expected floating point number");
                 return 0f;
@@ -775,13 +775,14 @@ namespace System.NumericsX.Core
             }
             else if (token.type != TT.NUMBER)
             {
-                if (errorFlag)
+                if (errorFlag_)
                 {
                     Warning($"expected float value, found '{token}'");
-                    errorFlag = true;
+                    errorFlag_ = true;
                 }
                 else Error($"expected float value, found '{token}'");
             }
+            errorFlag?.Invoke(errorFlag_);
             return token.FloatValue;
         }
 
@@ -791,7 +792,7 @@ namespace System.NumericsX.Core
             if (!ExpectTokenString("("))
                 return false;
             for (var i = 0; i < x; i++)
-                m[i] = ParseFloat(out var _);
+                m[i] = ParseFloat();
             if (!ExpectTokenString(")"))
                 return false;
             return true;

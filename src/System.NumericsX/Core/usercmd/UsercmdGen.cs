@@ -5,19 +5,19 @@ namespace System.NumericsX.Core
     public class Usercmd
     {
         const int USERCMD_HZ			= 60;
-        public const int USERCMD_MSEC			= 1000 / USERCMD_HZ;
+        public const int USERCMD_MSEC	= 1000 / USERCMD_HZ;
 
         //static int USERCMD_MSEC() => (1000 / (renderSystem != null ? renderSystem.GetRefresh() : 60));
 
         // usercmd_t->button bits
-        const int BUTTON_ATTACK = 1 << 0;
-        const int BUTTON_RUN = 1 << 1;
-        const int BUTTON_ZOOM = 1 << 2;
-        const int BUTTON_SCORES = 1 << 3;
-        const int BUTTON_MLOOK = 1 << 4;
-        const int BUTTON_JUMP = 1 << 5;
-        const int BUTTON_CROUCH = 1 << 6;
-        const int BUTTON_USE = 1 << 7;
+        public const byte BUTTON_ATTACK = 1 << 0;
+        public const byte BUTTON_RUN = 1 << 1;
+        public const byte BUTTON_ZOOM = 1 << 2;
+        public const byte BUTTON_SCORES = 1 << 3;
+        public const byte BUTTON_MLOOK = 1 << 4;
+        public const byte BUTTON_JUMP = 1 << 5;
+        public const byte BUTTON_CROUCH = 1 << 6;
+        public const byte BUTTON_USE = 1 << 7;
 
         // usercmd_t->impulse commands
         const int IMPULSE_0 = 0;            // weap 0
@@ -76,7 +76,7 @@ namespace System.NumericsX.Core
         public int gameFrame;                       // frame number
         public int gameTime;                        // game time
         public int duplicateCount;                  // duplication count for networking
-        public byte buttons;                        // buttons
+        public byte buttons;                       // buttons
         public char forwardmove;                   // forward/backward movement
         public char rightmove;                     // left/right movement
         public char upmove;                         // up/down movement

@@ -284,13 +284,13 @@ namespace Gengine.Render
 
         void ShutdownOpenGL();
 
-        bool IsOpenGLRunning();
+        bool IsOpenGLRunning { get; }
 
-        bool IsFullScreen();
-        int GetScreenWidth();
-        int GetScreenHeight();
-        float GetFOV();
-        int GetRefresh();
+        bool IsFullScreen { get; }
+        int ScreenWidth { get; }
+        int ScreenHeight { get; }
+        float FOV { get; }
+        int Refresh { get; }
 
         // allocate a renderWorld to be used for drawing
         IRenderWorld AllocRenderWorld();

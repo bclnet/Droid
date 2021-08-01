@@ -153,9 +153,9 @@ namespace Gengine.Render
         void LoadModel();
 
         // internal use
-        bool IsLoaded();
+        bool IsLoaded { get; }
         void SetLevelLoadReferenced(bool referenced);
-        bool IsLevelLoadReferenced();
+        bool IsLevelLoadReferenced { get; }
 
         // models that are already loaded at level start time will still touch their data to make sure they are kept loaded
         void TouchData();
@@ -176,13 +176,13 @@ namespace Gengine.Render
         int Memory();
 
         // for reloadModels
-        DateTime Timestamp();
+        DateTime Timestamp { get; }
 
         // returns the number of surfaces
-        int NumSurfaces();
+        int NumSurfaces { get; }
 
         // NumBaseSurfaces will not count any overlays added to dynamic models
-        int NumBaseSurfaces();
+        int NumBaseSurfaces { get; }
 
         // get a pointer to a surface
         ModelSurface Surface(int surfaceNum);
@@ -199,22 +199,22 @@ namespace Gengine.Render
         SrfTriangles[] ShadowHull();
 
         // models of the form "_area*" may have a prelight shadow model associated with it
-        bool IsStaticWorldModel();
+        bool IsStaticWorldModel { get; }
 
         // models parsed from inside map files or dynamically created cannot be reloaded by reloadmodels
-        bool IsReloadable();
+        bool IsReloadable { get; }
 
         // md3, md5, particles, etc
-        DynamicModel IsDynamicModel();
+        DynamicModel IsDynamicModel { get; }
 
         // if the load failed for any reason, this will return true
-        bool IsDefaultModel();
+        bool IsDefaultModel { get; }
 
         // dynamic models should return a fast, conservative approximation static models should usually return the exact value
         Bounds Bounds(RenderEntity ent = null);
 
         // returns value != 0.0f if the model requires the depth hack
-        float DepthHack();
+        float DepthHack { get; }
 
         // returns a static model based on the definition and view currently, this will be regenerated for every view, even though
         // some models, like character meshes, could be used for multiple (mirror) views in a frame, or may stay static for multiple frames (corpses)
@@ -222,10 +222,10 @@ namespace Gengine.Render
         IRenderModel InstantiateDynamicModel(RenderEntity ent, ViewDef view, IRenderModel cachedModel);
 
         // Returns the number of joints or 0 if the model is not an MD5
-        int NumJoints();
+        int NumJoints { get; }
 
         // Returns the MD5 joints or NULL if the model is not an MD5
-        MD5Joint GetJoints();
+        MD5Joint Joints { get; }
 
         // Returns the handle for the joint with the given name.
         JointHandle GetJointHandle(string name);
@@ -234,7 +234,7 @@ namespace Gengine.Render
         string GetJointName(JointHandle handle);
 
         // Returns the default animation pose or NULL if the model is not an MD5.
-        JointQuat GetDefaultPose();
+        JointQuat DefaultPose { get; }
 
         // Returns number of the joint nearest to the given triangle.
         int NearestJoint(int surfaceNum, int a, int c, int b);

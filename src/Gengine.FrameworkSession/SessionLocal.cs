@@ -29,7 +29,7 @@ namespace Gengine.Framework
     {
         public Dictionary<string, object> serverInfo;
         public Dictionary<string, object> syncedCVars;
-        public Dictionary<string, object>[] userInfo = new Dictionary<string, object>[Config.MAX_ASYNC_CLIENTS];
+        public Dictionary<string, string>[] userInfo = new Dictionary<string, string>[Config.MAX_ASYNC_CLIENTS];
         public Dictionary<string, object>[] persistentPlayerInfo = new Dictionary<string, object>[Config.MAX_ASYNC_CLIENTS];
         public Usercmd[] mapSpawnUsercmd = new Usercmd[Config.MAX_ASYNC_CLIENTS];     // needed for tracking delta angles
     }
@@ -218,7 +218,7 @@ namespace Gengine.Framework
 
 #if true //_WIN32
 
-            if (com_editors)
+            if (C.com_editors != 0)
                 if (!SysW.IsWindowVisible())
                     return;
 #endif
@@ -235,12 +235,12 @@ namespace Gengine.Framework
             if (outOfSequence)
                 SysW.GrabMouseCursor(false);
 
-            renderSystem.BeginFrame(renderSystem.GetScreenWidth(), renderSystem.GetScreenHeight());
+            renderSystem.BeginFrame(renderSystem.ScreenWidth, renderSystem.ScreenHeight);
 
             // draw everything
             Draw();
 
-            if (com_speeds.Bool) renderSystem.EndFrame(out time_frontend, out time_backend);
+            if (C.com_speeds.Bool) renderSystem.EndFrame(out var time_frontend, out var time_backend);
             else renderSystem.EndFrame(out _, out _);
 
             insideUpdateScreen = false;
@@ -255,19 +255,19 @@ namespace Gengine.Framework
             if (insideUpdateScreen)
                 return;
 
-            int time = eventLoop.Milliseconds();
+            var time = eventLoop.Milliseconds;
 
             if (time - lastPacifierTime < 100)
                 return;
             lastPacifierTime = time;
 
-            if (guiLoading && bytesNeededForMapLoad)
+            if (guiLoading != null && bytesNeededForMapLoad != 0)
             {
                 float n = fileSystem.GetReadCount();
                 float pct = (n / bytesNeededForMapLoad);
                 // pct = idMath.ClampFloat( 0.0f, 100.0f, pct );
                 guiLoading.SetStateFloat("map_loading", pct);
-                guiLoading.StateChanged(com_frameTime);
+                guiLoading.StateChanged(C.com_frameTime);
             }
 
             SysW.GenerateEvents();
@@ -280,7 +280,7 @@ namespace Gengine.Framework
 
         public void Frame()
         {
-            if (com_asyncSound.Integer == 0)
+            if (C.com_asyncSound.Integer == 0)
                 soundSystem.AsyncUpdateWrite(SysW.Milliseconds);
 
             // DG: periodically check if sound device is still there and try to reset it if not (calling this from idSoundSystem.AsyncUpdate(), which runs in a separate thread
@@ -288,11 +288,11 @@ namespace Gengine.Framework
             CheckOpenALDeviceAndRecoverIfNeeded();
 
             // Editors that completely take over the game
-            if (com_editorActive && (com_editors & (EDITOR.RADIANT | EDITOR.GUI)))
+            if (C.com_editorActive && ((C.com_editors & (int)(EDITOR.RADIANT | EDITOR.GUI)) != 0))
                 return;
 
             // if the console is down, we don't need to hold the mouse cursor
-            SysW.GrabMouseCursor(console.Active || com_editorActive ? false : true);
+            SysW.GrabMouseCursor(console.Active || !C.com_editorActive);
 
             // save the screenshot and audio from the last draw if needed
             if (aviCaptureMode)
@@ -311,7 +311,7 @@ namespace Gengine.Framework
                         name = $"demos/{aviDemoShortName}/{aviDemoShortName}_{++aviTicStart:05}.tga";
                     }
                 }
-                aviTicStart = aviDemoFrameCount;
+                aviTicStart = (int)aviDemoFrameCount;
 
                 // remove any printed lines at the top before taking the screenshot
                 console.ClearNotifyLines();
@@ -345,7 +345,7 @@ namespace Gengine.Framework
                 latchedTicNumber = com_ticNumber;
                 if (latchedTicNumber >= minTic)
                     break;
-                SysW.WaitForEvent(TRIGGER_EVENT_ONE);
+                SysW.WaitForEvent(TRIGGER_EVENT.ONE);
             }
 
             if (authEmitTimeout != 0)
@@ -385,15 +385,15 @@ namespace Gengine.Framework
 
             //------------ single player game tics --------------
 
-            if (!mapSpawned || guiActive)
-                if (!com_asyncInput.Bool)
+            if (!mapSpawned || guiActive != null)
+                if (!C.com_asyncInput.Bool)
                     // early exit, won't do RunGameTic .. but still need to update mouse position for GUIs
                     usercmdGen.GetDirectUsercmd();
 
             if (!mapSpawned)
                 return;
 
-            if (guiActive)
+            if (guiActive != null)
             {
                 lastGameTic = latchedTicNumber;
                 return;
@@ -415,7 +415,7 @@ namespace Gengine.Framework
             var numCmdsToRun = latchedTicNumber - lastGameTic;
 
             // don't let a long onDemand sound load unsync everything
-            if (timeHitch)
+            if (timeHitch != 0)
             {
                 var skip = timeHitch / Usercmd.USERCMD_MSEC;
                 lastGameTic += skip;
@@ -433,7 +433,7 @@ namespace Gengine.Framework
                 var fixedTic = USERCMD_PER_DEMO_FRAME;
                 // we should have waited long enough
                 if (numCmdsToRun < fixedTic)
-                    common.Error("idSessionLocal.Frame: numCmdsToRun < fixedTic");
+                    common.Error("SessionLocal.Frame: numCmdsToRun < fixedTic");
                 // we may need to dump older commands
                 lastGameTic = latchedTicNumber - fixedTic;
             }
@@ -471,7 +471,7 @@ namespace Gengine.Framework
             var skipTics = false;
             if (com_skipTics.Bool && gameTicsToRun > 1)
             {
-                var refresh = renderSystem.GetRefresh();
+                var refresh = renderSystem.Refresh;
 
                 //Skip extra tics if we are maintaining 95% of the intended refresh rate
                 skipTics = (fps >= (refresh * 0.95F));
@@ -498,11 +498,12 @@ namespace Gengine.Framework
         public bool IsMultiplayer
             => AsyncNetwork.IsActive;
 
-        public bool ProcessEvent(SysEvent event_)
+        static string ProcessEvent_cmd;
+        public bool ProcessEvent(SysEvent ev)
         {
             // hitting escape anywhere brings up the menu
             // DG: but shift-escape should bring up console instead so ignore that
-            if (!guiActive && event_.evType == SE_KEY && event_.evValue2 == 1 && event_.evValue == K_ESCAPE && !KeyInput.IsDown(K_SHIFT))
+            if (guiActive == null && ev.evType == SE.KEY && ev.evValue2 == 1 && ev.evValue == K_ESCAPE && !KeyInput.IsDown(K_SHIFT))
             {
                 console.Close();
                 if (game)
@@ -523,44 +524,43 @@ namespace Gengine.Framework
             }
 
             // let the pull-down console take it if desired
-            if (console.ProcessEvent(event_, false))
+            if (console.ProcessEvent(ev, false))
                 return true;
 
             // if we are testing a GUI, send all events to it
-            if (guiTest)
+            if (guiTest != null)
             {
                 // hitting escape exits the testgui
-                if (event_.evType == SE_KEY && event_.evValue2 == 1 && event_.evValue == K_ESCAPE)
+                if (ev.evType == SE.KEY && ev.evValue2 == 1 && ev.evValue == K_ESCAPE)
                 {
                     guiTest = null;
                     return true;
                 }
 
-                static string cmd;
-                cmd = guiTest.HandleEvent(event_, com_frameTime);
-                if (!string.IsNullOrEmpty(cmd))
-                    common.Printf($"testGui event returned: '{cmd}'\n");
+                ProcessEvent_cmd = guiTest.HandleEvent(ev, C.com_frameTime);
+                if (!string.IsNullOrEmpty(ProcessEvent_cmd))
+                    common.Printf($"testGui event returned: '{ProcessEvent_cmd}'\n");
                 return true;
             }
 
             // menus / etc
-            if (guiActive)
+            if (guiActive != null)
             {
-                MenuEvent(event_);
+                MenuEvent(ev);
                 return true;
             }
 
             // if we aren't in a game, force the console to take it
             if (!mapSpawned)
             {
-                console.ProcessEvent(event_, true);
+                console.ProcessEvent(ev, true);
                 return true;
             }
 
             // in game, exec bindings for all key downs
-            if (event_.evType == SE_KEY && event_.evValue2 == 1)
+            if (ev.evType == SE_KEY && ev.evValue2 == 1)
             {
-                KeyInput.ExecKeyBinding(event_.evValue);
+                KeyInput.ExecKeyBinding(ev.evValue);
                 return true;
             }
 
@@ -1647,7 +1647,7 @@ namespace Gengine.Framework
                 // report the stats
                 var demoSeconds = (timeDemoStopTime - timeDemoStartTime) * 0.001f;
                 var demoFPS = numDemoFrames / demoSeconds;
-                var message = $"{numDemoFrames} frames rendered in {demoSeconds:3.1} seconds = {demoFPS:3.1} fps\n");
+                var message = $"{numDemoFrames} frames rendered in {demoSeconds:3.1} seconds = {demoFPS:3.1} fps\n";
 
                 common.Printf(message);
                 if (timeDemo == TD.YES_THEN_QUIT)
@@ -1871,15 +1871,15 @@ namespace Gengine.Framework
             if (com_showDemo.Bool)
                 common.Printf($"frame:{numDemoFrames} DemoTic:{lastDemoTic} latched:{latchedTicNumber} skip:{skipFrames}\n");
         }
-        public void RunGameTic()
+        public unsafe void RunGameTic()
         {
             LogCmd logCmd;
             Usercmd cmd;
 
             // if we are doing a command demo, read or write from the file
-            if (cmdDemoFile)
+            if (cmdDemoFile != null)
             {
-                if (!cmdDemoFile.Read(&logCmd, sizeof(logCmd)))
+                if (cmdDemoFile.Read(&logCmd, sizeof(LogCmd))==null)
                 {
                     common.Printf("Command demo completed at logIndex %i\n", logIndex);
                     fileSystem.CloseFile(cmdDemoFile);
@@ -1902,32 +1902,27 @@ namespace Gengine.Framework
             }
 
             // if we didn't get one from the file, get it locally
-            if (!cmdDemoFile)
+            if (cmdDemoFile == null)
             {
                 // get a locally created command
-                if (com_asyncInput.GetBool())
-                {
-                    cmd = usercmdGen.TicCmd(lastGameTic);
-                }
-                else
-                {
-                    cmd = usercmdGen.GetDirectUsercmd();
-                }
+                cmd = C.com_asyncInput.Bool
+                    ? usercmdGen.TicCmd(lastGameTic)
+                    : usercmdGen.GetDirectUsercmd();
                 lastGameTic++;
             }
 
             // run the game logic every player move
-            int start = SysW.Milliseconds;
-            var ret = game.RunFrame(&cmd);
+            var start = SysW.Milliseconds;
+            var ret = game.RunFrame(out cmd);
 
             for (var h = 0; h < 2; h++)
                 common.Vibrate(h, ret.vibrationLow[h], ret.vibrationHigh[h]);
 
             var end = SysW.Milliseconds;
-            time_gameFrame += end - start;  // note time used for com_speeds
+            C.time_gameFrame += end - start;  // note time used for com_speeds
 
             // check for constency failure from a recorded command
-            if (cmdDemoFile)
+            if (cmdDemoFile!=null)
             {
                 if (ret.consistencyHash != logCmd.consistencyHash)
                 {
@@ -1968,14 +1963,14 @@ namespace Gengine.Framework
                     for (var i = 0; i < numClients; i++)
                         mapSpawnData.persistentPlayerInfo[i] = game.GetPersistentPlayerInfo(i);
                     // clear the devmap key on serverinfo, so player spawns won't get the map testing items
-                    mapSpawnData.serverInfo.Delete("devmap");
+                    mapSpawnData.serverInfo.Remove("devmap");
 
                     // go to the next map
                     MoveToNewMap(args[1]);
                 }
                 else if (string.Equals(args[0], "devmap", StringComparison.OrdinalIgnoreCase))
                 {
-                    mapSpawnData.serverInfo.Set("devmap", "1");
+                    mapSpawnData.serverInfo["devmap"] = "1";
                     MoveToNewMap(args[1]);
                 }
                 else if (string.Equals(args[0], "died", StringComparison.OrdinalIgnoreCase))
@@ -2026,7 +2021,7 @@ namespace Gengine.Framework
 
         public int GetBytesNeededForMapLoad(string mapName)
         {
-            var mapDecl = declManager.FindType(DECL_MAPDEF, mapName, false);
+            var mapDecl = declManager.FindType(DECL.MAPDEF, mapName, false);
             var mapDef = (DeclEntityDef)mapDecl;
             return mapDef != null
                 ? mapDef.dict.GetInt($"size{3}")
@@ -2034,10 +2029,10 @@ namespace Gengine.Framework
         }
         public void SetBytesNeededForMapLoad(string mapName, int bytesNeeded)
         {
-            var mapDecl = declManager.FindType(DECL_MAPDEF, mapName, false);
+            var mapDecl = declManager.FindType(DECL.MAPDEF, mapName, false);
             var mapDef = (DeclEntityDef)mapDecl;
 
-            if (com_updateLoadSize.GetBool() && mapDef)
+            if (C.com_updateLoadSize.Bool && mapDef)
             {
                 // we assume that if com_updateLoadSize is true then the file is writable
 
@@ -2175,7 +2170,7 @@ namespace Gengine.Framework
             }
 
             // load and spawn all other entities ( from a savegame possibly )
-            if (loadingSaveGame && savegameFile)
+            if (loadingSaveGame && savegameFile != null)
             {
                 if (game.InitFromSaveGame(fullMapName + ".map", rw, sw, savegameFile) == false)
                 {
@@ -2185,13 +2180,13 @@ namespace Gengine.Framework
                     savegameFile = null;
 
                     game.SetServerInfo(mapSpawnData.serverInfo);
-                    game.InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork.server.IsActive(), idAsyncNetwork.client.IsActive(), Sys_Milliseconds());
+                    game.InitFromNewMap(fullMapName + ".map", rw, sw, AsyncNetwork.server.IsActive, AsyncNetwork.client.IsActive(), SysW.Milliseconds);
                 }
             }
             else
             {
                 game.SetServerInfo(mapSpawnData.serverInfo);
-                game.InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork.server.IsActive(), idAsyncNetwork.client.IsActive(), Sys_Milliseconds());
+                game.InitFromNewMap(fullMapName + ".map", rw, sw, AsyncNetwork.server.IsActive, AsyncNetwork.client.IsActive, SysW.Milliseconds);
             }
 
             if (!AsyncNetwork.IsActive && !loadingSaveGame)
@@ -2214,7 +2209,7 @@ namespace Gengine.Framework
                 for (i = 0; i < 10; i++)
                     game.RunFrame(mapSpawnData.mapSpawnUsercmd);
 
-            var msec = SysW.Milliseconds() - start;
+            var msec = SysW.Milliseconds - start;
             common.Printf($"{msec:6} msec to load {mapString}\n");
 
             // let the renderSystem generate interactions now that everything is spawned
@@ -2222,7 +2217,7 @@ namespace Gengine.Framework
 
             common.PrintWarnings();
 
-            if (guiLoading && bytesNeededForMapLoad)
+            if (guiLoading != null && bytesNeededForMapLoad != 0)
             {
                 var pct = guiLoading.State.GetFloat("map_loading");
                 if (pct < 0.0f)
@@ -2230,7 +2225,7 @@ namespace Gengine.Framework
                 while (pct < 1.0f)
                 {
                     guiLoading.SetStateFloat("map_loading", pct);
-                    guiLoading.StateChanged(com_frameTime);
+                    guiLoading.StateChanged(C.com_frameTime);
                     SysW.GenerateEvents();
                     UpdateScreen();
                     pct += 0.05f;
@@ -2305,7 +2300,7 @@ namespace Gengine.Framework
         public IUserInterface GetActiveMenu() { }
 
         public void DispatchCommand(IUserInterface gui, string menuCommand, bool doIngame = true) { }
-        public void MenuEvent(sysEvent event_);
+        public void MenuEvent(SysEvent ev);
         public bool HandleSaveGameMenuCommand(out CmdArgs args, out int icmd);
         public void HandleInGameCommands(string menuCommand);
         public void HandleMainMenuCommands(string menuCommand);

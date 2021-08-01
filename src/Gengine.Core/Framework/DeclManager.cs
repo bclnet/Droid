@@ -2,6 +2,7 @@ using Gengine.Render;
 using Gengine.Sound;
 using System;
 using System.NumericsX.Core;
+using static Gengine.Lib;
 
 namespace Gengine.Framework
 {
@@ -26,7 +27,7 @@ namespace Gengine.Framework
         MAX_TYPES = 32
     }
 
-    public enum declState
+    public enum DeclState
     {
         DS_UNPARSED,
         DS_DEFAULTED,          // set if a parse failed due to an error, or the lack of any source
@@ -42,29 +43,29 @@ namespace Gengine.Framework
             LEXFL.ALLOWBACKSLASHSTRINGCONCAT |  // allow multiple strings seperated by '\' to be concatenated
             LEXFL.NOFATALERRORS;                // just set a flag instead of fatal erroring
 
-        public abstract string GetName();
-        public abstract DECL GetType_();
-        public abstract declState GetState();
-        public abstract bool IsImplicit();
-        public abstract bool IsValid();
+        public abstract string Name { get; }
+        public abstract DECL Type { get; }
+        public abstract DeclState State { get; }
+        public abstract bool IsImplicit { get; }
+        public abstract bool IsValid { get; }
         public abstract void Invalidate();
         public abstract void Reload();
         public abstract void EnsureNotPurged();
-        public abstract int Index();
-        public abstract int GetLineNum();
-        public abstract string GetFileName();
-        public abstract void GetText(string text);
-        public abstract int GetTextLength();
+        public abstract int Index { get; }
+        public abstract int LineNum { get; }
+        public abstract string FileName { get; }
+        public abstract string GetText();
+        public abstract int TextLength { get; }
         public abstract void SetText(string text);
         public abstract bool ReplaceSourceFileText();
         public abstract bool SourceFileChanged();
         public abstract void MakeDefault();
-        public abstract bool EverReferenced();
+        public abstract bool EverReferenced { get; }
         public abstract bool SetDefaultText();
-        public abstract string DefaultDefinition();
+        public abstract string DefaultDefinition { get; }
         public abstract bool Parse(string text, int textLength);
         public abstract void FreeData();
-        public abstract int Size();
+        public abstract int Size { get; }
         public abstract void List();
         public abstract void Print();
     }
@@ -72,84 +73,84 @@ namespace Gengine.Framework
     public class Decl
     {
         // Returns the name of the decl.
-        public string GetName() => _base.GetName();
+        public string Name => base_.Name;
 
         // Returns the decl type.
-        public DECL GetType_() => _base.GetType_();
+        public DECL Type => base_.Type;
 
         // Returns the decl state which is usefull for finding out if a decl defaulted.
-        public declState GetState() => _base.GetState();
+        public DeclState State => base_.State;
 
         // Returns true if the decl was defaulted or the text was created with a call to SetDefaultText.
-        public bool IsImplicit() => _base.IsImplicit();
+        public bool IsImplicit => base_.IsImplicit;
 
         // The only way non-manager code can have an invalid decl is if the *ByIndex() call was used with forceParse = false to walk the lists to look at names
         // without touching the media.
-        public bool IsValid() => _base.IsValid();
+        public bool IsValid => base_.IsValid;
 
         // Sets state back to unparsed. Used by decl editors to undo any changes to the decl.
-        public void Invalidate() => _base.Invalidate();
+        public void Invalidate() => base_.Invalidate();
 
         // if a pointer might possible be stale from a previous level, call this to have it re-parsed
-        public void EnsureNotPurged() => _base.EnsureNotPurged();
+        public void EnsureNotPurged() => base_.EnsureNotPurged();
 
         // Returns the index in the per-type list.
-        public int Index() => _base.Index();
+        public int Index => base_.Index;
 
         // Returns the line number the decl starts.
-        public int GetLineNum() => _base.GetLineNum();
+        public int LineNum => base_.LineNum;
 
         // Returns the name of the file in which the decl is defined.
-        public string GetFileName() => _base.GetFileName();
+        public string FileName => base_.FileName;
 
         // Returns the decl text.
-        public void GetText(string text) => _base.GetText(text);
+        public string GetText() => base_.GetText();
 
         // Returns the length of the decl text.
-        public int GetTextLength() => _base.GetTextLength();
+        public int TextLength => base_.TextLength;
 
         // Sets new decl text.
-        public void SetText(string text) => _base.SetText(text);
+        public void SetText(string text) => base_.SetText(text);
 
         // Saves out new text for the decl. Used by decl editors to replace the decl text in the source file.
-        public bool ReplaceSourceFileText() => _base.ReplaceSourceFileText();
+        public bool ReplaceSourceFileText() => base_.ReplaceSourceFileText();
         // Returns true if the source file changed since it was loaded and parsed.
-        public bool SourceFileChanged() => _base.SourceFileChanged();
+        public bool SourceFileChanged() => base_.SourceFileChanged();
 
         // Frees data and makes the decl a default.
-        public void MakeDefault() => _base.MakeDefault();
+        public void MakeDefault() => base_.MakeDefault();
 
         // Returns true if the decl was ever referenced.
-        public bool EverReferenced() => _base.EverReferenced();
+        public bool EverReferenced() => base_.EverReferenced;
 
         // Sets textSource to a default text if necessary. This may be overridden to provide a default definition based on the
         // decl name. For instance materials may default to an implicit definition using a texture with the same name as the decl.
-        public virtual bool SetDefaultText() => _base.SetDefaultText();
+        public virtual bool SetDefaultText() => base_.SetDefaultText();
 
         // Each declaration type must have a default string that it is guaranteed to parse acceptably. When a decl is not explicitly found, is purged, or
         // has an error while parsing, MakeDefault() will do a FreeData(), then a Parse() with DefaultDefinition(). The defaultDefintion should start with
         // an open brace and end with a close brace.
-        public virtual string DefaultDefinition() => _base.DefaultDefinition();
+        public virtual string DefaultDefinition => base_.DefaultDefinition;
 
         // The manager will have already parsed past the type, name and opening brace. All necessary media will be touched before return.
         // The manager will have called FreeData() before issuing a Parse(). The subclass can call MakeDefault() internally at any point if there are parse errors.
-        public virtual bool Parse(string text, int textLength) => _base.Parse(text, textLength);
+        public virtual bool Parse(string text, int textLength) => base_.Parse(text, textLength);
 
         // Frees any pointers held by the subclass. This may be called before any Parse(), so the constructor must have set sane values. The decl will be
         // invalid after issuing this call, but it will always be immediately followed by a Parse()
-        public virtual void FreeData() => _base.FreeData();
+        public virtual void FreeData() => base_.FreeData();
 
         // Returns the size of the decl in memory.
-        public virtual int Size() => _base.Size();
+        public virtual int Size => base_.Size;
 
         // If this isn't overridden, it will just print the decl name.
         // The manager will have printed 7 characters on the line already, containing the reference state and index number.
-        public virtual void List() => _base.List();
+        public virtual void List() => base_.List();
 
         // The print function will already have dumped the text source and common data, subclasses can override this to dump more explicit data.
-        public virtual void Print() => _base.Print();
+        public virtual void Print() => base_.Print();
 
-        DeclBase _base;
+        protected internal DeclBase base_;
     }
 
     public interface DeclManager
@@ -171,7 +172,7 @@ namespace Gengine.Framework
         int GetChecksum();
 
         // Returns the number of decl types.
-        int GetNumDeclTypes();
+        int NumDeclTypes { get; }
 
         // Returns the type name for a decl type.
         string GetDeclNameFromType(DECL type);
@@ -218,8 +219,5 @@ namespace Gengine.Framework
         DeclSkin SkinByIndex(int index, bool forceParse = true);
         SoundShader SoundByIndex(int index, bool forceParse = true);
     }
-
-    //static void ListDecls_f(CmdArgs args) => G.declManager.ListType(args, type);
-    //static void PrintDecls_f(CmdArgs args) => G.declManager.PrintType(args, type);
 }
 

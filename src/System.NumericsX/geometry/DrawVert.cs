@@ -11,7 +11,10 @@ namespace System.NumericsX
         public Vector3 normal;
         public Vector3 tangents0;
         public Vector3 tangents1;
-        public uint color;
+        public byte color0;
+        public byte color1;
+        public byte color2;
+        public byte color3;
 
         public DrawVert Clone()
             => (DrawVert)MemberwiseClone();
@@ -33,7 +36,7 @@ namespace System.NumericsX
             normal.Zero();
             tangents0.Zero();
             tangents1.Zero();
-            color = 0;
+            color0 = color1 = color2 = color3 = 0;
         }
 
         public void Lerp(DrawVert a, DrawVert b, float f)
@@ -49,11 +52,10 @@ namespace System.NumericsX
             normal = a.normal + f * (b.normal - a.normal);
             tangents0 = a.tangents0 + f * (b.tangents0 - a.tangents0);
             tangents1 = a.tangents1 + f * (b.tangents1 - a.tangents1);
-            byte* color = (byte*)this.color, a_color = (byte*)a.color, b_color = (byte*)b.color;
-            color[0] = (byte)(a_color[0] + f * (b_color[0] - a_color[0]));
-            color[1] = (byte)(a_color[1] + f * (b_color[1] - a_color[1]));
-            color[2] = (byte)(a_color[2] + f * (b_color[2] - a_color[2]));
-            color[3] = (byte)(a_color[3] + f * (b_color[3] - a_color[3]));
+            color0 = (byte)(a.color0 + f * (b.color0 - a.color0));
+            color1 = (byte)(a.color1 + f * (b.color1 - a.color1));
+            color2 = (byte)(a.color2 + f * (b.color2 - a.color2));
+            color3 = (byte)(a.color3 + f * (b.color3 - a.color3));
         }
 
         public void Normalize()
@@ -65,11 +67,11 @@ namespace System.NumericsX
             tangents0.Normalize();
         }
 
-        public uint Color
-        {
-            get => color;
-            set => color = value;
-        }
+        //public uint Color
+        //{
+        //    get => color;
+        //    set => color = value;
+        //}
 
         public void SetTexCoord(Vector2 st)
         {

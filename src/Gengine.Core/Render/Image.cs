@@ -74,35 +74,52 @@ namespace Gengine.Render
         public fixed uint dwReserved2[3];
     }
 
-    // increasing numeric values imply more information is stored
-    public enum TD
-    {
-        SPECULAR,            // may be compressed, and always zeros the alpha channel
-        DIFFUSE,             // may be compressed
-        DEFAULT,             // will use compressed formats when possible
-        BUMP,                // may be compressed with 8 bit lookup
-        HIGH_QUALITY         // either 32 bit or a component format, no loss at all
-    }
-
-    public enum TT
-    {
-        DISABLED,
-        _2D,
-        CUBIC,
-        RECT
-    }
-
-    public enum CF
-    {
-        _2D,          // not a cube map
-        NATIVE,      // _px, _nx, _py, etc, directly sent to GL
-        CAMERA       // _forward, _back, etc, rotated and flipped as needed before sending to GL
-    }
-
     //#define MAX_IMAGE_NAME	256
 
     public class Image
     {
+        public enum TF
+        {
+            LINEAR,
+            NEAREST,
+            DEFAULT             // use the user-specified r_textureFilter
+        }
+
+        public enum TR
+        {
+            REPEAT,
+            CLAMP,
+            CLAMP_TO_BORDER,        // this should replace TR_CLAMP_TO_ZERO and TR_CLAMP_TO_ZERO_ALPHA,
+                                    // but I don't want to risk changing it right now
+            CLAMP_TO_ZERO,      // guarantee 0,0,0,255 edge for projected textures, set AFTER image format selection
+            CLAMP_TO_ZERO_ALPHA // guarantee 0 alpha edge for projected textures, set AFTER image format selection
+        }
+
+        // increasing numeric values imply more information is stored
+        public enum TD
+        {
+            SPECULAR,            // may be compressed, and always zeros the alpha channel
+            DIFFUSE,             // may be compressed
+            DEFAULT,             // will use compressed formats when possible
+            BUMP,                // may be compressed with 8 bit lookup
+            HIGH_QUALITY         // either 32 bit or a component format, no loss at all
+        }
+
+        public enum TT
+        {
+            DISABLED,
+            _2D,
+            CUBIC,
+            RECT
+        }
+
+        public enum CF
+        {
+            _2D,          // not a cube map
+            NATIVE,      // _px, _nx, _py, etc, directly sent to GL
+            CAMERA       // _forward, _back, etc, rotated and flipped as needed before sending to GL
+        }
+
         public Image()
         {
             texnum = TEXTURE_NOT_LOADED;
@@ -254,8 +271,8 @@ namespace Gengine.Render
         // If the load fails for any reason, the image will be filled in with the default grid pattern.
         // Will automatically resample non-power-of-two images and execute image programs if needed.
         public Image ImageFromFile(string name,
-                                TF filter, bool allowDownSize,
-                                TR repeat, TD depth, CF cubeMap = CF._2D) => throw new NotImplementedException();
+                                Image.TF filter, bool allowDownSize,
+                                Image.TR repeat, Image.TD depth, Image.CF cubeMap = Image.CF._2D) => throw new NotImplementedException();
 
         // look for a loaded image, whatever the parameters
         public Image GetImage(string name) => throw new NotImplementedException();
@@ -406,13 +423,13 @@ namespace Gengine.Render
 
         public static void LoadImage(string name, out byte[] pic, out int width, out int height, out DateTime timestamp, bool makePowerOf2) => throw new NotImplementedException();
         // pic is in top to bottom raster format
-        public static bool LoadCubeImages(string cname, CF extensions, out byte[] pic, out int size, out DateTime timestamp) => throw new NotImplementedException();
+        public static bool LoadCubeImages(string cname, Image.CF extensions, out byte[] pic, out int size, out DateTime timestamp) => throw new NotImplementedException();
 
         #endregion
 
         #region IMAGEPROGRAM
 
-        public static void LoadImageProgram(string name, out byte[] pic, out int width, out int height, out DateTime timestamp, out TD depth) => throw new NotImplementedException();
+        public static void LoadImageProgram(string name, out byte[] pic, out int width, out int height, out DateTime timestamp, out Image.TD depth) => throw new NotImplementedException();
         public static string ParsePastImageProgram(Lexer src) => throw new NotImplementedException();
 
         #endregion

@@ -15,7 +15,6 @@
   <ItemGroup>
     <None Remove="Framework\Console.cpp" />
     <None Remove="Framework\Console.h" />
-    <None Remove="Framework\EventLoop.cpp" />
     <None Remove="Framework\EventLoop.h" />
     <None Remove="Framework\KeyInput.cpp" />
     <None Remove="Framework\KeyInput.h" />

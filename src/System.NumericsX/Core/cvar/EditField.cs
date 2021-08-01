@@ -369,6 +369,12 @@ namespace System.NumericsX.Core
         public StringBuilder Buffer
             => buffer;
 
+        public void SetBuffer(string buf)
+        {
+            Clear();
+            buffer.Append(buf);
+            Cursor = buffer.Length;
+        }
         public void SetBuffer(StringBuilder buf)
         {
             Clear();

@@ -9,24 +9,15 @@ namespace System.NumericsX.Core
     public abstract class VCompressor : VFile
     {
         // compressor allocation
-        //public static VCompressor AllocNoCompression()
-        //    => new VCompressor_None();
-        //public static VCompressor AllocBitStream()
-        //    => new VCompressor_BitStream();
-        //public static VCompressor AllocRunLength()
-        //    => new VCompressor_RunLength();
-        //public static VCompressor AllocRunLength_ZeroBased()
-        //    => new VCompressor_RunLength_ZeroBased();
-        //public static VCompressor AllocHuffman()
-        //    => new VCompressor_Huffman();
-        //public static VCompressor AllocArithmetic()
-        //    => new VCompressor_Arithmetic();
-        //public static VCompressor AllocLZSS()
-        //    => new VCompressor_LZSS();
-        //public static VCompressor AllocLZSS_WordAligned()
-        //    => new VCompressor_LZSS_WordAligned();
-        //public static VCompressor AllocLZW()
-        //    => new VCompressor_LZW();
+        public static VCompressor AllocNoCompression() => new VCompressor_None();
+        public static VCompressor AllocBitStream() => new VCompressor_BitStream();
+        public static VCompressor AllocRunLength() => new VCompressor_RunLength();
+        public static VCompressor AllocRunLength_ZeroBased() => new VCompressor_RunLength_ZeroBased();
+        public static VCompressor AllocHuffman() => throw new NotImplementedException(); //new VCompressor_Huffman();
+        public static VCompressor AllocArithmetic() => new VCompressor_Arithmetic();
+        public static VCompressor AllocLZSS() => new VCompressor_LZSS();
+        public static VCompressor AllocLZSS_WordAligned() => new VCompressor_LZSS_WordAligned();
+        public static VCompressor AllocLZW() => new VCompressor_LZW();
 
         // initialization
         public abstract void Init(VFile f, bool compress, int wordLength);

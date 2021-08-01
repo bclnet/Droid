@@ -4,8 +4,9 @@ using System.Diagnostics;
 using System.NumericsX;
 using System.NumericsX.Core;
 using System.NumericsX.Sys;
-using static System.NumericsX.Lib;
 using static Gengine.Framework.Async.MsgChannel;
+using static Gengine.Lib;
+using static System.NumericsX.Lib;
 
 namespace Gengine.Framework.Async
 {
@@ -924,7 +925,7 @@ namespace Gengine.Framework.Async
             var client = clients[clientNum];
 
             // clear the unsent fragments. might flood winsock but that's ok
-            while (client.channel.UnsentFragmentsLeft())
+            while (client.channel.UnsentFragmentsLeft)
                 client.channel.SendNextFragment(serverPort, serverTime);
 
             BitMsg msg = new(); byte[] msgBuf = new byte[MAX_MESSAGE_SIZE];
@@ -1958,7 +1959,7 @@ namespace Gengine.Framework.Async
 
             outMsg.InitW(msgBuf);
             outMsg.WriteByte((int)SERVER_RELIABLE_MESSAGE.GAME);
-            outMsg.WriteData(msg.DataW, msg.Size);
+            outMsg.WriteData(msg.DataW, 0, msg.Size);
 
             if (clientNum >= 0 && clientNum < Config.MAX_ASYNC_CLIENTS)
             {
@@ -1983,7 +1984,7 @@ namespace Gengine.Framework.Async
 
             outMsg.InitW(msgBuf);
             outMsg.WriteByte((int)SERVER_RELIABLE_MESSAGE.GAME);
-            outMsg.WriteData(msg.DataW, msg.Size);
+            outMsg.WriteData(msg.DataW, 0, msg.Size);
 
             for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
@@ -2166,7 +2167,7 @@ namespace Gengine.Framework.Async
                 else SendEmptyToClient(i);
             }
 
-            if (com_showAsyncStats.Bool)
+            if (C.com_showAsyncStats.Bool)
             {
                 UpdateAsyncStatsAvg();
 
@@ -2311,7 +2312,7 @@ namespace Gengine.Framework.Async
                 return;
             }
 
-            string pakbuf;
+            string pakbuf = null;
             pakNames.Add(pakbuf);
             numPaks = 1;
 

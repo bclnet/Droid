@@ -131,7 +131,7 @@ namespace System.NumericsX.Core
         // The extension must include a leading dot and may not contain wildcards.
         FileList ListFilesTree(string relativePath, string extension, bool sort = false, string gamedir = null);
         // Frees the given file list.
-        void FreeFileList(ref FileList fileList);
+        void FreeFileList(FileList fileList);
         // Converts a relative path to a full OS path.
         string OSPathToRelativePath(string OSPath);
         // Converts a full OS path to a relative path.

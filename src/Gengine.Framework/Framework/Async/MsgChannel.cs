@@ -192,7 +192,7 @@ namespace Gengine.Framework.Async
             this.remoteAddress = adr;
             this.id = id;
             this.maxRate = 50000;
-            this.compressor = Compressor.AllocRunLength_ZeroBased();
+            this.compressor = VCompressor.AllocRunLength_ZeroBased();
 
             lastSendTime = 0;
             lastDataBytes = 0;
@@ -551,7 +551,7 @@ namespace Gengine.Framework.Async
             compressor.Init(file, true, 3);
             compressor.Write(tmp.DataW, tmp.Size);
             compressor.FinishCompress();
-            outgoingCompression = compressor.GetCompressionRatio();
+            outgoingCompression = compressor.CompressionRatio;
         }
 
         bool ReadMessageData(BitMsg o, BitMsg msg)
@@ -565,7 +565,7 @@ namespace Gengine.Framework.Async
             var file = new VFile_BitMsg(msg);
             compressor.Init(file, false, 3);
             compressor.Read(o.DataR, o.Size);
-            incomingCompression = compressor.GetCompressionRatio();
+            incomingCompression = compressor.CompressionRatio;
             o.BeginReading();
 
             // read acknowledgement of sent reliable messages

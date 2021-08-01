@@ -6,6 +6,7 @@ using System.NumericsX;
 using System.NumericsX.Core;
 using System.NumericsX.Sys;
 using static System.NumericsX.Lib;
+using static Gengine.Lib;
 
 namespace Gengine.Framework.Async
 {
@@ -203,7 +204,7 @@ namespace Gengine.Framework.Async
             }
 
             var si_map = server.serverInfo["si_map"];
-            var mapDecl = declManager.FindType(DECL_MAPDEF, si_map, false);
+            var mapDecl = declManager.FindType(DECL.MAPDEF, si_map, false);
             var mapDef = (DeclEntityDef)mapDecl;
             if (mapDef != null)
             {
@@ -422,7 +423,7 @@ namespace Gengine.Framework.Async
 
         void GUIAdd(int id, NetworkServer server)
         {
-            var name = server.serverInfo.Get("si_name", $"{Config.GAME_NAME} Server");
+            var name = server.serverInfo.Get("si_name", $"{PlatformW.GAME_NAME} Server");
             var d3xp = string.Equals(server.serverInfo.Get("fs_game"), "d3xp", StringComparison.OrdinalIgnoreCase) || string.Equals(server.serverInfo.Get("fs_game_base"), "d3xp", StringComparison.OrdinalIgnoreCase);
             var mod = server.serverInfo.Get("fs_game")[0] != '\0';
 

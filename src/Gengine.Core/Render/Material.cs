@@ -7,26 +7,6 @@ using System.NumericsX.Core;
 
 namespace Gengine.Render
 {
-    // moved from image.h for default parm
-    public enum TF
-    {
-        LINEAR,
-        NEAREST,
-        DEFAULT             // use the user-specified r_textureFilter
-    }
-
-    public enum TR
-    {
-        REPEAT,
-        CLAMP,
-        CLAMP_TO_BORDER,        // this should replace TR_CLAMP_TO_ZERO and TR_CLAMP_TO_ZERO_ALPHA,
-                                // but I don't want to risk changing it right now
-        CLAMP_TO_ZERO,      // guarantee 0,0,0,255 edge for projected textures,
-                            // set AFTER image format selection
-        CLAMP_TO_ZERO_ALPHA // guarantee 0 alpha edge for projected textures,
-                            // set AFTER image format selection
-    }
-
     public unsafe struct DecalInfo
     {
         public int stayTime;        // msec for no change
@@ -272,7 +252,6 @@ namespace Gengine.Render
         REMOVE_UTIL = ~(AREAPORTAL | NOCSG)
     }
 
-
     public enum SURFTYPE
     {
         NONE,                  // default type
@@ -329,9 +308,9 @@ namespace Gengine.Render
 
         //public Material();
 
-        public override int Size() => throw new NotImplementedException();
+        public override int Size => throw new NotImplementedException();
         public override bool SetDefaultText() => throw new NotImplementedException();
-        public override string DefaultDefinition() => throw new NotImplementedException();
+        public override string DefaultDefinition => throw new NotImplementedException();
         public override bool Parse(string text, int textLength) => throw new NotImplementedException();
         public override void FreeData() => throw new NotImplementedException();
         public override void Print() => throw new NotImplementedException();
@@ -554,7 +533,7 @@ namespace Gengine.Render
         void ParseBlend(Lexer src, ShaderStage stage) => throw new NotImplementedException();
         void ParseVertexParm(Lexer src, NewShaderStage newStage) => throw new NotImplementedException();
         void ParseFragmentMap(Lexer src, NewShaderStage newStage) => throw new NotImplementedException();
-        void ParseStage(Lexer src, TR trpDefault = TR.REPEAT) => throw new NotImplementedException();
+        void ParseStage(Lexer src, Image.TR trpDefault = Image.TR.REPEAT) => throw new NotImplementedException();
         void ParseDeform(Lexer src) => throw new NotImplementedException();
         void ParseDecalInfo(Lexer src) => throw new NotImplementedException();
         bool CheckSurfaceParm(Token token) => throw new NotImplementedException();
@@ -571,7 +550,7 @@ namespace Gengine.Render
         int NameToDstBlendMode(string name) => throw new NotImplementedException();
         void MultiplyTextureMatrix(TextureStage ts, int[,] registers) => throw new NotImplementedException();   // FIXME: for some reason the const is bad for gcc and Mac
         void SortInteractionStages() => throw new NotImplementedException();
-        void AddImplicitStages(TR trpDefault = TR.REPEAT) => throw new NotImplementedException();
+        void AddImplicitStages(Image.TR trpDefault = Image.TR.REPEAT) => throw new NotImplementedException();
         void CheckForConstantRegisters() => throw new NotImplementedException();
 
         string desc;             // description
