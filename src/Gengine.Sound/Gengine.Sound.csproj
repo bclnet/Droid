@@ -13,6 +13,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Sound.cs" />
+    <Compile Remove="SoundLocal.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Sound.cs" />
+    <None Include="SoundLocal.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
   </ItemGroup>
 

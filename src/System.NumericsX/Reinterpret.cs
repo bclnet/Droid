@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace System.NumericsX
 {
-    static class reinterpret
+    public static class reinterpret
     {
         public static unsafe int cast_int(float v) => *(int*)&v;
         public static unsafe float cast_float(int v) => *(float*)&v;

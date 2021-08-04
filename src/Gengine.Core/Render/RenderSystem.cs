@@ -61,7 +61,7 @@ namespace Gengine.Render
         public string name;
     }
 
-    public struct fontInfoEx
+    public struct FontInfoEx
     {
         public FontInfo fontInfoSmall;
         public FontInfo fontInfoMedium;

@@ -13,6 +13,46 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="EditWindow.cs" />
+    <Compile Remove="FieldWindow.cs" />
+    <Compile Remove="GameBearShootWindow.cs" />
+    <Compile Remove="GameBustOutWindow.cs" />
+    <Compile Remove="GameSSDWindow.cs" />
+    <Compile Remove="GameWindow.cs" />
+    <Compile Remove="GuiScript.cs" />
+    <Compile Remove="ListGUI.cs" />
+    <Compile Remove="ListGUILocal.cs" />
+    <Compile Remove="ListWindow.cs" />
+    <Compile Remove="MarkerWindow.cs" />
+    <Compile Remove="RegExp.cs" />
+    <Compile Remove="RenderWindow.cs" />
+    <Compile Remove="SimpleWindow.cs" />
+    <Compile Remove="SliderWindow.cs" />
+    <Compile Remove="UserInterface.cs" />
+    <Compile Remove="UserInterfaceLocal.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="EditWindow.cs" />
+    <None Include="FieldWindow.cs" />
+    <None Include="GameBearShootWindow.cs" />
+    <None Include="GameBustOutWindow.cs" />
+    <None Include="GameSSDWindow.cs" />
+    <None Include="GameWindow.cs" />
+    <None Include="GuiScript.cs" />
+    <None Include="ListGUI.cs" />
+    <None Include="ListGUILocal.cs" />
+    <None Include="ListWindow.cs" />
+    <None Include="MarkerWindow.cs" />
+    <None Include="RegExp.cs" />
+    <None Include="RenderWindow.cs" />
+    <None Include="SimpleWindow.cs" />
+    <None Include="SliderWindow.cs" />
+    <None Include="UserInterface.cs" />
+    <None Include="UserInterfaceLocal.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
   </ItemGroup>
 
