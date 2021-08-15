@@ -7,10 +7,10 @@ namespace Gengine.UI
     public interface IUserInterface
     {
         // Returns the name of the gui.
-        string Name();
+        string Name {get;}
 
         // Returns a comment on the gui.
-        string Comment();
+        string Comment { get; }
 
         // Returns true if the gui is interactive.
         bool IsInteractive { get; }
@@ -67,8 +67,8 @@ namespace Gengine.UI
         void SetKeyBindingNames();
 
         void SetCursor(float x, float y);
-        float CursorX();
-        float CursorY();
+        float CursorX { get; }
+        float CursorY { get; }
     }
 
     public interface IUserInterfaceManager
@@ -110,10 +110,5 @@ namespace Gengine.UI
 
         // De-allocates a list gui
         void FreeListGUI(IListGUI listgui);
-    }
-
-    public static partial class UIX
-    {
-        public static IUserInterfaceManager uiManager;
     }
 }

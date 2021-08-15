@@ -1,94 +1,348 @@
-/*
-===========================================================================
+using Gengine.Render;
+using System;
+using System.NumericsX;
+using System.NumericsX.Core;
+using System.NumericsX.Sys;
+using static Gengine.Lib;
+using static System.NumericsX.Core.Key;
+using static System.NumericsX.Lib;
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+namespace Gengine.UI
+{
+    public class SliderWindow : Window
+    {
+        WinFloat value;
+        float low;
+        float high;
+        float thumbWidth;
+        float thumbHeight;
+        float stepSize;
+        float lastValue;
+        Rectangle thumbRect;
+        Material thumbMat;
+        bool vertical;
+        bool verticalFlip;
+        bool scrollbar;
+        Window buddyWin;
+        string thumbShader;
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+        WinStr cvarStr;
+        CVar cvar;
+        bool cvar_init;
+        WinBool liveUpdate;
+        WinStr cvarGroup;
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+        protected override bool ParseInternalVar(string name, Parser src)
+        {
+            if (string.Equals(name, "stepsize", StringComparison.OrdinalIgnoreCase) || string.Equals(name, "step", StringComparison.OrdinalIgnoreCase)) { stepSize = src.ParseFloat(); return true; }
+            if (string.Equals(name, "low", StringComparison.OrdinalIgnoreCase)) { low = src.ParseFloat(); return true; }
+            if (string.Equals(name, "high", StringComparison.OrdinalIgnoreCase)) { high = src.ParseFloat(); return true; }
+            if (string.Equals(name, "vertical", StringComparison.OrdinalIgnoreCase)) { vertical = src.ParseBool(); return true; }
+            if (string.Equals(name, "verticalflip", StringComparison.OrdinalIgnoreCase)) { verticalFlip = src.ParseBool(); return true; }
+            if (string.Equals(name, "scrollbar", StringComparison.OrdinalIgnoreCase)) { scrollbar = src.ParseBool(); return true; }
+            if (string.Equals(name, "thumbshader", StringComparison.OrdinalIgnoreCase)) { ParseString(src, out thumbShader); declManager.FindMaterial(thumbShader); return true; }
+            return base.ParseInternalVar(name, src);
+        }
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+        void CommonInit()
+        {
+            value = 0f;
+            low = 0f;
+            high = 100f;
+            stepSize = 1f;
+            thumbMat = declManager.FindMaterial("_default");
+            buddyWin = null;
+            cvar = null;
+            cvar_init = false;
+            liveUpdate = true;
+            vertical = false;
+            scrollbar = false;
+            verticalFlip = false;
+        }
 
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+        public SliderWindow(UserInterfaceLocal gui) : base(gui)
+        {
+            this.gui = gui;
+            CommonInit();
+        }
+        public SliderWindow(DeviceContext dc, UserInterfaceLocal gui) : base(dc, gui)
+        {
+            this.dc = dc;
+            this.gui = gui;
+            CommonInit();
+        }
 
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+        public float Low => low;
 
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+        public float High => high;
 
-===========================================================================
-*/
+        public float Value
+        {
+            get => this.value;
+            set => this.value = value;
+        }
 
-#ifndef __SLIDERWINDOW_H__
-#define __SLIDERWINDOW_H__
+        public override int Allocated => base.Allocated;
 
-#include "ui/Window.h"
+        public override WinVar GetWinVarByName(string name, bool winLookup = false, DrawWin owner = null)
+        {
+            if (string.Equals(name, "value", StringComparison.OrdinalIgnoreCase)) return value;
+            if (string.Equals(name, "cvar", StringComparison.OrdinalIgnoreCase)) return cvarStr;
+            if (string.Equals(name, "liveUpdate", StringComparison.OrdinalIgnoreCase)) return liveUpdate;
+            if (string.Equals(name, "cvarGroup", StringComparison.OrdinalIgnoreCase)) return cvarGroup;
+            return base.GetWinVarByName(name, winLookup, owner);
+        }
 
-class idUserInterfaceLocal;
+        public virtual string HandleEvent(SysEvent ev, bool updateVisuals)
+        {
+            if (!(ev.evType == SE.KEY && ev.evValue2 != 0))
+                return "";
 
-class idSliderWindow : public idWindow {
-public:
-						idSliderWindow(idUserInterfaceLocal *gui);
-						idSliderWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
-	virtual				~idSliderWindow();
+            var key = (Key)ev.evValue;
 
-	void				InitWithDefaults(const char *_name, const idRectangle &rect, const idVec4 &foreColor, const idVec4 &matColor, const char *_background, const char *thumbShader, bool _vertical, bool _scrollbar);
+            if (ev.evValue2 != 0 && key == K_MOUSE1)
+            {
+                SetCapture(this);
+                RouteMouseCoords(0f, 0f);
+                return "";
+            }
 
-	void				SetRange(float _low, float _high, float _step);
-	float				GetLow() { return low; }
-	float				GetHigh() { return high; }
+            if (key == K_RIGHTARROW || key == K_KP_RIGHTARROW || (key == K_MOUSE2 && gui.CursorY > thumbRect.y))
+                value += stepSize;
 
-	void				SetValue(float _value);
-	float				GetValue() { return value; };
+            if (key == K_LEFTARROW || key == K_KP_LEFTARROW || (key == K_MOUSE2 && gui.CursorY < thumbRect.y))
+                value -= stepSize;
 
-	virtual size_t		Allocated(){return idWindow::Allocated();};
-	virtual idWinVar *	GetWinVarByName(const char *_name, bool winLookup = false, drawWin_t** owner = NULL);
-	virtual const char *HandleEvent(const sysEvent_t *event, bool *updateVisuals);
-	virtual void		PostParse();
-	virtual void		Draw(int time, float x, float y);
-	virtual void		DrawBackground(const idRectangle &drawRect);
-	virtual const char *RouteMouseCoords(float xd, float yd);
-	virtual void		Activate(bool activate, idStr &act);
-	virtual void		SetBuddy(idWindow *buddy);
+            if (buddyWin != null)
+                buddyWin.HandleBuddyUpdate(this);
+            else
+            {
+                gui.SetStateFloat(cvarStr, value);
+                UpdateCvar(false);
+            }
 
-	void				RunNamedEvent( const char* eventName );
+            return "";
+        }
 
-private:
-	virtual bool		ParseInternalVar(const char *name, idParser *src);
-	void				CommonInit();
-	void				InitCvar();
-						// true: read the updated cvar from cvar system
-						// false: write to the cvar system
-						// force == true overrides liveUpdate 0
-	void				UpdateCvar( bool read, bool force = false );
+        public override void SetBuddy(Window buddy)
+            => buddyWin = buddy;
 
-	idWinFloat			value;
-	float				low;
-	float				high;
-	float				thumbWidth;
-	float				thumbHeight;
-	float				stepSize;
-	float				lastValue;
-	idRectangle			thumbRect;
-	const idMaterial *	thumbMat;
-	bool				vertical;
-	bool				verticalFlip;
-	bool				scrollbar;
-	idWindow *			buddyWin;
-	idStr				thumbShader;
+        public override void PostParse()
+        {
+            base.PostParse();
+            value = 0f;
+            thumbMat = declManager.FindMaterial(thumbShader);
+            thumbMat.Sort = (float)SS.GUI;
+            thumbWidth = thumbMat.ImageWidth;
+            thumbHeight = thumbMat.ImageHeight;
+            //vertical = state.GetBool("vertical");
+            //scrollbar = state.GetBool("scrollbar");
+            flags |= (WIN_HOLDCAPTURE | WIN_CANFOCUS);
+            InitCvar();
+        }
 
-	idWinStr			cvarStr;
-	idCVar *			cvar;
-	bool				cvar_init;
-	idWinBool			liveUpdate;
-	idWinStr			cvarGroup;
-};
+        public void InitWithDefaults(string name, Rectangle rect, Vector4 foreColor, Vector4 matColor, string background, string thumbShader, bool vertical, bool scrollbar)
+        {
+            SetInitialState(name);
+            this.rect = rect;
+            this.foreColor = foreColor;
+            this.matColor = matColor;
+            thumbMat = declManager.FindMaterial(thumbShader);
+            thumbMat.Sort = (float)SS.GUI;
+            thumbWidth = thumbMat.ImageWidth;
+            thumbHeight = thumbMat.ImageHeight;
+            this.background = declManager.FindMaterial(background);
+            this.background.Sort = (float)SS.GUI;
+            this.vertical = vertical;
+            this.scrollbar = scrollbar;
+            flags |= WIN_HOLDCAPTURE;
+        }
 
-#endif /* !__SLIDERWINDOW_H__ */
+        public void SetRange(float low, float high, float step)
+        {
+            this.low = low;
+            this.high = high;
+            stepSize = step;
+        }
+
+        public override void Draw(int time, float x, float y)
+        {
+            Vector4 color = foreColor;
+
+            if (cvar == null && buddyWin == null)
+                return;
+
+            if (thumbWidth == 0f || thumbHeight == 0f)
+            {
+                thumbWidth = thumbMat.ImageWidth;
+                thumbHeight = thumbMat.ImageHeight;
+            }
+
+            UpdateCvar(true);
+            if (value > high) value = high;
+            else if (value < low) value = low;
+
+            var range = high - low;
+            if (range <= 0f)
+                return;
+
+            var thumbPos = range != 0 ? (value - low) / range : 0f;
+            if (vertical)
+            {
+                if (verticalFlip)
+                    thumbPos = 1f - thumbPos;
+                thumbPos *= drawRect.h - thumbHeight;
+                thumbPos += drawRect.y;
+                thumbRect.y = thumbPos;
+                thumbRect.x = drawRect.x;
+            }
+            else
+            {
+                thumbPos *= drawRect.w - thumbWidth;
+                thumbPos += drawRect.x;
+                thumbRect.x = thumbPos;
+                thumbRect.y = drawRect.y;
+            }
+            thumbRect.w = thumbWidth;
+            thumbRect.h = thumbHeight;
+
+            if (hover && !noEvents && Contains(gui.CursorX, gui.CursorY)) color = hoverColor;
+            else hover = false;
+            if ((flags & WIN_CAPTURE) != 0) { color = hoverColor; hover = true; }
+
+            dc.DrawMaterial(thumbRect.x, thumbRect.y, thumbRect.w, thumbRect.h, thumbMat, color);
+            if ((flags & WIN_FOCUS) != 0)
+                dc.DrawRect(thumbRect.x + 1f, thumbRect.y + 1f, thumbRect.w - 2f, thumbRect.h - 2f, 1f, color);
+        }
+
+        public override void DrawBackground(Rectangle drawRect)
+        {
+            if (cvar == null && buddyWin == null)
+                return;
+
+            if (high - low <= 0f)
+                return;
+
+            var r = new Rectangle(drawRect);
+            if (!scrollbar)
+                if (vertical) { r.y += thumbHeight / 2f; r.h -= thumbHeight; }
+                else { r.x += thumbWidth / 2f; r.w -= thumbWidth; }
+            base.DrawBackground(r);
+        }
+
+        public override string RouteMouseCoords(float xd, float yd)
+        {
+            float pct;
+
+            if ((flags & WIN_CAPTURE) == 0)
+                return "";
+
+            var r = new Rectangle(drawRect);
+            r.x = actualX;
+            r.y = actualY;
+            r.x += thumbWidth / 2f;
+            r.w -= thumbWidth;
+            if (vertical)
+            {
+                r.y += thumbHeight / 2;
+                r.h -= thumbHeight;
+                if (gui.CursorY >= r.y && gui.CursorY <= r.Bottom)
+                {
+                    pct = (gui.CursorY - r.y) / r.h;
+                    if (verticalFlip)
+                        pct = 1f - pct;
+                    value = low + (high - low) * pct;
+                }
+                else if (gui.CursorY() < r.y) value = verticalFlip ? high : low;
+                else value = verticalFlip ? low : high;
+            }
+            else
+            {
+                r.x += thumbWidth / 2;
+                r.w -= thumbWidth;
+                if (gui.CursorX >= r.x && gui.CursorX <= r.Right)
+                {
+                    pct = (gui.CursorX - r.x) / r.w;
+                    value = low + (high - low) * pct;
+                }
+                else if (gui.CursorX < r.x) value = low;
+                else value = high;
+            }
+
+            if (buddyWin != null) buddyWin.HandleBuddyUpdate(this);
+            else gui.SetStateFloat(cvarStr, value);
+            UpdateCvar(false);
+
+            return "";
+        }
+
+
+        public override void Activate(bool activate, string act)
+        {
+            base.Activate(activate, act);
+            if (activate)
+                UpdateCvar(true, true);
+        }
+
+        void InitCvar()
+        {
+            if (cvarStr[0] == '\0')
+            {
+                if (buddyWin == null)
+                    common.Warning($"SliderWindow::InitCvar: gui '{gui.SourceFile}' window '{name}' has an empty cvar string");
+                cvar_init = true;
+                cvar = null;
+                return;
+            }
+
+            cvar = cvarSystem.Find(cvarStr);
+            if (cvar == null)
+            {
+                common.Warning($"SliderWindow::InitCvar: gui '{gui.SourceFile}' window '{name}' references undefined cvar '{cvarStr}'");
+                cvar_init = true;
+                return;
+            }
+        }
+
+        // true: read the updated cvar from cvar system
+        // false: write to the cvar system
+        // force == true overrides liveUpdate 0
+        void UpdateCvar(bool read, bool force = false)
+        {
+            if (buddyWin != null || cvar == null)
+                return;
+            if (force || liveUpdate)
+            {
+                value = cvar.Float;
+                if (value != gui.State.GetFloat(cvarStr))
+                    if (read) gui.SetStateFloat(cvarStr, value);
+                    else
+                    {
+                        value = gui.State.GetFloat(cvarStr);
+                        cvar.Float = value;
+                    }
+            }
+        }
+
+        public override void RunNamedEvent(string eventName)
+        {
+            string ev, group;
+
+            if (eventName.StartsWith("cvar read "))
+            {
+                ev = eventName;
+                group = ev.Mid(10, ev.Length - 10);
+                if (group == cvarGroup)
+                    UpdateCvar(true, true);
+            }
+            else if (eventName.StartsWith("cvar write "))
+            {
+                ev = eventName;
+                group = ev.Mid(11, ev.Length - 11);
+                if (group == cvarGroup)
+                    UpdateCvar(false, true);
+            }
+        }
+
+    }
+}

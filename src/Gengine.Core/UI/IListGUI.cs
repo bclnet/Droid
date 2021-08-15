@@ -8,11 +8,11 @@ namespace Gengine.UI
         void Push(string s);
         bool Del(int id);
         void Clear();
-        int Num();
-        int GetSelection(string s, int size, int sel = 0); // returns the id, not the list index (or -1)
+        int Num { get; }
+        int GetSelection(out string s, int size, int sel = 0); // returns the id, not the list index (or -1)
         void SetSelection(int sel);
-        int GetNumSelections();
-        bool IsConfigured();
+        int NumSelections { get; }
+        bool IsConfigured { get; }
         // by default, any modification to the list will trigger a full GUI refresh immediately
         void SetStateChanges(bool enable);
         void Shutdown();

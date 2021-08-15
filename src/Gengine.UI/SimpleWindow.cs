@@ -1,103 +1,341 @@
-/*
-===========================================================================
+using Gengine.Render;
+using System;
+using System.NumericsX;
+using System.NumericsX.Core;
+using static Gengine.Lib;
+using static System.NumericsX.Lib;
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+namespace Gengine.UI
+{
+    public struct DrawWin
+    {
+        public Window win;
+        public SimpleWindow simp;
+    }
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+    public class SimpleWindow
+    {
+        public string name;
+        protected UserInterfaceLocal gui;
+        protected DeviceContext dc;
+        protected int flags;
+        protected Rectangle drawRect;         // overall rect
+        protected Rectangle clientRect;         // client area
+        protected Rectangle textRect;
+        protected Vector2 origin;
+        protected int fontNum;
+        protected float matScalex;
+        protected float matScaley;
+        protected float borderSize;
+        protected DeviceContext.ALIGN textAlign;
+        protected float textAlignx;
+        protected float textAligny;
+        protected int textShadow;
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+        protected WinStr text;
+        protected WinBool visible;
+        protected WinRectangle rect;                // overall rect
+        protected WinVec4 backColor;
+        protected WinVec4 matColor;
+        protected WinVec4 foreColor;
+        protected WinVec4 borderColor;
+        protected WinFloat textScale;
+        protected WinFloat rotate;
+        protected WinVec2 shear;
+        protected WinBackground backGroundName;
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+        protected Material background;
 
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+        protected Window mParent;
 
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+        protected WinBool hideCursor;
 
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+        public SimpleWindow(Window win)
+        {
+            gui = win.Gui;
+            dc = win.dc;
+            drawRect = win.drawRect;
+            clientRect = win.clientRect;
+            textRect = win.textRect;
+            origin = win.origin;
+            fontNum = win.fontNum;
+            name = win.name;
+            matScalex = win.matScalex;
+            matScaley = win.matScaley;
+            borderSize = win.borderSize;
+            textAlign = win.textAlign;
+            textAlignx = win.textAlignx;
+            textAligny = win.textAligny;
+            background = win.background;
+            flags = (int)win.flags;
+            textShadow = win.textShadow;
 
-===========================================================================
-*/
+            visible = win.visible;
+            text = win.text;
+            rect = win.rect;
+            backColor = win.backColor;
+            matColor = win.matColor;
+            foreColor = win.foreColor;
+            borderColor = win.borderColor;
+            textScale = win.textScale;
+            rotate = win.rotate;
+            shear = win.shear;
+            backGroundName = win.backGroundName;
+            if (backGroundName.Length != 0)
+            {
+                background = declManager.FindMaterial(backGroundName);
+                background.Sort = (float)SS.GUI;
+                background.SetImageClassifications(1); // just for resource tracking
+            }
+            backGroundName.SetMaterialPtr(x => background = x);
 
-#ifndef __SIMPLEWIN_H__
-#define __SIMPLEWIN_H__
+            mParent = win.Parent;
 
-#include "ui/Window.h"
+            hideCursor = win.hideCursor;
 
-class idUserInterfaceLocal;
-class idDeviceContext;
-class idSimpleWindow;
+            var parent = win.Parent;
+            if (parent != null)
+            {
+                if (text.NeedsUpdate) parent.AddUpdateVar(text);
+                if (visible.NeedsUpdate) parent.AddUpdateVar(visible);
+                if (rect.NeedsUpdate) parent.AddUpdateVar(rect);
+                if (backColor.NeedsUpdate) parent.AddUpdateVar(backColor);
+                if (matColor.NeedsUpdate) parent.AddUpdateVar(matColor);
+                if (foreColor.NeedsUpdate) parent.AddUpdateVar(foreColor);
+                if (borderColor.NeedsUpdate) parent.AddUpdateVar(borderColor);
+                if (textScale.NeedsUpdate) parent.AddUpdateVar(textScale);
+                if (rotate.NeedsUpdate) parent.AddUpdateVar(rotate);
+                if (shear.NeedsUpdate) parent.AddUpdateVar(shear);
+                if (backGroundName.NeedsUpdate) parent.AddUpdateVar(backGroundName);
+            }
+        }
 
-typedef struct {
-	idWindow *win;
-	idSimpleWindow *simp;
-} drawWin_t;
+        public void StateChanged(bool redraw)
+        {
+            if (redraw && background != null && background.CinematicLength != 0)
+                background.UpdateCinematic(gui.Time);
+        }
 
-class idSimpleWindow {
-	friend class idWindow;
-public:
-					idSimpleWindow(idWindow* win);
-	virtual			~idSimpleWindow();
-	void			Redraw(float x, float y);
-	void			StateChanged( bool redraw );
+        static Matrix3x3 SetupTransforms_trans = new();
+        static Vector3 SetupTransforms_org = new();
+        static Rotation SetupTransforms_rot = new();
+        static Vector3 SetupTransforms_vec = new(0f, 0f, 1f);
+        static Matrix3x3 SetupTransforms_smat = new();
+        protected void SetupTransforms(float x, float y)
+        {
+            SetupTransforms_trans.Identity();
+            SetupTransforms_org.Set(origin.x + x, origin.y + y, 0);
+            if (rotate != null)
+            {
+                SetupTransforms_rot.Set(SetupTransforms_org, SetupTransforms_vec, rotate);
+                SetupTransforms_trans = SetupTransforms_rot.ToMat3();
+            }
 
-	idStr			name;
+            SetupTransforms_smat.Identity();
+            if (shear.x != 0f || shear.y != 0f)
+            {
+                SetupTransforms_smat[0].y = shear.x; SetupTransforms_smat[1].x = shear.y;
+                SetupTransforms_trans *= SetupTransforms_smat;
+            }
 
-	idWinVar *		GetWinVarByName(const char *_name);
-	intptr_t		GetWinVarOffset( idWinVar *wv, drawWin_t* owner);
-	size_t			Size();
+            if (!SetupTransforms_trans.IsIdentity())
+                dc.SetTransformInfo(SetupTransforms_org, SetupTransforms_trans);
+        }
 
-	idWindow*		GetParent ( void ) { return mParent; }
+        protected void DrawBackground(Rectangle drawRect)
+        {
+            if (backColor.w > 0f)
+                dc.DrawFilledRect(drawRect.x, drawRect.y, drawRect.w, drawRect.h, backColor);
 
-	virtual void	WriteToSaveGame( idFile *savefile );
-	virtual void	ReadFromSaveGame( idFile *savefile );
+            if (background != null && matColor.w > 0f)
+            {
+                float scalex, scaley;
+                if ((flags & Window.WIN_NATURALMAT) != 0) { scalex = drawRect.w / background.ImageWidth; scaley = drawRect.h / background.ImageHeight; }
+                else { scalex = matScalex; scaley = matScaley; }
+                dc.DrawMaterial(drawRect.x, drawRect.y, drawRect.w, drawRect.h, background, matColor, scalex, scaley);
+            }
+        }
 
-protected:
-	void			CalcClientRect(float xofs, float yofs);
-	void			SetupTransforms(float x, float y);
-	void			DrawBackground(const idRectangle &drawRect);
-	void			DrawBorderAndCaption(const idRectangle &drawRect);
+        protected void DrawBorderAndCaption(Rectangle drawRect)
+        {
+            if ((flags & Window.WIN_BORDER) != 0 && borderSize != 0f)
+                dc.DrawRect(drawRect.x, drawRect.y, drawRect.w, drawRect.h, borderSize, borderColor);
+        }
 
-	idUserInterfaceLocal *gui;
-	idDeviceContext *dc;
-	int				flags;
-	idRectangle		drawRect;			// overall rect
-	idRectangle		clientRect;			// client area
-	idRectangle		textRect;
-	idVec2			origin;
-	int				fontNum;
-	float			matScalex;
-	float			matScaley;
-	float			borderSize;
-	int				textAlign;
-	float			textAlignx;
-	float			textAligny;
-	int				textShadow;
+        protected void CalcClientRect(float xofs, float yofs)
+        {
+            drawRect = rect;
 
-	idWinStr		text;
-	idWinBool		visible;
-	idWinRectangle	rect;				// overall rect
-	idWinVec4		backColor;
-	idWinVec4		matColor;
-	idWinVec4		foreColor;
-	idWinVec4		borderColor;
-	idWinFloat		textScale;
-	idWinFloat		rotate;
-	idWinVec2		shear;
-	idWinBackground	backGroundName;
+            if ((flags & Window.WIN_INVERTRECT) != 0) { drawRect.x = rect.x - rect.w; drawRect.y = rect.y - rect.h; }
 
-	const idMaterial* background;
+            drawRect.x += xofs; drawRect.y += yofs;
 
-	idWindow *		mParent;
+            clientRect = drawRect;
+            if (rect.h > 0f && rect.w > 0f)
+            {
+                if ((flags & Window.WIN_BORDER) != 0 && borderSize != 0f)
+                {
+                    clientRect.x += borderSize; clientRect.y += borderSize;
+                    clientRect.w -= borderSize; clientRect.h -= borderSize;
+                }
 
-	idWinBool	hideCursor;
-};
+                textRect = clientRect;
+                textRect.x += 2f; textRect.y += 2f;
+                textRect.w -= 2f; textRect.h -= 2f;
+                textRect.x += textAlignx;
+                textRect.y += textAligny;
+            }
+            origin.Set(rect.x + (rect.w / 2), rect.y + (rect.h / 2));
+        }
 
-#endif /* !__SIMPLEWIN_H__ */
+        public void Redraw(float x, float y)
+        {
+            if (!visible)
+                return;
+
+            CalcClientRect(0, 0);
+            dc.SetFont(fontNum);
+            drawRect.Offset(x, y);
+            clientRect.Offset(x, y);
+            textRect.Offset(x, y);
+            SetupTransforms(x, y);
+            if ((flags & Window.WIN_NOCLIP) != 0)
+                dc.EnableClipping(false);
+            DrawBackground(drawRect);
+            DrawBorderAndCaption(drawRect);
+            if (textShadow != 0)
+            {
+                var shadowText = (string)text;
+                var shadowRect = new Rectangle(textRect);
+
+                shadowText.RemoveColors();
+                shadowRect.x += textShadow;
+                shadowRect.y += textShadow;
+
+                dc.DrawText(shadowText, textScale, textAlign, colorBlack, shadowRect, (flags & Window.WIN_NOWRAP) == 0, -1);
+            }
+            dc.DrawText(text, textScale, textAlign, foreColor, textRect, (flags & Window.WIN_NOWRAP) == 0, -1);
+            dc.SetTransformInfo(Vector3.origin, Matrix3x3.identity);
+            if ((flags & Window.WIN_NOCLIP) != 0)
+                dc.EnableClipping(true);
+            drawRect.Offset(-x, -y);
+            clientRect.Offset(-x, -y);
+            textRect.Offset(-x, -y);
+        }
+
+        public int GetWinVarOffset(WinVar wv, DrawWin owner)
+        {
+            int ret = -1;
+            if (wv == rect) ret = (ptrdiff_t) & this.rect - (ptrdiff_t)this;
+            if (wv == backColor) ret = (ptrdiff_t) & this.backColor - (ptrdiff_t)this;
+            if (wv == matColor) ret = (ptrdiff_t) & this.matColor - (ptrdiff_t)this;
+            if (wv == foreColor) ret = (ptrdiff_t) & this.foreColor - (ptrdiff_t)this;
+            if (wv == borderColor) ret = (ptrdiff_t) & this.borderColor - (ptrdiff_t)this;
+            if (wv == textScale) ret = (ptrdiff_t) & this.textScale - (ptrdiff_t)this;
+            if (wv == rotate) ret = (ptrdiff_t) & this.rotate - (ptrdiff_t)this;
+            if (ret != -1) owner.simp = this;
+            return ret;
+        }
+
+        public WinVar GetWinVarByName(string name)
+        {
+            WinVar retVar = null;
+            if (string.Equals(name, "background", StringComparison.OrdinalIgnoreCase)) retVar = backGroundName;
+            if (string.Equals(name, "visible", StringComparison.OrdinalIgnoreCase)) retVar = visible;
+            if (string.Equals(name, "rect", StringComparison.OrdinalIgnoreCase)) retVar = rect;
+            if (string.Equals(name, "backColor", StringComparison.OrdinalIgnoreCase)) retVar = backColor;
+            if (string.Equals(name, "matColor", StringComparison.OrdinalIgnoreCase)) retVar = matColor;
+            if (string.Equals(name, "foreColor", StringComparison.OrdinalIgnoreCase)) retVar = foreColor;
+            if (string.Equals(name, "borderColor", StringComparison.OrdinalIgnoreCase)) retVar = borderColor;
+            if (string.Equals(name, "textScale", StringComparison.OrdinalIgnoreCase)) retVar = textScale;
+            if (string.Equals(name, "rotate", StringComparison.OrdinalIgnoreCase)) retVar = rotate;
+            if (string.Equals(name, "shear", StringComparison.OrdinalIgnoreCase)) retVar = shear;
+            if (string.Equals(name, "text", StringComparison.OrdinalIgnoreCase)) retVar = text;
+            return retVar;
+        }
+
+        public Window Parent => mParent;
+
+        public virtual void WriteToSaveGame(VFile savefile)
+        {
+            savefile.Write(flags);
+            savefile.WriteT(drawRect);
+            savefile.WriteT(clientRect);
+            savefile.WriteT(textRect);
+            savefile.WriteT(origin);
+            savefile.Write(fontNum);
+            savefile.Write(matScalex);
+            savefile.Write(matScaley);
+            savefile.Write(borderSize);
+            savefile.Write((byte)textAlign);
+            savefile.Write(textAlignx);
+            savefile.Write(textAligny);
+            savefile.Write(textShadow);
+
+            text.WriteToSaveGame(savefile);
+            visible.WriteToSaveGame(savefile);
+            rect.WriteToSaveGame(savefile);
+            backColor.WriteToSaveGame(savefile);
+            matColor.WriteToSaveGame(savefile);
+            foreColor.WriteToSaveGame(savefile);
+            borderColor.WriteToSaveGame(savefile);
+            textScale.WriteToSaveGame(savefile);
+            rotate.WriteToSaveGame(savefile);
+            shear.WriteToSaveGame(savefile);
+            backGroundName.WriteToSaveGame(savefile);
+
+            int stringLen;
+            if (background != null)
+            {
+                stringLen = background.Name.Length;
+                savefile.Write(stringLen);
+                savefile.WriteASCII(background.Name);
+            }
+            else
+            {
+                stringLen = 0;
+                savefile.Write(stringLen);
+            }
+        }
+
+        public virtual void ReadFromSaveGame(VFile savefile)
+        {
+            savefile.Read(out flags);
+            savefile.ReadT(out drawRect);
+            savefile.ReadT(out clientRect);
+            savefile.ReadT(out textRect);
+            savefile.ReadT(out origin);
+            savefile.Read(out fontNum);
+            savefile.Read(out matScalex);
+            savefile.Read(out matScaley);
+            savefile.Read(out borderSize);
+            savefile.Read(out int textAlign); this.textAlign = (DeviceContext.ALIGN)textAlign;
+            savefile.Read(out textAlignx);
+            savefile.Read(out textAligny);
+            savefile.Read(out textShadow);
+
+            text.ReadFromSaveGame(savefile);
+            visible.ReadFromSaveGame(savefile);
+            rect.ReadFromSaveGame(savefile);
+            backColor.ReadFromSaveGame(savefile);
+            matColor.ReadFromSaveGame(savefile);
+            foreColor.ReadFromSaveGame(savefile);
+            borderColor.ReadFromSaveGame(savefile);
+            textScale.ReadFromSaveGame(savefile);
+            rotate.ReadFromSaveGame(savefile);
+            shear.ReadFromSaveGame(savefile);
+            backGroundName.ReadFromSaveGame(savefile);
+
+            savefile.Read(out int stringLen);
+            if (stringLen > 0)
+            {
+                savefile.ReadASCII(out var backName, stringLen);
+                background = declManager.FindMaterial(backName);
+                background.Sort = (float)SS.GUI;
+            }
+            else background = null;
+        }
+
+        public int Size => 0;
+    }
+}

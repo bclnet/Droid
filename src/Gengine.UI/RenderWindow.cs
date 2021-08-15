@@ -1,80 +1,199 @@
-/*
-===========================================================================
+using Gengine.Render;
+using System;
+using System.Collections.Generic;
+using System.NumericsX;
+using System.NumericsX.Core;
+using static Gengine.Lib;
+using static System.NumericsX.Lib;
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+namespace Gengine.UI
+{
+    public class RenderWindow : Window
+    {
+        RenderView refdef;
+        IRenderWorld world;
+        RenderEntity worldEntity;
+        RenderLight rLight;
+        MD5Anim modelAnim;
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+        Qhandle worldModelDef;
+        Qhandle lightDef;
+        Qhandle modelDef;
+        WinStr modelName;
+        WinStr animName;
+        string animClass;
+        WinVec4 lightOrigin;
+        WinVec4 lightColor;
+        WinVec4 modelOrigin;
+        WinVec4 modelRotate;
+        WinVec4 viewOffset;
+        WinBool needsRender;
+        int animLength;
+        int animEndTime;
+        bool updateAnimation;
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+        protected override bool ParseInternalVar(string name, Parser src)
+        {
+            if (string.Equals(name, "animClass", StringComparison.OrdinalIgnoreCase)) { ParseString(src, out animClass); return true; }
+            return base.ParseInternalVar(name, src);
+        }
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+        void CommonInit()
+        {
+            world = renderSystem.AllocRenderWorld();
+            needsRender = true;
+            lightOrigin = new Vector4(-128f, 0f, 0f, 1f);
+            lightColor = new Vector4(1f, 1f, 1f, 1f);
+            modelOrigin.Zero();
+            viewOffset = new Vector4(-128f, 0f, 0f, 1f);
+            modelAnim = null;
+            animLength = 0;
+            animEndTime = -1;
+            modelDef = -1;
+            updateAnimation = true;
+        }
 
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+        public RenderWindow(UserInterfaceLocal gui) : base(gui)
+        {
+            this.gui = gui;
+            CommonInit();
+        }
+        public RenderWindow(DeviceContext dc, UserInterfaceLocal gui) : base(dc, gui)
+        {
+            this.dc = dc;
+            this.gui = gui;
+            CommonInit();
+        }
+        public void Dispose()
+            => renderSystem.FreeRenderWorld(world);
 
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+        void BuildAnimation(int time)
+        {
+            if (!updateAnimation)
+                return;
 
-===========================================================================
-*/
-#ifndef __RENDERWINDOW_H
-#define __RENDERWINDOW_H
+            if (animName.Length != 0 && animClass.Length != 0)
+            {
+                worldEntity.numJoints = worldEntity.hModel.NumJoints;
+                worldEntity.joints = new JointMat[worldEntity.numJoints];
+                modelAnim = gameEdit.ANIM_GetAnimFromEntityDef(animClass, animName);
+                if (modelAnim != null)
+                {
+                    animLength = gameEdit.ANIM_GetLength(modelAnim);
+                    animEndTime = time + animLength;
+                }
+            }
+            updateAnimation = false;
+        }
 
-#include "renderer/RenderWorld.h"
-#include "ui/Window.h"
+        void PreRender()
+        {
+            if (needsRender)
+            {
+                world.InitFromMap(null);
+                var spawnArgs = new Dictionary<string, string> {
+                    {"classname", "light"},
+                    {"name", "light_1"},
+                    {"origin", lightOrigin.ToVec3.ToString()},
+                    {"_color", lightColor.ToVec3.ToString()},
+                };
+                gameEdit.ParseSpawnArgsToRenderLight(spawnArgs, rLight);
+                lightDef = world.AddLightDef(rLight);
+                if (((string)modelName).Length == 0)
+                    common.Warning($"Window '{Name}' in gui '{Gui.SourceFile}': no model set");
+                worldEntity.memset();
+                spawnArgs.Clear();
+                spawnArgs.Add("classname", "func_static");
+                spawnArgs.Add("model", modelName);
+                spawnArgs.Add("origin", modelOrigin.ToString());
+                gameEdit.ParseSpawnArgsToRenderEntity(spawnArgs, worldEntity);
+                if (worldEntity.hModel != null)
+                {
+                    var v = modelRotate.ToVec3;
+                    worldEntity.axis = v.ToMatrix3x3();
+                    worldEntity.shaderParms[0] = 1f;
+                    worldEntity.shaderParms[1] = 1f;
+                    worldEntity.shaderParms[2] = 1f;
+                    worldEntity.shaderParms[3] = 1f;
+                    modelDef = world.AddEntityDef(worldEntity);
+                }
+                needsRender = false;
+            }
+        }
 
-class idUserInterfaceLocal;
-class idMD5Anim;
+        void Render(int time)
+        {
+            rLight.origin = lightOrigin.ToVec3;
+            rLight.shaderParms[IRenderWorld.SHADERPARM_RED] = lightColor.x;
+            rLight.shaderParms[IRenderWorld.SHADERPARM_GREEN] = lightColor.y;
+            rLight.shaderParms[IRenderWorld.SHADERPARM_BLUE] = lightColor.z;
+            world.UpdateLightDef(lightDef, rLight);
+            if (worldEntity.hModel != null)
+            {
+                if (updateAnimation)
+                    BuildAnimation(time);
+                if (modelAnim)
+                {
+                    if (time > animEndTime)
+                        animEndTime = time + animLength;
+                    gameEdit.ANIM_CreateAnimFrame(worldEntity.hModel, modelAnim, worldEntity.numJoints, worldEntity.joints, animLength - (animEndTime - time), Vector3.origin, false);
+                }
+                worldEntity.axis = new Angles(modelRotate.x, modelRotate.y, modelRotate.z).ToMat3();
+                world.UpdateEntityDef(modelDef, worldEntity);
+            }
+        }
 
-class idRenderWindow : public idWindow {
-public:
-	idRenderWindow(idUserInterfaceLocal *gui);
-	idRenderWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
-	virtual ~idRenderWindow();
+        public override void Draw(int time, float x_, float y_)
+        {
+            PreRender();
+            Render(time);
 
-	virtual void PostParse();
-	virtual void Draw(int time, float x, float y);
-	virtual size_t Allocated(){return idWindow::Allocated();};
-//
-//
-	virtual idWinVar *GetWinVarByName(const char *_name, bool winLookup = false, drawWin_t** owner = NULL);
-//
+            refdef.memset();
+            refdef.vieworg = viewOffset.ToVec3; //: refdef.vieworg.Set(-128f, 0f, 0f);
 
-private:
-	void CommonInit();
-	virtual bool ParseInternalVar(const char *name, idParser *src);
-	void Render(int time);
-	void PreRender();
-	void BuildAnimation(int time);
-	renderView_t refdef;
-	idRenderWorld *world;
-	renderEntity_t worldEntity;
-	renderLight_t rLight;
-	const idMD5Anim *modelAnim;
+            refdef.viewaxis.Identity();
+            refdef.shaderParms[0] = 1;
+            refdef.shaderParms[1] = 1;
+            refdef.shaderParms[2] = 1;
+            refdef.shaderParms[3] = 1;
 
-	qhandle_t	worldModelDef;
-	qhandle_t	lightDef;
-	qhandle_t   modelDef;
-	idWinStr modelName;
-	idWinStr animName;
-	idStr	 animClass;
-	idWinVec4 lightOrigin;
-	idWinVec4 lightColor;
-	idWinVec4 modelOrigin;
-	idWinVec4 modelRotate;
-	idWinVec4 viewOffset;
-	idWinBool needsRender;
-	int animLength;
-	int animEndTime;
-	bool updateAnimation;
-};
+            // DG: for scaling menus to 4:3 (like that spinning mars globe in the main menu)
+            float x = drawRect.x;
+            float y = drawRect.y;
+            float w = drawRect.w;
+            float h = drawRect.h;
+            if (dc.IsMenuScaleFixActive)
+                dc.AdjustCoords(ref x, ref y, ref w, ref h);
 
-#endif // __RENDERWINDOW_H
+            refdef.x = (int)x;
+            refdef.y = (int)y;
+            refdef.width = (int)w;
+            refdef.height = (int)h;
+            // DG end
+            refdef.fov_x = 90;
+            refdef.fov_y = (float)(2 * Math.Atan(drawRect.h / drawRect.w) * MathX.M_RAD2DEG);
+
+            refdef.time = time;
+            world.RenderScene(refdef);
+        }
+
+        public override void PostParse()
+            => base.PostParse();
+
+        public override int Allocated => base.Allocated;
+
+        public override WinVar GetWinVarByName(string name, bool winLookup = false, DrawWin owner = null)
+        {
+            if (string.Equals(name, "model", StringComparison.OrdinalIgnoreCase)) return modelName;
+            if (string.Equals(name, "anim", StringComparison.OrdinalIgnoreCase)) return animName;
+            if (string.Equals(name, "lightOrigin", StringComparison.OrdinalIgnoreCase)) return lightOrigin;
+            if (string.Equals(name, "lightColor", StringComparison.OrdinalIgnoreCase)) return lightColor;
+            if (string.Equals(name, "modelOrigin", StringComparison.OrdinalIgnoreCase)) return modelOrigin;
+            if (string.Equals(name, "modelRotate", StringComparison.OrdinalIgnoreCase)) return modelRotate;
+            if (string.Equals(name, "viewOffset", StringComparison.OrdinalIgnoreCase)) return viewOffset;
+            if (string.Equals(name, "needsRender", StringComparison.OrdinalIgnoreCase)) return needsRender;
+            return base.GetWinVarByName(name, winLookup, owner);
+        }
+    }
+}

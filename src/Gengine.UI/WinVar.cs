@@ -148,8 +148,8 @@ namespace Gengine.UI
         public WinStr() : base() { }
         public override int Size => 0;
 
-        public static bool operator ==(WinBool _, string a) => _.data == a;
-        public static bool operator !=(WinBool _, string a) => _.data != a;
+        public static bool operator ==(WinStr _, string a) => _.data == a;
+        public static bool operator !=(WinStr _, string a) => _.data != a;
         public static implicit operator WinStr(string s) => new(s);
         public static implicit operator string(WinStr t) => t.data;
         public override string ToString() => data;
@@ -206,23 +206,20 @@ namespace Gengine.UI
         // SaveGames
         public override void WriteToSaveGame(VFile savefile)
         {
-            savefile.Write(eval, sizeof(bool));
+            savefile.Write(eval);
 
             var len = data.Length;
-            savefile.Write(len, sizeof(int));
+            savefile.Write(len);
             if (len > 0)
-                savefile.Write(data, len);
+                savefile.WriteASCII(data, len);
         }
         public override void ReadFromSaveGame(VFile savefile)
         {
-            savefile.Read(eval, sizeof(bool));
+            savefile.Read(out eval);
 
-            savefile.Read(out int len, sizeof(int));
+            savefile.Read(out int len);
             if (len > 0)
-            {
-                data.Fill(' ', len);
-                savefile.Read(data[0], len);
-            }
+                savefile.ReadASCII(out data, len);
         }
     }
 
@@ -271,13 +268,13 @@ namespace Gengine.UI
         // SaveGames
         public override void WriteToSaveGame(VFile savefile)
         {
-            savefile.Write(eval, sizeof(bool));
-            savefile.Write(data, sizeof(int));
+            savefile.Write(eval);
+            savefile.Write(data);
         }
         public override void ReadFromSaveGame(VFile savefile)
         {
-            savefile.Read(eval, sizeof(bool));
-            savefile.Read(data, sizeof(int));
+            savefile.Read(out eval);
+            savefile.Read(out data);
         }
     }
 
@@ -296,6 +293,7 @@ namespace Gengine.UI
 
         public static bool operator ==(WinFloat _, float a) => _.data == a;
         public static bool operator !=(WinFloat _, float a) => _.data != a;
+        public static implicit operator WinFloat(float s) => new(s);
         public static implicit operator float(WinFloat t) => t.data;
         public override string ToString() => $"{data}";
 
@@ -352,6 +350,7 @@ namespace Gengine.UI
 
         public static bool operator ==(WinRectangle _, Rectangle a) => _.data == a;
         public static bool operator !=(WinRectangle _, Rectangle a) => _.data != a;
+        public static implicit operator WinRectangle(Vector4 s) => new(s);
         public static implicit operator WinRectangle(Rectangle s) => new(s);
         public static implicit operator Rectangle(WinRectangle t) => t.data;
         public override string ToString() => $"{data.ToVec4()}";
@@ -518,12 +517,12 @@ namespace Gengine.UI
 
         public override void WriteToSaveGame(VFile savefile)
         {
-            savefile.Write(eval, sizeof(bool));
+            savefile.Write(eval);
             savefile.Write(data, sizeof(Vector3));
         }
         public override void ReadFromSaveGame(VFile savefile)
         {
-            savefile.Read(eval, sizeof(bool));
+            savefile.Read(out eval);
             savefile.Read(data, sizeof(Vector3));
         }
     }

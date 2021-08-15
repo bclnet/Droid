@@ -19,7 +19,7 @@ namespace Gengine.UI
             COUNT
         }
 
-        public enum ALIGN
+        public enum ALIGN : byte
         {
             LEFT,
             CENTER,
@@ -64,7 +64,7 @@ namespace Gengine.UI
         float vidHeight;
         float vidWidth;
 
-        int cursor;
+        CURSOR cursor;
 
         List<Rectangle> clipRects = new();
 
@@ -211,7 +211,7 @@ namespace Gengine.UI
             DrawStretchPic(x, y, width, height, 0, 0, 0, 0, whiteImage);
         }
 
-        public int DrawText(string text, float textScale, int textAlign, Vector4 color, Rectangle rectDraw, bool wrap, int cursor = -1, bool calcOnly = false, List<int> breaks = null, int limit = 0)
+        public int DrawText(string text, float textScale, ALIGN textAlign, Vector4 color, Rectangle rectDraw, bool wrap, int cursor = -1, bool calcOnly = false, List<int> breaks = null, int limit = 0)
         {
             const char* p, *textPtr, *newLinePtr;
             char buff[1024];
@@ -769,17 +769,17 @@ namespace Gengine.UI
 
             // DG: I use this instead of plain AdjustCursorCoords and the following lines
             //     to scale menus and other fullscreen GUIs to 4:3 aspect ratio
-            AdjustCursorCoords(x, y, &size, &size);
+            AdjustCursorCoords(ref x, ref y, ref size, ref size);
             float sizeW = size * fixScaleForMenu.x;
             float sizeH = size * fixScaleForMenu.y;
             float fixedX = x * fixScaleForMenu.x + fixOffsetForMenu.x;
             float fixedY = y * fixScaleForMenu.y + fixOffsetForMenu.y;
 
-            DrawStretchPic(fixedX, fixedY, sizeW, sizeH, 0, 0, 1, 1, cursorImages[cursor]);
+            DrawStretchPic(fixedX, fixedY, sizeW, sizeH, 0, 0, 1, 1, cursorImages[(int)cursor]);
         }
 
-        public void SetCursor(int n)
-            => cursor = (n < (int)CURSOR.ARROW || n >= (int)CURSOR.COUNT) ? (int)CURSOR.ARROW : n;
+        public void SetCursor(CURSOR n)
+            => cursor = (n < CURSOR.ARROW || n >= CURSOR.COUNT) ? CURSOR.ARROW : n;
 
         public void AdjustCoords(ref float x, ref float y, ref float w, ref float h)
         {

@@ -1,53 +1,72 @@
-/*
-===========================================================================
+using System;
+using System.NumericsX.Core;
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+namespace Gengine.UI
+{
+    public class FieldWindow : Window
+    {
+        int cursorPos;
+        int lastTextLength;
+        int lastCursorPos;
+        int paintOffset;
+        bool showCursor;
+        string cursorVar;
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+        protected override bool ParseInternalVar(string name, Parser src)
+        {
+            if (string.Equals(name, "cursorvar", StringComparison.OrdinalIgnoreCase)) { ParseString(src, out cursorVar); return true; }
+            if (string.Equals(name, "showcursor", StringComparison.OrdinalIgnoreCase)) { showCursor = src.ParseBool(); return true; }
+            return base.ParseInternalVar(name, src);
+        }
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+        void CommonInit()
+        {
+            cursorPos = 0;
+            lastTextLength = 0;
+            lastCursorPos = 0;
+            paintOffset = 0;
+            showCursor = false;
+        }
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+        public FieldWindow(UserInterfaceLocal gui) : base(gui)
+        {
+            this.gui = gui;
+            CommonInit();
+        }
+        public FieldWindow(DeviceContext dc, UserInterfaceLocal gui) : base(dc, gui)
+        {
+            this.dc = dc;
+            this.gui = gui;
+            CommonInit();
+        }
 
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+        void CalcPaintOffset(int len)
+        {
+            lastCursorPos = cursorPos;
+            lastTextLength = len;
+            paintOffset = 0;
+            var tw = dc.TextWidth(text, textScale, -1);
+            if (tw < textRect.w)
+                return;
+            while (tw > textRect.w && len > 0)
+            {
+                tw = dc.TextWidth(text, textScale, --len);
+                paintOffset++;
+            }
+        }
 
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+        public override void Draw(int time, float x, float y)
+        {
+            var scale = (float)textScale;
+            var len = text.Length;
+            cursorPos = gui.State.GetInt(cursorVar);
+            if (len != lastTextLength || cursorPos != lastCursorPos)
+                CalcPaintOffset(len);
+            var rect = new Rectangle(textRect);
+            if (paintOffset >= len) paintOffset = 0;
+            if (cursorPos > len) cursorPos = len;
+            dc.DrawText(text[paintOffset], scale, 0, foreColor, rect, false, (flags & WIN_FOCUS) != 0 || showCursor ? cursorPos - paintOffset : -1);
+        }
+    }
+}
 
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-#ifndef __FIELDWINDOW_H
-#define __FIELDWINDOW_H
-
-#include "ui/Window.h"
-
-class idFieldWindow : public idWindow {
-public:
-	idFieldWindow(idUserInterfaceLocal *gui);
-	idFieldWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
-	virtual ~idFieldWindow();
-
-	virtual void Draw(int time, float x, float y);
-
-private:
-	virtual bool ParseInternalVar(const char *name, idParser *src);
-	void CommonInit();
-	void CalcPaintOffset(int len);
-	int cursorPos;
-	int lastTextLength;
-	int lastCursorPos;
-	int paintOffset;
-	bool showCursor;
-	idStr cursorVar;
-};
-
-#endif // __FIELDWINDOW_H

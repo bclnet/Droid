@@ -127,5 +127,10 @@ namespace System.NumericsX.Core
             Unsafe.CopyBlock(ref dest[0], ref src[0], (uint)destsize - 1);
             dest[destsize - 1] = 0;
         }
+
+        public static bool CharIsPrintable(Key key)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

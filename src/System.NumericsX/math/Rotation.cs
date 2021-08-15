@@ -10,7 +10,7 @@ namespace System.NumericsX
         internal Matrix3x3 axis;          // rotation axis
         internal bool axisValid;     // true if rotation axis is valid
 
-        internal Rotation() { }
+        public Rotation() { }
         public Rotation(Vector3 rotationOrigin, Vector3 rotationVec, float rotationAngle)
         {
             origin = rotationOrigin;

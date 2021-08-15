@@ -1,73 +1,112 @@
-/*
-===========================================================================
+using Gengine.Framework;
+using System.Collections.Generic;
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+namespace Gengine.UI
+{
+    public class ListGUILocal : List<string>, IListGUI
+    {
+        IUserInterface gui;
+        string name;
+        int water;
+        List<int> ids = new();
+        bool stateUpdates;
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+        public ListGUILocal() { gui = null; water = 0; stateUpdates = true; }
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+        void StateChanged()
+        {
+            if (!stateUpdates)
+                return;
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+            int i;
+            for (i = 0; i < Count; i++)
+                gui.SetStateString($"{name}_item_{i}", base[i]);
+            for (i = Count; i < water; i++)
+                gui.SetStateString($"{name}_item_{i}", "");
+            water = Count;
+            gui.StateChanged(C.com_frameTime);
+        }
 
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+        public void Config(IUserInterface gui, string name)
+        {
+            this.gui = gui;
+            this.name = name;
+        }
 
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+        public void Add(int id, string s)
+        {
+            var i = ids.FindIndex(x => x == id);
+            if (i == -1) { Add(s); ids.Add(id); }
+            else base[i] = s;
+            StateChanged();
+        }
 
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+        // use the element count as index for the ids
+        public void Push(string s)
+        {
+            Add(s);
+            ids.Add(ids.Count);
+            StateChanged();
+        }
 
-===========================================================================
-*/
+        public bool Del(int id)
+        {
+            var i = ids.FindIndex(x => x == id);
+            if (i == -1)
+                return false;
+            ids.RemoveAt(i);
+            this.RemoveAt(i);
+            StateChanged();
+            return true;
+        }
 
-#ifndef __LISTGUILOCAL_H__
-#define __LISTGUILOCAL_H__
+        public new void Clear()
+        {
+            ids.Clear();
+            base.Clear();
+            if (gui != null)
+                StateChanged(); // will clear all the GUI variables and will set m_water back to 0
+        }
 
-#include "idlib/containers/List.h"
-#include "ui/ListGUI.h"
+        public int Num => base.Count;
 
-/*
-===============================================================================
+        public int GetSelection(out string s, int size, int sel = 0) // returns the id, not the list index (or -1)
+        {
+            var sel2 = gui.State.GetInt($"{name}_sel_{sel}", "-1");
+            if (sel2 == -1 || sel2 >= ids.Count)
+            {
+                s = string.Empty;
+                return -1;
+            }
+            s = gui.State.GetString($"{name}_item_{sel2}", "");
+            if (sel2 >= ids.Count) sel2 = 0; // don't let overflow
+            gui.SetStateInt($"{name}_selid_0", ids[sel2]);
+            return ids[sel2];
+        }
 
-	feed data to a listDef
-	each item has an id and a display string
+        public void SetSelection(int sel)
+        {
+            gui.SetStateInt($"{name}_sel_0", sel);
+            StateChanged();
+        }
 
-===============================================================================
-*/
+        public int NumSelections
+            => gui.State.GetInt($"{name}_numsel");
 
-class idListGUILocal : protected idList<idStr>, public idListGUI {
-public:
-						idListGUILocal() { m_pGUI = NULL; m_water = 0; m_stateUpdates = true; }
+        public bool IsConfigured
+            => gui != null;
 
-	// idListGUI interface
-	void				Config( idUserInterface *pGUI, const char *name ) { m_pGUI = pGUI; m_name = name; }
-	void				Add( int id, const idStr& s );
-						// use the element count as index for the ids
-	void				Push( const idStr& s );
-	bool				Del( int id );
-	void				Clear( void );
-	int					Num( void ) { return idList<idStr>::Num(); }
-	int					GetSelection( char *s, int size, int sel = 0 ) const; // returns the id, not the list index (or -1)
-	void				SetSelection( int sel );
-	int					GetNumSelections();
-	bool				IsConfigured( void ) const;
-	void				SetStateChanges( bool enable );
-	void				Shutdown( void );
+        public void SetStateChanges(bool enable)
+        {
+            stateUpdates = enable;
+            StateChanged();
+        }
 
-private:
-	idUserInterface *	m_pGUI;
-	idStr				m_name;
-	int					m_water;
-	idList<int>			m_ids;
-	bool				m_stateUpdates;
-
-	void				StateChanged();
-};
-
-#endif /* !__LISTGUILOCAL_H__ */
+        public void Shutdown()
+        {
+            gui = null;
+            name = string.Empty;
+            Clear();
+        }
+    }
+}

@@ -9,42 +9,6 @@ namespace Gengine.Render
 {
     static partial class RenderWorldX
     {
-        public const string PROC_FILE_EXT = "proc";
-        public const string PROC_FILE_ID = "mapProcFile003";
-
-        // shader parms
-        public const int MAX_GLOBAL_SHADER_PARMS = 12;
-
-        public const int SHADERPARM_RED = 0;
-        public const int SHADERPARM_GREEN = 1;
-        public const int SHADERPARM_BLUE = 2;
-        public const int SHADERPARM_ALPHA = 3;
-        public const int SHADERPARM_TIMESCALE = 3;
-        public const int SHADERPARM_TIMEOFFSET = 4;
-        public const int SHADERPARM_DIVERSITY = 5; // random between 0.0 and 1.0 for some effects (muzzle flashes, etc)
-        public const int SHADERPARM_MODE = 7;  // for selecting which shader passes to enable
-        public const int SHADERPARM_TIME_OF_DEATH = 7; // for the monster skin-burn-away effect enable and time offset
-
-        // model parms
-        public const int SHADERPARM_MD5_SKINSCALE = 8; // for scaling vertex offsets on md5 models (jack skellington effect)
-
-        public const int SHADERPARM_MD3_FRAME = 8;
-        public const int SHADERPARM_MD3_LASTFRAME = 9;
-        public const int SHADERPARM_MD3_BACKLERP = 10;
-
-        public const int SHADERPARM_BEAM_END_X = 8;    // for _beam models
-        public const int SHADERPARM_BEAM_END_Y = 9;
-        public const int SHADERPARM_BEAM_END_Z = 10;
-        public const int SHADERPARM_BEAM_WIDTH = 11;
-
-        public const int SHADERPARM_SPRITE_WIDTH = 8;
-        public const int SHADERPARM_SPRITE_HEIGHT = 9;
-
-        public const int SHADERPARM_PARTICLE_STOPTIME = 8; // don't spawn any more particles after this time
-
-        // guis
-        public const int MAX_RENDERENTITY_GUI = 3;
-
         public static int SIMD_ROUND_JOINTS(int numJoints) => (numJoints + 1) & ~1;
         public static void SIMD_INIT_LAST_JOINT(JointMat[] joints, int numJoints)
         {
@@ -72,6 +36,11 @@ namespace Gengine.Render
 
         public byte[] callbackData;         // used for whatever the callback wants
 
+        public void memset()
+        {
+            throw new NotImplementedException();
+        }
+
         // player bodies and possibly player shadows should be suppressed in views from that player's eyes, but will show up in mirrors and other subviews
         // security cameras could suppress their model in their subviews if we add a way of specifying a view number for a remoteRenderMap view
         public int suppressSurfaceInViewID;
@@ -98,13 +67,12 @@ namespace Gengine.Render
         public float[] shaderParms = new float[Material.MAX_ENTITY_SHADER_PARMS]; // can be used in any way by shader or model generation
 
         // networking: see WriteGUIToSnapshot / ReadGUIFromSnapshot
-        public IUserInterface[] gui = new IUserInterface[RenderWorldX.MAX_RENDERENTITY_GUI];
+        public IUserInterface[] gui = new IUserInterface[IRenderWorld.MAX_RENDERENTITY_GUI];
 
         public RenderView remoteRenderView;     // any remote camera surfaces will use this
 
         public int numJoints;
-        public JointMat joints;                 // array of joints that will modify vertices.
-                                                // NULL if non-deformable model.  NOT freed by renderer
+        public JointMat[] joints;                 // array of joints that will modify vertices. NULL if non-deformable model.  NOT freed by renderer
 
         public float modelDepthHack;           // squash depth range so particle effects don't clip into walls
 
@@ -170,7 +138,7 @@ namespace Gengine.Render
         // sized from 0 to SCREEN_WIDTH / SCREEN_HEIGHT (640/480), not actual resolution
         public int x, y, width, height;
 
-        float fov_x, fov_y;
+        public float fov_x, fov_y;
         public Vector3 vieworg;
         public Matrix3x3 viewaxis;            // transformation matrix, view looks down the positive X axis
 
@@ -180,8 +148,13 @@ namespace Gengine.Render
 
         // time in milliseconds for shader effects and other time dependent rendering issues
         public int time;
-        public float[] shaderParms = new float[RenderWorldX.MAX_GLOBAL_SHADER_PARMS];     // can be used in any way by shader
+        public float[] shaderParms = new float[IRenderWorld.MAX_GLOBAL_SHADER_PARMS];     // can be used in any way by shader
         public Material globalMaterial;                           // used to override everything draw
+
+        public void memset()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     // exitPortal_t is returned by idRenderWorld::GetPortal()
@@ -230,6 +203,42 @@ namespace Gengine.Render
 
     public interface IRenderWorld
     {
+        public const string PROC_FILE_EXT = "proc";
+        public const string PROC_FILE_ID = "mapProcFile003";
+
+        // shader parms
+        public const int MAX_GLOBAL_SHADER_PARMS = 12;
+
+        public const int SHADERPARM_RED = 0;
+        public const int SHADERPARM_GREEN = 1;
+        public const int SHADERPARM_BLUE = 2;
+        public const int SHADERPARM_ALPHA = 3;
+        public const int SHADERPARM_TIMESCALE = 3;
+        public const int SHADERPARM_TIMEOFFSET = 4;
+        public const int SHADERPARM_DIVERSITY = 5; // random between 0.0 and 1.0 for some effects (muzzle flashes, etc)
+        public const int SHADERPARM_MODE = 7;  // for selecting which shader passes to enable
+        public const int SHADERPARM_TIME_OF_DEATH = 7; // for the monster skin-burn-away effect enable and time offset
+
+        // model parms
+        public const int SHADERPARM_MD5_SKINSCALE = 8; // for scaling vertex offsets on md5 models (jack skellington effect)
+
+        public const int SHADERPARM_MD3_FRAME = 8;
+        public const int SHADERPARM_MD3_LASTFRAME = 9;
+        public const int SHADERPARM_MD3_BACKLERP = 10;
+
+        public const int SHADERPARM_BEAM_END_X = 8;    // for _beam models
+        public const int SHADERPARM_BEAM_END_Y = 9;
+        public const int SHADERPARM_BEAM_END_Z = 10;
+        public const int SHADERPARM_BEAM_WIDTH = 11;
+
+        public const int SHADERPARM_SPRITE_WIDTH = 8;
+        public const int SHADERPARM_SPRITE_HEIGHT = 9;
+
+        public const int SHADERPARM_PARTICLE_STOPTIME = 8; // don't spawn any more particles after this time
+
+        // guis
+        public const int MAX_RENDERENTITY_GUI = 3;
+
         // The same render world can be reinitialized as often as desired a NULL or empty mapName will create an empty, single area world
         bool InitFromMap(string mapName);
 

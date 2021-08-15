@@ -158,7 +158,7 @@ namespace Gengine.Render
         public MegaTexture megaTexture;        // handles all the binding and parameter setting
     }
 
-    public struct ShaderStage
+    public class ShaderStage
     {
         public int conditionRegister;  // if registers[conditionRegister] == 0, skip stage
         public SL lighting;           // determines which passes interact with lights
@@ -489,7 +489,7 @@ namespace Gengine.Render
         //------------------------------------------------------------------
 
         // returns the length, in milliseconds, of the videoMap on this material, or zero if it doesn't have one
-        public int CinematicLength() => throw new NotImplementedException();
+        public int CinematicLength => throw new NotImplementedException();
 
         public void CloseCinematic() => throw new NotImplementedException();
 
@@ -500,9 +500,9 @@ namespace Gengine.Render
         //------------------------------------------------------------------
 
         // gets an image for the editor to use
-        public Image GetEditorImage() => throw new NotImplementedException();
-        public int GetImageWidth() => throw new NotImplementedException();
-        public int GetImageHeight() => throw new NotImplementedException();
+        public Image EditorImage => throw new NotImplementedException();
+        public int ImageWidth => throw new NotImplementedException();
+        public int ImageHeight => throw new NotImplementedException();
 
         public void SetGui(string _gui) => throw new NotImplementedException();
 

@@ -15,6 +15,35 @@ namespace System.NumericsX.Core
         SET
     }
 
+    public static unsafe class VFileExtensions
+    {
+        public static int ReadASCII(this VFile source, out string value, int length) => throw new NotImplementedException();
+        public static int Read(this VFile source, out long value) { long val; var r = source.Read((byte*)&val, sizeof(long)); value = val; return r; }
+        public static int Read(this VFile source, out ulong value) { ulong val; var r = source.Read((byte*)&val, sizeof(ulong)); value = val; return r; }
+        public static int Read(this VFile source, out float value) { float val; var r = source.Read((byte*)&val, sizeof(float)); value = val; return r; }
+        public static int Read(this VFile source, out int value) { int val; var r = source.Read((byte*)&val, sizeof(int)); value = val; return r; }
+        public static int Read(this VFile source, out uint value) { uint val; var r = source.Read((byte*)&val, sizeof(uint)); value = val; return r; }
+        public static int Read(this VFile source, out short value) { short val; var r = source.Read((byte*)&val, sizeof(short)); value = val; return r; }
+        public static int Read(this VFile source, out ushort value) { ushort val; var r = source.Read((byte*)&val, sizeof(ushort)); value = val; return r; }
+        public static int Read(this VFile source, out byte value) { byte val; var r = source.Read((byte*)&val, sizeof(byte)); value = val; return r; }
+        public static int Read(this VFile source, out bool value) { bool val; var r = source.Read((byte*)&val, sizeof(bool)); value = val; return r; }
+        public static int ReadT<T>(this VFile source, out T value) where T : struct => throw new NotImplementedException();
+        public static int ReadTMany<T>(this VFile source, out T[] value, int count) where T : struct => throw new NotImplementedException();
+
+        public static int WriteASCII(this VFile source, string value, int length) => source.Write(Encoding.ASCII.GetBytes(value), value.Length);
+        public static int Write(this VFile source, long value) => source.Write((byte*)&value, sizeof(long));
+        public static int Write(this VFile source, ulong value) => source.Write((byte*)&value, sizeof(ulong));
+        public static int Write(this VFile source, float value) => source.Write((byte*)&value, sizeof(float));
+        public static int Write(this VFile source, int value) => source.Write((byte*)&value, sizeof(int));
+        public static int Write(this VFile source, uint value) => source.Write((byte*)&value, sizeof(uint));
+        public static int Write(this VFile source, short value) => source.Write((byte*)&value, sizeof(short));
+        public static int Write(this VFile source, ushort value) => source.Write((byte*)&value, sizeof(ushort));
+        public static int Write(this VFile source, byte value) => source.Write((byte*)&value, sizeof(byte));
+        public static int Write(this VFile source, bool value) => source.Write((byte*)&value, sizeof(bool));
+        public static int WriteT<T>(this VFile source, T value) where T : struct => throw new NotImplementedException();
+        public static int WriteTMany<T>(this VFile source, T[] value) where T : struct => throw new NotImplementedException();
+    }
+
     public unsafe class VFile : IDisposable
     {
         public virtual void Dispose() { }

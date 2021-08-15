@@ -294,7 +294,7 @@ namespace Gengine.Render
 
         // allocate a renderWorld to be used for drawing
         IRenderWorld AllocRenderWorld();
-        void FreeRenderWorld(ref IRenderWorld rw);
+        void FreeRenderWorld(IRenderWorld rw);
 
         // All data that will be used in a level should be registered before rendering any frames to prevent disk hits,
         // but they can still be registered at a later time if necessary.
@@ -302,7 +302,7 @@ namespace Gengine.Render
         void EndLevelLoad();
 
         // font support
-        bool RegisterFont(string fontName, fontInfoEx font);
+        bool RegisterFont(string fontName, FontInfoEx font);
 
         // GUI drawing just involves shader parameter setting and axial image subsections
         void SetColor(Vector4 rgba);

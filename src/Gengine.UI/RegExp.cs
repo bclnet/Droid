@@ -1,111 +1,260 @@
-/*
-===========================================================================
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.NumericsX;
+using System.NumericsX.Core;
+using System.Text;
+using static System.NumericsX.Lib;
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+namespace Gengine.UI
+{
+    public class Register
+    {
+        public Register() { }
+        public Register(string p, int t)
+        {
+            name = p;
+            type = (short)t;
+            Debug.Assert(t >= 0 && t < (int)REGTYPE.NUMTYPES);
+            regCount = REGCOUNT[t];
+            enabled = type == (short)REGTYPE.STRING ? false : true;
+            var = null;
+        }
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+        public enum REGTYPE : short { VEC4 = 0, FLOAT, BOOL, INT, STRING, VEC2, VEC3, RECTANGLE, NUMTYPES };
+        public static int[] REGCOUNT = { 4, 1, 1, 1, 0, 2, 3, 4 };
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+        public bool enabled;
+        public short type;
+        public string name;
+        public int regCount;
+        public ushort[] regs = new ushort[4];
+        public WinVar var;
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+        public void SetToRegs(float[] registers)
+        {
+            Vector4 v = new(); Vector2 v2; Vector3 v3; Rectangle rect;
 
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+            if (!enabled || var == null || (var != null && (var.Dict != null || !var.Eval)))
+                return;
 
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+            switch ((REGTYPE)type)
+            {
+                case REGTYPE.VEC4: v = (WinVec4)var; break;
+                case REGTYPE.RECTANGLE: rect = (WinRectangle)var; v = rect.ToVec4(); break;
+                case REGTYPE.VEC2: v2 = (WinVec2)var; v.x = v2.x; v.y = v2.y; break;
+                case REGTYPE.VEC3: v3 = (WinVec3)var; v.x = v3.x; v.y = v3.y; v.z = v3.z; break;
+                case REGTYPE.FLOAT: v.x = (WinFloat)var; break;
+                case REGTYPE.INT: v.x = (WinInt)var; break;
+                case REGTYPE.BOOL: v.x = (WinBool)var ? 1f : 0f; break;
+                default: common.FatalError("Register::SetToRegs: bad reg type"); break;
+            }
+            for (var i = 0; i < regCount; i++)
+                registers[regs[i]] = v[i];
+        }
 
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+        public void GetFromRegs(float[] registers)
+        {
+            Vector4 v = new(); Rectangle rect = new();
 
-===========================================================================
-*/
+            if (!enabled || var == null || (var != null && (var.Dict != null || !var.Eval)))
+                return;
 
-#ifndef __REGEXP_H__
-#define __REGEXP_H__
+            for (var i = 0; i < regCount; i++)
+                v[i] = registers[regs[i]];
 
-class idWindow;
-class idWinVar;
+            switch ((REGTYPE)type)
+            {
+                case REGTYPE.VEC4: var = (WinVec4)v; break;
+                case REGTYPE.RECTANGLE: rect.x = v.x; rect.y = v.y; rect.w = v.z; rect.h = v.w; var = (WinRectangle)rect; break;
+                case REGTYPE.VEC2: var = (WinVec2)v.ToVec2(); break;
+                case REGTYPE.VEC3: var = (WinVec3)v.ToVec3(); break;
+                case REGTYPE.FLOAT: var = (WinFloat)v[0]; break;
+                case REGTYPE.INT: var = (WinInt)v[0]; break;
+                case REGTYPE.BOOL: var = (WinBool)(v[0] != 0.0f); break;
+                default: common.FatalError("Register::GetFromRegs: bad reg type"); break;
+            }
+        }
 
-class idRegister {
-public:
-						idRegister();
-						idRegister( const char *p, int t );
+        public void CopyRegs(Register src)
+        {
+            regs[0] = src.regs[0];
+            regs[1] = src.regs[1];
+            regs[2] = src.regs[2];
+            regs[3] = src.regs[3];
+        }
 
-	enum REGTYPE { VEC4 = 0, FLOAT, BOOL, INT, STRING, VEC2, VEC3, RECTANGLE, NUMTYPES } ;
-	static int REGCOUNT[NUMTYPES];
+        public void Enable(bool b) => enabled = b;
 
-	bool				enabled;
-	short				type;
-	idStr				name;
-	int					regCount;
-	unsigned short		regs[4];
-	idWinVar *			var;
+        public void ReadFromDemoFile(VFileDemo f)
+        {
+            f.ReadBool(out enabled);
+            f.ReadShort(out type);
+            f.ReadInt(out regCount);
+            for (var i = 0; i < 4; i++)
+                f.ReadUnsignedShort(out regs[i]);
+            name = f.ReadHashString();
+        }
 
-	void				SetToRegs( float *registers );
-	void				GetFromRegs( float *registers );
-	void				CopyRegs( idRegister *src );
-	void				Enable( bool b ) { enabled = b; }
-	void				ReadFromDemoFile( idDemoFile *f );
-	void				WriteToDemoFile( idDemoFile *f );
-	void				WriteToSaveGame( idFile *savefile );
-	void				ReadFromSaveGame( idFile *savefile );
-};
+        public void WriteToDemoFile(VFileDemo f)
+        {
+            f.WriteBool(enabled);
+            f.WriteShort(type);
+            f.WriteInt(regCount);
+            for (var i = 0; i < 4; i++)
+                f.WriteUnsignedShort(regs[i]);
+            f.WriteHashString(name);
+        }
 
-ID_INLINE idRegister::idRegister( void ) {
+        public void WriteToSaveGame(VFile savefile)
+        {
+            savefile.Write(enabled);
+            savefile.Write(type);
+            savefile.Write(regCount);
+            savefile.WriteTMany(regs);
+
+            var len = name.Length;
+            savefile.Write(len);
+            savefile.Write(Encoding.ASCII.GetBytes(name), len);
+
+            var.WriteToSaveGame(savefile);
+        }
+
+        public void ReadFromSaveGame(VFile savefile)
+        {
+            int len;
+
+            savefile.Read(out enabled);
+            savefile.Read(out type);
+            savefile.Read(out regCount);
+            savefile.ReadTMany(out regs, regs.Length);
+
+            savefile.Read(out len);
+            name.Fill(' ', len);
+            savefile.Read(name[0], len);
+
+            var.ReadFromSaveGame(savefile);
+        }
+    }
+
+    public class RegisterList
+    {
+        Dictionary<string, Register> regs = new(StringComparer.OrdinalIgnoreCase);
+
+        public RegisterList()
+        {
+            //regs.SetGranularity(4);
+        }
+
+        public void AddReg(string name, int type, Parser src, Window win, WinVar var)
+        {
+            var reg = FindReg(name);
+            if (reg == null)
+            {
+                Debug.Assert(type >= 0 && type < (short)Register.REGTYPE.NUMTYPES);
+                var numRegs = Register.REGCOUNT[type];
+                reg = new Register(name, type) { var = var };
+                if (type == (int)Register.REGTYPE.STRING)
+                {
+                    if (src.ReadToken(out var tok))
+                    {
+                        tok = common.LanguageDictGetString(tok);
+                        var.Init(tok, win);
+                    }
+                }
+                else
+                    for (var i = 0; i < numRegs; i++)
+                    {
+                        reg.regs[i] = (ushort)win.ParseExpression(src, null);
+                        if (i < numRegs - 1)
+                            src.ExpectTokenString(",");
+                    }
+                regs.Add(name, reg);
+            }
+            else
+            {
+                var numRegs = Register.REGCOUNT[type];
+                reg.var = var;
+                if (type == (int)Register.REGTYPE.STRING)
+                {
+                    if (src.ReadToken(out var tok))
+                        var.Init(tok, win);
+                }
+                else
+                    for (var i = 0; i < numRegs; i++)
+                    {
+                        reg.regs[i] = (ushort)win.ParseExpression(src, null);
+                        if (i < numRegs - 1)
+                            src.ExpectTokenString(",");
+                    }
+            }
+        }
+
+        public void AddReg(string name, int type, Vector4 data, Window win, WinVar var)
+        {
+            if (FindReg(name) == null)
+            {
+                Debug.Assert(type >= 0 && type < (short)Register.REGTYPE.NUMTYPES);
+                var numRegs = Register.REGCOUNT[type];
+                var reg = new Register(name, type) { var = var };
+                for (var i = 0; i < numRegs; i++)
+                    reg.regs[i] = (ushort)win.ExpressionConstant(data[i]);
+                regs.Add(name, reg);
+            }
+        }
+
+        public Register FindReg(string name)
+            => regs.TryGetValue(name, out var z) ? z : null;
+
+        public void SetToRegs(float[] registers)
+        {
+            foreach (var reg in regs.Values)
+                reg.SetToRegs(registers);
+        }
+
+        public void GetFromRegs(float[] registers)
+        {
+            foreach (var reg in regs.Values)
+                reg.GetFromRegs(registers);
+        }
+
+        public void Reset()
+            => regs.Clear();
+
+        public void ReadFromDemoFile(VFileDemo f)
+        {
+            f.ReadInt(out var c);
+            regs.Clear();
+            for (var i = 0; i < c; i++)
+            {
+                var reg = new Register();
+                reg.ReadFromDemoFile(f);
+                regs.Add(reg.name, reg);
+            }
+        }
+
+        public void WriteToDemoFile(VFileDemo f)
+        {
+            var c = regs.Count;
+            f.WriteInt(c);
+            for (var i = 0; i < c; i++)
+                regs[i].WriteToDemoFile(f);
+        }
+
+        public void WriteToSaveGame(VFile savefile)
+        {
+            var num = regs.Count;
+            savefile.Write(num);
+
+            for (var i = 0; i < num; i++)
+                regs[i].WriteToSaveGame(savefile);
+        }
+
+        public void ReadFromSaveGame(VFile savefile)
+        {
+            savefile.Read(out int num);
+            for (var i = 0; i < num; i++)
+                regs[i].ReadFromSaveGame(savefile);
+        }
+    }
 }
-
-ID_INLINE idRegister::idRegister( const char *p, int t ) {
-	name = p;
-	type = t;
-	assert( t >= 0 && t < NUMTYPES );
-	regCount = REGCOUNT[t];
-	enabled = ( type == STRING ) ? false : true;
-	var = NULL;
-};
-
-ID_INLINE void idRegister::CopyRegs( idRegister *src ) {
-	regs[0] = src->regs[0];
-	regs[1] = src->regs[1];
-	regs[2] = src->regs[2];
-	regs[3] = src->regs[3];
-}
-
-class idRegisterList {
-public:
-
-						idRegisterList();
-						~idRegisterList();
-
-	void				AddReg( const char *name, int type, idParser *src, idWindow *win, idWinVar *var );
-	void				AddReg( const char *name, int type, idVec4 data, idWindow *win, idWinVar *var );
-
-	idRegister *		FindReg( const char *name );
-	void				SetToRegs( float *registers );
-	void				GetFromRegs( float *registers );
-	void				Reset();
-	void				ReadFromDemoFile( idDemoFile *f );
-	void				WriteToDemoFile( idDemoFile *f );
-	void				WriteToSaveGame( idFile *savefile );
-	void				ReadFromSaveGame( idFile *savefile );
-
-private:
-	idList<idRegister*>	regs;
-	idHashIndex			regHash;
-};
-
-ID_INLINE idRegisterList::idRegisterList() {
-	regs.SetGranularity( 4 );
-	regHash.SetGranularity( 4 );
-	regHash.Clear( 32, 4 );
-}
-
-ID_INLINE idRegisterList::~idRegisterList() {
-}
-
-#endif /* !__REGEXP_H__ */

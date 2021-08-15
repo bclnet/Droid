@@ -4,7 +4,7 @@ using System.NumericsX;
 
 namespace Gengine.UI
 {
-    public class Rectangle
+    public struct Rectangle
     {
         public float x;    // horiz position
         public float y;    // vert position
@@ -18,7 +18,14 @@ namespace Gengine.UI
             w = v.z;
             h = v.w;
         }
-        public Rectangle() { x = y = w = h = 0f; }
+        public Rectangle(Rectangle r)
+        {
+            x = r.x;
+            y = r.y;
+            w = r.w;
+            h = r.h;
+        }
+        //public Rectangle() => x = y = w = h = 0f;
         public Rectangle(float ix, float iy, float iw, float ih) { x = ix; y = iy; w = iw; h = ih; }
 
         public float Bottom => y + h;
@@ -32,14 +39,13 @@ namespace Gengine.UI
 
         public bool Contains(float xt, float yt)
         {
-            if (w == 0f && h == 0f)
-                return false;
-            if (xt >= x && xt <= Right && yt >= y && yt <= Bottom)
-                return true;
+            if (w == 0f && h == 0f) return false;
+            if (xt >= x && xt <= Right && yt >= y && yt <= Bottom) return true;
             return false;
         }
 
-        public void Empty() { x = y = w = h = 0f; };
+        public void Empty()
+            => x = y = w = h = 0f;
 
         public void ClipAgainst(Rectangle r, bool sizeOnly)
         {
@@ -150,7 +156,7 @@ namespace Gengine.UI
         public int RectCount()
              => rects.Count;
 
-        public Rectangle GetRect(int index)
+        public Rectangle? GetRect(int index)
             => index >= 0 && index < rects.Count ? rects[index] : null;
     }
 }
