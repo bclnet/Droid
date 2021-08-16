@@ -29,23 +29,23 @@ namespace System.NumericsX.Core
         public char this[int index] => val[index];
 
         // number sub types
-        internal const int TT_INTEGER = 0x00001;            // integer
-        internal const int TT_DECIMAL = 0x00002;            // decimal number
-        internal const int TT_HEX = 0x00004;                // hexadecimal number
-        internal const int TT_OCTAL = 0x00008;              // octal number
-        internal const int TT_BINARY = 0x00010;             // binary number
-        internal const int TT_LONG = 0x00020;               // long int
-        internal const int TT_UNSIGNED = 0x00040;           // unsigned int
-        internal const int TT_FLOAT = 0x00080;              // floating point number
-        internal const int TT_SINGLE_PRECISION = 0x00100;   // float
-        internal const int TT_DOUBLE_PRECISION = 0x00200;   // double
-        internal const int TT_EXTENDED_PRECISION = 0x00400; // long double
-        internal const int TT_INFINITE = 0x00800;           // infinite 1.#INF
-        internal const int TT_INDEFINITE = 0x01000;         // indefinite 1.#IND
-        internal const int TT_NAN = 0x02000;                // NaN
-        internal const int TT_IPADDRESS = 0x04000;          // ip address
-        internal const int TT_IPPORT = 0x08000;             // ip port
-        internal const int TT_VALUESVALID = 0x10000;        // set if intvalue and floatvalue are valid
+        public const int TT_INTEGER = 0x00001;            // integer
+        public const int TT_DECIMAL = 0x00002;            // decimal number
+        public const int TT_HEX = 0x00004;                // hexadecimal number
+        public const int TT_OCTAL = 0x00008;              // octal number
+        public const int TT_BINARY = 0x00010;             // binary number
+        public const int TT_LONG = 0x00020;               // long int
+        public const int TT_UNSIGNED = 0x00040;           // unsigned int
+        public const int TT_FLOAT = 0x00080;              // floating point number
+        public const int TT_SINGLE_PRECISION = 0x00100;   // float
+        public const int TT_DOUBLE_PRECISION = 0x00200;   // double
+        public const int TT_EXTENDED_PRECISION = 0x00400; // long double
+        public const int TT_INFINITE = 0x00800;           // infinite 1.#INF
+        public const int TT_INDEFINITE = 0x01000;         // indefinite 1.#IND
+        public const int TT_NAN = 0x02000;                // NaN
+        public const int TT_IPADDRESS = 0x04000;          // ip address
+        public const int TT_IPPORT = 0x08000;             // ip port
+        public const int TT_VALUESVALID = 0x10000;        // set if intvalue and floatvalue are valid
 
         public string val;
 

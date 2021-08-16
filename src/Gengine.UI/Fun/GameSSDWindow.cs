@@ -1,618 +1,504 @@
-/*
-===========================================================================
+using Gengine.Render;
+using System;
+using System.Collections.Generic;
+using System.NumericsX;
+using System.NumericsX.Core;
+using System.NumericsX.Sys;
+using static Gengine.Lib;
+using static System.NumericsX.Core.Key;
+using static System.NumericsX.Lib;
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+namespace Gengine.UI
+{
+    class SSDCrossHair
+    {
+        public enum CROSSHAIR
+        {
+            STANDARD = 0,
+            SUPER,
+            COUNT
+        }
+        public Material[] crosshairMaterial = new Material[(int)CROSSHAIR.COUNT];
+        public int currentCrosshair;
+        public float crosshairWidth, crosshairHeight;
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+        public SSDCrossHair();
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+        public virtual void WriteToSaveGame(VFile savefile);
+        public virtual void ReadFromSaveGame(VFile savefile);
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+        public void InitCrosshairs();
+        public void Draw(DeviceContext dc, Vector2 cursor);
+    }
 
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+    enum SSD_ENTITY
+    {
+        BASE = 0,
+        ASTEROID,
+        ASTRONAUT,
+        EXPLOSION,
+        POINTS,
+        PROJECTILE,
+        POWERUP
+    }
 
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+    class SSDEntity
+    {
+        //SSDEntity Information
+        public int type;
+        public int id;
+        public string materialName;
+        public Material material;
+        public Vector3 position;
+        public Vector2 size;
+        public float radius;
+        public float hitRadius;
+        public float rotation;
 
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+        public Vector4 matColor;
 
-===========================================================================
+        public string text;
+        public float textScale;
+        public Vector4 foreColor;
+
+        public GameSSDWindow game;
+        public int currentTime;
+        public int lastUpdate;
+        public int elapsed;
+
+        public bool destroyed;
+        public bool noHit;
+        public bool noPlayerDamage;
+
+        public bool inUse;
+
+        public SSDEntity();
+
+        public virtual void WriteToSaveGame(VFile savefile);
+        public virtual void ReadFromSaveGame(VFile savefile, GameSSDWindow game);
+
+        public void EntityInit();
+
+        public void SetGame(idGameSSDWindow game);
+        public void SetMaterial(string name);
+        public void SetPosition(Vector3 _position);
+        public void SetSize(Vector2 size);
+        public void SetRadius(float radius, float hitFactor = 1f);
+        public void SetRotation(float rotation);
+
+        public void Update();
+        public bool HitTest(Vector2 pt);
+
+        public virtual void EntityUpdate() { }
+        public virtual void Draw(DeviceContext dc);
+        public virtual void DestroyEntity();
+
+        public virtual void OnHit(int key) { }
+        public virtual void OnStrikePlayer() { }
+
+        public Bounds WorldToScreen(Bounds worldBounds);
+        public Vector3 WorldToScreen(Vector3 worldPos);
+
+        public Vector3 ScreenToWorld(Vector3 screenPos);
+    }
+
+
+    // SSDMover
+    class SSDMover : SSDEntity
+    {
+        public Vector3 speed;
+        public float rotationSpeed;
+
+        public SSDMover();
+
+        public virtual void WriteToSaveGame(VFile savefile);
+        public virtual void ReadFromSaveGame(VFile savefile, GameSSDWindow game);
+
+        public void MoverInit(Vector3 speed, float rotationSpeed);
+
+        public virtual void EntityUpdate();
+    }
+
+    // SSDAsteroid
+    class SSDAsteroid : SSDMover
+    {
+        public const int MAX_ASTEROIDS = 64;
+        public int health;
+        protected static SSDAsteroid[] asteroidPool = new SSDAsteroid[MAX_ASTEROIDS];
+
+        public SSDAsteroid();
+
+        public virtual void WriteToSaveGame(VFile savefile);
+        public virtual void ReadFromSaveGame(VFile savefile, GameSSDWindow game);
+
+        public void Init(GameSSDWindow game, Vector3 startPosition, Vector2 size, float speed, float rotate, int health);
+
+        public virtual void EntityUpdate();
+        public static SSDAsteroid GetNewAsteroid(GameSSDWindow game, Vector3 startPosition, Vector2 size, float speed, float rotate, int health);
+        public static SSDAsteroid GetSpecificAsteroid(int id);
+        public static void WriteAsteroids(VFile savefile);
+        public static void ReadAsteroids(VFile savefile, GameSSDWindow game);
+
+    }
+
+    // SSDAstronaut
+    class SSDAstronaut : SSDMover
+    {
+        public const int MAX_ASTRONAUT = 8;
+        public int health;
+        protected static SSDAstronaut[] astronautPool = new SSDAstronaut[MAX_ASTRONAUT];
+
+        public SSDAstronaut();
+
+        public virtual void WriteToSaveGame(VFile savefile);
+        public virtual void ReadFromSaveGame(VFile savefile, GameSSDWindow game);
+
+        public void Init(GameSSDWindow game, Vector3 startPosition, float speed, float rotate, int health);
+
+        public static SSDAstronaut GetNewAstronaut(GameSSDWindow game, Vector3 startPosition, float speed, float rotate, int health);
+        public static SSDAstronaut GetSpecificAstronaut(int id);
+        public static void WriteAstronauts(VFile savefile);
+        public static void ReadAstronauts(VFile savefile, GameSSDWindow game);
+    }
+
+    // SSDExplosion
+    class SSDExplosion : SSDEntity
+    {
+        public enum EXPLOSION
+        {
+            NORMAL = 0,
+            TELEPORT = 1
+        }
+
+        public const int MAX_EXPLOSIONS = 64;
+        public Vector2 finalSize;
+        public int length;
+        public int beginTime;
+        public int endTime;
+        public int explosionType;
+
+        //The entity that is exploding
+        public SSDEntity buddy;
+        public bool killBuddy;
+        public bool followBuddy;
+
+        protected static SSDExplosion[] explosionPool = new SSDExplosion[MAX_EXPLOSIONS];
+
+        public SSDExplosion();
+
+        public virtual void WriteToSaveGame(VFile savefile);
+        public virtual void ReadFromSaveGame(VFile savefile, GameSSDWindow game);
+
+        public void Init(GameSSDWindow game, Vector3 position, Vector2 size, int length, int type, SSDEntity buddy, bool killBuddy = true, bool followBuddy = true);
+
+        public virtual void EntityUpdate();
+        public static SSDExplosion GetNewExplosion(GameSSDWindow game, Vector3 position, Vector2 size, int length, int type, SSDEntity buddy, bool killBuddy = true, bool followBuddy = true);
+        public static SSDExplosion GetSpecificExplosion(int id);
+        public static void WriteExplosions(VFile savefile);
+        public static void ReadExplosions(VFile savefile, GameSSDWindow game);
+    }
+
+    class SSDPoints : SSDEntity
+    {
+        public const int MAX_POINTS = 16;
+        public int length;
+        public int distance;
+        public int beginTime;
+        public int endTime;
+
+        public Vector3 beginPosition;
+        public Vector3 endPosition;
+
+        public Vector4 beginColor;
+        public Vector4 endColor;
+        protected static SSDPoints[] pointsPool = new SSDPoints[MAX_POINTS];
+
+        public SSDPoints();
+
+        public virtual void WriteToSaveGame(VFile savefile);
+        public virtual void ReadFromSaveGame(VFile savefile, GameSSDWindow game);
+
+        public void Init(GameSSDWindow game, SSDEntity _ent, int points, int length, int distance, Vector4 color);
+        public virtual void EntityUpdate();
+
+        public static SSDPoints GetNewPoints(GameSSDWindow game, SSDEntity ent, int points, int length, int distance, Vector4 color);
+        public static SSDPoints GetSpecificPoints(int id);
+        public static void WritePoints(VFile savefile);
+        public static void ReadPoints(VFile savefile, GameSSDWindow game);
+    }
+
+
+    class SSDProjectile : SSDEntity
+    {
+        public const int MAX_PROJECTILES = 64;
+
+        public Vector3 dir;
+        public Vector3 speed;
+        public int beginTime;
+        public int endTime;
+
+        public Vector3 endPosition;
+
+
+        public SSDProjectile();
+
+        public virtual void WriteToSaveGame(idFile* savefile);
+        public virtual void ReadFromSaveGame(idFile* savefile, idGameSSDWindow* _game);
+
+        public void Init(idGameSSDWindow* _game, const Vector3& _beginPosition, const Vector3& _endPosition, float _speed, float _size);
+        public virtual void EntityUpdate();
+
+        public static SSDProjectile* GetNewProjectile(idGameSSDWindow* _game, const Vector3& _beginPosition, const Vector3& _endPosition, float _speed, float _size);
+        public static SSDProjectile* GetSpecificProjectile(int id);
+        public static void WriteProjectiles(idFile* savefile);
+        public static void ReadProjectiles(idFile* savefile, idGameSSDWindow* _game);
+
+        protected static SSDProjectile[] projectilePool = new SSDProjectile[MAX_PROJECTILES];
+    }
+
+
+    /**
+    * Powerups work in two phases:
+    *	1.) Closed container hurls at you If you shoot the container it open
+    *	3.) If an opened powerup hits the player he aquires the powerup
+    * Powerup Types:
+    *	Health - Give a specific amount of health
+    *	Super Blaster - Increases the power of the blaster (lasts a specific amount of time)
+    *	Asteroid Nuke - Destroys all asteroids on screen as soon as it is aquired
+    *	Rescue Powerup - Rescues all astronauts as soon as it is acquited
+    *	Bonus Points - Gives some bonus points when acquired
 */
-#ifndef __GAME_SSD_WINDOW_H__
-#define __GAME_SSD_WINDOW_H__
+    class SSDPowerup : SSDMover
+    {
+        public const int MAX_POWERUPS = 64;
+
+        enum POWERUP_STATE
+        {
+            CLOSED = 0,
+            OPEN
+        }
+
+        enum POWERUP_TYPE
+        {
+            HEALTH = 0,
+            SUPER_BLASTER,
+            ASTEROID_NUKE,
+            RESCUE_ALL,
+            BONUS_POINTS,
+            DAMAGE,
+            MAX
+        }
+
+        public int powerupState;
+        public int powerupType;
+        protected static SSDPowerup[] powerupPool = new SSDPowerup[MAX_POWERUPS];
+
+        public SSDPowerup();
+
+        public virtual void WriteToSaveGame(VFile savefile);
+        public virtual void ReadFromSaveGame(VFile savefile, GameSSDWindow game);
+
+        public virtual void OnHit(int key);
+        public virtual void OnStrikePlayer();
+
+        public void OnOpenPowerup();
+        public void OnActivatePowerup();
+
+        public void Init(GameSSDWindow game, float speed, float rotation);
+
+        public static SSDPowerup GetNewPowerup(VGameSSDWindow game, float speed, float rotation);
+        public static SSDPowerup GetSpecificPowerup(int id);
+        public static void WritePowerups(VFile savefile);
+        public static void ReadPowerups(VFile savefile, GameSSDWindow game);
+    }
+
+    struct SSDLevelData
+    {
+        public float spawnBuffer;
+        public int needToWin;
+    }
+
+    struct SSDAsteroidData
+    {
+        public float speedMin, speedMax;
+        public float sizeMin, sizeMax;
+        public float rotateMin, rotateMax;
+        public int spawnMin, spawnMax;
+        public int asteroidHealth;
+        public int asteroidPoints;
+        public int asteroidDamage;
+    }
+
+    struct SSDAstronautData
+    {
+
+        public float speedMin, speedMax;
+        public float rotateMin, rotateMax;
+        public int spawnMin, spawnMax;
+        public int health;
+        public int points;
+        public int penalty;
+    }
+
+    struct SSDPowerupData
+    {
+        public float speedMin, speedMax;
+        public float rotateMin, rotateMax;
+        public int spawnMin, spawnMax;
+    }
+
+    struct SSDWeaponData
+    {
+        public float speed;
+        public int damage;
+        public int size;
+    }
+
+    // Data that is used for each level. This data is reset each new level.
+    struct SSDLevelStats
+    {
+        public int shotCount;
+        public int hitCount;
+        public int destroyedAsteroids;
+        public int nextAsteroidSpawnTime;
+
+        public int killedAstronauts;
+        public int savedAstronauts;
+
+        // Astronaut Level Data
+        public int nextAstronautSpawnTime;
+
+        // Powerup Level Data
+        public int nextPowerupSpawnTime;
 
-#include "ui/Window.h"
+        public SSDEntity targetEnt;
+    }
 
-class idGameSSDWindow;
+    //	Data that is used for the game that is currently running. Memset this to completely reset the game
+    struct SSDGameStats
+    {
+        public bool gameRunning;
 
-class SSDCrossHair {
+        public int score;
+        public int prebonusscore;
 
-public:
-	enum {
-		CROSSHAIR_STANDARD = 0,
-		CROSSHAIR_SUPER,
-		CROSSHAIR_COUNT
-	};
-	const idMaterial*	crosshairMaterial[CROSSHAIR_COUNT];
-	int					currentCrosshair;
-	float				crosshairWidth, crosshairHeight;
+        public int health;
 
-public:
-				SSDCrossHair();
-				~SSDCrossHair();
+        public int currentWeapon;
+        public int currentLevel;
+        public int nextLevel;
 
-	virtual void	WriteToSaveGame( idFile *savefile );
-	virtual void	ReadFromSaveGame( idFile *savefile );
+        public SSDLevelStats levelStats;
+    }
 
-	void		InitCrosshairs();
-	void		Draw(idDeviceContext *dc, const idVec2& cursor);
-};
+    class GameSSDWindow : Window
+    {
+        public static RandomX random = new();
+        public int ssdTime;
+        // WinVars used to call functions from the guis
+        public WinBool beginLevel;
+        public WinBool resetGame;
+        public WinBool continueGame;
+        public WinBool refreshGuiData;
 
-enum {
-	SSD_ENTITY_BASE = 0,
-	SSD_ENTITY_ASTEROID,
-	SSD_ENTITY_ASTRONAUT,
-	SSD_ENTITY_EXPLOSION,
-	SSD_ENTITY_POINTS,
-	SSD_ENTITY_PROJECTILE,
-	SSD_ENTITY_POWERUP
-};
+        public SSDCrossHair crosshair;
+        public Bounds screenBounds;
 
-class SSDEntity  {
+        // Level Data
+        public int levelCount;
+        public List<SSDLevelData> levelData = new();
+        public List<SSDAsteroidData> asteroidData = new();
+        public List<SSDAstronautData> astronautData = new();
+        public List<SSDPowerupData> powerupData = new();
 
-public:
-	//SSDEntity Information
-	int					type;
-	int					id;
-	idStr				materialName;
-	const idMaterial*	material;
-	idVec3				position;
-	idVec2				size;
-	float				radius;
-	float				hitRadius;
-	float				rotation;
+        // Weapon Data
+        public int weaponCount;
+        public List<SSDWeaponData> weaponData = new();
 
-	idVec4				matColor;
+        public int superBlasterTimeout;
 
-	idStr				text;
-	float				textScale;
-	idVec4				foreColor;
+        // All current game data is stored in this structure (except the entity list)
+        public SSDGameStats gameStats;
+        public List<SSDEntity> entities = new();
 
-	idGameSSDWindow*	game;
-	int					currentTime;
-	int					lastUpdate;
-	int					elapsed;
+        public int currentSound;
 
-	bool				destroyed;
-	bool				noHit;
-	bool				noPlayerDamage;
+        protected override bool ParseInternalVar(string name, Parser src);
+        void ParseLevelData(int level, string levelDataString);
+        void ParseAsteroidData(int level, string asteroidDataString);
+        void ParseWeaponData(int weapon, string weaponDataString);
+        void ParseAstronautData(int level, string astronautDataString);
+        void ParsePowerupData(int level, string powerupDataString);
 
-	bool				inUse;
+        void CommonInit();
 
+        public GameSSDWindow(UserInterfaceLocal gui);
+        public GameSSDWindow(DeviceContext dc, UserInterfaceLocal gui);
 
-public:
-						SSDEntity();
-	virtual				~SSDEntity();
+        public virtual void WriteToSaveGame(VFile savefile);
+        public virtual void ReadFromSaveGame(VFile savefile);
 
-	virtual void		WriteToSaveGame( idFile *savefile );
-	virtual void		ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game );
+        public virtual string HandleEvent(SysEvent ev, Action<bool> updateVisuals);
+        public virtual WinVar GetWinVarByName(string name, bool winLookup = false, DrawWin owner = null);
 
-	void				EntityInit();
+        public virtual void Draw(int time, float x, float y);
 
-	void				SetGame(idGameSSDWindow* _game);
-	void				SetMaterial(const char* _name);
-	void				SetPosition(const idVec3& _position);
-	void				SetSize(const idVec2& _size);
-	void				SetRadius(float _radius, float _hitFactor = 1.0f);
-	void				SetRotation(float _rotation);
+        public void AddHealth(int health);
+        public void AddScore(SSDEntity ent, int points);
+        public void AddDamage(int damage);
 
-	void				Update();
-	bool				HitTest(const idVec2& pt);
+        public void OnNuke();
+        public void OnRescueAll();
+        public void OnSuperBlaster();
 
+        public SSDEntity GetSpecificEntity(int type, int id);
 
-	virtual void		EntityUpdate() {};
-	virtual void		Draw(idDeviceContext *dc);
-	virtual void		DestroyEntity();
+        public void PlaySound(string sound);
 
-	virtual void		OnHit(int key) {};
-	virtual void		OnStrikePlayer() {};
+        void ResetGameStats();
+        void ResetLevelStats();
+        void ResetEntities();
 
-	idBounds			WorldToScreen(const idBounds worldBounds);
-	idVec3				WorldToScreen(const idVec3& worldPos);
+        // Game Running Methods
+        void StartGame();
+        void StopGame();
+        void GameOver();
 
-	idVec3				ScreenToWorld(const idVec3& screenPos);
+        // Starting the Game
+        void BeginLevel(int level);
+        void ContinueGame();
 
-};
+        // Stopping the Game
+        void LevelComplete();
+        void GameComplete();
 
-/*
-*****************************************************************************
-* SSDMover
-****************************************************************************
-*/
+        void UpdateGame();
+        void CheckForHits();
+        void ZOrderEntities();
 
-class SSDMover : public SSDEntity {
+        void SpawnAsteroid();
 
-public:
-	idVec3				speed;
-	float				rotationSpeed;
+        void FireWeapon(int key);
+        SSDEntity EntityHitTest(Vector2 pt);
 
-public:
-						SSDMover();
-	virtual				~SSDMover();
+        void HitAsteroid(SSDAsteroid asteroid, int key);
+        void AsteroidStruckPlayer(SSDAsteroid asteroid);
 
-	virtual void	WriteToSaveGame( idFile *savefile );
-	virtual void	ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  );
+        void RefreshGuiData();
 
-	void				MoverInit(const idVec3& _speed, float _rotationSpeed);
+        Vector2 GetCursorWorld();
 
-	virtual void		EntityUpdate();
+        // Astronaut Methods
+        void SpawnAstronaut();
+        void HitAstronaut(SSDAstronaut astronaut, int key);
+        void AstronautStruckPlayer(SSDAstronaut astronaut);
 
+        // Powerup Methods
+        void SpawnPowerup();
 
-};
+        void StartSuperBlaster();
+        void StopSuperBlaster();
 
-/*
-*****************************************************************************
-* SSDAsteroid
-****************************************************************************
-*/
-
-#define MAX_ASTEROIDS 64
-
-class SSDAsteroid : public SSDMover {
-
-public:
-
-	int					health;
-
-public:
-						SSDAsteroid();
-						~SSDAsteroid();
-
-	virtual void	WriteToSaveGame( idFile *savefile );
-	virtual void	ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  );
-
-	void				Init(idGameSSDWindow* _game, const idVec3& startPosition, const idVec2& _size, float _speed, float rotate, int _health);
-
-	virtual void		EntityUpdate();
-	static SSDAsteroid*	GetNewAsteroid(idGameSSDWindow* _game, const idVec3& startPosition, const idVec2& _size, float _speed, float rotate, int _health);
-	static SSDAsteroid*	GetSpecificAsteroid(int id);
-	static void			WriteAsteroids(idFile* savefile);
-	static void			ReadAsteroids(idFile* savefile, idGameSSDWindow* _game);
-
-
-
-protected:
-	static SSDAsteroid	asteroidPool[MAX_ASTEROIDS];
-
-};
-
-/*
-*****************************************************************************
-* SSDAstronaut
-****************************************************************************
-*/
-#define MAX_ASTRONAUT 8
-
-class SSDAstronaut : public SSDMover {
-
-public:
-
-	int					health;
-
-public:
-							SSDAstronaut();
-							~SSDAstronaut();
-
-	virtual void	WriteToSaveGame( idFile *savefile );
-	virtual void	ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  );
-
-	void					Init(idGameSSDWindow* _game, const idVec3& startPosition, float _speed, float rotate, int _health);
-
-	static SSDAstronaut*	GetNewAstronaut(idGameSSDWindow* _game, const idVec3& startPosition, float _speed, float rotate, int _health);
-	static SSDAstronaut*	GetSpecificAstronaut(int id);
-	static void				WriteAstronauts(idFile* savefile);
-	static void				ReadAstronauts(idFile* savefile, idGameSSDWindow* _game);
-
-protected:
-	static SSDAstronaut	astronautPool[MAX_ASTRONAUT];
-
-};
-
-/*
-*****************************************************************************
-* SSDExplosion
-****************************************************************************
-*/
-#define MAX_EXPLOSIONS 64
-
-class SSDExplosion : public SSDEntity {
-
-public:
-	idVec2	finalSize;
-	int		length;
-	int		beginTime;
-	int		endTime;
-	int		explosionType;
-
-	//The entity that is exploding
-	SSDEntity*			buddy;
-	bool				killBuddy;
-	bool				followBuddy;
-
-	enum {
-		EXPLOSION_NORMAL = 0,
-		EXPLOSION_TELEPORT = 1
-	};
-
-public:
-	SSDExplosion();
-	~SSDExplosion();
-
-	virtual void	WriteToSaveGame( idFile *savefile );
-	virtual void	ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  );
-
-	void				Init(idGameSSDWindow* _game, const idVec3& _position, const idVec2& _size, int _length, int _type, SSDEntity* _buddy, bool _killBuddy = true, bool _followBuddy = true);
-
-	virtual void		EntityUpdate();
-	static SSDExplosion*	GetNewExplosion(idGameSSDWindow* _game, const idVec3& _position, const idVec2& _size, int _length, int _type, SSDEntity* _buddy, bool _killBuddy = true, bool _followBuddy = true);
-	static SSDExplosion*	GetSpecificExplosion(int id);
-	static void				WriteExplosions(idFile* savefile);
-	static void				ReadExplosions(idFile* savefile, idGameSSDWindow* _game);
-
-protected:
-	static SSDExplosion	explosionPool[MAX_EXPLOSIONS];
-};
-
-#define MAX_POINTS 16
-
-class SSDPoints : public SSDEntity {
-
-	int		length;
-	int		distance;
-	int		beginTime;
-	int		endTime;
-
-	idVec3	beginPosition;
-	idVec3	endPosition;
-
-	idVec4	beginColor;
-	idVec4	endColor;
-
-
-public:
-	SSDPoints();
-	~SSDPoints();
-
-	virtual void	WriteToSaveGame( idFile *savefile );
-	virtual void	ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  );
-
-	void				Init(idGameSSDWindow* _game, SSDEntity* _ent, int _points, int _length, int _distance, const idVec4& color);
-	virtual void		EntityUpdate();
-
-	static SSDPoints*	GetNewPoints(idGameSSDWindow* _game, SSDEntity* _ent, int _points, int _length, int _distance, const idVec4& color);
-	static SSDPoints*	GetSpecificPoints(int id);
-	static void			WritePoints(idFile* savefile);
-	static void			ReadPoints(idFile* savefile, idGameSSDWindow* _game);
-
-protected:
-	static SSDPoints	pointsPool[MAX_POINTS];
-};
-
-#define MAX_PROJECTILES 64
-
-class SSDProjectile : public SSDEntity {
-
-	idVec3	dir;
-	idVec3	speed;
-	int		beginTime;
-	int		endTime;
-
-	idVec3	endPosition;
-
-public:
-	SSDProjectile();
-	~SSDProjectile();
-
-	virtual void	WriteToSaveGame( idFile *savefile );
-	virtual void	ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  );
-
-	void				Init(idGameSSDWindow* _game, const idVec3& _beginPosition, const idVec3& _endPosition, float _speed, float _size);
-	virtual void		EntityUpdate();
-
-	static SSDProjectile* GetNewProjectile(idGameSSDWindow* _game, const idVec3& _beginPosition, const idVec3& _endPosition, float _speed, float _size);
-	static SSDProjectile* GetSpecificProjectile(int id);
-	static void				WriteProjectiles(idFile* savefile);
-	static void				ReadProjectiles(idFile* savefile, idGameSSDWindow* _game);
-
-protected:
-	static SSDProjectile	projectilePool[MAX_PROJECTILES];
-};
-
-
-#define MAX_POWERUPS 64
-
-/**
-* Powerups work in two phases:
-*	1.) Closed container hurls at you
-*		If you shoot the container it open
-*	3.) If an opened powerup hits the player he aquires the powerup
-* Powerup Types:
-*	Health - Give a specific amount of health
-*	Super Blaster - Increases the power of the blaster (lasts a specific amount of time)
-*	Asteroid Nuke - Destroys all asteroids on screen as soon as it is aquired
-*	Rescue Powerup - Rescues all astronauts as soon as it is acquited
-*	Bonus Points - Gives some bonus points when acquired
-*/
-class SSDPowerup : public SSDMover {
-
-	enum {
-		POWERUP_STATE_CLOSED = 0,
-		POWERUP_STATE_OPEN
-	};
-
-	enum {
-		POWERUP_TYPE_HEALTH = 0,
-		POWERUP_TYPE_SUPER_BLASTER,
-		POWERUP_TYPE_ASTEROID_NUKE,
-		POWERUP_TYPE_RESCUE_ALL,
-		POWERUP_TYPE_BONUS_POINTS,
-		POWERUP_TYPE_DAMAGE,
-		POWERUP_TYPE_MAX
-	};
-
-	int powerupState;
-	int powerupType;
-
-
-public:
-
-
-public:
-	SSDPowerup();
-	virtual ~SSDPowerup();
-
-	virtual void	WriteToSaveGame( idFile *savefile );
-	virtual void	ReadFromSaveGame( idFile *savefile,  idGameSSDWindow* _game  );
-
-	virtual void		OnHit(int key);
-	virtual void		OnStrikePlayer();
-
-	void	OnOpenPowerup();
-	void	OnActivatePowerup();
-
-
-
-	void	Init(idGameSSDWindow* _game, float _speed, float _rotation);
-
-	static SSDPowerup* GetNewPowerup(idGameSSDWindow* _game, float _speed, float _rotation);
-	static SSDPowerup* GetSpecificPowerup(int id);
-	static void			WritePowerups(idFile* savefile);
-	static void			ReadPowerups(idFile* savefile, idGameSSDWindow* _game);
-
-protected:
-	static SSDPowerup	powerupPool[MAX_POWERUPS];
-
-};
-
-
-typedef struct {
-	float	spawnBuffer;
-	int		needToWin;
-} SSDLevelData_t;
-
-typedef struct {
-	float	speedMin, speedMax;
-	float	sizeMin, sizeMax;
-	float	rotateMin, rotateMax;
-	int		spawnMin, spawnMax;
-	int		asteroidHealth;
-	int		asteroidPoints;
-	int		asteroidDamage;
-} SSDAsteroidData_t;
-
-typedef struct {
-	float	speedMin, speedMax;
-	float	rotateMin, rotateMax;
-	int		spawnMin, spawnMax;
-	int		health;
-	int		points;
-	int		penalty;
-} SSDAstronautData_t;
-
-typedef struct {
-	float	speedMin, speedMax;
-	float	rotateMin, rotateMax;
-	int		spawnMin, spawnMax;
-} SSDPowerupData_t;
-
-typedef struct {
-	float	speed;
-	int		damage;
-	int		size;
-} SSDWeaponData_t;
-
-/**
-* SSDLevelStats_t
-*	Data that is used for each level. This data is reset
-*	each new level.
-*/
-typedef struct {
-	int					shotCount;
-	int					hitCount;
-	int					destroyedAsteroids;
-	int					nextAsteroidSpawnTime;
-
-	int					killedAstronauts;
-	int					savedAstronauts;
-
-	//Astronaut Level Data
-	int					nextAstronautSpawnTime;
-
-	//Powerup Level Data
-	int					nextPowerupSpawnTime;
-
-	SSDEntity*			targetEnt;
-} SSDLevelStats_t;
-
-/**
-* SSDGameStats_t
-*	Data that is used for the game that is currently running. Memset this
-*	to completely reset the game
-*/
-typedef struct {
-	bool				gameRunning;
-
-	int					score;
-	int					prebonusscore;
-
-	int					health;
-
-	int					currentWeapon;
-	int					currentLevel;
-	int					nextLevel;
-
-	SSDLevelStats_t		levelStats;
-} SSDGameStats_t;
-
-
-class idGameSSDWindow : public idWindow {
-public:
-	idGameSSDWindow(idUserInterfaceLocal *gui);
-	idGameSSDWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
-	~idGameSSDWindow();
-
-	virtual void	WriteToSaveGame( idFile *savefile );
-	virtual void	ReadFromSaveGame( idFile *savefile );
-
-	virtual const char*	HandleEvent(const sysEvent_t *event, bool *updateVisuals);
-	virtual idWinVar*	GetWinVarByName	(const char *_name, bool winLookup = false, drawWin_t** owner = NULL);
-
-
-	virtual void		Draw(int time, float x, float y);
-
-	void				AddHealth(int health);
-	void				AddScore(SSDEntity* ent, int points);
-	void				AddDamage(int damage);
-
-	void				OnNuke();
-	void				OnRescueAll();
-	void				OnSuperBlaster();
-
-	SSDEntity*			GetSpecificEntity(int type, int id);
-
-	void				PlaySound(const char* sound);
-
-
-
-
-	static idRandom		random;
-	int					ssdTime;
-
-private:
-
-	//Initialization
-	virtual bool		ParseInternalVar(const char *name, idParser *src);
-	void				ParseLevelData(int level, const idStr& levelDataString);
-	void				ParseAsteroidData(int level, const idStr& asteroidDataString);
-	void				ParseWeaponData(int weapon, const idStr& weaponDataString);
-	void				ParseAstronautData(int level, const idStr& astronautDataString);
-	void				ParsePowerupData(int level, const idStr& powerupDataString);
-
-	void				CommonInit();
-	void				ResetGameStats();
-	void				ResetLevelStats();
-	void				ResetEntities();
-
-	//Game Running Methods
-	void				StartGame();
-	void				StopGame();
-	void				GameOver();
-
-	//Starting the Game
-	void				BeginLevel(int level);
-	void				ContinueGame();
-
-	//Stopping the Game
-	void				LevelComplete();
-	void				GameComplete();
-
-
-
-	void				UpdateGame();
-	void				CheckForHits();
-	void				ZOrderEntities();
-
-	void				SpawnAsteroid();
-
-	void				FireWeapon(int key);
-	SSDEntity*			EntityHitTest(const idVec2& pt);
-
-	void				HitAsteroid(SSDAsteroid* asteroid, int key);
-	void				AsteroidStruckPlayer(SSDAsteroid* asteroid);
-
-
-
-
-
-	void				RefreshGuiData();
-
-	idVec2				GetCursorWorld();
-
-	//Astronaut Methods
-	void				SpawnAstronaut();
-	void				HitAstronaut(SSDAstronaut* astronaut, int key);
-	void				AstronautStruckPlayer(SSDAstronaut* astronaut);
-
-	//Powerup Methods
-	void				SpawnPowerup();
-
-
-	void				StartSuperBlaster();
-	void				StopSuperBlaster();
-
-	//void				FreeSoundEmitter( bool immediate );
-
-
-
-
-public:
-
-	//WinVars used to call functions from the guis
-	idWinBool					beginLevel;
-	idWinBool					resetGame;
-	idWinBool					continueGame;
-	idWinBool					refreshGuiData;
-
-	SSDCrossHair				crosshair;
-	idBounds					screenBounds;
-
-	//Level Data
-	int							levelCount;
-	idList<SSDLevelData_t>		levelData;
-	idList<SSDAsteroidData_t>	asteroidData;
-	idList<SSDAstronautData_t>	astronautData;
-	idList<SSDPowerupData_t>	powerupData;
-
-
-	//Weapon Data
-	int							weaponCount;
-	idList<SSDWeaponData_t>		weaponData;
-
-	int							superBlasterTimeout;
-
-	//All current game data is stored in this structure (except the entity list)
-	SSDGameStats_t				gameStats;
-	idList<SSDEntity*>			entities;
-
-	int							currentSound;
-
-};
-
-#endif //__GAME_SSD_WINDOW_H__
+        //void FreeSoundEmitter(bool immediate);
+    }
+}

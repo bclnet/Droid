@@ -7,7 +7,7 @@ using static System.NumericsX.Lib;
 
 namespace Gengine.UI
 {
-    public struct DrawWin
+    public class DrawWin
     {
         public Window win;
         public SimpleWindow simp;

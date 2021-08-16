@@ -10,7 +10,7 @@ namespace Gengine.UI
 {
     public abstract class WinVar
     {
-        const string VAR_GUIPREFIX = "gui::";
+        public const string VAR_GUIPREFIX = "gui::";
 
         protected Dictionary<string, string> guiDict;
         protected string name;

@@ -11,13 +11,13 @@ namespace Gengine.UI
     public class Register
     {
         public Register() { }
-        public Register(string p, int t)
+        public Register(string p, REGTYPE t)
         {
             name = p;
-            type = (short)t;
-            Debug.Assert(t >= 0 && t < (int)REGTYPE.NUMTYPES);
-            regCount = REGCOUNT[t];
-            enabled = type == (short)REGTYPE.STRING ? false : true;
+            type = t;
+            Debug.Assert(t >= 0 && t < REGTYPE.NUMTYPES);
+            regCount = REGCOUNT[(int)t];
+            enabled = type == REGTYPE.STRING ? false : true;
             var = null;
         }
 
@@ -25,7 +25,7 @@ namespace Gengine.UI
         public static int[] REGCOUNT = { 4, 1, 1, 1, 0, 2, 3, 4 };
 
         public bool enabled;
-        public short type;
+        public REGTYPE type;
         public string name;
         public int regCount;
         public ushort[] regs = new ushort[4];
@@ -38,7 +38,7 @@ namespace Gengine.UI
             if (!enabled || var == null || (var != null && (var.Dict != null || !var.Eval)))
                 return;
 
-            switch ((REGTYPE)type)
+            switch (type)
             {
                 case REGTYPE.VEC4: v = (WinVec4)var; break;
                 case REGTYPE.RECTANGLE: rect = (WinRectangle)var; v = rect.ToVec4(); break;
@@ -63,7 +63,7 @@ namespace Gengine.UI
             for (var i = 0; i < regCount; i++)
                 v[i] = registers[regs[i]];
 
-            switch ((REGTYPE)type)
+            switch (type)
             {
                 case REGTYPE.VEC4: var = (WinVec4)v; break;
                 case REGTYPE.RECTANGLE: rect.x = v.x; rect.y = v.y; rect.w = v.z; rect.h = v.w; var = (WinRectangle)rect; break;
@@ -89,7 +89,7 @@ namespace Gengine.UI
         public void ReadFromDemoFile(VFileDemo f)
         {
             f.ReadBool(out enabled);
-            f.ReadShort(out type);
+            f.ReadShort(out short type); this.type = (REGTYPE)type;
             f.ReadInt(out regCount);
             for (var i = 0; i < 4; i++)
                 f.ReadUnsignedShort(out regs[i]);
@@ -99,7 +99,7 @@ namespace Gengine.UI
         public void WriteToDemoFile(VFileDemo f)
         {
             f.WriteBool(enabled);
-            f.WriteShort(type);
+            f.WriteShort((short)type);
             f.WriteInt(regCount);
             for (var i = 0; i < 4; i++)
                 f.WriteUnsignedShort(regs[i]);
@@ -109,13 +109,12 @@ namespace Gengine.UI
         public void WriteToSaveGame(VFile savefile)
         {
             savefile.Write(enabled);
-            savefile.Write(type);
+            savefile.Write((short)type);
             savefile.Write(regCount);
             savefile.WriteTMany(regs);
 
             var len = name.Length;
-            savefile.Write(len);
-            savefile.Write(Encoding.ASCII.GetBytes(name), len);
+            savefile.Write(len); savefile.Write(Encoding.ASCII.GetBytes(name), len);
 
             var.WriteToSaveGame(savefile);
         }
@@ -125,13 +124,11 @@ namespace Gengine.UI
             int len;
 
             savefile.Read(out enabled);
-            savefile.Read(out type);
+            savefile.Read(out short type); this.type = (REGTYPE)type;
             savefile.Read(out regCount);
             savefile.ReadTMany(out regs, regs.Length);
 
-            savefile.Read(out len);
-            name.Fill(' ', len);
-            savefile.Read(name[0], len);
+            savefile.Read(out len); savefile.ReadASCII(out name, len);
 
             var.ReadFromSaveGame(savefile);
         }
@@ -146,15 +143,15 @@ namespace Gengine.UI
             //regs.SetGranularity(4);
         }
 
-        public void AddReg(string name, int type, Parser src, Window win, WinVar var)
+        public void AddReg(string name, Register.REGTYPE type, Parser src, Window win, WinVar var)
         {
             var reg = FindReg(name);
             if (reg == null)
             {
-                Debug.Assert(type >= 0 && type < (short)Register.REGTYPE.NUMTYPES);
-                var numRegs = Register.REGCOUNT[type];
+                Debug.Assert(type >= 0 && type < Register.REGTYPE.NUMTYPES);
+                var numRegs = Register.REGCOUNT[(int)type];
                 reg = new Register(name, type) { var = var };
-                if (type == (int)Register.REGTYPE.STRING)
+                if (type == Register.REGTYPE.STRING)
                 {
                     if (src.ReadToken(out var tok))
                     {
@@ -173,9 +170,9 @@ namespace Gengine.UI
             }
             else
             {
-                var numRegs = Register.REGCOUNT[type];
+                var numRegs = Register.REGCOUNT[(int)type];
                 reg.var = var;
-                if (type == (int)Register.REGTYPE.STRING)
+                if (type == Register.REGTYPE.STRING)
                 {
                     if (src.ReadToken(out var tok))
                         var.Init(tok, win);
@@ -190,12 +187,12 @@ namespace Gengine.UI
             }
         }
 
-        public void AddReg(string name, int type, Vector4 data, Window win, WinVar var)
+        public void AddReg(string name, Register.REGTYPE type, Vector4 data, Window win, WinVar var)
         {
             if (FindReg(name) == null)
             {
-                Debug.Assert(type >= 0 && type < (short)Register.REGTYPE.NUMTYPES);
-                var numRegs = Register.REGCOUNT[type];
+                Debug.Assert(type >= 0 && type < Register.REGTYPE.NUMTYPES);
+                var numRegs = Register.REGCOUNT[(int)type];
                 var reg = new Register(name, type) { var = var };
                 for (var i = 0; i < numRegs; i++)
                     reg.regs[i] = (ushort)win.ExpressionConstant(data[i]);

@@ -426,7 +426,7 @@ namespace Gengine.UI
 
         public int Size => 0;
 
-        void FixupParms(Window win)
+        internal void FixupParms(Window win)
         {
             var c = list.Count;
             for (var i = 0; i < c; i++)

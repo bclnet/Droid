@@ -33,7 +33,7 @@ namespace Gengine.Framework
 
         public static int com_frameTime;           // time for the current frame in milliseconds
         public static volatile int com_ticNumber;          // 60 hz tics, incremented by async function
-        public static int com_editors;         // current active editor(s)
+        public static EDITOR com_editors;         // current active editor(s)
         public static bool com_editorActive;       // true if an editor has focus
 
 #if _WIN32

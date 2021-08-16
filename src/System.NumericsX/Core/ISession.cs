@@ -113,6 +113,6 @@ namespace System.NumericsX.Core
 
         string CurrentMapName { get; }
 
-        int SaveGameVersion();
+        int SaveGameVersion { get; }
     }
 }

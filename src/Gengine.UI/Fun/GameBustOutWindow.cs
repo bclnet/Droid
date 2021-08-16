@@ -1,187 +1,149 @@
-/*
-===========================================================================
+using Gengine.Render;
+using System;
+using System.Collections.Generic;
+using System.NumericsX;
+using System.NumericsX.Core;
+using System.NumericsX.Sys;
+using static Gengine.Lib;
+using static System.NumericsX.Core.Key;
+using static System.NumericsX.Lib;
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+namespace Gengine.UI
+{
+    enum POWERUP
+    {
+        NONE = 0,
+        BIGPADDLE,
+        MULTIBALL
+    }
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+    class BOEntity
+    {
+        public bool visible;
+        public string materialName;
+        public Material material;
+        public float width, height;
+        public Vector4 color;
+        public Vector2 position;
+        public Vector2 velocity;
+        public POWERUP powerup;
+        public bool removed;
+        public bool fadeOut;
+        public GameBustOutWindow game;
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+        public BOEntity(GameBustOutWindow game);
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+        public virtual void WriteToSaveGame(VFile savefile);
+        public virtual void ReadFromSaveGame(VFile savefile, GameBustOutWindow game);
 
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+        public void SetMaterial(string name);
+        public void SetSize(float width, float _height);
+        public void SetColor(float r, float g, float b, float a);
+        public void SetVisible(bool isVisible);
 
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+        public virtual void Update(float timeslice, int guiTime);
+        public virtual void Draw(DeviceContext dc);
+    }
 
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+    enum COLLIDE
+    {
+        NONE = 0,
+        DOWN,
+        UP,
+        LEFT,
+        RIGHT
+    }
 
-===========================================================================
-*/
-#ifndef __GAME_BUSTOUT_WINDOW_H__
-#define __GAME_BUSTOUT_WINDOW_H__
+    class BOBrick
+    {
+        public float x;
+        public float y;
+        public float width;
+        public float height;
+        public POWERUP powerup;
+        public bool isBroken;
+        public BOEntity ent;
 
-#include "ui/Window.h"
+        public BOBrick();
+        public BOBrick(BOEntity ent, float x, float y, float width, float height);
 
-class idGameBustOutWindow;
+        public virtual void WriteToSaveGame(VFile savefile);
+        public virtual void ReadFromSaveGame(VFile savefile, GameBustOutWindow game);
 
-typedef enum {
-	POWERUP_NONE = 0,
-	POWERUP_BIGPADDLE,
-	POWERUP_MULTIBALL
-} powerupType_t;
+        public void SetColor(Vector4 bcolor);
+        public COLLIDE checkCollision(Vector2 pos, Vector2 vel);
+    }
 
-class BOEntity {
-public:
-	bool					visible;
+    public class GameBustOutWindow : Window
+    {
+        public const int BOARD_ROWS = 12;
 
-	idStr					materialName;
-	const idMaterial *		material;
-	float					width, height;
-	idVec4					color;
-	idVec2					position;
-	idVec2					velocity;
+        WinBool gamerunning;
+        WinBool onFire;
+        WinBool onContinue;
+        WinBool onNewGame;
+        WinBool onNewLevel;
 
-	powerupType_t			powerup;
+        float timeSlice;
+        bool gameOver;
 
-	bool					removed;
-	bool					fadeOut;
+        int numLevels;
+        byte[] levelBoardData;
+        bool boardDataLoaded;
 
-	idGameBustOutWindow *	game;
+        int numBricks;
+        int currentLevel;
 
-public:
-							BOEntity(idGameBustOutWindow* _game);
-	virtual					~BOEntity();
+        bool updateScore;
+        int gameScore;
+        int nextBallScore;
 
-	virtual void			WriteToSaveGame( idFile *savefile );
-	virtual void			ReadFromSaveGame( idFile *savefile, idGameBustOutWindow* _game );
+        int bigPaddleTime;
+        float paddleVelocity;
 
-	void					SetMaterial(const char* name);
-	void					SetSize( float _width, float _height );
-	void					SetColor( float r, float g, float b, float a );
-	void					SetVisible( bool isVisible );
+        float ballSpeed;
+        int ballsRemaining;
+        int ballsInPlay;
+        bool ballHitCeiling;
 
-	virtual void			Update( float timeslice, int guiTime );
-	virtual void			Draw(idDeviceContext *dc);
+        List<BOEntity> balls;
+        List<BOEntity> powerUps;
 
-private:
-};
+        BOBrick paddle;
+        List<BOBrick>[] board = new List<BOBrick>[BOARD_ROWS];
 
-typedef enum {
-	COLLIDE_NONE = 0,
-	COLLIDE_DOWN,
-	COLLIDE_UP,
-	COLLIDE_LEFT,
-	COLLIDE_RIGHT
-} collideDir_t;
+        protected override bool ParseInternalVar(string name, Parser src);
 
-class BOBrick {
-public:
-	float			x;
-	float			y;
-	float			width;
-	float			height;
-	powerupType_t	powerup;
+        public GameBustOutWindow(UserInterfaceLocal gui);
+        public GameBustOutWindow(DeviceContext dc, UserInterfaceLocal gui);
 
-	bool			isBroken;
+        public override void WriteToSaveGame(VFile savefile);
+        public override void ReadFromSaveGame(VFile savefile);
 
-	BOEntity		*ent;
+        public override string HandleEvent(SysEvent ev, Action<bool> updateVisuals);
+        public override void PostParse();
+        public override void Draw(int time, float x, float y);
+        public override WinVar GetWinVarByName(string name, bool winLookup = false, DrawWin owner = null);
 
-public:
-					BOBrick();
-					BOBrick( BOEntity *_ent, float _x, float _y, float _width, float _height );
-	virtual			~BOBrick();
+        public List<BOEntity> entities;
 
-	virtual void	WriteToSaveGame( idFile *savefile );
-	virtual void	ReadFromSaveGame( idFile *savefile, idGameBustOutWindow *game );
+        void CommonInit();
+        void ResetGameState();
 
-	void			SetColor( idVec4 bcolor );
-	collideDir_t	checkCollision( idVec2 pos, idVec2 vel );
+        void ClearBoard();
+        void ClearPowerups();
+        void ClearBalls();
 
-private:
-};
+        void LoadBoardFiles();
+        void SetCurrentBoard();
+        void UpdateGame();
+        void UpdatePowerups();
+        void UpdatePaddle();
+        void UpdateBall();
+        void UpdateScore();
 
-#define BOARD_ROWS 12
+        BOEntity CreateNewBall();
+        BOEntity CreatePowerup(BOBrick brick);
+    }
+}
 
-class idGameBustOutWindow : public idWindow {
-public:
-	idGameBustOutWindow(idUserInterfaceLocal *gui);
-	idGameBustOutWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
-	~idGameBustOutWindow();
-
-	virtual void		WriteToSaveGame( idFile *savefile );
-	virtual void		ReadFromSaveGame( idFile *savefile );
-
-	virtual const char*	HandleEvent(const sysEvent_t *event, bool *updateVisuals);
-	virtual void		PostParse();
-	virtual void		Draw(int time, float x, float y);
-	virtual idWinVar *	GetWinVarByName	(const char *_name, bool winLookup = false, drawWin_t** owner = NULL);
-
-	idList<BOEntity*>	entities;
-
-private:
-	void				CommonInit();
-	void				ResetGameState();
-
-	void				ClearBoard();
-	void				ClearPowerups();
-	void				ClearBalls();
-
-	void				LoadBoardFiles();
-	void				SetCurrentBoard();
-	void				UpdateGame();
-	void				UpdatePowerups();
-	void				UpdatePaddle();
-	void				UpdateBall();
-	void				UpdateScore();
-
-	BOEntity *			CreateNewBall();
-	BOEntity *			CreatePowerup( BOBrick *brick );
-
-	virtual bool		ParseInternalVar(const char *name, idParser *src);
-
-private:
-
-	idWinBool			gamerunning;
-	idWinBool			onFire;
-	idWinBool			onContinue;
-	idWinBool			onNewGame;
-	idWinBool			onNewLevel;
-
-	float				timeSlice;
-	bool				gameOver;
-
-	int					numLevels;
-	byte *				levelBoardData;
-	bool				boardDataLoaded;
-
-	int					numBricks;
-	int					currentLevel;
-
-	bool				updateScore;
-	int					gameScore;
-	int					nextBallScore;
-
-	int					bigPaddleTime;
-	float				paddleVelocity;
-
-	float				ballSpeed;
-	int					ballsRemaining;
-	int					ballsInPlay;
-	bool				ballHitCeiling;
-
-	idList<BOEntity*>	balls;
-	idList<BOEntity*>	powerUps;
-
-	BOBrick				*paddle;
-	idList<BOBrick*>	board[BOARD_ROWS];
-};
-
-#endif //__GAME_BUSTOUT_WINDOW_H__

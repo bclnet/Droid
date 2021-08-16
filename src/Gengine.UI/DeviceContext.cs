@@ -12,7 +12,7 @@ namespace Gengine.UI
         public const int VIRTUAL_HEIGHT = 480;
         public const int BLINK_DIVISOR = 200;
 
-        public enum CURSOR
+        public enum CURSOR : byte
         {
             ARROW,
             HAND,
@@ -594,7 +594,7 @@ namespace Gengine.UI
             glyph = font.glyphs[(byte)c];
             return MathX.FtoiFast(glyph.xSkip * useScale);
         }
-        
+
         public int TextWidth(string text, float scale, int limit)
         {
             int i, width;
