@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.UI", "Gengine.UI\Ge
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.Render", "Gengine.Render\Gengine.Render.csproj", "{6AD36A58-AB17-41EF-8F88-B2F802C36D32}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenTK.OpenAL", "..\lib\opentk\src\OpenAL\OpenTK.OpenAL\OpenTK.OpenAL.csproj", "{44CCB15F-99B2-4871-A188-64EF850C7109}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenAL", "System.NumericsX.OpenAL\System.NumericsX.OpenAL.csproj", "{ACC3CC82-EC38-4550-94E4-F7A772FAA089}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -71,10 +71,10 @@ Global
 		{6AD36A58-AB17-41EF-8F88-B2F802C36D32}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6AD36A58-AB17-41EF-8F88-B2F802C36D32}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6AD36A58-AB17-41EF-8F88-B2F802C36D32}.Release|Any CPU.Build.0 = Release|Any CPU
-		{44CCB15F-99B2-4871-A188-64EF850C7109}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{44CCB15F-99B2-4871-A188-64EF850C7109}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{44CCB15F-99B2-4871-A188-64EF850C7109}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{44CCB15F-99B2-4871-A188-64EF850C7109}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACC3CC82-EC38-4550-94E4-F7A772FAA089}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACC3CC82-EC38-4550-94E4-F7A772FAA089}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACC3CC82-EC38-4550-94E4-F7A772FAA089}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACC3CC82-EC38-4550-94E4-F7A772FAA089}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,6 @@
+Removing droid/app/libs/
+Removing droid/droidjs/libs/
+Removing droid/droidjs/src/main/java/
+Removing droid/droidnet/libs/
+Removing droid/droidvr/libs/
+Removing droid/droidvr/src/main/libs/
