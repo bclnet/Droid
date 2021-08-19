@@ -17,4 +17,6 @@ namespace System.NumericsX
 
 <# type = "float"; #>
 <#@ include file="Extrapolate.t4" #>
+<# type = "Vector4"; #>
+<#@ include file="Extrapolate.t4" #>
 }

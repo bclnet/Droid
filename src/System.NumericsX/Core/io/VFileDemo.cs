@@ -7,16 +7,16 @@ using static System.NumericsX.Lib;
 
 namespace System.NumericsX.Core
 {
-    public enum DS
-    {
-        FINISHED,
-        RENDER,
-        SOUND,
-        VERSION
-    }
-
     public class VFileDemo : VFile
     {
+        public enum DS : int
+        {
+            FINISHED,
+            RENDER,
+            SOUND,
+            VERSION
+        }
+
         bool writing;
         byte[] fileImage;
         VFile f;

@@ -1225,7 +1225,7 @@ namespace System.NumericsX
             }
             if (!backFaceCull || lastside)
             {
-                windingPlane.RayIntersection(start, dir, scale);
+                windingPlane.RayIntersection(start, dir, out scale);
                 return true;
             }
             return false;

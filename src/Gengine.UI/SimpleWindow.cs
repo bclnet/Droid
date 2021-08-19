@@ -267,7 +267,7 @@ namespace Gengine.UI
             savefile.Write(matScalex);
             savefile.Write(matScaley);
             savefile.Write(borderSize);
-            savefile.Write((byte)textAlign);
+            savefile.Write(textAlign);
             savefile.Write(textAlignx);
             savefile.Write(textAligny);
             savefile.Write(textShadow);

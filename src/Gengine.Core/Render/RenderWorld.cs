@@ -309,7 +309,7 @@ namespace Gengine.Render
         int NumAreas();
 
         // Will return -1 if the point is not in an area, otherwise it will return 0 <= value < NumAreas()
-        int PointInArea(out Vector3 point);
+        int PointInArea(Vector3 point);
 
         // fills the *areas array with the numbers of the areas the bounds cover
         // returns the total number of areas the bounds cover

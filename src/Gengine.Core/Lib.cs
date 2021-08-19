@@ -1,9 +1,11 @@
+using System.Runtime.CompilerServices;
 using Gengine.Framework;
 using Gengine.Render;
 using Gengine.Sound;
 using Gengine.UI;
 //using GL_INDEX_TYPE = System.UInt32; // GL_UNSIGNED_INT
 //using GlIndex = System.Int32;
+[assembly: InternalsVisibleTo("Gengine.Sound")]
 
 namespace Gengine
 {

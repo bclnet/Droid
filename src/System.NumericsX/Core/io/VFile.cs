@@ -27,6 +27,7 @@ namespace System.NumericsX.Core
         public static int Read(this VFile source, out ushort value) { ushort val; var r = source.Read((byte*)&val, sizeof(ushort)); value = val; return r; }
         public static int Read(this VFile source, out byte value) { byte val; var r = source.Read((byte*)&val, sizeof(byte)); value = val; return r; }
         public static int Read(this VFile source, out bool value) { bool val; var r = source.Read((byte*)&val, sizeof(bool)); value = val; return r; }
+        public static int Read<E>(this VFile source, out E value) where E : Enum => throw new NotImplementedException();
         public static int ReadT<T>(this VFile source, out T value) where T : struct => throw new NotImplementedException();
         public static int ReadTMany<T>(this VFile source, out T[] value, int count) where T : struct => throw new NotImplementedException();
 
@@ -40,6 +41,7 @@ namespace System.NumericsX.Core
         public static int Write(this VFile source, ushort value) => source.Write((byte*)&value, sizeof(ushort));
         public static int Write(this VFile source, byte value) => source.Write((byte*)&value, sizeof(byte));
         public static int Write(this VFile source, bool value) => source.Write((byte*)&value, sizeof(bool));
+        public static int Write<E>(this VFile source, E value) where E : Enum => throw new NotImplementedException();
         public static int WriteT<T>(this VFile source, T value) where T : struct => throw new NotImplementedException();
         public static int WriteTMany<T>(this VFile source, T[] value) where T : struct => throw new NotImplementedException();
     }

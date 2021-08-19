@@ -109,7 +109,7 @@ namespace Gengine.UI
         public void WriteToSaveGame(VFile savefile)
         {
             savefile.Write(enabled);
-            savefile.Write((short)type);
+            savefile.Write(type);
             savefile.Write(regCount);
             savefile.WriteTMany(regs);
 
@@ -124,7 +124,7 @@ namespace Gengine.UI
             int len;
 
             savefile.Read(out enabled);
-            savefile.Read(out short type); this.type = (REGTYPE)type;
+            savefile.Read(out type);
             savefile.Read(out regCount);
             savefile.ReadTMany(out regs, regs.Length);
 

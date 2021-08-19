@@ -1,905 +1,775 @@
-/*
-===========================================================================
+using Gengine.Framework;
+using Gengine.Render;
+using System;
+using System.NumericsX;
+using System.NumericsX.Core;
+using SoundSample = System.Object;
+using ChannelType = System.Int32; // the game uses its own series of enums, and we don't want to require casts
+using FourCC = System.Int32;
+using ALuint = System.UInt32;
+using System.Collections.Generic;
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+namespace Gengine.Sound
+{
+    // demo sound commands
+    public enum SCMD : int
+    {
+        STATE,             // followed by a load game state
+        PLACE_LISTENER,
+        ALLOC_EMITTER,
+        FREE,
+        UPDATE,
+        START,
+        MODIFY,
+        STOP,
+        FADE
+    }
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+    #region General extended waveform format structure.
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    public class WaveformatEx
+    {
+        public short wFormatTag;        // format type
+        public short nChannels;         // number of channels (i.e. mono, stereo...)
+        public int nSamplesPerSec;    // sample rate
+        public int nAvgBytesPerSec;   // for buffer estimation
+        public short nBlockAlign;       // block size of data
+        public short wBitsPerSample;    // Number of bits per sample of mono data
+        public short cbSize;            // The count in bytes of the size of extra information (after cbSize)
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+        internal void memset()
+        {
+            throw new NotImplementedException();
+        }
+    }
 
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+    // OLD general waveform format structure (information common to all formats)
+    public struct Waveformat
+    {
+        public short wFormatTag;        // format type
+        public short nChannels;         // number of channels (i.e. mono, stereo, etc.)
+        public int nSamplesPerSec;    // sample rate
+        public int nAvgBytesPerSec;   // for buffer estimation
+        public short nBlockAlign;       // block size of data
+    }
 
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+    // flags for wFormatTag field of WAVEFORMAT
+    public enum WAVE_FORMAT_TAG : short
+    {
+        PCM = 1,
+        OGG = 2
+    }
 
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+    // specific waveform format structure for PCM data
+    public struct Pcmwaveformat
+    {
+        public Waveformat wf;
+        public short wBitsPerSample;
+    }
 
-===========================================================================
-*/
 
-#ifndef __SND_LOCAL_H__
-#define __SND_LOCAL_H__
+    public struct WaveformatExtensible
+    {
+        public WaveformatEx Format;
+        //      union {
+        //short wValidBitsPerSample;       // bits of precision 
+        //      short wSamplesPerBlock;          // valid if wBitsPerSample==0
+        //      short wReserved;                 // If neither applies, set to zero
+        //      } Samples;
+        public int dwChannelMask;      // which channels are
+        public int SubFormat; // present in stream 
 
-#ifdef ID_DEDICATED
-// stub-only mode: AL_API and ALC_API shouldn't refer to any dll-stuff
-// because the implemenations are in openal_stub.cpp
-// this is ensured by defining AL_LIBTYPE_STATIC before including the AL headers
-#define AL_LIBTYPE_STATIC
+        internal void memset()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    // RIFF chunk information data structure
+    public struct Mminfo
+    {
+        public FourCC ckid;           // chunk ID //
+        public uint cksize;         // chunk size //
+        public FourCC fccType;        // form type or list type //
+        public int dwDataOffset;   // offset of data portion of chunk //
+    }
+
+    #endregion
+
+    #region WaveFile
+
+    //public class WaveFile
+    //{
+    //    WaveformatExtensible mpwfx;        // Pointer to waveformatex structure
+    //    VFile mhmmio;         // I/O handle for the WAVE
+    //    Mminfo mck;           // Multimedia RIFF chunk
+    //    Mminfo mckRiff;       // used when opening a WAVE file
+    //    int mdwSize;      // size in samples
+    //    int mMemSize;     // size of the wave data in memory
+    //    int mseekBase;
+    //    DateTime mfileTime;
+
+    //    bool mbIsReadingFromMemory;
+    //    short[] mpbData;
+    //    short[] mpbDataCur;
+    //    int mulDataSize;
+
+    //    object ogg;          // only !NULL when !s_realTimeDecoding
+    //    bool isOgg;
+
+    //    public WaveFile();
+
+    //    public int Open(string strFileName, WaveformatEx pwfx = null);
+    //    public int OpenFromMemory(short[] pbData, int ulDataSize, WaveformatExtensible pwfx);
+    //    public int Read(byte[] pBuffer, int dwSizeToRead, out int pdwSizeRead);
+    //    public int Seek(int offset);
+    //    public int Close();
+    //    public int ResetFile();
+
+    //    public int OutputSize => mdwSize;
+    //    public int MemorySize => mMemSize;
+
+    //    int ReadMMIO();
+
+    //    int OpenOGG(string strFileName, Waveformatex pwfx = null);
+    //    int ReadOGG(byte[] pBuffer, int dwSizeToRead, out int pdwSizeRead);
+    //    int CloseOGG();
+    //}
+
+    #endregion
+
+    #region Encapsulates functionality of a DirectSound buffer.
+
+    public interface IAudioBuffer
+    {
+        int Play(int dwPriority = 0, int dwFlags = 0);
+        int Stop();
+        int Reset();
+        bool IsSoundPlaying();
+        void SetVolume(float x);
+    }
+
+    #endregion
+
+    #region SoundEmitterLocal
+
+    public enum REMOVE_STATUS // removeStatus_t;
+    {
+        INVALID = -1,
+        ALIVE = 0,
+        WAITSAMPLEFINISHED = 1,
+        SAMPLEFINISHED = 2
+    }
+
+    public class SoundFade
+    {
+        public int fadeStart44kHz;
+        public int fadeEnd44kHz;
+        public float fadeStartVolume;      // in dB
+        public float fadeEndVolume;            // in dB
+
+        public void Clear();
+        public float FadeDbAt44kHz(int current44kHz);
+    }
+
+    public class SoundFX
+    {
+        protected bool initialized;
+
+        protected int channel;
+        protected int maxlen;
+
+        protected float[] buffer;
+        protected float[] continuitySamples = new float[4];
+
+        protected float param;
+
+        public SoundFX() { channel = 0; buffer = null; initialized = false; maxlen = 0; Array.Clear(continuitySamples, 0, 4); };
+
+        public virtual void Initialize() { }
+        public abstract void ProcessSample(float[] i, float[] o);
+
+        public int Channel
+        {
+            get => channel;
+            set => channel = value;
+        }
+
+        public void SetContinuitySamples(float in1, float in2, float out1, float out2) { continuitySamples[0] = in1; continuitySamples[1] = in2; continuitySamples[2] = out1; continuitySamples[3] = out2; };      // FIXME?
+        public void GetContinuitySamples(out float in1, out float in2, out float out1, out float out2) { in1 = continuitySamples[0]; in2 = continuitySamples[1]; out1 = continuitySamples[2]; out2 = continuitySamples[3]; };
+
+        public void SetParameter(float val) => param = val;
+    }
+
+    public class SoundFX_Lowpass : SoundFX
+    {
+        public virtual void ProcessSample(float[] i, float[] o);
+    }
+
+    public class SoundFX_LowpassFast : SoundFX
+    {
+        float freq;
+        float res;
+        float a1, a2, a3;
+        float b1, b2;
+
+        public virtual void ProcessSample(float[] i, float[] o);
+        public void SetParms(float p1 = 0, float p2 = 0, float p3 = 0);
+    }
+
+    public class SoundFX_Comb : SoundFX
+    {
+        int currentTime;
+
+        public virtual void Initialize();
+        public virtual void ProcessSample(float[] i, float[] o);
+    }
+
+    public class FracTime
+    {
+        public int time;
+        public float frac;
+
+        public void Set(int val) { time = val; frac = 0; }
+        public void Increment(float val) { frac += val; while (frac >= 1f) { time++; frac--; } }
+    }
+
+    public enum PLAYBACK
+    {
+        RESET,
+        ADVANCING
+    }
+
+    public class SlowChannel
+    {
+        bool active;
+        SoundChannel chan;
+
+        int playbackState;
+        int triggerOffset;
+
+        FracTime newPosition;
+        int newSampleOffset;
+
+        FracTime curPosition;
+        int curSampleOffset;
+
+        SoundFX_LowpassFast lowpass;
+
+        // functions
+        void GenerateSlowChannel(ref FracTime playPos, int sampleCount44k, float[] finalBuffer);
+
+        float GetSlowmoSpeed();
+
+        public void AttachSoundChannel(SoundChannel chan);
+        public void Reset();
+
+        public void GatherChannelSamples(int sampleOffset44k, int sampleCount44k, float[] dest);
+
+        public bool IsActive => active;
+        public FracTime CurrentPosition => curPosition;
+    }
+
+    public class SoundChannel
+    {
+        public bool triggerState;
+        public int trigger44kHzTime;       // hardware time sample the channel started
+        public int triggerGame44kHzTime;   // game time sample time the channel started
+        public SoundShaderParms parms;                   // combines the shader parms and the per-channel overrides
+        public SoundSample leadinSample;            // if not looped, this is the only sample
+        public ChannelType triggerChannel;
+        public SoundShader soundShader;
+        public SampleDecoder decoder;
+        public float diversity;
+        public float lastVolume;               // last calculated volume based on distance
+        public float[] lastV = new float[6];             // last calculated volume for each speaker, so we can smoothly fade
+        public SoundFade channelFade;
+        public bool triggered;
+        public ALuint openalSource;
+        public ALuint openalStreamingOffset;
+        public ALuint[] openalStreamingBuffer = new ALuint[3];
+        public ALuint[] lastopenalStreamingBuffer = new ALuint[3];
+        public bool stopped;
+
+        public bool disallowSlow;
+
+        public SoundChannel();
+
+        public void Clear();
+        public void Start();
+        public void Stop();
+        public void GatherChannelSamples(int sampleOffset44k, int sampleCount44k, float[] dest);
+        public void ALStop();         // free OpenAL resources if any
+    }
+
+    public class SoundEmitterLocal : ISoundEmitter
+    {
+        public SoundEmitterLocal();
+
+        //----------------------------------------------
+
+        // the "time" parameters should be game time in msec, which is used to make queries return deterministic values regardless of async buffer scheduling
+        // a non-immediate free will let all currently playing sounds complete
+        public virtual void Free(bool immediate);
+
+        // the parms specified will be the default overrides for all sounds started on this emitter. NULL is acceptable for parms
+        public virtual void UpdateEmitter(Vector3 origin, int listenerId, SoundShaderParms parms);
+
+        // returns the length of the started sound in msec
+        public virtual int StartSound(SoundShader shader, ChannelType channel, float diversity = 0, int shaderFlags = 0, bool allowSlow = true /* D3XP */ );
+
+        // can pass SCHANNEL_ANY
+        public virtual void ModifySound(ChannelType channel, SoundShaderParms parms);
+        public virtual void StopSound(ChannelType channel);
+        public virtual void FadeSound(ChannelType channel, float to, float over);
+
+        public virtual bool CurrentlyPlaying();
+
+        // can pass SCHANNEL_ANY
+        public virtual float CurrentAmplitude();
+
+        // used for save games
+        public virtual int Index();
+
+        //----------------------------------------------
+
+        public void Clear();
+
+        public void OverrideParms(SoundShaderParms base_, SoundShaderParms over, SoundShaderParms o);
+        public void CheckForCompletion(int current44kHzTime);
+        public void Spatialize(Vector3 listenerPos, int listenerArea, IRenderWorld rw);
+
+        public SoundWorldLocal soundWorld;              // the world that holds this emitter
+
+        public int index;                      // in world emitter list
+        public RemoveStatus removeStatus;
+
+        public Vector3 origin;
+        public int listenerId;
+        public SoundShaderParms parms;                       // default overrides for all channels
+
+        // the following are calculated in UpdateEmitter, and don't need to be archived
+        public float maxDistance;              // greatest of all playing channel distances
+        public int lastValidPortalArea;        // so an emitter that slides out of the world continues playing
+        public bool playing;                   // if false, no channel is active
+        public bool hasShakes;
+        public Vector3 spatializedOrigin;      // the virtual sound origin, either the real sound origin, or a point through a portal chain
+        public float realDistance;             // in meters
+        public float distance;                 // in meters, this may be the straight-line distance, or it may go through a chain of portals.  If there
+                                               // is not an open-portal path, distance will be > maxDistance
+
+        // a single soundEmitter can have many channels playing from the same point
+        public SoundChannel[] channels[SOUND_MAX_CHANNELS];
+
+        public SlowChannel[] slowChannels[SOUND_MAX_CHANNELS];
+
+        public SlowChannel GetSlowChannel(SoundChannel chan);
+        public void SetSlowChannel(SoundChannel chan, SlowChannel slow);
+        public void ResetSlowChannel(SoundChannel chan);
+
+        // this is just used for feedback to the game or rendering system: flashing lights and screen shakes.  Because the material expression
+        // evaluation doesn't do common subexpression removal, we cache the last generated value
+        public int ampTime;
+        public float amplitude;
+    }
+
+    #endregion
+
+    #region SoundWorldLocal
+
+    public class SoundStats
+    {
+        public int rinuse;
+        public int runs = 1;
+        public int timeinprocess;
+        public int missedWindow;
+        public int missedUpdateWindow;
+        public int activeSounds;
+    }
+
+    public class SoundPortalTrace
+    {
+        public int portalArea;
+        public SoundPortalTrace prevStack;
+    }
+
+    //public class SoundWorldLocal : ISoundWorld
+    //{
+    //    // call at each map start
+    //    public virtual void ClearAllSoundEmitters();
+    //    public virtual void StopAllSounds();
+
+    //    // get a new emitter that can play sounds in this world
+    //    public virtual SoundEmitter AllocSoundEmitter();
+
+    //    // for load games
+    //    public virtual SoundEmitter EmitterForIndex(int index);
+
+    //    // query data from all emitters in the world
+    //    public virtual float CurrentShakeAmplitudeForPosition(int time, Vector3 listererPosition);
+
+    //    // where is the camera/microphone listenerId allows listener-private sounds to be added
+    //    public virtual void PlaceListener(Vector3 origin, Matrix3x3 axis, int listenerId, int gameTime, string areaName);
+
+    //    // fade all sounds in the world with a given shader soundClass to is in Db (sigh), over is in seconds
+    //    public virtual void FadeSoundClasses(int soundClass, float to, float over);
+
+    //    // dumps the current state and begins archiving commands
+    //    public virtual void StartWritingDemo(VFileDemo demo);
+    //    public virtual void StopWritingDemo();
+
+    //    // read a sound command from a demo file
+    //    public virtual void ProcessDemoCommand(VFileDemo readDemo);
+
+    //    // background music
+    //    public virtual void PlayShaderDirectly(string name, int channel = -1);
+
+    //    // pause and unpause the sound world
+    //    public virtual void Pause();
+    //    public virtual void UnPause();
+    //    public virtual bool IsPaused { get; }
+
+    //    // avidump
+    //    public virtual void AVIOpen(string path, string name);
+    //    public virtual void AVIClose();
+
+    //    // SaveGame Support
+    //    public virtual void WriteToSaveGame(VFile savefile);
+    //    public virtual void ReadFromSaveGame(VFile savefile);
+
+    //    public virtual void ReadFromSaveGameSoundChannel(VFile saveGame, SoundChannel ch);
+    //    public virtual void ReadFromSaveGameSoundShaderParams(VFile saveGame, SoundShaderParms parms);
+    //    public virtual void WriteToSaveGameSoundChannel(VFile saveGame, SoundChannel ch);
+    //    public virtual void WriteToSaveGameSoundShaderParams(VFile saveGame, SoundShaderParms parms);
+
+    //    public virtual void SetSlowmo(bool active);
+    //    public virtual void SetSlowmoSpeed(float speed);
+    //    public virtual void SetEnviroSuit(bool active);
+
+    //    //=======================================
+
+    //    public IRenderWorld rw;              // for portals and debug drawing
+    //    public VFileDemo writeDemo;          // if not NULL, archive commands here
+
+    //    public Matrix3x3 listenerAxis;
+    //    public Vector3 listenerPos;     // position in meters
+    //    public int listenerPrivateId;
+    //    public Vector3 listenerQU;          // position in "quake units"
+    //    public int listenerArea;
+    //    public string listenerAreaName;
+    //    public ALuint listenerEffect;
+    //    public ALuint listenerSlot;
+    //    public ALuint listenerFilter;
+
+    //    public int gameMsec;
+    //    public int game44kHz;
+    //    public int pause44kHz;
+    //    public int lastAVI44kHz;       // determine when we need to mix and write another block
+
+    //    public List<SoundEmitterLocal> emitters = new();
+
+    //    public SoundFade[] soundClassFade = new SoundFade[SOUND_MAX_CLASSES];  // for global sound fading
+
+    //    // avi stuff
+    //    public VFile[] fpa = new VFile[6];
+    //    public string aviDemoPath;
+    //    public string aviDemoName;
+
+    //    public SoundEmitterLocal localSound;        // just for playShaderDirectly()
+
+    //    public bool slowmoActive;
+    //    public float slowmoSpeed;
+    //    public bool enviroSuitActive;
+
+    //    public SoundWorldLocal();
+
+    //    public void Shutdown();
+    //    public void Init(IRenderWorld rw);
+
+    //    // update
+    //    public void ForegroundUpdate(int currentTime);
+    //    public void OffsetSoundTime(int offset44kHz);
+
+    //    public SoundEmitterLocal AllocLocalSoundEmitter();
+    //    public void CalcEars(int numSpeakers, Vector3 realOrigin, Vector3 listenerPos, Matrix3x3 listenerAxis, float[] ears, float spatialize);
+    //    public void AddChannelContribution(SoundEmitterLocal sound, SoundChannel chan, int current44kHz, int numSpeakers, float[] finalMixBuffer);
+    //    public void MixLoop(int current44kHz, int numSpeakers, float[] finalMixBuffer);
+    //    public void AVIUpdate();
+    //    public void ResolveOrigin(int stackDepth, SoundPortalTrace prevStack, int soundArea, float dist, Vector3 soundOrigin, SoundEmitterLocal def);
+    //    public float FindAmplitude(SoundEmitterLocal sound, int localTime, Vector3 listenerPosition, ChannelType channel, bool shakesOnly);
+    //}
+
+    #endregion
+
+    #region SoundSystemLocal
+
+    public struct OpenalSource
+    {
+        public ALuint handle;
+        public int startTime;
+        public SoundChannel chan;
+        public bool inUse;
+        public bool looping;
+        public bool stereo;
+    }
+
+    public class SoundSystemLocal : ISoundSystem
+    {
+        //#define mmioFOURCC( ch0, ch1, ch2, ch3 )				 ((dword)(byte) (ch0) | ((dword)(byte) (ch1) << 8 ) | ((dword)(byte) (ch2) << 16 ) | ((dword)(byte) (ch3) << 24 ) )
+        //#define fourcc_riff     mmioFOURCC('R', 'I', 'F', 'F')
+
+        public const int SOUND_MAX_CHANNELS = 8;
+        public const int SOUND_DECODER_FREE_DELAY = 1000 * SIMD.MIXBUFFER_SAMPLES / Usercmd.USERCMD_MSEC;       // four seconds
+        public const int PRIMARYFREQ = 44100;          // samples per second
+        public const float SND_EPSILON = 1f / 32768f;  // if volume is below this, it will always multiply to zero
+        public const int ROOM_SLICES_IN_BUFFER = 10;
+
+        public SoundSystemLocal()
+            => isInitialized = false;
+
+        // all non-hardware initialization
+        public virtual void Init();
+
+        // shutdown routine
+        public virtual void Shutdown();
+
+        // sound is attached to the window, and must be recreated when the window is changed
+        public virtual bool ShutdownHW();
+        public virtual bool InitHW();
+
+        // async loop, called at 60Hz
+        public virtual int AsyncUpdate(int time);
+        // async loop, when the sound driver uses a write strategy
+        public virtual int AsyncUpdateWrite(int time);
+        // direct mixing called from the sound driver thread for OSes that support it
+        public virtual int AsyncMix(int soundTime, float[] mixBuffer);
+
+        public virtual void SetMute(bool mute);
+
+        public virtual CinData ImageForTime(int milliseconds, bool waveform);
+
+        public int GetSoundDecoderInfo(int index, SoundDecoderInfo decoderInfo);
+
+        // if rw == NULL, no portal occlusion or rendered debugging is available
+        public virtual ISoundWorld AllocSoundWorld(IRenderWorld rw);
+
+        // specifying NULL will cause silence to be played
+        public virtual void SetPlayingSoundWorld(ISoundWorld soundWorld);
+
+        // some tools, like the sound dialog, may be used in both the game and the editor This can return NULL, so check!
+        public virtual ISoundWorld GetPlayingSoundWorld();
+
+        public virtual void BeginLevelLoad();
+        public virtual void EndLevelLoad(string mapString);
+
+        public virtual void PrintMemInfo(MemInfo mi);
+
+        public virtual int IsEFXAvailable();
+
+        //-------------------------
+
+        public int Current44kHzTime => 0;
+        public float dB2Scale(float val);
+        public int SamplesToMilliseconds(int samples);
+        public int MillisecondsToSamples(int ms);
+
+        public void DoEnviroSuit(float[] samples, int numSamples, int numSpeakers);
+
+        public ALuint AllocOpenALSource(SoundChannel chan, bool looping, bool stereo);
+        public void FreeOpenALSource(ALuint handle);
+
+        // returns true if openalDevice is still available, otherwise it will try to recover the device and return false while it's gone
+        // (display audio sound devices sometimes disappear for a few seconds when switching resolution)
+        public bool CheckDeviceAndRecoverIfNeeded();
+
+        public SoundCache soundCache;
+
+        public SoundWorldLocal currentSoundWorld;   // the one to mix each async tic
+
+        public int olddwCurrentWritePos;   // statistics
+        public int buffers;                // statistics
+        public int CurrentSoundTime;       // set by the async thread and only used by the main thread
+
+        public uint nextWriteBlock;
+
+        public float[] realAccum = new float[6 * SIMD.MIXBUFFER_SAMPLES + 16];
+        public float[] finalMixBuffer;          // points inside realAccum at a 16 byte aligned boundary
+
+        public bool isInitialized;
+        public bool muted;
+        public bool shutdown;
+
+        public SoundStats soundStats;             // NOTE: updated throughout the code, not displayed anywhere
+
+        public int[] meterTops = new int[256];
+        public int[] meterTopsTime = new int[256];
+
+        public int[] graph;
+
+        public float[] volumesDB = new float[1200];      // dB to float volume conversion
+
+        public List<SoundFX> fxList = new();
+
+        public ALCdevice openalDevice;
+        public ALCcontext openalContext;
+        public ALsizei openalSourceCount;
+        public OpenalSource[] openalSources = new OpenalSource[256];
+
+        public LPALGENEFFECTS alGenEffects;
+        public LPALDELETEEFFECTS alDeleteEffects;
+        public LPALISEFFECT alIsEffect;
+        public LPALEFFECTI alEffecti;
+        public LPALEFFECTF alEffectf;
+        public LPALEFFECTFV alEffectfv;
+        public LPALGENFILTERS alGenFilters;
+        public LPALDELETEFILTERS alDeleteFilters;
+        public LPALISFILTER alIsFilter;
+        public LPALFILTERI alFilteri;
+        public LPALFILTERF alFilterf;
+        public LPALGENAUXILIARYEFFECTSLOTS alGenAuxiliaryEffectSlots;
+        public LPALDELETEAUXILIARYEFFECTSLOTS alDeleteAuxiliaryEffectSlots;
+        public LPALISAUXILIARYEFFECTSLOT alIsAuxiliaryEffectSlot;
+        public LPALAUXILIARYEFFECTSLOTI alAuxiliaryEffectSloti;
+
+        public EFXFile EFXDatabase;
+        public bool efxloaded;
+
+        // latches
+        public static bool useEFXReverb;
+        // mark available during initialization, or through an explicit test
+        public static int EFXAvailable;
+
+        // DG: for CheckDeviceAndRecoverIfNeeded()
+#if __ANDROID__
+        public ALCboolean(ALC_APIENTRY LPALCRESETDEVICESOFT)(ALCdevice device, ALCint[] attribs);
 #endif
+        public LPALCRESETDEVICESOFT alcResetDeviceSOFT; // needs ALC_SOFT_HRTF extension
+        public int resetRetryCount;
+        public uint lastCheckTime;
+
+        public static readonly CVar s_noSound;
+        public static readonly CVar s_device;
+        public static readonly CVar s_quadraticFalloff;
+        public static readonly CVar s_drawSounds;
+        public static readonly CVar s_minVolume6;
+        public static readonly CVar s_dotbias6;
+        public static readonly CVar s_minVolume2;
+        public static readonly CVar s_dotbias2;
+        public static readonly CVar s_spatializationDecay;
+        public static readonly CVar s_showStartSound;
+        public static readonly CVar s_maxSoundsPerShader;
+        public static readonly CVar s_reverse;
+        public static readonly CVar s_showLevelMeter;
+        public static readonly CVar s_meterTopTime;
+        public static readonly CVar s_volume;
+        public static readonly CVar s_constantAmplitude;
+        public static readonly CVar s_playDefaultSound;
+        public static readonly CVar s_useOcclusion;
+        public static readonly CVar s_subFraction;
+        public static readonly CVar s_globalFraction;
+        public static readonly CVar s_doorDistanceAdd;
+        public static readonly CVar s_singleEmitter;
+        public static readonly CVar s_numberOfSpeakers;
+        public static readonly CVar s_force22kHz;
+        public static readonly CVar s_clipVolumes;
+        public static readonly CVar s_realTimeDecoding;
+        public static readonly CVar s_useEAXReverb;
+        public static readonly CVar s_decompressionLimit;
+
+        public static readonly CVar s_slowAttenuate;
+
+        public static readonly CVar s_enviroSuitCutoffFreq;
+        public static readonly CVar s_enviroSuitCutoffQ;
+        public static readonly CVar s_enviroSuitSkipLowpass;
+        public static readonly CVar s_enviroSuitSkipReverb;
+
+        public static readonly CVar s_reverbTime;
+        public static readonly CVar s_reverbFeedback;
+        public static readonly CVar s_enviroSuitVolumeScale;
+        public static readonly CVar s_skipHelltimeFX;
+    }
+
+    #endregion
+
+    //extern idSoundSystemLocal soundSystemLocal;
+
+    #region This class holds the actual wavefile bitmap, size, and info.
+
+    //public class SoundSample
+    //{
+    //    public const int SCACHE_SIZE = MIXBUFFER_SAMPLES * 20; // 1/2 of a second (aroundabout)
+    //    public SoundSample();
+
+    //    public string name;                     // name of the sample file
+    //    public DateTime timestamp;                    // the most recent of all images used in creation, for reloadImages command
+
+    //    public WaveformatEx objectInfo;                  // what are we caching
+    //    public int objectSize;                 // size of waveform in samples, excludes the header
+    //    public int objectMemSize;              // object size in memory
+    //    public byte[] nonCacheData;             // if it's not cached
+    //    public byte[] amplitudeData;                // precomputed min,max amplitude pairs
+    //    public ALuint openalBuffer;                // openal buffer
+    //    public bool hardwareBuffer;
+    //    public bool defaultSound;
+    //    public bool onDemand;
+    //    public bool purged;
+    //    public bool levelLoadReferenced;       // so we can tell which samples aren't needed any more
+
+    //    public int LengthIn44kHzSamples => 0;
+    //    public DateTime NewTimeStamp => 0;
+    //    public void MakeDefault();             // turns it into a beep
+    //    public void Load();                        // loads the current sound based on name
+    //    public void Reload(bool force);        // reloads if timestamp has changed, or always if force
+    //    public void PurgeSoundSample();            // frees all data
+    //    public void CheckForDownSample();      // down sample if required
+    //    public bool FetchFromCache(int offset, byte[] output, out int position, out int size, bool allowIO);
+    //}
+
+    #endregion
+
+    #region Sound sample decoder.
+
+    public interface SampleDecoder
+    {
+        public static void Init();
+        public static void Shutdown();
+        public static SampleDecoder Alloc();
+        public static void Free(SampleDecoder decoder);
+        public static int GetNumUsedBlocks();
+        public static int GetUsedBlockMemory();
+
+        void Decode(SoundSample sample, int sampleOffset44k, int sampleCount44k, float[] dest);
+        void ClearDecoder();
+        SoundSample Sample { get; }
+        int LastDecodeTime { get; }
+    }
+
+    #endregion
 
-#include <AL/al.h>
-#include <AL/alc.h>
-#include <AL/alext.h>
+    #region The actual sound cache.
 
-#include "framework/UsercmdGen.h"
-#include "sound/efxlib.h"
-#include "sound/sound.h"
-#include "renderer/RenderSystem.h"
+    //public class SoundCache
+    //{
+    //    bool insideLevelLoad;
+    //    List<SoundSample> listCache = new();
 
-// demo sound commands
-typedef enum {
-	SCMD_STATE,				// followed by a load game state
-	SCMD_PLACE_LISTENER,
-	SCMD_ALLOC_EMITTER,
+    //    public SoundCache();
 
-	SCMD_FREE,
-	SCMD_UPDATE,
-	SCMD_START,
-	SCMD_MODIFY,
-	SCMD_STOP,
-	SCMD_FADE
-} soundDemoCommand_t;
+    //    public SoundSample FindSound(string fname, bool loadOnDemandOnly);
 
-const int SOUND_MAX_CHANNELS		= 8;
-const int SOUND_DECODER_FREE_DELAY	= 1000 * MIXBUFFER_SAMPLES / USERCMD_MSEC;		// four seconds
+    //    public int NumObjects
+    //        => listCache.Count;
 
-const int PRIMARYFREQ				= 44100;			// samples per second
-const float SND_EPSILON				= 1.0f / 32768.0f;	// if volume is below this, it will always multiply to zero
+    //    public SoundSample GetObject(int index);
 
-const int ROOM_SLICES_IN_BUFFER		= 10;
+    //    public void ReloadSounds(bool force);
 
-class idAudioBuffer;
-class idWaveFile;
-class idSoundCache;
-class idSoundSample;
-class idSampleDecoder;
-class idSoundWorldLocal;
+    //    public void BeginLevelLoad();
 
+    //    public void EndLevelLoad();
 
-/*
-===================================================================================
+    //    public void PrintMemInfo(MemInfo mi);
+    //}
 
-	General extended waveform format structure.
-	Use this for all NON PCM formats.
-
-===================================================================================
-*/
-
-#ifdef WIN32
-#pragma pack(1)
-#endif
-struct waveformatex_s {
-	word    wFormatTag;        /* format type */
-	word    nChannels;         /* number of channels (i.e. mono, stereo...) */
-	dword   nSamplesPerSec;    /* sample rate */
-	dword   nAvgBytesPerSec;   /* for buffer estimation */
-	word    nBlockAlign;       /* block size of data */
-	word    wBitsPerSample;    /* Number of bits per sample of mono data */
-	word    cbSize;            /* The count in bytes of the size of
-									extra information (after cbSize) */
-} PACKED;
-
-typedef waveformatex_s waveformatex_t;
-
-/* OLD general waveform format structure (information common to all formats) */
-struct waveformat_s {
-	word    wFormatTag;        /* format type */
-	word    nChannels;         /* number of channels (i.e. mono, stereo, etc.) */
-	dword   nSamplesPerSec;    /* sample rate */
-	dword   nAvgBytesPerSec;   /* for buffer estimation */
-	word    nBlockAlign;       /* block size of data */
-} PACKED;
-
-typedef waveformat_s waveformat_t;
-
-/* flags for wFormatTag field of WAVEFORMAT */
-enum {
-	WAVE_FORMAT_TAG_PCM		= 1,
-	WAVE_FORMAT_TAG_OGG		= 2
-};
-
-/* specific waveform format structure for PCM data */
-struct pcmwaveformat_s {
-	waveformat_t	wf;
-	word			wBitsPerSample;
-} PACKED;
-
-typedef pcmwaveformat_s pcmwaveformat_t;
-
-#ifndef mmioFOURCC
-#define mmioFOURCC( ch0, ch1, ch2, ch3 )				\
-		( (dword)(byte)(ch0) | ( (dword)(byte)(ch1) << 8 ) |	\
-		( (dword)(byte)(ch2) << 16 ) | ( (dword)(byte)(ch3) << 24 ) )
-#endif
-
-#define fourcc_riff     mmioFOURCC('R', 'I', 'F', 'F')
-
-struct waveformatextensible_s {
-	waveformatex_t    Format;
-	union {
-		word wValidBitsPerSample;       /* bits of precision  */
-		word wSamplesPerBlock;          /* valid if wBitsPerSample==0*/
-		word wReserved;                 /* If neither applies, set to zero*/
-	} Samples;
-	dword           dwChannelMask;      /* which channels are */
-										/* present in stream  */
-	int            SubFormat;
-} PACKED;
-
-typedef waveformatextensible_s waveformatextensible_t;
-
-typedef dword fourcc;
-
-/* RIFF chunk information data structure */
-struct mminfo_s {
-	fourcc			ckid;           /* chunk ID */
-	dword			cksize;         /* chunk size */
-	fourcc			fccType;        /* form type or list type */
-	dword			dwDataOffset;   /* offset of data portion of chunk */
-} PACKED;
-
-typedef mminfo_s mminfo_t;
-
-#ifdef WIN32
-#pragma pack()
-#endif
-
-/*
-===================================================================================
-
-idWaveFile
-
-===================================================================================
-*/
-
-class idWaveFile {
-public:
-					idWaveFile( void );
-					~idWaveFile( void );
-
-	int				Open( const char* strFileName, waveformatex_t* pwfx = NULL );
-	int				OpenFromMemory( short* pbData, int ulDataSize, waveformatextensible_t* pwfx );
-	int				Read( byte* pBuffer, int dwSizeToRead, int *pdwSizeRead );
-	int				Seek( int offset );
-	int				Close( void );
-	int				ResetFile( void );
-
-	int				GetOutputSize( void ) { return mdwSize; }
-	int				GetMemorySize( void ) { return mMemSize; }
-
-	waveformatextensible_t	mpwfx;        // Pointer to waveformatex structure
-
-private:
-	idFile *		mhmmio;			// I/O handle for the WAVE
-	mminfo_t		mck;			// Multimedia RIFF chunk
-	mminfo_t		mckRiff;		// used when opening a WAVE file
-	dword			mdwSize;		// size in samples
-	dword			mMemSize;		// size of the wave data in memory
-	dword			mseekBase;
-	ID_TIME_T			mfileTime;
-
-	bool			mbIsReadingFromMemory;
-	short *			mpbData;
-	short *			mpbDataCur;
-	dword			mulDataSize;
-
-	void *			ogg;			// only !NULL when !s_realTimeDecoding
-	bool			isOgg;
-
-private:
-	int				ReadMMIO( void );
-
-	int				OpenOGG( const char* strFileName, waveformatex_t* pwfx = NULL );
-	int				ReadOGG( byte* pBuffer, int dwSizeToRead, int *pdwSizeRead );
-	int				CloseOGG( void );
-};
-
-
-/*
-===================================================================================
-
-Encapsulates functionality of a DirectSound buffer.
-
-===================================================================================
-*/
-
-class idAudioBuffer {
-public:
-	virtual int		Play( dword dwPriority=0, dword dwFlags=0 ) = 0;
-	virtual int			Stop( void ) = 0;
-	virtual int			Reset( void ) = 0;
-	virtual bool		IsSoundPlaying( void ) = 0;
-	virtual void		SetVolume( float x ) = 0;
-};
-
-
-/*
-===================================================================================
-
-idSoundEmitterLocal
-
-===================================================================================
-*/
-
-typedef enum {
-	REMOVE_STATUS_INVALID				= -1,
-	REMOVE_STATUS_ALIVE					=  0,
-	REMOVE_STATUS_WAITSAMPLEFINISHED	=  1,
-	REMOVE_STATUS_SAMPLEFINISHED		=  2
-} removeStatus_t;
-
-class idSoundFade {
-public:
-	int					fadeStart44kHz;
-	int					fadeEnd44kHz;
-	float				fadeStartVolume;		// in dB
-	float				fadeEndVolume;			// in dB
-
-	void				Clear();
-	float				FadeDbAt44kHz( int current44kHz );
-};
-
-class SoundFX {
-protected:
-	bool				initialized;
-
-	int					channel;
-	int					maxlen;
-
-	float*				buffer;
-	float				continuitySamples[4];
-
-	float				param;
-
-public:
-						SoundFX()										{ channel = 0; buffer = NULL; initialized = false; maxlen = 0; memset( continuitySamples, 0, sizeof( float ) * 4 ); };
-	virtual				~SoundFX()										{ if ( buffer ) delete buffer; };
-
-	virtual void		Initialize()									{ };
-	virtual void		ProcessSample( float* in, float* out ) = 0;
-
-	void				SetChannel( int chan )							{ channel = chan; };
-	int					GetChannel()									{ return channel; };
-
-	void				SetContinuitySamples( float in1, float in2, float out1, float out2 )		{ continuitySamples[0] = in1; continuitySamples[1] = in2; continuitySamples[2] = out1; continuitySamples[3] = out2; };		// FIXME?
-	void				GetContinuitySamples( float& in1, float& in2, float& out1, float& out2 )	{ in1 = continuitySamples[0]; in2 = continuitySamples[1]; out1 = continuitySamples[2]; out2 = continuitySamples[3]; };
-
-	void				SetParameter( float val )						{ param = val; };
-};
-
-class SoundFX_Lowpass : public SoundFX {
-public:
-	virtual void		ProcessSample( float* in, float* out );
-};
-
-class SoundFX_LowpassFast : public SoundFX {
-	float				freq;
-	float				res;
-	float				a1, a2, a3;
-	float				b1, b2;
-
-public:
-	virtual void		ProcessSample( float* in, float* out );
-	void				SetParms( float p1 = 0, float p2 = 0, float p3 = 0 );
-};
-
-class SoundFX_Comb : public SoundFX {
-	int					currentTime;
-
-public:
-	virtual void		Initialize();
-	virtual void		ProcessSample( float* in, float* out );
-};
-
-class FracTime {
-public:
-	int			time;
-	float		frac;
-
-	void		Set( int val )					{ time = val; frac = 0; };
-	void		Increment( float val )			{ frac += val; while ( frac >= 1.f ) { time++; frac--; } };
-};
-
-enum {
-	PLAYBACK_RESET,
-	PLAYBACK_ADVANCING
-};
-
-class idSoundChannel;
-
-class idSlowChannel {
-	bool					active;
-	const idSoundChannel*	chan;
-
-	int						playbackState;
-	int						triggerOffset;
-
-	FracTime				newPosition;
-	int						newSampleOffset;
-
-	FracTime				curPosition;
-	int						curSampleOffset;
-
-	SoundFX_LowpassFast		lowpass;
-
-	// functions
-	void					GenerateSlowChannel( FracTime& playPos, int sampleCount44k, float* finalBuffer );
-
-	float					GetSlowmoSpeed();
-
-public:
-
-	void					AttachSoundChannel( const idSoundChannel *chan );
-	void					Reset();
-
-	void					GatherChannelSamples( int sampleOffset44k, int sampleCount44k, float *dest );
-
-	bool					IsActive()				{ return active; };
-	FracTime				GetCurrentPosition()	{ return curPosition; };
-};
-
-class idSoundChannel {
-public:
-						idSoundChannel( void );
-						~idSoundChannel( void );
-
-	void				Clear( void );
-	void				Start( void );
-	void				Stop( void );
-	void				GatherChannelSamples( int sampleOffset44k, int sampleCount44k, float *dest ) const;
-	void				ALStop( void );			// free OpenAL resources if any
-
-	bool				triggerState;
-	int					trigger44kHzTime;		// hardware time sample the channel started
-	int					triggerGame44kHzTime;	// game time sample time the channel started
-	soundShaderParms_t	parms;					// combines the shader parms and the per-channel overrides
-	idSoundSample *		leadinSample;			// if not looped, this is the only sample
-	s_channelType		triggerChannel;
-	const idSoundShader *soundShader;
-	idSampleDecoder *	decoder;
-	float				diversity;
-	float				lastVolume;				// last calculated volume based on distance
-	float				lastV[6];				// last calculated volume for each speaker, so we can smoothly fade
-	idSoundFade			channelFade;
-	bool				triggered;
-	ALuint				openalSource;
-	ALuint				openalStreamingOffset;
-	ALuint				openalStreamingBuffer[3];
-	ALuint				lastopenalStreamingBuffer[3];
-	bool				stopped;
-
-	bool				disallowSlow;
-
-};
-
-class idSoundEmitterLocal : public idSoundEmitter {
-public:
-
-						idSoundEmitterLocal( void );
-	virtual				~idSoundEmitterLocal( void );
-
-	//----------------------------------------------
-
-	// the "time" parameters should be game time in msec, which is used to make queries
-	// return deterministic values regardless of async buffer scheduling
-
-	// a non-immediate free will let all currently playing sounds complete
-	virtual void		Free( bool immediate );
-
-	// the parms specified will be the default overrides for all sounds started on this emitter.
-	// NULL is acceptable for parms
-	virtual void		UpdateEmitter( const idVec3 &origin, int listenerId, const soundShaderParms_t *parms );
-
-	// returns the length of the started sound in msec
-	virtual int			StartSound( const idSoundShader *shader, const s_channelType channel, float diversity = 0, int shaderFlags = 0, bool allowSlow = true /* D3XP */ );
-
-	// can pass SCHANNEL_ANY
-	virtual void		ModifySound( const s_channelType channel, const soundShaderParms_t *parms );
-	virtual void		StopSound( const s_channelType channel );
-	virtual void		FadeSound( const s_channelType channel, float to, float over );
-
-	virtual bool		CurrentlyPlaying( void ) const;
-
-	// can pass SCHANNEL_ANY
-	virtual	float		CurrentAmplitude( void );
-
-	// used for save games
-	virtual	int			Index( void ) const;
-
-	//----------------------------------------------
-
-	void				Clear( void );
-
-	void				OverrideParms( const soundShaderParms_t *base, const soundShaderParms_t *over, soundShaderParms_t *out );
-	void				CheckForCompletion( int current44kHzTime );
-	void				Spatialize( idVec3 listenerPos, int listenerArea, idRenderWorld *rw );
-
-	idSoundWorldLocal *	soundWorld;				// the world that holds this emitter
-
-	int					index;						// in world emitter list
-	removeStatus_t		removeStatus;
-
-	idVec3				origin;
-	int					listenerId;
-	soundShaderParms_t	parms;						// default overrides for all channels
-
-
-	// the following are calculated in UpdateEmitter, and don't need to be archived
-	float				maxDistance;				// greatest of all playing channel distances
-	int					lastValidPortalArea;		// so an emitter that slides out of the world continues playing
-	bool				playing;					// if false, no channel is active
-	bool				hasShakes;
-	idVec3				spatializedOrigin;			// the virtual sound origin, either the real sound origin,
-													// or a point through a portal chain
-	float				realDistance;				// in meters
-	float				distance;					// in meters, this may be the straight-line distance, or
-													// it may go through a chain of portals.  If there
-													// is not an open-portal path, distance will be > maxDistance
-
-	// a single soundEmitter can have many channels playing from the same point
-	idSoundChannel		channels[SOUND_MAX_CHANNELS];
-
-	idSlowChannel		slowChannels[SOUND_MAX_CHANNELS];
-
-	idSlowChannel		GetSlowChannel( const idSoundChannel *chan );
-	void				SetSlowChannel( const idSoundChannel *chan, idSlowChannel slow );
-	void				ResetSlowChannel( const idSoundChannel *chan );
-
-	// this is just used for feedback to the game or rendering system:
-	// flashing lights and screen shakes.  Because the material expression
-	// evaluation doesn't do common subexpression removal, we cache the
-	// last generated value
-	int					ampTime;
-	float				amplitude;
-};
-
-
-/*
-===================================================================================
-
-idSoundWorldLocal
-
-===================================================================================
-*/
-
-class s_stats {
-public:
-	s_stats( void ) {
-		rinuse = 0;
-		runs = 1;
-		timeinprocess = 0;
-		missedWindow = 0;
-		missedUpdateWindow = 0;
-		activeSounds = 0;
-	}
-	int		rinuse;
-	int		runs;
-	int		timeinprocess;
-	int		missedWindow;
-	int		missedUpdateWindow;
-	int		activeSounds;
-};
-
-typedef struct soundPortalTrace_s {
-	int		portalArea;
-	const struct soundPortalTrace_s	*prevStack;
-} soundPortalTrace_t;
-
-class idSoundWorldLocal : public idSoundWorld {
-public:
-	virtual					~idSoundWorldLocal( void );
-
-	// call at each map start
-	virtual void			ClearAllSoundEmitters( void );
-	virtual void			StopAllSounds( void );
-
-	// get a new emitter that can play sounds in this world
-	virtual idSoundEmitter *AllocSoundEmitter( void );
-
-	// for load games
-	virtual idSoundEmitter *EmitterForIndex( int index );
-
-	// query data from all emitters in the world
-	virtual float			CurrentShakeAmplitudeForPosition( const int time, const idVec3 &listererPosition );
-
-	// where is the camera/microphone
-	// listenerId allows listener-private sounds to be added
-	virtual void			PlaceListener( const idVec3 &origin, const idMat3 &axis, const int listenerId, const int gameTime, const idStr& areaName );
-
-	// fade all sounds in the world with a given shader soundClass
-	// to is in Db (sigh), over is in seconds
-	virtual void			FadeSoundClasses( const int soundClass, const float to, const float over );
-
-	// dumps the current state and begins archiving commands
-	virtual void			StartWritingDemo( idDemoFile *demo );
-	virtual void			StopWritingDemo( void );
-
-	// read a sound command from a demo file
-	virtual void			ProcessDemoCommand( idDemoFile *readDemo );
-
-	// background music
-	virtual void			PlayShaderDirectly( const char *name, int channel = -1 );
-
-	// pause and unpause the sound world
-	virtual void			Pause( void );
-	virtual void			UnPause( void );
-	virtual bool			IsPaused( void );
-
-	// avidump
-	virtual void			AVIOpen( const char *path, const char *name );
-	virtual void			AVIClose( void );
-
-	// SaveGame Support
-	virtual void			WriteToSaveGame( idFile *savefile );
-	virtual void			ReadFromSaveGame( idFile *savefile );
-
-	virtual void			ReadFromSaveGameSoundChannel( idFile *saveGame, idSoundChannel *ch );
-	virtual void			ReadFromSaveGameSoundShaderParams( idFile *saveGame, soundShaderParms_t *params );
-	virtual void			WriteToSaveGameSoundChannel( idFile *saveGame, idSoundChannel *ch );
-	virtual void			WriteToSaveGameSoundShaderParams( idFile *saveGame, soundShaderParms_t *params );
-
-	virtual void			SetSlowmo( bool active );
-	virtual void			SetSlowmoSpeed( float speed );
-	virtual void			SetEnviroSuit( bool active );
-
-	//=======================================
-
-							idSoundWorldLocal( void );
-
-	void					Shutdown( void );
-	void					Init( idRenderWorld *rw );
-
-	// update
-	void					ForegroundUpdate( int currentTime );
-	void					OffsetSoundTime( int offset44kHz );
-
-	idSoundEmitterLocal *	AllocLocalSoundEmitter();
-	void					CalcEars( int numSpeakers, idVec3 realOrigin, idVec3 listenerPos, idMat3 listenerAxis, float ears[6], float spatialize );
-	void					AddChannelContribution( idSoundEmitterLocal *sound, idSoundChannel *chan,
-												int current44kHz, int numSpeakers, float *finalMixBuffer );
-	void					MixLoop( int current44kHz, int numSpeakers, float *finalMixBuffer );
-	void					AVIUpdate( void );
-	void					ResolveOrigin( const int stackDepth, const soundPortalTrace_t *prevStack, const int soundArea, const float dist, const idVec3& soundOrigin, idSoundEmitterLocal *def );
-	float					FindAmplitude( idSoundEmitterLocal *sound, const int localTime, const idVec3 *listenerPosition, const s_channelType channel, bool shakesOnly );
-
-	//============================================
-
-	idRenderWorld *			rw;				// for portals and debug drawing
-	idDemoFile *			writeDemo;			// if not NULL, archive commands here
-
-	idMat3					listenerAxis;
-	idVec3					listenerPos;		// position in meters
-	int						listenerPrivateId;
-	idVec3					listenerQU;			// position in "quake units"
-	int						listenerArea;
-	idStr					listenerAreaName;
-	ALuint					listenerEffect;
-	ALuint					listenerSlot;
-	ALuint					listenerFilter;
-
-	int						gameMsec;
-	int						game44kHz;
-	int						pause44kHz;
-	int						lastAVI44kHz;		// determine when we need to mix and write another block
-
-	idList<idSoundEmitterLocal *>emitters;
-
-	idSoundFade				soundClassFade[SOUND_MAX_CLASSES];	// for global sound fading
-
-	// avi stuff
-	idFile *				fpa[6];
-	idStr					aviDemoPath;
-	idStr					aviDemoName;
-
-	idSoundEmitterLocal *	localSound;		// just for playShaderDirectly()
-
-	bool					slowmoActive;
-	float					slowmoSpeed;
-	bool					enviroSuitActive;
-};
-
-/*
-===================================================================================
-
-idSoundSystemLocal
-
-===================================================================================
-*/
-
-typedef struct {
-	ALuint			handle;
-	int				startTime;
-	idSoundChannel	*chan;
-	bool			inUse;
-	bool			looping;
-	bool			stereo;
-} openalSource_t;
-
-class idSoundSystemLocal : public idSoundSystem {
-public:
-	idSoundSystemLocal( ) {
-		isInitialized = false;
-	}
-
-	// all non-hardware initialization
-	virtual void			Init( void );
-
-	// shutdown routine
-	virtual	void			Shutdown( void );
-
-	// sound is attached to the window, and must be recreated when the window is changed
-	virtual bool			ShutdownHW( void );
-	virtual bool			InitHW( void );
-
-	// async loop, called at 60Hz
-	virtual int				AsyncUpdate( int time );
-	// async loop, when the sound driver uses a write strategy
-	virtual int				AsyncUpdateWrite( int time );
-	// direct mixing called from the sound driver thread for OSes that support it
-	virtual int				AsyncMix( int soundTime, float *mixBuffer );
-
-	virtual void			SetMute( bool mute );
-
-	virtual cinData_t		ImageForTime( const int milliseconds, const bool waveform );
-
-	int						GetSoundDecoderInfo( int index, soundDecoderInfo_t &decoderInfo );
-
-	// if rw == NULL, no portal occlusion or rendered debugging is available
-	virtual idSoundWorld	*AllocSoundWorld( idRenderWorld *rw );
-
-	// specifying NULL will cause silence to be played
-	virtual void			SetPlayingSoundWorld( idSoundWorld *soundWorld );
-
-	// some tools, like the sound dialog, may be used in both the game and the editor
-	// This can return NULL, so check!
-	virtual idSoundWorld	*GetPlayingSoundWorld( void );
-
-	virtual	void			BeginLevelLoad( void );
-	virtual	void			EndLevelLoad( const char *mapString );
-
-	virtual void			PrintMemInfo( MemInfo_t *mi );
-
-	virtual int				IsEFXAvailable( void );
-
-	//-------------------------
-
-	int						GetCurrent44kHzTime( void ) const;
-	float					dB2Scale( const float val ) const;
-	int						SamplesToMilliseconds( int samples ) const;
-	int						MillisecondsToSamples( int ms ) const;
-
-	void					DoEnviroSuit( float* samples, int numSamples, int numSpeakers );
-
-	ALuint					AllocOpenALSource( idSoundChannel *chan, bool looping, bool stereo );
-	void					FreeOpenALSource( ALuint handle );
-
-	// returns true if openalDevice is still available,
-	// otherwise it will try to recover the device and return false while it's gone
-	// (display audio sound devices sometimes disappear for a few seconds when switching resolution)
-	bool					CheckDeviceAndRecoverIfNeeded();
-
-	idSoundCache *			soundCache;
-
-	idSoundWorldLocal *		currentSoundWorld;	// the one to mix each async tic
-
-	int						olddwCurrentWritePos;	// statistics
-	int						buffers;				// statistics
-	int						CurrentSoundTime;		// set by the async thread and only used by the main thread
-
-	unsigned int			nextWriteBlock;
-
-	float					realAccum[6*MIXBUFFER_SAMPLES+16];
-	float *					finalMixBuffer;			// points inside realAccum at a 16 byte aligned boundary
-
-	bool					isInitialized;
-	bool					muted;
-	bool					shutdown;
-
-	s_stats					soundStats;				// NOTE: updated throughout the code, not displayed anywhere
-
-	int						meterTops[256];
-	int						meterTopsTime[256];
-
-	dword *					graph;
-
-	float					volumesDB[1200];		// dB to float volume conversion
-
-	idList<SoundFX*>		fxList;
-
-	ALCdevice				*openalDevice;
-	ALCcontext				*openalContext;
-	ALsizei					openalSourceCount;
-	openalSource_t			openalSources[256];
-
-	LPALGENEFFECTS			alGenEffects;
-	LPALDELETEEFFECTS		alDeleteEffects;
-	LPALISEFFECT			alIsEffect;
-	LPALEFFECTI				alEffecti;
-	LPALEFFECTF				alEffectf;
-	LPALEFFECTFV			alEffectfv;
-	LPALGENFILTERS			alGenFilters;
-	LPALDELETEFILTERS		alDeleteFilters;
-	LPALISFILTER			alIsFilter;
-	LPALFILTERI				alFilteri;
-	LPALFILTERF				alFilterf;
-	LPALGENAUXILIARYEFFECTSLOTS		alGenAuxiliaryEffectSlots;
-	LPALDELETEAUXILIARYEFFECTSLOTS	alDeleteAuxiliaryEffectSlots;
-	LPALISAUXILIARYEFFECTSLOT		alIsAuxiliaryEffectSlot;
-	LPALAUXILIARYEFFECTSLOTI		alAuxiliaryEffectSloti;
-
-	idEFXFile				EFXDatabase;
-	bool					efxloaded;
-							// latches
-	static bool				useEFXReverb;
-							// mark available during initialization, or through an explicit test
-	static int				EFXAvailable;
-
-	// DG: for CheckDeviceAndRecoverIfNeeded()
-#ifdef __ANDROID__
-	typedef ALCboolean(ALC_APIENTRY * 	LPALCRESETDEVICESOFT )(ALCdevice *device, const ALCint *attribs);
-#endif
-	LPALCRESETDEVICESOFT	alcResetDeviceSOFT; // needs ALC_SOFT_HRTF extension
-	int						resetRetryCount;
-	unsigned int			lastCheckTime;
-
-	static idCVar			s_noSound;
-	static idCVar			s_device;
-	static idCVar			s_quadraticFalloff;
-	static idCVar			s_drawSounds;
-	static idCVar			s_minVolume6;
-	static idCVar			s_dotbias6;
-	static idCVar			s_minVolume2;
-	static idCVar			s_dotbias2;
-	static idCVar			s_spatializationDecay;
-	static idCVar			s_showStartSound;
-	static idCVar			s_maxSoundsPerShader;
-	static idCVar			s_reverse;
-	static idCVar			s_showLevelMeter;
-	static idCVar			s_meterTopTime;
-	static idCVar			s_volume;
-	static idCVar			s_constantAmplitude;
-	static idCVar			s_playDefaultSound;
-	static idCVar			s_useOcclusion;
-	static idCVar			s_subFraction;
-	static idCVar			s_globalFraction;
-	static idCVar			s_doorDistanceAdd;
-	static idCVar			s_singleEmitter;
-	static idCVar			s_numberOfSpeakers;
-	static idCVar			s_force22kHz;
-	static idCVar			s_clipVolumes;
-	static idCVar			s_realTimeDecoding;
-	static idCVar			s_useEAXReverb;
-	static idCVar			s_decompressionLimit;
-
-	static idCVar			s_slowAttenuate;
-
-	static idCVar			s_enviroSuitCutoffFreq;
-	static idCVar			s_enviroSuitCutoffQ;
-	static idCVar			s_enviroSuitSkipLowpass;
-	static idCVar			s_enviroSuitSkipReverb;
-
-	static idCVar			s_reverbTime;
-	static idCVar			s_reverbFeedback;
-	static idCVar			s_enviroSuitVolumeScale;
-	static idCVar			s_skipHelltimeFX;
-};
-
-extern	idSoundSystemLocal	soundSystemLocal;
-
-
-/*
-===================================================================================
-
-  This class holds the actual wavefile bitmap, size, and info.
-
-===================================================================================
-*/
-
-const int SCACHE_SIZE = MIXBUFFER_SAMPLES*20;	// 1/2 of a second (aroundabout)
-
-class idSoundSample {
-public:
-							idSoundSample();
-							~idSoundSample();
-
-	idStr					name;						// name of the sample file
-	ID_TIME_T					timestamp;					// the most recent of all images used in creation, for reloadImages command
-
-	waveformatex_t			objectInfo;					// what are we caching
-	int						objectSize;					// size of waveform in samples, excludes the header
-	int						objectMemSize;				// object size in memory
-	byte *					nonCacheData;				// if it's not cached
-	byte *					amplitudeData;				// precomputed min,max amplitude pairs
-	ALuint					openalBuffer;				// openal buffer
-	bool					hardwareBuffer;
-	bool					defaultSound;
-	bool					onDemand;
-	bool					purged;
-	bool					levelLoadReferenced;		// so we can tell which samples aren't needed any more
-
-	int						LengthIn44kHzSamples() const;
-	ID_TIME_T					GetNewTimeStamp( void ) const;
-	void					MakeDefault();				// turns it into a beep
-	void					Load();						// loads the current sound based on name
-	void					Reload( bool force );		// reloads if timestamp has changed, or always if force
-	void					PurgeSoundSample();			// frees all data
-	void					CheckForDownSample();		// down sample if required
-	bool					FetchFromCache( int offset, const byte **output, int *position, int *size, const bool allowIO );
-};
-
-
-/*
-===================================================================================
-
-  Sound sample decoder.
-
-===================================================================================
-*/
-
-class idSampleDecoder {
-public:
-	static void				Init( void );
-	static void				Shutdown( void );
-	static idSampleDecoder *Alloc( void );
-	static void				Free( idSampleDecoder *decoder );
-	static int				GetNumUsedBlocks( void );
-	static int				GetUsedBlockMemory( void );
-
-	virtual					~idSampleDecoder( void ) {}
-	virtual void			Decode( idSoundSample *sample, int sampleOffset44k, int sampleCount44k, float *dest ) = 0;
-	virtual void			ClearDecoder( void ) = 0;
-	virtual idSoundSample *	GetSample( void ) const = 0;
-	virtual int				GetLastDecodeTime( void ) const = 0;
-};
-
-
-/*
-===================================================================================
-
-  The actual sound cache.
-
-===================================================================================
-*/
-
-class idSoundCache {
-public:
-							idSoundCache();
-							~idSoundCache();
-
-	idSoundSample *			FindSound( const idStr &fname, bool loadOnDemandOnly );
-
-	const int				GetNumObjects( void ) { return listCache.Num(); }
-	const idSoundSample *	GetObject( const int index ) const;
-
-	void					ReloadSounds( bool force );
-
-	void					BeginLevelLoad();
-	void					EndLevelLoad();
-
-	void					PrintMemInfo( MemInfo_t *mi );
-
-private:
-	bool					insideLevelLoad;
-	idList<idSoundSample*>	listCache;
-};
-
-#endif /* !__SND_LOCAL_H__ */
+    #endregion
+}

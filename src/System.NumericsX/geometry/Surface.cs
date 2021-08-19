@@ -874,7 +874,7 @@ namespace System.NumericsX
                 {
                     if (!plane.FromPoints(verts[indexes[i + 0]].xyz, verts[indexes[i + 1]].xyz, verts[indexes[i + 2]].xyz))
                         return false;
-                    plane.RayIntersection(start, dir, s);
+                    plane.RayIntersection(start, dir, out s);
                     if (MathX.Fabs(s) < MathX.Fabs(scale))
                         scale = s;
                 }
@@ -882,7 +882,7 @@ namespace System.NumericsX
                 {
                     if (!plane.FromPoints(verts[indexes[i + 0]].xyz, verts[indexes[i + 1]].xyz, verts[indexes[i + 2]].xyz))
                         return false;
-                    plane.RayIntersection(start, dir, s);
+                    plane.RayIntersection(start, dir, out s);
                     if (MathX.Fabs(s) < MathX.Fabs(scale))
                         scale = s;
                 }

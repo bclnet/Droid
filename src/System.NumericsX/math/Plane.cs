@@ -108,7 +108,7 @@ namespace System.NumericsX
             => a.GetHashCode() ^ b.GetHashCode() ^ c.GetHashCode() ^ d.GetHashCode();
 
         public void Zero()                         // zero plane
-            => a = b = c = d = 0.0f;
+            => a = b = c = d = 0f;
 
         public void SetNormal(Vector3 normal)      // sets the normal
         {
@@ -154,18 +154,18 @@ namespace System.NumericsX
         {
             get
             {
-                if (Normal[0] == 0.0f)
+                if (Normal[0] == 0f)
                 {
-                    if (Normal[1] == 0.0f) return Normal[2] > 0.0f ? PLANETYPE.Z : PLANETYPE.NEGZ;
-                    else if (Normal[2] == 0.0f) return Normal[1] > 0.0f ? PLANETYPE.Y : PLANETYPE.NEGY;
+                    if (Normal[1] == 0f) return Normal[2] > 0f ? PLANETYPE.Z : PLANETYPE.NEGZ;
+                    else if (Normal[2] == 0f) return Normal[1] > 0f ? PLANETYPE.Y : PLANETYPE.NEGY;
                     else return PLANETYPE.ZEROX;
                 }
-                else if (Normal[1] == 0.0f)
+                else if (Normal[1] == 0f)
                 {
-                    if (Normal[2] == 0.0f) return Normal[0] > 0.0f ? PLANETYPE.X : PLANETYPE.NEGX;
+                    if (Normal[2] == 0f) return Normal[0] > 0f ? PLANETYPE.X : PLANETYPE.NEGX;
                     else return PLANETYPE.ZEROY;
                 }
-                else if (Normal[2] == 0.0f) return PLANETYPE.ZEROZ;
+                else if (Normal[2] == 0f) return PLANETYPE.ZEROZ;
                 else return PLANETYPE.NONAXIAL;
             }
         }
@@ -173,7 +173,7 @@ namespace System.NumericsX
         public bool FromPoints(Vector3 p1, Vector3 p2, Vector3 p3, bool fixDegenerate = true)
         {
             Normal = (p1 - p2).Cross(p3 - p2);
-            if (Normalize(fixDegenerate) == 0.0f)
+            if (Normalize(fixDegenerate) == 0f)
                 return false;
             d = -(Normal * p2);
             return true;
@@ -181,7 +181,7 @@ namespace System.NumericsX
         public bool FromVecs(Vector3 dir1, Vector3 dir2, Vector3 p, bool fixDegenerate = true)
         {
             Normal = dir1.Cross(dir2);
-            if (Normalize(fixDegenerate) == 0.0f)
+            if (Normalize(fixDegenerate) == 0f)
                 return false;
             d = -(Normal * p);
             return true;
@@ -193,15 +193,15 @@ namespace System.NumericsX
         public bool HeightFit(Vector3[] points, int numPoints)
         {
             int i;
-            float sumXX = 0.0f, sumXY = 0.0f, sumXZ = 0.0f;
-            float sumYY = 0.0f, sumYZ = 0.0f;
+            float sumXX = 0f, sumXY = 0f, sumXZ = 0f;
+            float sumYY = 0f, sumYZ = 0f;
             Vector3 sum = new(), average, dir;
 
             if (numPoints == 1)
             {
-                a = 0.0f;
-                b = 0.0f;
-                c = 1.0f;
+                a = 0f;
+                b = 0f;
+                c = 1f;
                 d = -points[0].z;
                 return true;
             }
@@ -235,7 +235,7 @@ namespace System.NumericsX
 
             a = -sumXZ * m[0][0] - sumYZ * m[0][1];
             b = -sumXZ * m[1][0] - sumYZ * m[1][1];
-            c = 1.0f;
+            c = 1f;
             Normalize();
             d = -(a * average.x + b * average.y + c * average.z);
             return true;
@@ -267,7 +267,7 @@ namespace System.NumericsX
         public float Distance(Vector3 v)
             => a * v.x + b * v.y + c * v.z + d;
 
-        public PLANESIDE Side(Vector3 v, float epsilon = 0.0f)
+        public PLANESIDE Side(Vector3 v, float epsilon = 0f)
         {
             var dist = Distance(v);
             if (dist > epsilon) return PLANESIDE.FRONT;
@@ -282,21 +282,24 @@ namespace System.NumericsX
             d1 = Normal * start + d;
             d2 = Normal * end + d;
             if (d1 == d2) return false;
-            if (d1 > 0.0f && d2 > 0.0f) return false;
-            if (d1 < 0.0f && d2 < 0.0f) return false;
+            if (d1 > 0f && d2 > 0f) return false;
+            if (d1 < 0f && d2 < 0f) return false;
             fraction = d1 / (d1 - d2);
-            return fraction >= 0.0f && fraction <= 1.0f;
+            return fraction >= 0f && fraction <= 1f;
         }
 
         // intersection point is start + dir * scale
-        public bool RayIntersection(Vector3 start, Vector3 dir, float scale)
+        public bool RayIntersection(Vector3 start, Vector3 dir, out float scale)
         {
             float d1, d2;
 
             d1 = Normal * start + d;
             d2 = Normal * dir;
-            if (d2 == 0.0f)
+            if (d2 == 0f)
+            {
+                scale = 0;
                 return false;
+            }
             scale = -(d1 / d2);
             return true;
         }
@@ -313,7 +316,7 @@ namespace System.NumericsX
             if (MathX.Fabs(det) < 1e-6f)
                 return false;
 
-            invDet = 1.0f / det;
+            invDet = 1f / det;
             f0 = (n01 * plane.d - n11 * d) * invDet;
             f1 = (n01 * d - n00 * plane.d) * invDet;
 
@@ -339,6 +342,6 @@ namespace System.NumericsX
             return ToFloatPtr(_ => StringX.FloatArrayToString(_, dimension, precision));
         }
 
-        public static Plane origin = new(0.0f, 0.0f, 0.0f, 0.0f);
+        public static Plane origin = new(0f, 0f, 0f, 0f);
     }
 }
