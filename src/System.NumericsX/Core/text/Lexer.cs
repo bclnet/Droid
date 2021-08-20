@@ -315,17 +315,17 @@ namespace System.NumericsX.Core
             return true;
         }
         // free the script
-        //public void FreeSource() {
-        //    if (allocated)
-        //    {
-        //        Mem_Free((void*)buffer);
-        //        buffer = null;
-        //        allocated = false;
-        //    }
-        //    tokenavailable = false;
-        //    token = string.Empty;
-        //    loaded = false;
-        //}
+        public void FreeSource()
+        {
+            if (allocated)
+            {
+                buffer = null;
+                allocated = false;
+            }
+            tokenavailable = false;
+            token = string.Empty;
+            loaded = false;
+        }
 
         // returns true if a script is loaded
         public bool IsLoaded => loaded;

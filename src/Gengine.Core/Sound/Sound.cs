@@ -1,9 +1,7 @@
 using Gengine.Framework;
 using Gengine.Render;
-using System;
 using System.NumericsX;
 using System.NumericsX.Core;
-using SoundSample = System.Object;
 using ChannelType = System.Int32; // the game uses its own series of enums, and we don't want to require casts
 
 namespace Gengine.Sound
@@ -19,54 +17,7 @@ namespace Gengine.Sound
         public int soundClass;              // for global fading of sounds
     }
 
-    // it is somewhat tempting to make this a virtual class to hide the private details here, but that doesn't fit easily with the decl manager at the moment.
-    public class SoundShader : Decl
-    {
-        // options from sound shader text
-        SoundShaderParms parms;                       // can be overriden on a per-channel basis
-
-        bool onDemand;                  // only load when played, and free when finished
-        internal int speakerMask;
-        SoundShader altSound;
-        string desc;                     // description
-        bool errorDuringParse;
-        internal float leadinVolume;             // allows light breaking leadin sounds to be much louder than the broken loop
-
-        SoundSample[] leadins = new SoundSample[ISoundSystem.SOUND_MAX_LIST_WAVS];
-        int numLeadins;
-        internal SoundSample[] entries = new SoundSample[ISoundSystem.SOUND_MAX_LIST_WAVS];
-        int numEntries;
-
-        //SoundShader();
-
-        public override int Size => 0;
-        public override bool SetDefaultText() => throw new NotImplementedException();
-        public override string DefaultDefinition => throw new NotImplementedException();
-        public override bool Parse(string text, int textLength) => throw new NotImplementedException();
-        public override void FreeData() => throw new NotImplementedException();
-        public override void List() => throw new NotImplementedException();
-
-        public virtual string Description => throw new NotImplementedException();
-
-        // so the editor can draw correct default sound spheres this is currently defined as meters, which sucks, IMHO.
-        public virtual float MinDistance => throw new NotImplementedException();       // FIXME: replace this with a GetSoundShaderParms()
-        public virtual float MaxDistance => throw new NotImplementedException();
-
-        // returns NULL if an AltSound isn't defined in the shader.
-        // we use this for pairing a specific broken light sound with a normal light sound
-        public virtual SoundShader AltSound => throw new NotImplementedException();
-
-        public virtual bool HasDefaultSound => throw new NotImplementedException();
-
-        public virtual SoundShaderParms Parms => throw new NotImplementedException();
-        public virtual int NumSounds => throw new NotImplementedException();
-        public virtual string GetSound(int index) => throw new NotImplementedException();
-
-        public virtual bool CheckShakesAndOgg() => throw new NotImplementedException();
-
-        void Init() => throw new NotImplementedException();
-        bool ParseShader(Lexer src) => throw new NotImplementedException();
-    }
+    public interface ISoundShader { }
 
     public interface ISoundEmitter
     {
@@ -78,7 +29,7 @@ namespace Gengine.Sound
         void UpdateEmitter(Vector3 origin, int listenerId, SoundShaderParms parms);
 
         // returns the length of the started sound in msec
-        int StartSound(SoundShader shader, ChannelType channel, float diversity = 0, int shaderFlags = 0, bool allowSlow = true);
+        int StartSound(ISoundShader shader, ChannelType channel, float diversity = 0, int shaderFlags = 0, bool allowSlow = true);
 
         // pass SCHANNEL_ANY to effect all channels
         void ModifySound(ChannelType channel, SoundShaderParms parms);

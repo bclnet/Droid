@@ -1,5 +1,4 @@
-﻿using Droid.Core;
-using System;
+﻿using System;
 
 namespace Droid
 {

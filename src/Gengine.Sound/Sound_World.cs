@@ -1,5 +1,6 @@
 using Gengine.Framework;
 using Gengine.Render;
+using OpenTK.Audio.OpenAL;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,7 +10,6 @@ using System.NumericsX.Sys;
 using static Gengine.Lib;
 using static Gengine.Sound.Lib;
 using static System.NumericsX.Lib;
-using ChannelType = System.Int32; // the game uses its own series of enums, and we don't want to require casts
 
 namespace Gengine.Sound
 {
@@ -48,7 +48,7 @@ namespace Gengine.Sound
             var emitter = AllocLocalSoundEmitter();
 
             if (SoundSystemLocal.s_showStartSound.Integer != 0)
-                common.Printf("AllocSoundEmitter = {emitter.index}\n");
+                common.Printf($"AllocSoundEmitter = {emitter.index}\n");
             if (writeDemo != null)
             {
                 writeDemo.WriteInt((int)VFileDemo.DS.SOUND);
@@ -73,7 +73,7 @@ namespace Gengine.Sound
         // this is called from the main thread
         public virtual float CurrentShakeAmplitudeForPosition(int time, Vector3? listererPosition)
         {
-            float amp = 0f; int localTime;
+            var amp = 0f; int localTime;
 
             if (SoundSystemLocal.s_constantAmplitude.Float >= 0f)
                 return 0f;
@@ -312,7 +312,7 @@ namespace Gengine.Sound
 
             var diversity = PlayShaderDirectly_rnd.RandomFloat();
 
-            localSound.StartSound(shader, channel == -1 ? ISoundSystem.SCHANNEL_ONE : channel, diversity, SSF.GLOBAL);
+            localSound.StartSound(shader, channel == -1 ? ISoundSystem.SCHANNEL_ONE : channel, diversity, ISoundSystem.SSF_GLOBAL);
 
             // in case we are at the console without a game doing updates, force an update
             ForegroundUpdate(soundSystemLocal.Current44kHzTime);
@@ -334,7 +334,7 @@ namespace Gengine.Sound
         {
             if (pause44kHz < 0)
             {
-                common.Warning("idSoundWorldLocal::UnPause: not paused");
+                common.Warning("SoundWorldLocal::UnPause: not paused");
                 return;
             }
 
@@ -612,10 +612,10 @@ namespace Gengine.Sound
 
                     if (chan.decoder == null)
                         // The pointer in the save file is not valid, so we grab a new one
-                        chan.decoder = SampleDecoder.Alloc();
+                        chan.decoder = ISampleDecoder.Alloc();
 
                     savefile.ReadString(out soundShader);
-                    chan.soundShader = declManager.FindSound(soundShader);
+                    chan.soundShader = (SoundShader)declManager.FindSound(soundShader);
 
                     savefile.ReadString(out soundShader);
                     // load savegames with s_noSound 1
@@ -721,7 +721,7 @@ namespace Gengine.Sound
             saveGame.WriteFloat(parms.maxDistance);
             saveGame.WriteFloat(parms.volume);
             saveGame.WriteFloat(parms.shakes);
-            saveGame.WriteInt((int)parms.soundShaderFlags);
+            saveGame.WriteInt(parms.soundShaderFlags);
             saveGame.WriteInt(parms.soundClass);
         }
 
@@ -745,9 +745,9 @@ namespace Gengine.Sound
         public Vector3 listenerQU;          // position in "quake units"
         public int listenerArea;
         public string listenerAreaName;
-        public ALuint listenerEffect;
-        public ALuint listenerSlot;
-        public ALuint listenerFilter;
+        public int listenerEffect;
+        public int listenerSlot;
+        public int listenerFilter;
 
         public int gameMsec;
         public int game44kHz;
@@ -756,7 +756,7 @@ namespace Gengine.Sound
 
         public List<SoundEmitterLocal> emitters = new();
 
-        public SoundFade[] soundClassFade = new SoundFade[SoundSystemLocal.SOUND_MAX_CLASSES];  // for global sound fading
+        public SoundFade[] soundClassFade = new SoundFade[ISoundSystem.SOUND_MAX_CLASSES];  // for global sound fading
 
         // avi stuff
         public VFile[] fpa = new VFile[6];
@@ -822,11 +822,11 @@ namespace Gengine.Sound
             {
                 if (!soundSystemLocal.alIsAuxiliaryEffectSlot(listenerSlot))
                 {
-                    alGetError();
+                    AL.GetError();
 
                     soundSystemLocal.alGenAuxiliaryEffectSlots(1, &listenerSlot);
-                    ALuint e = alGetError();
-                    if (e != AL_NO_ERROR)
+                    var e = AL.GetError();
+                    if (e != ALError.NoError)
                     {
                         common.Warning($"SoundWorldLocal::Init: alGenAuxiliaryEffectSlots failed: 0x{e}");
                         listenerSlot = AL_EFFECTSLOT_NULL;
@@ -835,7 +835,7 @@ namespace Gengine.Sound
 
                 if (!soundSystemLocal.alIsFilter(listenerFilter))
                 {
-                    alGetError();
+                    AL.GetError();
 
                     soundSystemLocal.alGenFilters(1, listenerFilter);
                     ALuint e = alGetError();
@@ -1198,6 +1198,7 @@ namespace Gengine.Sound
                 // we tweak the spatialization bias when you are inside the minDistance
                 else if (mind > 0f) spatialize = dlen / mind;
             }
+            else spatializedOriginInMeters = Vector3.origin;
 
             // if it is a private sound, set the volume to zero unless we match the listenerId
             if ((parms.soundShaderFlags & ISoundSystem.SSF_PRIVATE_SOUND) != 0 && sound.listenerId != listenerPrivateId)
@@ -1218,68 +1219,66 @@ namespace Gengine.Sound
             // allocate and initialize hardware source
             if (sound.removeStatus < REMOVE_STATUS.SAMPLEFINISHED)
             {
-                if (!alIsSource(chan.openalSource))
+                if (!AL.IsSource(chan.openalSource))
                     chan.openalSource = soundSystemLocal.AllocOpenALSource(chan, !chan.leadinSample.hardwareBuffer || !chan.soundShader.entries[0].hardwareBuffer || looping, chan.leadinSample.objectInfo.nChannels == 2);
 
-                if (alIsSource(chan.openalSource))
+                if (AL.IsSource(chan.openalSource))
                 {
                     // stop source if needed..
                     if (chan.triggered)
-                        alSourceStop(chan.openalSource);
+                        AL.SourceStop(chan.openalSource);
 
                     // update source parameters
                     if (global || omni)
                     {
-                        alSourcei(chan.openalSource, AL_SOURCE_RELATIVE, AL_TRUE);
-                        alSource3f(chan.openalSource, AL_POSITION, 0f, 0f, 0f);
-                        alSourcef(chan.openalSource, AL_GAIN, volume < 1f ? volume : 1f);
+                        AL.Source(chan.openalSource, ALSourceb.SourceRelative, true);
+                        AL.Source(chan.openalSource, ALSource3f.Position, 0f, 0f, 0f);
+                        AL.Source(chan.openalSource, ALSourcef.Gain, volume < 1f ? volume : 1f);
                     }
                     else
                     {
-                        alSourcei(chan.openalSource, AL_SOURCE_RELATIVE, AL_FALSE);
-                        alSource3f(chan.openalSource, AL_POSITION, -spatializedOriginInMeters.y, spatializedOriginInMeters.z, -spatializedOriginInMeters.x);
-                        alSourcef(chan.openalSource, AL_GAIN, volume < 1f ? volume : 1f);
+                        AL.Source(chan.openalSource, ALSourceb.SourceRelative, false);
+                        AL.Source(chan.openalSource, ALSource3f.Position, -spatializedOriginInMeters.y, spatializedOriginInMeters.z, -spatializedOriginInMeters.x);
+                        AL.Source(chan.openalSource, ALSourcef.Gain, volume < 1f ? volume : 1f);
                     }
                     // DG: looping sounds with a leadin can't just use a HW buffer and openal's AL_LOOPING because we need to switch from leadin to the looped sound.. see https://github.com/dhewm/dhewm3/issues/291
-                    bool haveLeadin = chan.soundShader.numLeadins > 0;
-                    alSourcei(chan.openalSource, AL_LOOPING, (looping && chan.soundShader.entries[0].hardwareBuffer && !haveLeadin) ? AL_TRUE : AL_FALSE);
+                    var haveLeadin = chan.soundShader.numLeadins > 0;
+                    AL.Source(chan.openalSource, ALSourceb.Looping, looping && chan.soundShader.entries[0].hardwareBuffer && !haveLeadin);
 #if true
-                    alSourcef(chan.openalSource, AL_REFERENCE_DISTANCE, mind);
-                    alSourcef(chan.openalSource, AL_MAX_DISTANCE, maxd);
+                    AL.Source(chan.openalSource, ALSourcef.ReferenceDistance, mind);
+                    AL.Source(chan.openalSource, ALSourcef.MaxDistance, maxd);
 #endif
-                    alSourcef(chan.openalSource, AL_PITCH, (slowmoActive && !chan.disallowSlow) ? (slowmoSpeed) : (1f));
+                    AL.Source(chan.openalSource, ALSourcef.Pitch, slowmoActive && !chan.disallowSlow ? slowmoSpeed : 1f);
 
                     if (SoundSystemLocal.useEFXReverb)
                         if (enviroSuitActive)
                         {
-                            alSourcei(chan.openalSource, AL_DIRECT_FILTER, listenerFilter);
-                            alSource3i(chan.openalSource, AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, listenerFilter);
+                            AL.Source(chan.openalSource, ALSourcei.EfxDirectFilter, listenerFilter);
+                            AL.Source(chan.openalSource, ALSource3i.EfxAUXILIARYSENDFILTER, listenerSlot, 0, listenerFilter);
                         }
-                        else
-                        {
-                            alSource3i(chan.openalSource, AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, AL_FILTER_NULL);
-                        }
+                        else AL.Source(chan.openalSource, ALSource3i.EfxAUXILIARYSENDFILTER, listenerSlot, 0, AL_FILTER_NULL);
 
                     if ((!looping && chan.leadinSample.hardwareBuffer) || (looping && !haveLeadin && chan.soundShader.entries[0].hardwareBuffer))
                     {
                         // handle uncompressed (non streaming) single shot and looping sounds
                         // DG: ... that have no leadin (with leadin we still need to switch to another sound, just use streaming code for that) - see https://github.com/dhewm/dhewm3/issues/291
                         if (chan.triggered)
-                            alSourcei(chan.openalSource, AL_BUFFER, looping ? chan.soundShader.entries[0].openalBuffer : chan.leadinSample.openalBuffer);
+                            AL.Source(chan.openalSource, ALSourcei.Buffer, looping ? chan.soundShader.entries[0].openalBuffer : chan.leadinSample.openalBuffer);
                     }
                     else
                     {
-                        ALint finishedbuffers; ALuint buffers[3];
+                        int finishedbuffers;
+                        var buffers = new int[3];
 
                         // handle streaming sounds (decode on the fly) both single shot AND looping
                         if (chan.triggered)
                         {
-                            alSourcei(chan.openalSource, AL_BUFFER, 0);
-                            alDeleteBuffers(3, &chan.lastopenalStreamingBuffer[0]);
+                            AL.Source(chan.openalSource, ALSourcei.Buffer, 0);
+                            AL.DeleteBuffers(3, ref chan.lastopenalStreamingBuffer[0]);
                             chan.lastopenalStreamingBuffer[0] = chan.openalStreamingBuffer[0];
                             chan.lastopenalStreamingBuffer[1] = chan.openalStreamingBuffer[1];
                             chan.lastopenalStreamingBuffer[2] = chan.openalStreamingBuffer[2];
-                            alGenBuffers(3, &chan.openalStreamingBuffer[0]);
+                            AL.GenBuffers(3, ref chan.openalStreamingBuffer[0]);
                             buffers[0] = chan.openalStreamingBuffer[0];
                             buffers[1] = chan.openalStreamingBuffer[1];
                             buffers[2] = chan.openalStreamingBuffer[2];
@@ -1287,8 +1286,8 @@ namespace Gengine.Sound
                         }
                         else
                         {
-                            alGetSourcei(chan.openalSource, AL_BUFFERS_PROCESSED, &finishedbuffers);
-                            alSourceUnqueueBuffers(chan.openalSource, finishedbuffers, &buffers[0]);
+                            AL.GetSource(chan.openalSource, ALGetSourcei.BuffersProcessed, out finishedbuffers);
+                            AL.SourceUnqueueBuffers(chan.openalSource, finishedbuffers, ref buffers[0]);
                             if (finishedbuffers == 3)
                                 chan.triggered = true;
                         }
@@ -1300,20 +1299,20 @@ namespace Gengine.Sound
                             {
                                 if (alignedInputSamples[i] < -32768f) ((short*)alignedInputSamples)[i] = -32768;
                                 else if (alignedInputSamples[i] > 32767f) ((short*)alignedInputSamples)[i] = 32767;
-                                else ((short*)alignedInputSamples)[i] = idMath::FtoiFast(alignedInputSamples[i]);
+                                else ((short*)alignedInputSamples)[i] = MathX.FtoiFast(alignedInputSamples[i]);
                             }
-                            alBufferData(buffers[j], chan.leadinSample.objectInfo.nChannels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, alignedInputSamples, MIXBUFFER_SAMPLES * sample.objectInfo.nChannels * sizeof(short), 44100);
-                            chan.openalStreamingOffset += MIXBUFFER_SAMPLES;
+                            AL.BufferData(buffers[j], chan.leadinSample.objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels * sizeof(short), 44100);
+                            chan.openalStreamingOffset += SIMD.MIXBUFFER_SAMPLES;
                         }
 
-                        if (finishedbuffers)
-                            alSourceQueueBuffers(chan.openalSource, finishedbuffers, &buffers[0]);
+                        if (finishedbuffers != 0)
+                            AL.SourceQueueBuffers(chan.openalSource, finishedbuffers, ref buffers[0]);
                     }
 
                     // (re)start if needed..
                     if (chan.triggered)
                     {
-                        alSourcePlay(chan.openalSource);
+                        AL.SourcePlay(chan.openalSource);
                         chan.triggered = false;
                     }
                 }
@@ -1332,9 +1331,9 @@ namespace Gengine.Sound
 
                     if (sample.objectInfo.nChannels == 2)
                         // need to add a stereo path, but very few samples go through this
-                        memset(alignedInputSamples, 0, sizeof(alignedInputSamples[0]) * MIXBUFFER_SAMPLES * 2);
+                        memset(alignedInputSamples, 0, sizeof(alignedInputSamples[0]) * SIMD.MIXBUFFER_SAMPLES * 2);
                     else
-                        slow.GatherChannelSamples(offset, MIXBUFFER_SAMPLES, alignedInputSamples);
+                        slow.GatherChannelSamples(offset, SIMD.MIXBUFFER_SAMPLES, alignedInputSamples);
 
                     sound.SetSlowChannel(chan, slow);
                 }
@@ -1343,8 +1342,8 @@ namespace Gengine.Sound
                     sound.ResetSlowChannel(chan);
 
                     // if we are getting a stereo sample adjust accordingly
-                    if (sample.objectInfo.nChannels == 2) chan.GatherChannelSamples(offset * 2, MIXBUFFER_SAMPLES * 2, alignedInputSamples); // we should probably check to make sure any looping is also to a stereo sample...
-                    else chan.GatherChannelSamples(offset, MIXBUFFER_SAMPLES, alignedInputSamples);
+                    if (sample.objectInfo.nChannels == 2) chan.GatherChannelSamples(offset * 2, SIMD.MIXBUFFER_SAMPLES * 2, alignedInputSamples); // we should probably check to make sure any looping is also to a stereo sample...
+                    else chan.GatherChannelSamples(offset, SIMD.MIXBUFFER_SAMPLES, alignedInputSamples);
                 }
 
                 // work out the left / right ear values
@@ -1413,37 +1412,33 @@ namespace Gengine.Sound
             // if noclip flying outside the world, leave silence
             if (listenerArea == -1)
             {
-                alListenerf(AL_GAIN, 0f);
+                AL.Listener(ALListenerf.Gain, 0f);
                 return;
             }
 
             // update the listener position and orientation
-            ALfloat listenerPosition[3];
+            var listenerPosition0 = -listenerPos.y;
+            var listenerPosition1 = listenerPos.z;
+            var listenerPosition2 = -listenerPos.x;
 
-            listenerPosition[0] = -listenerPos.y;
-            listenerPosition[1] = listenerPos.z;
-            listenerPosition[2] = -listenerPos.x;
+            var listenerOrientation = new[]{
+                -listenerAxis[0].y,
+                listenerAxis[0].z,
+                -listenerAxis[0].x,
+                -listenerAxis[2].y,
+                listenerAxis[2].z,
+                -listenerAxis[2].x
+            };
 
-            ALfloat listenerOrientation[6];
-
-            listenerOrientation[0] = -listenerAxis[0].y;
-            listenerOrientation[1] = listenerAxis[0].z;
-            listenerOrientation[2] = -listenerAxis[0].x;
-
-            listenerOrientation[3] = -listenerAxis[2].y;
-            listenerOrientation[4] = listenerAxis[2].z;
-            listenerOrientation[5] = -listenerAxis[2].x;
-
-            alListenerf(AL_GAIN, 1f);
-            alListenerfv(AL_POSITION, listenerPosition);
-            alListenerfv(AL_ORIENTATION, listenerOrientation);
+            AL.Listener(ALListenerf.Gain, 1f);
+            AL.Listener(ALListener3f.Position, listenerPosition0, listenerPosition1, listenerPosition2);
+            AL.Listener(ALListenerfv.Orientation, listenerOrientation);
 
             if (SoundSystemLocal.useEFXReverb && soundSystemLocal.efxloaded)
             {
-                ALuint effect = 0;
                 var s = listenerArea.ToString();
 
-                var found = soundSystemLocal.EFXDatabase.FindEffect(s, out effect);
+                var found = soundSystemLocal.EFXDatabase.FindEffect(s, out var effect);
                 if (!found)
                 {
                     s = listenerAreaName;
@@ -1458,7 +1453,7 @@ namespace Gengine.Sound
                 // only update if change in settings
                 if (found && listenerEffect != effect)
                 {
-                    EFXprintf($"Switching to EFX '{s}' (#{effect:u})\n");
+                    EFXFile.EFXprintf($"Switching to EFX '{s}' (#{effect:u})\n");
                     listenerEffect = effect;
                     soundSystemLocal.alAuxiliaryEffectSloti(listenerSlot, AL_EFFECTSLOT_EFFECT, effect);
                 }
@@ -1705,7 +1700,7 @@ namespace Gengine.Sound
         // this is called from the main thread
         // if listenerPosition is NULL, this is being used for shader parameters, like flashing lights and glows based on sound level.Otherwise, it is being used for
         // the screen-shake on a player. This doesn't do the portal-occlusion currently, because it would have to reset all the defs which would be problematic in multiplayer
-        public float FindAmplitude(SoundEmitterLocal sound, int localTime, Vector3? listenerPosition, ChannelType channel, bool shakesOnly)
+        public unsafe float FindAmplitude(SoundEmitterLocal sound, int localTime, Vector3? listenerPosition, int channel, bool shakesOnly)
         {
             int i, j;
             SoundShaderParms parms;
@@ -1792,16 +1787,18 @@ namespace Gengine.Sound
                 {
                     var offset = localTime - localTriggerTimes;   // offset in samples
                     var size = looping ? chan.soundShader.entries[0].LengthIn44kHzSamples : chan.leadinSample.LengthIn44kHzSamples;
-                    var amplitudeData = (short[])(looping ? chan.soundShader.entries[0].amplitudeData : chan.leadinSample.amplitudeData);
-
+                    var amplitudeData = looping ? chan.soundShader.entries[0].amplitudeData : chan.leadinSample.amplitudeData;
                     if (amplitudeData != null)
                     {
-                        // when the amplitudeData is present use that fill a dummy sourceBuffer
-                        // this is to allow for amplitude based effect on hardware audio solutions
+                        // when the amplitudeData is present use that fill a dummy sourceBuffer this is to allow for amplitude based effect on hardware audio solutions
                         if (looping) offset %= size;
                         if (offset < size)
-                            for (j = 0; j < AMPLITUDE_SAMPLES; j++)
-                                sourceBuffer[j] = (j & 1) != 0 ? amplitudeData[(offset / 512) * 2] : amplitudeData[(offset / 512) * 2 + 1];
+                            fixed (byte* amplitudeDataB = amplitudeData)
+                            {
+                                var amplitudeDataS = (short*)amplitudeDataB;
+                                for (j = 0; j < AMPLITUDE_SAMPLES; j++)
+                                    sourceBuffer[j] = (j & 1) != 0 ? amplitudeDataS[offset / 512 * 2] : amplitudeDataS[offset / 512 * 2 + 1];
+                            }
                     }
                     // get actual sample data
                     else chan.GatherChannelSamples(offset, AMPLITUDE_SAMPLES, sourceBuffer);

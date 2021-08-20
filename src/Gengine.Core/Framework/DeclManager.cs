@@ -213,11 +213,11 @@ namespace Gengine.Framework
         // Convenience functions for specific types.
         Material FindMaterial(string name, bool makeDefault = true);
         DeclSkin FindSkin(string name, bool makeDefault = true);
-        SoundShader FindSound(string name, bool makeDefault = true);
+        ISoundShader FindSound(string name, bool makeDefault = true);
 
         Material MaterialByIndex(int index, bool forceParse = true);
         DeclSkin SkinByIndex(int index, bool forceParse = true);
-        SoundShader SoundByIndex(int index, bool forceParse = true);
+        ISoundShader SoundByIndex(int index, bool forceParse = true);
     }
 }
 

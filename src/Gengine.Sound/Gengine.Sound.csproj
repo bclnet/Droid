@@ -13,23 +13,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Sound_Decoder.cs" />
-    <Compile Remove="Sound_Efxfile.cs" />
     <Compile Remove="Sound_Emitter.cs" />
-    <Compile Remove="Sound_Shader.cs" />
     <Compile Remove="Sound_System.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Sound_Decoder.cs" />
-    <None Include="Sound_Efxfile.cs" />
     <None Include="Sound_Emitter.cs" />
-    <None Include="Sound_Shader.cs" />
     <None Include="Sound_System.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
+    <ProjectReference Include="..\System.NumericsX.OpenAL\System.NumericsX.OpenAL.csproj" />
   </ItemGroup>
 
   <ItemGroup>

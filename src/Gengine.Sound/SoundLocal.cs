@@ -3,10 +3,9 @@ using Gengine.Render;
 using System;
 using System.NumericsX;
 using System.NumericsX.Core;
-using SoundSample = System.Object;
-using ChannelType = System.Int32; // the game uses its own series of enums, and we don't want to require casts
+//using ChannelType = System.Int32; // the game uses its own series of enums, and we don't want to require casts
 using FourCC = System.Int32;
-using ALuint = System.UInt32;
+//using ALuint = System.UInt32;
 using System.Collections.Generic;
 
 namespace Gengine.Sound
@@ -184,7 +183,7 @@ namespace Gengine.Sound
 
         protected float param;
 
-        public SoundFX() { channel = 0; buffer = null; initialized = false; maxlen = 0; Array.Clear(continuitySamples, 0, 4); };
+        public SoundFX() { channel = 0; buffer = null; initialized = false; maxlen = 0; Array.Clear(continuitySamples, 0, 4); }
 
         public virtual void Initialize() { }
         public abstract void ProcessSample(float[] i, float[] o);
@@ -277,18 +276,18 @@ namespace Gengine.Sound
         public int triggerGame44kHzTime;   // game time sample time the channel started
         public SoundShaderParms parms;                   // combines the shader parms and the per-channel overrides
         public SoundSample leadinSample;            // if not looped, this is the only sample
-        public ChannelType triggerChannel;
+        public int triggerChannel;
         public SoundShader soundShader;
-        public SampleDecoder decoder;
+        public ISampleDecoder decoder;
         public float diversity;
         public float lastVolume;               // last calculated volume based on distance
         public float[] lastV = new float[6];             // last calculated volume for each speaker, so we can smoothly fade
         public SoundFade channelFade;
         public bool triggered;
-        public ALuint openalSource;
-        public ALuint openalStreamingOffset;
-        public ALuint[] openalStreamingBuffer = new ALuint[3];
-        public ALuint[] lastopenalStreamingBuffer = new ALuint[3];
+        public int openalSource;
+        public int openalStreamingOffset;
+        public int[] openalStreamingBuffer = new int[3];
+        public int[] lastopenalStreamingBuffer = new int[3];
         public bool stopped;
 
         public bool disallowSlow;
@@ -316,12 +315,12 @@ namespace Gengine.Sound
         public virtual void UpdateEmitter(Vector3 origin, int listenerId, SoundShaderParms parms);
 
         // returns the length of the started sound in msec
-        public virtual int StartSound(SoundShader shader, ChannelType channel, float diversity = 0, int shaderFlags = 0, bool allowSlow = true /* D3XP */ );
+        public virtual int StartSound(ISoundShader shader, int channel, float diversity = 0, int shaderFlags = 0, bool allowSlow = true /* D3XP */ );
 
         // can pass SCHANNEL_ANY
-        public virtual void ModifySound(ChannelType channel, SoundShaderParms parms);
-        public virtual void StopSound(ChannelType channel);
-        public virtual void FadeSound(ChannelType channel, float to, float over);
+        public virtual void ModifySound(int channel, SoundShaderParms parms);
+        public virtual void StopSound(int channel);
+        public virtual void FadeSound(int channel, float to, float over);
 
         public virtual bool CurrentlyPlaying();
 
@@ -359,9 +358,9 @@ namespace Gengine.Sound
                                                // is not an open-portal path, distance will be > maxDistance
 
         // a single soundEmitter can have many channels playing from the same point
-        public SoundChannel[] channels[SOUND_MAX_CHANNELS];
+        public SoundChannel[] channels = new SoundChannel[SoundSystemLocal.SOUND_MAX_CHANNELS];
 
-        public SlowChannel[] slowChannels[SOUND_MAX_CHANNELS];
+        public SlowChannel[] slowChannels = new SlowChannel[SoundSystemLocal.SOUND_MAX_CHANNELS];
 
         public SlowChannel GetSlowChannel(SoundChannel chan);
         public void SetSlowChannel(SoundChannel chan, SlowChannel slow);
@@ -505,7 +504,7 @@ namespace Gengine.Sound
 
     public struct OpenalSource
     {
-        public ALuint handle;
+        public int handle;
         public int startTime;
         public SoundChannel chan;
         public bool inUse;
@@ -575,8 +574,8 @@ namespace Gengine.Sound
 
         public void DoEnviroSuit(float[] samples, int numSamples, int numSpeakers);
 
-        public ALuint AllocOpenALSource(SoundChannel chan, bool looping, bool stereo);
-        public void FreeOpenALSource(ALuint handle);
+        public int AllocOpenALSource(SoundChannel chan, bool looping, bool stereo);
+        public void FreeOpenALSource(int handle);
 
         // returns true if openalDevice is still available, otherwise it will try to recover the device and return false while it's gone
         // (display audio sound devices sometimes disappear for a few seconds when switching resolution)
@@ -729,20 +728,20 @@ namespace Gengine.Sound
 
     #region Sound sample decoder.
 
-    public interface SampleDecoder
-    {
-        public static void Init();
-        public static void Shutdown();
-        public static SampleDecoder Alloc();
-        public static void Free(SampleDecoder decoder);
-        public static int GetNumUsedBlocks();
-        public static int GetUsedBlockMemory();
+    //public interface ISampleDecoder
+    //{
+    //    public static void Init();
+    //    public static void Shutdown();
+    //    public static ISampleDecoder Alloc();
+    //    public static void Free(ISampleDecoder decoder);
+    //    public static int GetNumUsedBlocks();
+    //    public static int GetUsedBlockMemory();
 
-        void Decode(SoundSample sample, int sampleOffset44k, int sampleCount44k, float[] dest);
-        void ClearDecoder();
-        SoundSample Sample { get; }
-        int LastDecodeTime { get; }
-    }
+    //    void Decode(SoundSample sample, int sampleOffset44k, int sampleCount44k, float[] dest);
+    //    void ClearDecoder();
+    //    SoundSample Sample { get; }
+    //    int LastDecodeTime { get; }
+    //}
 
     #endregion
 
@@ -752,22 +751,13 @@ namespace Gengine.Sound
     //{
     //    bool insideLevelLoad;
     //    List<SoundSample> listCache = new();
-
     //    public SoundCache();
-
     //    public SoundSample FindSound(string fname, bool loadOnDemandOnly);
-
-    //    public int NumObjects
-    //        => listCache.Count;
-
+    //    public int NumObjects => listCache.Count;
     //    public SoundSample GetObject(int index);
-
     //    public void ReloadSounds(bool force);
-
     //    public void BeginLevelLoad();
-
     //    public void EndLevelLoad();
-
     //    public void PrintMemInfo(MemInfo mi);
     //}
 

@@ -1,19 +1,11 @@
-using Gengine.Framework;
-using Gengine.Render;
 using System;
-using System.NumericsX;
-using System.NumericsX.Core;
-using SoundSample = System.Object;
-using ChannelType = System.Int32; // the game uses its own series of enums, and we don't want to require casts
-using FourCC = System.Int32;
-using ALuint = System.UInt32;
-using System.Collections.Generic;
-using static System.NumericsX.Lib;
 using System.Diagnostics;
+using System.NumericsX.Core;
+using static System.NumericsX.Lib;
 
 namespace Gengine.Sound
 {
-    public class WaveFile
+    public partial class WaveFile
     {
         WaveformatExtensible mpwfx;        // Pointer to waveformatex structure
         VFile mhmmio;         // I/O handle for the WAVE

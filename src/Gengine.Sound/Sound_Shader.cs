@@ -1,509 +1,308 @@
-/*
-===========================================================================
+using Gengine.Framework;
+using System;
+using System.IO;
+using System.NumericsX;
+using System.NumericsX.Core;
+using static Gengine.Lib;
+using static Gengine.Sound.Lib;
+using static System.NumericsX.Lib;
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+namespace Gengine.Sound
+{
+    // it is somewhat tempting to make this a virtual class to hide the private details here, but that doesn't fit easily with the decl manager at the moment.
+    public class SoundShader : Decl, ISoundShader
+    {
+        // options from sound shader text
+        SoundShaderParms parms;                       // can be overriden on a per-channel basis
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+        bool onDemand;                  // only load when played, and free when finished
+        internal int speakerMask;
+        SoundShader altSound;
+        string desc;                     // description
+        bool errorDuringParse;
+        internal float leadinVolume;             // allows light breaking leadin sounds to be much louder than the broken loop
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+        SoundSample[] leadins = new SoundSample[ISoundSystem.SOUND_MAX_LIST_WAVS];
+        internal int numLeadins;
+        internal SoundSample[] entries = new SoundSample[ISoundSystem.SOUND_MAX_LIST_WAVS];
+        int numEntries;
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+        public SoundShader()
+            => Init();
 
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+        public override int Size => 0;
 
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+        public override bool SetDefaultText()
+        {
+            var wavname = Name;
+            if (Path.GetExtension(wavname).Length == 0) wavname = $"{wavname}.wav"; // if the name has .ogg in it, that will stay
 
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+            // if there exists a wav file with the same name //if (fileSystem.ReadFile(wavname, null) == -1) return false;
+            SetText($"sound {Name} // IMPLICITLY GENERATED\n{{\n{wavname}\n}}\n");
+            return true;
+        }
 
-===========================================================================
-*/
+        public override string DefaultDefinition =>
+@"{
+    _default.wav
+}";
 
-#include "sys/platform.h"
-#include "framework/FileSystem.h"
+        public override bool Parse(string text, int textLength)
+        {
+            Lexer src = new();
+            src.LoadMemory(text, textLength, FileName, LineNum);
+            src.Flags = DeclBase.DECL_LEXER_FLAGS;
+            src.SkipUntilString("{");
+            // deeper functions can set this, which will cause MakeDefault() to be called at the end
+            errorDuringParse = false;
+            if (!ParseShader(src) || errorDuringParse) { MakeDefault(); return false; }
+            return true;
+        }
 
-#include "sound/snd_local.h"
+        public override void FreeData()
+        {
+            numEntries = 0;
+            numLeadins = 0;
+        }
 
-/*
-===============
-idSoundShader::Init
-===============
-*/
-void idSoundShader::Init( void ) {
-	desc = "<no description>";
-	errorDuringParse = false;
-	onDemand = false;
-	numEntries = 0;
-	numLeadins = 0;
-	leadinVolume = 0;
-	altSound = NULL;
-}
+        public override void List()
+        {
+            common.Printf($"{Index:4}: {Name}\n");
+            if (!string.Equals(Description, "<no description>", StringComparison.OrdinalIgnoreCase))
+                common.Printf($"      description: {Description}\n");
+            for (var k = 0; k < numLeadins; k++)
+            {
+                var objectp = leadins[k];
+                if (objectp != null)
+                    common.Printf($"      {soundSystemLocal.SamplesToMilliseconds(objectp.LengthIn44kHzSamples):5}ms {objectp.objectMemSize / 1024:4}Kb {objectp.name} (LEADIN)\n");
+            }
+            for (var k = 0; k < numEntries; k++)
+            {
+                var objectp = entries[k];
+                if (objectp != null)
+                    common.Printf($"      {soundSystemLocal.SamplesToMilliseconds(objectp.LengthIn44kHzSamples):5}ms {objectp.objectMemSize / 1024:4}Kb {objectp.name}\n");
+            }
+        }
 
-/*
-===============
-idSoundShader::idSoundShader
-===============
-*/
-idSoundShader::idSoundShader( void ) {
-	Init();
-}
+        public virtual string Description => desc;
+        // so the editor can draw correct default sound spheres this is currently defined as meters, which sucks, IMHO.
+        public virtual float MinDistance => parms.minDistance;       // FIXME: replace this with a GetSoundShaderParms()
+        public virtual float MaxDistance => parms.maxDistance;
+        // returns null if an AltSound isn't defined in the shader.
+        // we use this for pairing a specific broken light sound with a normal light sound
+        public virtual SoundShader AltSound => altSound;
 
-/*
-===============
-idSoundShader::~idSoundShader
-===============
-*/
-idSoundShader::~idSoundShader( void ) {
-}
+        public virtual bool HasDefaultSound
+        {
+            get
+            {
+                for (var i = 0; i < numEntries; i++)
+                    if (entries[i] != null && entries[i].defaultSound)
+                        return true;
+                return false;
+            }
+        }
 
-/*
-=================
-idSoundShader::Size
-=================
-*/
-size_t idSoundShader::Size( void ) const {
-	return sizeof( idSoundShader );
-}
+        public virtual SoundShaderParms Parms => parms;
+        public virtual int NumSounds => numLeadins + numEntries;
+        public virtual string GetSound(int index)
+        {
+            if (index >= 0)
+            {
+                if (index < numLeadins)
+                    return leadins[index].name;
+                index -= numLeadins;
+                if (index < numEntries)
+                    return entries[index].name;
+            }
+            return "";
+        }
 
-/*
-===============
-idSoundShader::idSoundShader::FreeData
-===============
-*/
-void idSoundShader::FreeData() {
-	numEntries = 0;
-	numLeadins = 0;
-}
+        public virtual bool CheckShakesAndOgg()
+        {
+            int i; var ret = false;
 
-/*
-===================
-idSoundShader::SetDefaultText
-===================
-*/
-bool idSoundShader::SetDefaultText( void ) {
-	idStr wavname;
+            for (i = 0; i < numLeadins; i++)
+                if (leadins[i].objectInfo.wFormatTag == (short)WAVE_FORMAT_TAG.OGG)
+                {
+                    common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{leadins[i].name}'");
+                    ret = true;
+                }
+            for (i = 0; i < numEntries; i++)
+                if (entries[i].objectInfo.wFormatTag == (short)WAVE_FORMAT_TAG.OGG)
+                {
+                    common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{entries[i].name}'");
+                    ret = true;
+                }
+            return ret;
+        }
 
-	wavname = GetName();
-	wavname.DefaultFileExtension( ".wav" );		// if the name has .ogg in it, that will stay
+        void Init()
+        {
+            desc = "<no description>";
+            errorDuringParse = false;
+            onDemand = false;
+            numEntries = 0;
+            numLeadins = 0;
+            leadinVolume = 0;
+            altSound = null;
+        }
 
-	// if there exists a wav file with the same name
-	if ( 1 ) { //fileSystem->ReadFile( wavname, NULL ) != -1 ) {
-		char generated[2048];
-		idStr::snPrintf( generated, sizeof( generated ),
-						"sound %s // IMPLICITLY GENERATED\n"
-						"{\n"
-						"%s\n"
-						"}\n", GetName(), wavname.c_str() );
-		SetText( generated );
-		return true;
-	} else {
-		return false;
-	}
-}
+        bool ParseShader(Lexer src)
+        {
+            int i;
 
-/*
-===================
-DefaultDefinition
-===================
-*/
-const char *idSoundShader::DefaultDefinition() const {
-	return
-		"{\n"
-	"\t"	"_default.wav\n"
-		"}";
-}
+            parms.minDistance = 1;
+            parms.maxDistance = 10;
+            parms.volume = 1;
+            parms.shakes = 0;
+            parms.soundShaderFlags = 0;
+            parms.soundClass = 0;
 
-/*
-===============
-idSoundShader::Parse
+            speakerMask = 0;
+            altSound = null;
 
-  this is called by the declManager
-===============
-*/
-bool idSoundShader::Parse( const char *text, const int textLength ) {
-	idLexer	src;
+            for (i = 0; i < ISoundSystem.SOUND_MAX_LIST_WAVS; i++)
+            {
+                leadins[i] = null;
+                entries[i] = null;
+            }
+            numEntries = 0;
+            numLeadins = 0;
 
-	src.LoadMemory( text, textLength, GetFileName(), GetLineNum() );
-	src.SetFlags( DECL_LEXER_FLAGS );
-	src.SkipUntilString( "{" );
+            var maxSamples = SoundSystemLocal.s_maxSoundsPerShader.Integer;
+            if (C.com_makingBuild.Bool || maxSamples <= 0 || maxSamples > ISoundSystem.SOUND_MAX_LIST_WAVS)
+                maxSamples = ISoundSystem.SOUND_MAX_LIST_WAVS;
 
-	// deeper functions can set this, which will cause MakeDefault() to be called at the end
-	errorDuringParse = false;
+            string tokenS;
+            while (true)
+            {
+                if (!src.ExpectAnyToken(out var token)) return false;
+                // end of definition
+                else if (token == "}") break;
+                // minimum number of sounds
+                else if (string.Equals(token, "minSamples", StringComparison.OrdinalIgnoreCase)) maxSamples = MathX.ClampInt(src.ParseInt(), ISoundSystem.SOUND_MAX_LIST_WAVS, maxSamples);
+                // description
+                else if (string.Equals(token, "description", StringComparison.OrdinalIgnoreCase)) { src.ReadTokenOnLine(out token); desc = token; }
+                // mindistance
+                else if (string.Equals(token, "mindistance", StringComparison.OrdinalIgnoreCase)) parms.minDistance = src.ParseFloat();
+                // maxdistance
+                else if (string.Equals(token, "maxdistance", StringComparison.OrdinalIgnoreCase)) parms.maxDistance = src.ParseFloat();
+                // shakes screen
+                else if (string.Equals(token, "shakes", StringComparison.OrdinalIgnoreCase))
+                {
+                    src.ExpectAnyToken(out token);
+                    if (token.type == TT.NUMBER) parms.shakes = token.FloatValue;
+                    else { src.UnreadToken(token); parms.shakes = 1f; }
+                }
+                // reverb
+                else if (string.Equals(token, "reverb"))
+                {
+                    src.ParseFloat();
+                    if (!src.ExpectTokenString(",")) { src.FreeSource(); return false; }
+                    src.ParseFloat();
+                    // no longer supported
+                }
+                // volume
+                else if (string.Equals(token, "volume", StringComparison.OrdinalIgnoreCase)) parms.volume = src.ParseFloat();
+                // leadinVolume is used to allow light breaking leadin sounds to be much louder than the broken loop
+                else if (string.Equals(token, "leadinVolume", StringComparison.OrdinalIgnoreCase)) leadinVolume = src.ParseFloat();
+                // speaker mask
+                else if (string.Equals(token, "mask_center", StringComparison.OrdinalIgnoreCase)) speakerMask |= 1 << (int)SPEAKER.CENTER;
+                // speaker mask
+                else if (string.Equals(token, "mask_left", StringComparison.OrdinalIgnoreCase)) speakerMask |= 1 << (int)SPEAKER.LEFT;
+                // speaker mask
+                else if (string.Equals(token, "mask_right", StringComparison.OrdinalIgnoreCase)) speakerMask |= 1 << (int)SPEAKER.RIGHT;
+                // speaker mask
+                else if (string.Equals(token, "mask_backright", StringComparison.OrdinalIgnoreCase)) speakerMask |= 1 << (int)SPEAKER.BACKRIGHT;
+                // speaker mask
+                else if (string.Equals(token, "mask_backleft", StringComparison.OrdinalIgnoreCase)) speakerMask |= 1 << (int)SPEAKER.BACKLEFT;
+                // speaker mask
+                else if (string.Equals(token, "mask_lfe", StringComparison.OrdinalIgnoreCase)) speakerMask |= 1 << (int)SPEAKER.LFE;
+                // soundClass
+                else if (string.Equals(token, "soundClass", StringComparison.OrdinalIgnoreCase))
+                {
+                    parms.soundClass = src.ParseInt();
+                    if (parms.soundClass < 0 || parms.soundClass >= ISoundSystem.SOUND_MAX_CLASSES) { src.Warning("SoundClass out of range"); return false; }
+                }
+                // altSound
+                else if (string.Equals(token, "altSound", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!src.ExpectAnyToken(out token)) return false;
+                    altSound = (SoundShader)declManager.FindSound(token);
+                }
+                // ordered
+                else if (string.Equals(token, "ordered", StringComparison.OrdinalIgnoreCase)) { } // no longer supported
+                // no_dups
+                else if (string.Equals(token, "no_dups", StringComparison.OrdinalIgnoreCase))
+                    parms.soundShaderFlags |= ISoundSystem.SSF_NO_DUPS;
+                // no_flicker
+                else if (string.Equals(token, "no_flicker", StringComparison.OrdinalIgnoreCase))
+                    parms.soundShaderFlags |= ISoundSystem.SSF_NO_FLICKER;
+                // plain
+                else if (string.Equals(token, "plain", StringComparison.OrdinalIgnoreCase)) { } // no longer supported
+                // looping
+                else if (string.Equals(token, "looping", StringComparison.OrdinalIgnoreCase)) parms.soundShaderFlags |= ISoundSystem.SSF_LOOPING;
+                // no occlusion
+                else if (string.Equals(token, "no_occlusion", StringComparison.OrdinalIgnoreCase)) parms.soundShaderFlags |= ISoundSystem.SSF_NO_OCCLUSION;
+                // private
+                else if (string.Equals(token, "private", StringComparison.OrdinalIgnoreCase)) parms.soundShaderFlags |= ISoundSystem.SSF_PRIVATE_SOUND;
+                // antiPrivate
+                else if (string.Equals(token, "antiPrivate", StringComparison.OrdinalIgnoreCase)) parms.soundShaderFlags |= ISoundSystem.SSF_ANTI_PRIVATE_SOUND;
+                // once
+                else if (string.Equals(token, "playonce", StringComparison.OrdinalIgnoreCase)) parms.soundShaderFlags |= ISoundSystem.SSF_PLAY_ONCE;
+                // global
+                else if (string.Equals(token, "global", StringComparison.OrdinalIgnoreCase)) parms.soundShaderFlags |= ISoundSystem.SSF_GLOBAL;
+                // unclamped
+                else if (string.Equals(token, "unclamped", StringComparison.OrdinalIgnoreCase)) parms.soundShaderFlags |= ISoundSystem.SSF_UNCLAMPED;
+                // omnidirectional
+                else if (string.Equals(token, "omnidirectional", StringComparison.OrdinalIgnoreCase)) parms.soundShaderFlags |= ISoundSystem.SSF_OMNIDIRECTIONAL;
+                // onDemand can't be a parms, because we must track all references and overrides would confuse it
+                else if (string.Equals(token, "onDemand", StringComparison.OrdinalIgnoreCase)) { /*onDemand = true;*/ } // no longer loading sounds on demand
+                // the wave files
+                else if (string.Equals(token, "leadin", StringComparison.OrdinalIgnoreCase))
+                {
+                    // add to the leadin list
+                    if (!src.ReadToken(out token)) { src.Warning("Expected sound after leadin"); return false; }
+                    if (soundSystemLocal.soundCache != null && numLeadins < maxSamples)
+                    {
+                        leadins[numLeadins] = soundSystemLocal.soundCache.FindSound(token, onDemand);
+                        numLeadins++;
+                    }
+                }
+                else if ((tokenS = token).Length != 0 && (tokenS.IndexOf(".wav", StringComparison.OrdinalIgnoreCase) != -1 || tokenS.IndexOf(".ogg", StringComparison.OrdinalIgnoreCase) != -1))
+                {
+                    // add to the wav list
+                    if (soundSystemLocal.soundCache != null && numEntries < maxSamples)
+                    {
+                        var tokenS2 = tokenS.Replace('\\', '/');
+                        var lang = cvarSystem.GetCVarString("sys_lang");
+                        if (!string.Equals(lang, "english", StringComparison.OrdinalIgnoreCase) && tokenS2.IndexOf("sound/vo/", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            var work = tokenS2.ToLowerInvariant();
+                            work.StripLeading("sound/vo/");
+                            work = $"sound/vo/{lang}/{work}";
+                            if (fileSystem.ReadFile(work) > 0) token = work;
+                            else
+                            {
+                                // also try to find it with the .ogg extension
+                                work.SetFileExtension(".ogg");
+                                if (fileSystem.ReadFile(work) > 0)
+                                    token = work;
+                            }
+                        }
+                        entries[numEntries] = soundSystemLocal.soundCache.FindSound(token, onDemand);
+                        numEntries++;
+                    }
+                }
+                else { src.Warning($"unknown token '{token}'"); return false; }
+            }
 
-	if ( !ParseShader( src ) || errorDuringParse ) {
-		MakeDefault();
-		return false;
-	}
-	return true;
-}
+            if (parms.shakes > 0f)
+                CheckShakesAndOgg();
 
-/*
-===============
-idSoundShader::ParseShader
-===============
-*/
-bool idSoundShader::ParseShader( idLexer &src ) {
-	int			i;
-	idToken		token;
+            return true;
+        }
 
-	parms.minDistance = 1;
-	parms.maxDistance = 10;
-	parms.volume = 1;
-	parms.shakes = 0;
-	parms.soundShaderFlags = 0;
-	parms.soundClass = 0;
-
-	speakerMask = 0;
-	altSound = NULL;
-
-	for( i = 0; i < SOUND_MAX_LIST_WAVS; i++ ) {
-		leadins[i] = NULL;
-		entries[i] = NULL;
-	}
-	numEntries = 0;
-	numLeadins = 0;
-
-	int	maxSamples = idSoundSystemLocal::s_maxSoundsPerShader.GetInteger();
-	if ( com_makingBuild.GetBool() || maxSamples <= 0 || maxSamples > SOUND_MAX_LIST_WAVS ) {
-		maxSamples = SOUND_MAX_LIST_WAVS;
-	}
-
-	while ( 1 ) {
-		if ( !src.ExpectAnyToken( &token ) ) {
-			return false;
-		}
-		// end of definition
-		else if ( token == "}" ) {
-			break;
-		}
-		// minimum number of sounds
-		else if ( !token.Icmp( "minSamples" ) ) {
-			maxSamples = idMath::ClampInt( src.ParseInt(), SOUND_MAX_LIST_WAVS, maxSamples );
-		}
-		// description
-		else if ( !token.Icmp( "description" ) ) {
-			src.ReadTokenOnLine( &token );
-			desc = token.c_str();
-		}
-		// mindistance
-		else if ( !token.Icmp( "mindistance" ) ) {
-			parms.minDistance = src.ParseFloat();
-		}
-		// maxdistance
-		else if ( !token.Icmp( "maxdistance" ) ) {
-			parms.maxDistance = src.ParseFloat();
-		}
-		// shakes screen
-		else if ( !token.Icmp( "shakes" ) ) {
-			src.ExpectAnyToken( &token );
-			if ( token.type == TT_NUMBER ) {
-				parms.shakes = token.GetFloatValue();
-			} else {
-				src.UnreadToken( &token );
-				parms.shakes = 1.0f;
-			}
-		}
-		// reverb
-		else if ( !token.Icmp( "reverb" ) ) {
-			src.ParseFloat();
-			if ( !src.ExpectTokenString( "," ) ) {
-				src.FreeSource();
-				return false;
-			}
-			src.ParseFloat();
-			// no longer supported
-		}
-		// volume
-		else if ( !token.Icmp( "volume" ) ) {
-			parms.volume = src.ParseFloat();
-		}
-		// leadinVolume is used to allow light breaking leadin sounds to be much louder than the broken loop
-		else if ( !token.Icmp( "leadinVolume" ) ) {
-			leadinVolume = src.ParseFloat();
-		}
-		// speaker mask
-		else if ( !token.Icmp( "mask_center" ) ) {
-			speakerMask |= 1<<SPEAKER_CENTER;
-		}
-		// speaker mask
-		else if ( !token.Icmp( "mask_left" ) ) {
-			speakerMask |= 1<<SPEAKER_LEFT;
-		}
-		// speaker mask
-		else if ( !token.Icmp( "mask_right" ) ) {
-			speakerMask |= 1<<SPEAKER_RIGHT;
-		}
-		// speaker mask
-		else if ( !token.Icmp( "mask_backright" ) ) {
-			speakerMask |= 1<<SPEAKER_BACKRIGHT;
-		}
-		// speaker mask
-		else if ( !token.Icmp( "mask_backleft" ) ) {
-			speakerMask |= 1<<SPEAKER_BACKLEFT;
-		}
-		// speaker mask
-		else if ( !token.Icmp( "mask_lfe" ) ) {
-			speakerMask |= 1<<SPEAKER_LFE;
-		}
-		// soundClass
-		else if ( !token.Icmp( "soundClass" ) ) {
-			parms.soundClass = src.ParseInt();
-			if ( parms.soundClass < 0 || parms.soundClass >= SOUND_MAX_CLASSES ) {
-				src.Warning( "SoundClass out of range" );
-				return false;
-			}
-		}
-		// altSound
-		else if ( !token.Icmp( "altSound" ) ) {
-			if ( !src.ExpectAnyToken( &token ) ) {
-				return false;
-			}
-			altSound = declManager->FindSound( token.c_str() );
-		}
-		// ordered
-		else if ( !token.Icmp( "ordered" ) ) {
-			// no longer supported
-		}
-		// no_dups
-		else if ( !token.Icmp( "no_dups" ) ) {
-			parms.soundShaderFlags |= SSF_NO_DUPS;
-		}
-		// no_flicker
-		else if ( !token.Icmp( "no_flicker" ) ) {
-			parms.soundShaderFlags |= SSF_NO_FLICKER;
-		}
-		// plain
-		else if ( !token.Icmp( "plain" ) ) {
-			// no longer supported
-		}
-		// looping
-		else if ( !token.Icmp( "looping" ) ) {
-			parms.soundShaderFlags |= SSF_LOOPING;
-		}
-		// no occlusion
-		else if ( !token.Icmp( "no_occlusion" ) ) {
-			parms.soundShaderFlags |= SSF_NO_OCCLUSION;
-		}
-		// private
-		else if ( !token.Icmp( "private" ) ) {
-			parms.soundShaderFlags |= SSF_PRIVATE_SOUND;
-		}
-		// antiPrivate
-		else if ( !token.Icmp( "antiPrivate" ) ) {
-			parms.soundShaderFlags |= SSF_ANTI_PRIVATE_SOUND;
-		}
-		// once
-		else if ( !token.Icmp( "playonce" ) ) {
-			parms.soundShaderFlags |= SSF_PLAY_ONCE;
-		}
-		// global
-		else if ( !token.Icmp( "global" ) ) {
-			parms.soundShaderFlags |= SSF_GLOBAL;
-		}
-		// unclamped
-		else if ( !token.Icmp( "unclamped" ) ) {
-			parms.soundShaderFlags |= SSF_UNCLAMPED;
-		}
-		// omnidirectional
-		else if ( !token.Icmp( "omnidirectional" ) ) {
-			parms.soundShaderFlags |= SSF_OMNIDIRECTIONAL;
-		}
-		// onDemand can't be a parms, because we must track all references and overrides would confuse it
-		else if ( !token.Icmp( "onDemand" ) ) {
-			// no longer loading sounds on demand
-			//onDemand = true;
-		}
-
-		// the wave files
-		else if ( !token.Icmp( "leadin" ) ) {
-			// add to the leadin list
-			if ( !src.ReadToken( &token ) ) {
-				src.Warning( "Expected sound after leadin" );
-				return false;
-			}
-			if ( soundSystemLocal.soundCache && numLeadins < maxSamples ) {
-				leadins[ numLeadins ] = soundSystemLocal.soundCache->FindSound( token.c_str(), onDemand );
-				numLeadins++;
-			}
-		} else if ( token.Find( ".wav", false ) != -1 || token.Find( ".ogg", false ) != -1 ) {
-			// add to the wav list
-			if ( soundSystemLocal.soundCache && numEntries < maxSamples ) {
-				token.BackSlashesToSlashes();
-				idStr lang = cvarSystem->GetCVarString( "sys_lang" );
-				if ( lang.Icmp( "english" ) != 0 && token.Find( "sound/vo/", false ) >= 0 ) {
-					idStr work = token;
-					work.ToLower();
-					work.StripLeading( "sound/vo/" );
-					work = va( "sound/vo/%s/%s", lang.c_str(), work.c_str() );
-					if ( fileSystem->ReadFile( work, NULL, NULL ) > 0 ) {
-						token = work;
-					} else {
-						// also try to find it with the .ogg extension
-						work.SetFileExtension( ".ogg" );
-						if ( fileSystem->ReadFile( work, NULL, NULL ) > 0 ) {
-							token = work;
-						}
-					}
-				}
-				entries[ numEntries ] = soundSystemLocal.soundCache->FindSound( token.c_str(), onDemand );
-				numEntries++;
-			}
-		} else {
-			src.Warning( "unknown token '%s'", token.c_str() );
-			return false;
-		}
-	}
-
-	if ( parms.shakes > 0.0f ) {
-		CheckShakesAndOgg();
-	}
-
-	return true;
-}
-
-/*
-===============
-idSoundShader::CheckShakesAndOgg
-===============
-*/
-bool idSoundShader::CheckShakesAndOgg( void ) const {
-	int i;
-	bool ret = false;
-
-	for ( i = 0; i < numLeadins; i++ ) {
-		if ( leadins[ i ]->objectInfo.wFormatTag == WAVE_FORMAT_TAG_OGG ) {
-			common->Warning( "sound shader '%s' has shakes and uses OGG file '%s'",
-								GetName(), leadins[ i ]->name.c_str() );
-			ret = true;
-		}
-	}
-	for ( i = 0; i < numEntries; i++ ) {
-		if ( entries[ i ]->objectInfo.wFormatTag == WAVE_FORMAT_TAG_OGG ) {
-			common->Warning( "sound shader '%s' has shakes and uses OGG file '%s'",
-								GetName(), entries[ i ]->name.c_str() );
-			ret = true;
-		}
-	}
-	return ret;
-}
-
-/*
-===============
-idSoundShader::List
-===============
-*/
-void idSoundShader::List() const {
-	idStrList	shaders;
-
-	common->Printf( "%4i: %s\n", Index(), GetName() );
-	if ( idStr::Icmp( GetDescription(), "<no description>" ) != 0 ) {
-		common->Printf( "      description: %s\n", GetDescription() );
-	}
-	for( int k = 0; k < numLeadins ; k++ ) {
-		const idSoundSample *objectp = leadins[k];
-		if ( objectp ) {
-			common->Printf( "      %5dms %4dKb %s (LEADIN)\n", soundSystemLocal.SamplesToMilliseconds(objectp->LengthIn44kHzSamples()), (objectp->objectMemSize/1024)
-				,objectp->name.c_str() );
-		}
-	}
-	for( int k = 0; k < numEntries; k++ ) {
-		const idSoundSample *objectp = entries[k];
-		if ( objectp ) {
-			common->Printf( "      %5dms %4dKb %s\n", soundSystemLocal.SamplesToMilliseconds(objectp->LengthIn44kHzSamples()), (objectp->objectMemSize/1024)
-				,objectp->name.c_str() );
-		}
-	}
-}
-
-/*
-===============
-idSoundShader::GetAltSound
-===============
-*/
-const idSoundShader *idSoundShader::GetAltSound( void ) const {
-	return altSound;
-}
-
-/*
-===============
-idSoundShader::GetMinDistance
-===============
-*/
-float idSoundShader::GetMinDistance() const {
-	return parms.minDistance;
-}
-
-/*
-===============
-idSoundShader::GetMaxDistance
-===============
-*/
-float idSoundShader::GetMaxDistance() const {
-	return parms.maxDistance;
-}
-
-/*
-===============
-idSoundShader::GetDescription
-===============
-*/
-const char *idSoundShader::GetDescription() const {
-	return desc;
-}
-
-/*
-===============
-idSoundShader::HasDefaultSound
-===============
-*/
-bool idSoundShader::HasDefaultSound() const {
-	for ( int i = 0; i < numEntries; i++ ) {
-		if ( entries[i] && entries[i]->defaultSound ) {
-			return true;
-		}
-	}
-	return false;
-}
-
-/*
-===============
-idSoundShader::GetParms
-===============
-*/
-const soundShaderParms_t *idSoundShader::GetParms() const {
-	return &parms;
-}
-
-/*
-===============
-idSoundShader::GetNumSounds
-===============
-*/
-int idSoundShader::GetNumSounds() const {
-	return numLeadins + numEntries;
-}
-
-/*
-===============
-idSoundShader::GetSound
-===============
-*/
-const char *idSoundShader::GetSound( int index ) const {
-	if ( index >= 0 ) {
-		if ( index < numLeadins ) {
-			return leadins[index]->name.c_str();
-		}
-		index -= numLeadins;
-		if ( index < numEntries ) {
-			return entries[index]->name.c_str();
-		}
-	}
-	return "";
+    }
 }

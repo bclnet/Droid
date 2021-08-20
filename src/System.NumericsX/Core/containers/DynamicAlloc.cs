@@ -27,7 +27,17 @@ namespace System.NumericsX.Core
         public void SetLockMemory(bool @lock) { }
         public void FreeEmptyBaseBlocks() { }
 
-        public T Alloc(int num)
+        public T[] Alloc(int num)
+        {
+            numAllocs++;
+            if (num <= 0)
+                return default;
+            numUsedBlocks++;
+            throw new NotImplementedException();
+            //usedBlockMemory += num * sizeof(type);
+            //return Mem_Alloc16(num * sizeof(type));
+        }
+        public K[] Alloc<K>(int num)
         {
             numAllocs++;
             if (num <= 0)
@@ -38,15 +48,15 @@ namespace System.NumericsX.Core
             //return Mem_Alloc16(num * sizeof(type));
         }
 
-        public T Resize(T ptr, int num)
+        public K[] Resize<K>(K[] ptr, int num)
         {
             numResizes++;
             if (ptr == null)
-                return Alloc(num);
+                return Alloc<K>(num);
 
             if (num <= 0)
             {
-                Free(ptr);
+                Free(ref ptr);
                 return default;
             }
 
@@ -54,12 +64,12 @@ namespace System.NumericsX.Core
             return ptr;
         }
 
-        public void Free(T ptr)
+        public void Free<K>(ref K[] ptr)
         {
             numFrees++;
             if (ptr == null)
                 return;
-            //Mem_Free16(ptr);
+            ptr = default;
         }
 
         public string CheckMemory(T ptr) => null;
