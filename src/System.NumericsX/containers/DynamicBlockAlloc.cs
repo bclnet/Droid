@@ -2,9 +2,8 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using static System.NumericsX.Lib;
 
-namespace System.NumericsX.Core
+namespace System.NumericsX
 {
     public class DynamicElement<T>
     {

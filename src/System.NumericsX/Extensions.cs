@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
-using System.Runtime.CompilerServices;
-using static System.NumericsX.Lib;
 
 namespace System.NumericsX.Core
 {

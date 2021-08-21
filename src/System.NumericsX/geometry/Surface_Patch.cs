@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.NumericsX.Core;
-using static System.NumericsX.Lib;
+using static System.NumericsX.LibX;
 
 namespace System.NumericsX
 {
@@ -33,9 +33,9 @@ namespace System.NumericsX
         public void SetSize(int patchWidth, int patchHeight)
         {
             if (patchWidth < 1 || patchWidth > maxWidth)
-                common.FatalError("Surface_Patch::SetSize: invalid patchWidth");
+                common_FatalError("Surface_Patch::SetSize: invalid patchWidth");
             if (patchHeight < 1 || patchHeight > maxHeight)
-                common.FatalError("Surface_Patch::SetSize: invalid patchHeight");
+                common_FatalError("Surface_Patch::SetSize: invalid patchHeight");
             width = patchWidth;
             height = patchHeight;
             verts.SetNum(width * height, false);
@@ -327,7 +327,7 @@ namespace System.NumericsX
             int i, j;
 
             if (expanded)
-                common.FatalError("Surface_Patch::Expand: patch alread expanded");
+                common_FatalError("Surface_Patch::Expand: patch alread expanded");
             expanded = true;
             verts.SetNum(maxWidth * maxHeight, false);
             if (width != maxWidth)
@@ -342,7 +342,7 @@ namespace System.NumericsX
             int i, j;
 
             if (!expanded)
-                common.FatalError("Surface_Patch::Collapse: patch not expanded");
+                common_FatalError("Surface_Patch::Collapse: patch not expanded");
             expanded = false;
             if (width != maxWidth)
                 for (j = 0; j < height; j++)

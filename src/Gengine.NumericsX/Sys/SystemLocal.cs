@@ -45,7 +45,7 @@ namespace System.NumericsX.Sys
             => SysW.DLL_Unload(dllHandle);
 
         public string DLL_GetFileName(string baseName)
-            => $"{baseName}{Platform.BUILD_LIBRARY_SUFFIX}";
+            => $"{baseName}{Config.BUILD_LIBRARY_SUFFIX}";
 
         public SysEvent GenerateMouseButtonEvent(int button, bool down)
             => new SysEvent

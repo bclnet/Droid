@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.NumericsX.Core;
 using System.Runtime.CompilerServices;
-using static System.NumericsX.Lib;
+using static System.NumericsX.LibX;
 using static System.NumericsX.Plane;
 
 namespace System.NumericsX
@@ -412,7 +412,7 @@ namespace System.NumericsX
         public void Print()
         {
             for (var i = 0; i < numPoints; i++)
-                common.Printf($"({p[i].x:5.1}, {p[i].y:5.1})\n");
+                common_Printf($"({p[i].x:5.1}, {p[i].y:5.1})\n");
         }
 
         public float PlaneDistance(Vector3 plane)

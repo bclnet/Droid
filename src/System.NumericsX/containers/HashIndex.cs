@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace System.NumericsX.Core
+namespace System.NumericsX
 {
     public class HashIndex
     {

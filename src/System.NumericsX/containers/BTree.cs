@@ -1,7 +1,7 @@
 #define BTREE_CHECK
 using System.Diagnostics;
 
-namespace System.NumericsX.Core
+namespace System.NumericsX
 {
     public class BTree<TValue, TKey> where TKey : IComparable<TKey>
     {

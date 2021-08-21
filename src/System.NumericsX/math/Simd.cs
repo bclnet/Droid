@@ -1,5 +1,4 @@
-using System.NumericsX.Sys;
-using static System.NumericsX.Lib;
+using static System.NumericsX.LibX;
 
 namespace System.NumericsX
 {
@@ -21,7 +20,7 @@ namespace System.NumericsX
         {
             ISIMDProcessor newProcessor;
 
-            var cpuid = Lib.sys.ProcessorId;
+            var cpuid = 1; // Lib.sys.ProcessorId;
 
             if (forceGeneric)
                 newProcessor = generic;
@@ -44,14 +43,14 @@ namespace System.NumericsX
             if (newProcessor != Processor)
             {
                 Processor = newProcessor;
-                common.Printf($"{module} using {Processor.Name} for SIMD processing\n");
+                common_Printf($"{module} using {Processor.Name} for SIMD processing\n");
             }
 
-            if ((cpuid & CPUID.SSE) != 0)
-            {
-                sys.FPU_SetFTZ(true);
-                sys.FPU_SetDAZ(true);
-            }
+            //if ((cpuid & CPUID.SSE) != 0)
+            //{
+            //    sys.FPU_SetFTZ(true);
+            //    sys.FPU_SetDAZ(true);
+            //}
         }
 
         public static void Shutdown()

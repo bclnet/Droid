@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
+using static System.NumericsX.LibX;
 using TraceModelVert = System.NumericsX.Vector3;
-using static System.NumericsX.Lib;
 
 namespace System.NumericsX
 {
@@ -553,17 +553,17 @@ namespace System.NumericsX
                 n = 3;
             if (n * 2 > MAX_TRACEMODEL_VERTS)
             {
-                common.Printf("WARNING: TraceModel::SetupCylinder: too many vertices\n");
+                common_Printf("WARNING: TraceModel::SetupCylinder: too many vertices\n");
                 n = MAX_TRACEMODEL_VERTS / 2;
             }
             if (n * 3 > MAX_TRACEMODEL_EDGES)
             {
-                common.Printf("WARNING: TraceModel::SetupCylinder: too many sides\n");
+                common_Printf("WARNING: TraceModel::SetupCylinder: too many sides\n");
                 n = MAX_TRACEMODEL_EDGES / 3;
             }
             if (n + 2 > MAX_TRACEMODEL_POLYS)
             {
-                common.Printf("WARNING: TraceModel::SetupCylinder: too many polygons\n");
+                common_Printf("WARNING: TraceModel::SetupCylinder: too many polygons\n");
                 n = MAX_TRACEMODEL_POLYS - 2;
             }
 
@@ -661,17 +661,17 @@ namespace System.NumericsX
                 n = 3;
             if (n + 1 > MAX_TRACEMODEL_VERTS)
             {
-                common.Printf("WARNING: TraceModel::SetupCone: too many vertices\n");
+                common_Printf("WARNING: TraceModel::SetupCone: too many vertices\n");
                 n = MAX_TRACEMODEL_VERTS - 1;
             }
             if (n * 2 > MAX_TRACEMODEL_EDGES)
             {
-                common.Printf("WARNING: TraceModel::SetupCone: too many edges\n");
+                common_Printf("WARNING: TraceModel::SetupCone: too many edges\n");
                 n = MAX_TRACEMODEL_EDGES / 2;
             }
             if (n + 1 > MAX_TRACEMODEL_POLYS)
             {
-                common.Printf("WARNING: TraceModel::SetupCone: too many polygons\n");
+                common_Printf("WARNING: TraceModel::SetupCone: too many polygons\n");
                 n = MAX_TRACEMODEL_POLYS - 1;
             }
 
@@ -858,7 +858,7 @@ namespace System.NumericsX
             // times three because we need to be able to turn the polygon into a volume
             if (numVerts * 3 > MAX_TRACEMODEL_EDGES)
             {
-                common.Printf("WARNING: TraceModel::SetupPolygon: too many vertices\n");
+                common_Printf("WARNING: TraceModel::SetupPolygon: too many vertices\n");
                 numVerts = MAX_TRACEMODEL_EDGES / 3;
             }
 

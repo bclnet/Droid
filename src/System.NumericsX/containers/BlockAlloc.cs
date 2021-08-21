@@ -1,6 +1,6 @@
 using System.Linq;
 
-namespace System.NumericsX.Core
+namespace System.NumericsX
 {
     public class BlockAllocElement<T>
     {

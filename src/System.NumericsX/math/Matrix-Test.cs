@@ -1,6 +1,6 @@
 //#define MATX_SIMD
 using System.Diagnostics;
-using static System.NumericsX.Lib;
+using static System.NumericsX.LibX;
 
 namespace System.NumericsX
 {
@@ -29,7 +29,7 @@ namespace System.NumericsX
             m1.LowerTriangularInverse();
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::LowerTriangularInverse failed");
+                common_Warning("MatrixX::LowerTriangularInverse failed");
 
             //  MatrixX::UpperTriangularInverse
 
@@ -41,7 +41,7 @@ namespace System.NumericsX
             m1.UpperTriangularInverse();
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::UpperTriangularInverse failed");
+                common_Warning("MatrixX::UpperTriangularInverse failed");
 
             //    MatrixX::Inverse_GaussJordan
 
@@ -51,7 +51,7 @@ namespace System.NumericsX
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
-                common.Warning("MatrixX::Inverse_GaussJordan failed");
+                common_Warning("MatrixX::Inverse_GaussJordan failed");
 
             //    MatrixX::Inverse_UpdateRankOne
 
@@ -73,7 +73,7 @@ namespace System.NumericsX
             m1.Inverse_UpdateRankOne(v, w, 1f);
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::Inverse_UpdateRankOne failed");
+                common_Warning("MatrixX::Inverse_UpdateRankOne failed");
 
             // MatrixX::Inverse_UpdateRowColumn
 
@@ -98,7 +98,7 @@ namespace System.NumericsX
                 m1.Inverse_UpdateRowColumn(v, w, offset);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    common.Warning("MatrixX::Inverse_UpdateRowColumn failed");
+                    common_Warning("MatrixX::Inverse_UpdateRowColumn failed");
             }
 
             //    MatrixX::Inverse_UpdateIncrement
@@ -122,7 +122,7 @@ namespace System.NumericsX
             m1.Inverse_UpdateIncrement(v, w);
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::Inverse_UpdateIncrement failed");
+                common_Warning("MatrixX::Inverse_UpdateIncrement failed");
 
             //    MatrixX::Inverse_UpdateDecrement
 
@@ -151,7 +151,7 @@ namespace System.NumericsX
                 m1.Inverse_UpdateDecrement(v, w, offset);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    common.Warning("MatrixX::Inverse_UpdateDecrement failed");
+                    common_Warning("MatrixX::Inverse_UpdateDecrement failed");
             }
 
             //    MatrixX::LU_Factor
@@ -163,7 +163,7 @@ namespace System.NumericsX
             m1 = m2 * m3;
 
             if (!original.Compare(m1, 1e-4f))
-                common.Warning("MatrixX::LU_Factor failed");
+                common_Warning("MatrixX::LU_Factor failed");
 
             //    MatrixX::LU_UpdateRankOne
 
@@ -189,7 +189,7 @@ namespace System.NumericsX
             m1 = new MatrixX(m1);
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::LU_UpdateRankOne failed");
+                common_Warning("MatrixX::LU_UpdateRankOne failed");
 
             //    MatrixX::LU_UpdateRowColumn
 
@@ -218,7 +218,7 @@ namespace System.NumericsX
                 m1 = new MatrixX(m1);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    common.Warning("MatrixX::LU_UpdateRowColumn failed");
+                    common_Warning("MatrixX::LU_UpdateRowColumn failed");
             }
 
             //    MatrixX::LU_UpdateIncrement
@@ -246,7 +246,7 @@ namespace System.NumericsX
             m1 = new MatrixX(m1);
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::LU_UpdateIncrement failed");
+                common_Warning("MatrixX::LU_UpdateIncrement failed");
 
             //    MatrixX::LU_UpdateDecrement
 
@@ -283,7 +283,7 @@ namespace System.NumericsX
                 m1 = new MatrixX(m1);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    common.Warning("MatrixX::LU_UpdateDecrement failed");
+                    common_Warning("MatrixX::LU_UpdateDecrement failed");
             }
 
             //    MatrixX::LU_Inverse
@@ -295,7 +295,7 @@ namespace System.NumericsX
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
-                common.Warning("MatrixX::LU_Inverse failed");
+                common_Warning("MatrixX::LU_Inverse failed");
 
             //    MatrixX::QR_Factor
 
@@ -309,7 +309,7 @@ namespace System.NumericsX
             m1 = q1 * r1;
 
             if (!original.Compare(m1, 1e-4f))
-                common.Warning("MatrixX::QR_Factor failed");
+                common_Warning("MatrixX::QR_Factor failed");
 
             //    MatrixX::QR_UpdateRankOne
 
@@ -338,7 +338,7 @@ namespace System.NumericsX
             m1 = q1 * r1;
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::QR_UpdateRankOne failed");
+                common_Warning("MatrixX::QR_UpdateRankOne failed");
 
             //    MatrixX::QR_UpdateRowColumn
 
@@ -370,7 +370,7 @@ namespace System.NumericsX
                 m1 = q1 * r1;
 
                 if (!m1.Compare(m2, 1e-3f))
-                    common.Warning("MatrixX::QR_UpdateRowColumn failed");
+                    common_Warning("MatrixX::QR_UpdateRowColumn failed");
             }
 
             //    MatrixX::QR_UpdateIncrement
@@ -401,7 +401,7 @@ namespace System.NumericsX
             m1 = q1 * r1;
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::QR_UpdateIncrement failed");
+                common_Warning("MatrixX::QR_UpdateIncrement failed");
 
             //    MatrixX::QR_UpdateDecrement
 
@@ -437,7 +437,7 @@ namespace System.NumericsX
                 m1 = q1 * r1;
 
                 if (!m1.Compare(m2, 1e-3f))
-                    common.Warning("MatrixX::QR_UpdateDecrement failed");
+                    common_Warning("MatrixX::QR_UpdateDecrement failed");
             }
 
             //    MatrixX::QR_Inverse
@@ -449,7 +449,7 @@ namespace System.NumericsX
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
-                common.Warning("MatrixX::QR_Inverse failed");
+                common_Warning("MatrixX::QR_Inverse failed");
 
             //    MatrixX::SVD_Factor
 
@@ -463,7 +463,7 @@ namespace System.NumericsX
             m1 = m1 * m2 * m3;
 
             if (!original.Compare(m1, 1e-4f))
-                common.Warning("MatrixX::SVD_Factor failed");
+                common_Warning("MatrixX::SVD_Factor failed");
 
             //    MatrixX::SVD_Inverse
 
@@ -474,7 +474,7 @@ namespace System.NumericsX
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
-                common.Warning("MatrixX::SVD_Inverse failed");
+                common_Warning("MatrixX::SVD_Inverse failed");
 
             //    MatrixX::Cholesky_Factor
 
@@ -484,7 +484,7 @@ namespace System.NumericsX
             m1.Cholesky_MultiplyFactors(m2);
 
             if (!original.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::Cholesky_Factor failed");
+                common_Warning("MatrixX::Cholesky_Factor failed");
 
             //    MatrixX::Cholesky_UpdateRankOne
 
@@ -507,7 +507,7 @@ namespace System.NumericsX
             m1.Cholesky_UpdateRankOne(w, 1f, 0);
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::Cholesky_UpdateRankOne failed");
+                common_Warning("MatrixX::Cholesky_UpdateRankOne failed");
 
             //    MatrixX::Cholesky_UpdateRowColumn
 
@@ -534,7 +534,7 @@ namespace System.NumericsX
                 m1.Cholesky_UpdateRowColumn(w, offset);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    common.Warning("MatrixX::Cholesky_UpdateRowColumn failed");
+                    common_Warning("MatrixX::Cholesky_UpdateRowColumn failed");
             }
 
             //    MatrixX::Cholesky_UpdateIncrement
@@ -564,7 +564,7 @@ namespace System.NumericsX
             m2.ClearUpperTriangle();
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::Cholesky_UpdateIncrement failed");
+                common_Warning("MatrixX::Cholesky_UpdateIncrement failed");
 
             //    MatrixX::Cholesky_UpdateDecrement
 
@@ -589,7 +589,7 @@ namespace System.NumericsX
                 m1.Cholesky_UpdateDecrement(v, offset);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    common.Warning("MatrixX::Cholesky_UpdateDecrement failed");
+                    common_Warning("MatrixX::Cholesky_UpdateDecrement failed");
             }
 
             //    MatrixX::Cholesky_Inverse
@@ -601,7 +601,7 @@ namespace System.NumericsX
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
-                common.Warning("MatrixX::Cholesky_Inverse failed");
+                common_Warning("MatrixX::Cholesky_Inverse failed");
 
             //    MatrixX::LDLT_Factor
 
@@ -611,13 +611,13 @@ namespace System.NumericsX
             m1.LDLT_MultiplyFactors(m2);
 
             if (!original.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::LDLT_Factor failed");
+                common_Warning("MatrixX::LDLT_Factor failed");
 
             m1.LDLT_UnpackFactors(m2, m3);
             m2 = m2 * m3 * m2.Transpose();
 
             if (!original.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::LDLT_Factor failed");
+                common_Warning("MatrixX::LDLT_Factor failed");
 
             //    MatrixX::LDLT_UpdateRankOne
 
@@ -640,7 +640,7 @@ namespace System.NumericsX
             m1.LDLT_UpdateRankOne(w, 1f, 0);
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::LDLT_UpdateRankOne failed");
+                common_Warning("MatrixX::LDLT_UpdateRankOne failed");
 
             //    MatrixX::LDLT_UpdateRowColumn
 
@@ -665,7 +665,7 @@ namespace System.NumericsX
                 m1.LDLT_UpdateRowColumn(w, offset);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    common.Warning("MatrixX::LDLT_UpdateRowColumn failed");
+                    common_Warning("MatrixX::LDLT_UpdateRowColumn failed");
             }
 
             //    MatrixX::LDLT_UpdateIncrement
@@ -695,7 +695,7 @@ namespace System.NumericsX
             m2.ClearUpperTriangle();
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::LDLT_UpdateIncrement failed");
+                common_Warning("MatrixX::LDLT_UpdateIncrement failed");
 
             //    MatrixX::LDLT_UpdateDecrement
 
@@ -720,7 +720,7 @@ namespace System.NumericsX
                 m1.LDLT_UpdateDecrement(v, offset);
 
                 if (!m1.Compare(m2, 1e-3f))
-                    common.Warning("MatrixX::LDLT_UpdateDecrement failed");
+                    common_Warning("MatrixX::LDLT_UpdateDecrement failed");
             }
 
             //    MatrixX::LDLT_Inverse
@@ -732,7 +732,7 @@ namespace System.NumericsX
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
-                common.Warning("MatrixX::LDLT_Inverse failed");
+                common_Warning("MatrixX::LDLT_Inverse failed");
 
             //    MatrixX::Eigen_SolveSymmetricTriDiagonal
 
@@ -751,7 +751,7 @@ namespace System.NumericsX
                     m1[i][j] *= v[j];
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::Eigen_SolveSymmetricTriDiagonal failed");
+                common_Warning("MatrixX::Eigen_SolveSymmetricTriDiagonal failed");
 
             //    MatrixX::Eigen_SolveSymmetric
 
@@ -769,7 +769,7 @@ namespace System.NumericsX
                     m1[i][j] *= v[j];
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::Eigen_SolveSymmetric failed");
+                common_Warning("MatrixX::Eigen_SolveSymmetric failed");
 
             //    MatrixX::Eigen_Solve
 
@@ -788,7 +788,7 @@ namespace System.NumericsX
                     m1[i][j] *= v[j];
 
             if (!m1.Compare(m2, 1e-4f))
-                common.Warning("MatrixX::Eigen_Solve failed");
+                common_Warning("MatrixX::Eigen_Solve failed");
         }
     }
 }

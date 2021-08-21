@@ -307,7 +307,7 @@ namespace System.NumericsX.Sys
                     {
                         path = Path.GetDirectoryName(path);
 
-                        s = Path.Combine(path, Platform.BASE_GAMEDIR);
+                        s = Path.Combine(path, Config.BASE_GAMEDIR);
                         st = new FileInfo(s);
                         if (st.Exists && (st.Attributes & FileAttributes.Directory) != 0)
                         {

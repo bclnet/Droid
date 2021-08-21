@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.NumericsX.Core;
 using System.Runtime.CompilerServices;
-using static System.NumericsX.Lib;
+using static System.NumericsX.LibX;
 using static System.NumericsX.Plane;
 
 namespace System.NumericsX
@@ -271,7 +271,7 @@ namespace System.NumericsX
                 }
 
             if (f.numPoints > maxpts || b.numPoints > maxpts)
-                common.FatalError("Winding::Split: points exceeded estimate.");
+                common_FatalError("Winding::Split: points exceeded estimate.");
 
             return SIDE_CROSS;
         }
@@ -535,7 +535,7 @@ namespace System.NumericsX
         public unsafe void RemovePoint(int point)
         {
             if (point < 0 || point >= numPoints)
-                common.FatalError("Winding::removePoint: point out of range");
+                common_FatalError("Winding::removePoint: point out of range");
             if (point < numPoints - 1)
                 fixed (Vector5* p = this.p)
                     UnsafeX.MoveBlock(&p[point], &p[point + 1], (uint)((numPoints - point - 1) * sizeof(Vector5)));
@@ -547,10 +547,10 @@ namespace System.NumericsX
             int i;
 
             if (spot > numPoints)
-                common.FatalError("Winding::insertPoint: spot > numPoints");
+                common_FatalError("Winding::insertPoint: spot > numPoints");
 
             if (spot < 0)
-                common.FatalError("Winding::insertPoint: spot < 0");
+                common_FatalError("Winding::insertPoint: spot < 0");
 
             EnsureAlloced(numPoints + 1, true);
             for (i = numPoints; i > spot; i--)
@@ -887,7 +887,7 @@ namespace System.NumericsX
             if (numPoints < 3)
             {
                 if (print)
-                    common.Printf($"Winding::Check: only {numPoints} points.");
+                    common_Printf($"Winding::Check: only {numPoints} points.");
                 return false;
             }
 
@@ -895,7 +895,7 @@ namespace System.NumericsX
             if (area < 1f)
             {
                 if (print)
-                    common.Printf($"Winding::Check: tiny area: {area}");
+                    common_Printf($"Winding::Check: tiny area: {area}");
                 return false;
             }
 
@@ -910,7 +910,7 @@ namespace System.NumericsX
                     if (p1[j] >= Platform.MAX_WORLD_COORD || p1[j] <= Platform.MIN_WORLD_COORD)
                     {
                         if (print)
-                            common.Printf($"Winding::Check: point {i} outside world {'X' + j}-axis: {p1[j]}");
+                            common_Printf($"Winding::Check: point {i} outside world {'X' + j}-axis: {p1[j]}");
                         return false;
                     }
 
@@ -921,7 +921,7 @@ namespace System.NumericsX
                 if (d < -ON_EPSILON || d > ON_EPSILON)
                 {
                     if (print)
-                        common.Printf($"Winding::Check: point {i} off plane.");
+                        common_Printf($"Winding::Check: point {i} off plane.");
                     return false;
                 }
 
@@ -932,7 +932,7 @@ namespace System.NumericsX
                 if (dir.Length < ON_EPSILON)
                 {
                     if (print)
-                        common.Printf($"Winding::Check: edge {i} is degenerate.");
+                        common_Printf($"Winding::Check: edge {i} is degenerate.");
                     return false;
                 }
 
@@ -951,7 +951,7 @@ namespace System.NumericsX
                     if (d > edgedist)
                     {
                         if (print)
-                            common.Printf("Winding::Check: non-convex.");
+                            common_Printf("Winding::Check: non-convex.");
                         return false;
                     }
                 }
@@ -1088,7 +1088,7 @@ namespace System.NumericsX
         public void Print()
         {
             for (var i = 0; i < numPoints; i++)
-                common.Printf($"({p[i].x:5.1}, {p[i].y:5.1}, {p[i].z:5.1})\n");
+                common_Printf($"({p[i].x:5.1}, {p[i].y:5.1}, {p[i].z:5.1})\n");
         }
 
         public float PlaneDistance(Plane plane)
@@ -1458,7 +1458,7 @@ namespace System.NumericsX
 
             if (n > MAX_POINTS_ON_WINDING)
             {
-                common.Printf("WARNING: FixedWinding . MAX_POINTS_ON_WINDING overflowed\n");
+                common_Printf("WARNING: FixedWinding . MAX_POINTS_ON_WINDING overflowed\n");
                 return false;
             }
             return true;

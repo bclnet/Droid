@@ -1,4 +1,3 @@
-using System;
 using System.NumericsX.Core;
 using static System.NumericsX.Plane;
 

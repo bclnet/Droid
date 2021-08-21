@@ -5,7 +5,6 @@ using System.Security;
 // https://benbowen.blog/post/fun_with_makeref/
 namespace System.NumericsX.Core
 {
-
     [SuppressUnmanagedCodeSecurity]
     public unsafe static class UnsafeX
     {
@@ -29,7 +28,6 @@ namespace System.NumericsX.Core
         {
             throw new NotImplementedException();
         }
-
 
         public static T[] ReadTArray<T>(byte[] buffer, int offset, int count)
         {

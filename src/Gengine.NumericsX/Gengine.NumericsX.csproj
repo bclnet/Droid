@@ -15,6 +15,7 @@
   <ItemGroup>
     <None Remove="Framework\Console.cpp" />
     <None Remove="Framework\Console.h" />
+    <None Remove="Framework\EventLoop.cpp" />
     <None Remove="Framework\EventLoop.h" />
     <None Remove="Framework\KeyInput.cpp" />
     <None Remove="Framework\KeyInput.h" />
@@ -24,11 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="WaveEngine.Bindings.OpenGLES" Version="1.0.4998" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Gengine.NumericsX\Gengine.NumericsX.csproj" />
+    <ProjectReference Include="..\System.NumericsX\System.NumericsX.csproj" />
   </ItemGroup>
 
   <ItemGroup>

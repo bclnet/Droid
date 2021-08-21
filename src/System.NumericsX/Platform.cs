@@ -2,10 +2,6 @@ namespace System.NumericsX
 {
     public static class Platform
     {
-        // paths
-        public const string BASE_GAMEDIR = "base";
-        public const string BUILD_LIBRARY_SUFFIX = "/libdes_game.so";
-
         // maxs
         public const int MAX_STRING_CHARS = 1024;
 

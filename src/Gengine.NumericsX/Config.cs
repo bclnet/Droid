@@ -2,6 +2,10 @@ namespace System.NumericsX
 {
     public static class Config
     {
+        // paths
+        public const string BASE_GAMEDIR = "base";
+        public const string BUILD_LIBRARY_SUFFIX = "/libdes_game.so";
+
         // CD Key file info
         // goes into BASE_GAMEDIR whatever the fs_game is set to two distinct files for easier win32 installer job
         public const string CDKEY_FILE = "doomkey";

@@ -1,8 +1,8 @@
 //#define VECX_SIMD
 using System.Diagnostics;
-using System.NumericsX.Core;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static System.NumericsX.LibX;
 
 namespace System.NumericsX
 {
@@ -189,7 +189,7 @@ namespace System.NumericsX
                 return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
 
         /// <summary>
         /// Linearly inperpolates one vector to another.
@@ -582,7 +582,7 @@ namespace System.NumericsX
                 return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
 
         /// <summary>
         /// vector should be normalized
@@ -859,7 +859,7 @@ namespace System.NumericsX
                 return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
 
         /// <summary>
         /// Linearly inperpolates one vector to another.
@@ -930,7 +930,7 @@ namespace System.NumericsX
                 return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
 
         public void Lerp(Vector5 v1, Vector5 v2, float l)
         {
@@ -1104,7 +1104,7 @@ namespace System.NumericsX
                 return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
 
         internal fixed float p[6];
 
@@ -1482,7 +1482,7 @@ namespace System.NumericsX
         public unsafe string ToString(int precision = 2)
         {
             var dimension = Dimension;
-            return ToFloatPtr(_ => StringX.FloatArrayToString(_, dimension, precision));
+            return ToFloatPtr(_ => common_FloatArrayToString(_, dimension, precision));
         }
     }
 

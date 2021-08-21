@@ -1,4 +1,4 @@
-#define FRUSTUM_DEBUG
+//#define FRUSTUM_DEBUG
 using System.Diagnostics;
 using System.NumericsX.Core;
 
@@ -947,15 +947,12 @@ namespace System.NumericsX
             AxisProjection(indexPoints, cornerVecs, ax[2], out bounds[0].z, out bounds[1].z);
         }
 
-#if FRUSTUM_DEBUG
-        static readonly CVar r_showInteractionScissors_0 = new("r_showInteractionScissors", "0", CVAR.RENDERER | CVAR.INTEGER, "", 0, 2, CmdArgs.ArgCompletion_Integer(0, 2));
-#endif
         void AddLocalLineToProjectionBoundsSetCull(Vector3 start, Vector3 end, out int startCull, out int endCull, Bounds bounds)
         {
             Vector3 p; float d1, d2, fstart, fend, lstart, lend, f; int cull1, cull2;
 
 #if FRUSTUM_DEBUG
-            if (r_showInteractionScissors_0.Integer > 1)
+            if (LibX.r_showInteractionScissors_0() > 1)
             {
                 //    session.rw.DebugLine(colorGreen, origin + start * axis, origin + end * axis);
             }
@@ -1089,9 +1086,6 @@ namespace System.NumericsX
             endCull = cull2;
         }
 
-#if FRUSTUM_DEBUG
-        static readonly CVar r_showInteractionScissors_1 = new("r_showInteractionScissors", "0", CVAR.RENDERER | CVAR.INTEGER, "", 0, 2, CmdArgs.ArgCompletion_Integer(0, 2));
-#endif
         void AddLocalLineToProjectionBoundsUseCull(Vector3 start, Vector3 end, int startCull, int endCull, Bounds bounds)
         {
             Vector3 p; float d1, d2, fstart, fend, lstart, lend, f;
@@ -1100,12 +1094,13 @@ namespace System.NumericsX
             if (clip == 0)
                 return;
 
-#if FRUSTUM_DEBUG
-            if (r_showInteractionScissors_1.Integer > 1)
+#if  FRUSTUM_DEBUG
+            if (LibX.r_showInteractionScissors_1() > 1)
             {
                 //session.rw.DebugLine(colorGreen, origin + start * axis, origin + end * axis);
             }
 #endif
+
             var leftScale = dLeft * invFar;
             var upScale = dUp * invFar;
             var dir = end - start;

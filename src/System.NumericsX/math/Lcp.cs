@@ -273,14 +273,14 @@
 //#if IGNORE_UNSATISFIABLE_VARIABLES
 //            if (numIgnored)
 //                if (lcp_showFailures.GetBool())
-//                    G.common.Printf("LCP_Symmetric::Solve: %d of %d bounded variables ignored\n", numIgnored, m.NumRows - numUnbounded);
+//                    G.common_Printf("LCP_Symmetric::Solve: %d of %d bounded variables ignored\n", numIgnored, m.NumRows - numUnbounded);
 //#endif
 
 //            // if failed clear remaining forces
 //            if (failed)
 //            {
 //                if (lcp_showFailures.GetBool())
-//                    G.common.Printf("LCP_Square::Solve: %s (%d of %d bounded variables ignored)\n", failed, m.NumRows - i, m.NumRows - numUnbounded);
+//                    G.common_Printf("LCP_Square::Solve: %s (%d of %d bounded variables ignored)\n", failed, m.NumRows - i, m.NumRows - numUnbounded);
 //                for (j = i; j < m.NumRows; j++)
 //                    f[j] = 0f;
 //            }
@@ -835,7 +835,7 @@
 //                // factor and solve for unbounded variables
 //                if (!FactorClamped())
 //                {
-//                    idLib::common.Printf("idLCP_Symmetric::Solve: unbounded factorization failed\n");
+//                    idLib::common_Printf("idLCP_Symmetric::Solve: unbounded factorization failed\n");
 //                    return false;
 //                }
 //                SolveClamped(f, b.ToFloatPtr());
@@ -1007,7 +1007,7 @@
 //            {
 //                if (lcp_showFailures.GetBool())
 //                {
-//                    idLib::common.Printf("idLCP_Symmetric::Solve: %d of %d bounded variables ignored\n", numIgnored, m.GetNumRows() - numUnbounded);
+//                    idLib::common_Printf("idLCP_Symmetric::Solve: %d of %d bounded variables ignored\n", numIgnored, m.GetNumRows() - numUnbounded);
 //                }
 //            }
 //#endif
@@ -1017,7 +1017,7 @@
 //            {
 //                if (lcp_showFailures.GetBool())
 //                {
-//                    idLib::common.Printf("idLCP_Symmetric::Solve: %s (%d of %d bounded variables ignored)\n", failed, m.GetNumRows() - i, m.GetNumRows() - numUnbounded);
+//                    idLib::common_Printf("idLCP_Symmetric::Solve: %s (%d of %d bounded variables ignored)\n", failed, m.GetNumRows() - i, m.GetNumRows() - numUnbounded);
 //                }
 //                for (j = i; j < m.GetNumRows(); j++)
 //                {
@@ -1183,7 +1183,7 @@
 
 //            if (d == 0f)
 //            {
-//                idLib::common.Printf("idLCP_Symmetric::AddClamped: updating factorization failed\n");
+//                idLib::common_Printf("idLCP_Symmetric::AddClamped: updating factorization failed\n");
 //                numClamped++;
 //                return;
 //            }
@@ -1228,7 +1228,7 @@
 //                    diag = rowPtrs[0][0];
 //                    if (diag == 0f)
 //                    {
-//                        idLib::common.Printf("idLCP_Symmetric::RemoveClamped: updating factorization failed\n");
+//                        idLib::common_Printf("idLCP_Symmetric::RemoveClamped: updating factorization failed\n");
 //                        return;
 //                    }
 //                    clamped[0][0] = diag;
@@ -1265,7 +1265,7 @@
 //                    diag = rowPtrs[r][r] - dot;
 //                    if (diag == 0f)
 //                    {
-//                        idLib::common.Printf("idLCP_Symmetric::RemoveClamped: updating factorization failed\n");
+//                        idLib::common_Printf("idLCP_Symmetric::RemoveClamped: updating factorization failed\n");
 //                        return;
 //                    }
 //                    clamped[r][r] = diag;
@@ -1324,7 +1324,7 @@
 
 //                if (newDiag == 0f)
 //                {
-//                    idLib::common.Printf("idLCP_Symmetric::RemoveClamped: updating factorization failed\n");
+//                    idLib::common_Printf("idLCP_Symmetric::RemoveClamped: updating factorization failed\n");
 //                    return;
 //                }
 
@@ -1338,7 +1338,7 @@
 
 //                if (newDiag == 0f)
 //                {
-//                    idLib::common.Printf("idLCP_Symmetric::RemoveClamped: updating factorization failed\n");
+//                    idLib::common_Printf("idLCP_Symmetric::RemoveClamped: updating factorization failed\n");
 //                    return;
 //                }
 

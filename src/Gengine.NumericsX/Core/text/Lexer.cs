@@ -1,5 +1,6 @@
 using System.Text;
 using static System.NumericsX.Lib;
+using static System.NumericsX.LibX;
 
 namespace System.NumericsX.Core
 {

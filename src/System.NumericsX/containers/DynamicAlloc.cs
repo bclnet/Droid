@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace System.NumericsX.Core
+namespace System.NumericsX
 {
     public class DynamicAlloc<T>
     {

@@ -7,11 +7,12 @@ using static Gengine.Render.QGL;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.NumericsX.Core;
+using System.NumericsX;
 
 // vertex cache calls should only be made by the front end
 namespace Gengine.Render
 {
-    public class VertCache
+    public class VertCache : BlockAllocElement<VertCache>
     {
         public uint vbo;
         public bool indexBuffer;        // holds indexes instead of vertexes
@@ -72,7 +73,7 @@ namespace Gengine.Render
 
         bool tempOverflow;      // had to alloc a temp in static memory
 
-        BlockAlloc<VertCache> headerAllocator = new BlockAlloc<VertCache>(1024);
+        BlockAlloc<VertCache> headerAllocator = new BlockAlloc<VertCache>(1024, new VertCache());
 
         VertCache freeStaticHeaders;    // head of doubly linked list
         VertCache freeStaticIndexHeaders;    // head of doubly linked list

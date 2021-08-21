@@ -1,6 +1,6 @@
 using System.Diagnostics;
-using System.NumericsX.Core;
 using System.Runtime.CompilerServices;
+using static System.NumericsX.LibX;
 
 namespace System.NumericsX
 {
@@ -238,7 +238,7 @@ namespace System.NumericsX
                 return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => StringX.FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
 
         public static Pluecker origin = new(0f, 0f, 0f, 0f, 0f, 0f);
     }
