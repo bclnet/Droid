@@ -6,6 +6,8 @@ namespace System.NumericsX.Core
     {
         int baseBlockSize;
         int minBlockSize;
+        int sizeofT;
+        Func<int, T[]> factory;
 
         int numUsedBlocks;          // number of used blocks
         int usedBlockMemory;        // total memory in used blocks
@@ -14,65 +16,14 @@ namespace System.NumericsX.Core
         int numResizes;
         int numFrees;
 
-        public DynamicAlloc(int baseBlockSize, int minBlockSize)
+        public DynamicAlloc(int baseBlockSize, int minBlockSize, int sizeofT, Func<int, T[]> factory)
         {
             this.baseBlockSize = baseBlockSize;
             this.minBlockSize = minBlockSize;
+            this.sizeofT = sizeofT;
+            this.factory = factory;
             Clear();
         }
-
-        public void Init() { }
-        public void Shutdown() => Clear();
-        public void SetFixedBlocks(int numBlocks) { }
-        public void SetLockMemory(bool @lock) { }
-        public void FreeEmptyBaseBlocks() { }
-
-        public T[] Alloc(int num)
-        {
-            numAllocs++;
-            if (num <= 0)
-                return default;
-            numUsedBlocks++;
-            throw new NotImplementedException();
-            //usedBlockMemory += num * sizeof(type);
-            //return Mem_Alloc16(num * sizeof(type));
-        }
-        public K[] Alloc<K>(int num)
-        {
-            numAllocs++;
-            if (num <= 0)
-                return default;
-            numUsedBlocks++;
-            throw new NotImplementedException();
-            //usedBlockMemory += num * sizeof(type);
-            //return Mem_Alloc16(num * sizeof(type));
-        }
-
-        public K[] Resize<K>(K[] ptr, int num)
-        {
-            numResizes++;
-            if (ptr == null)
-                return Alloc<K>(num);
-
-            if (num <= 0)
-            {
-                Free(ref ptr);
-                return default;
-            }
-
-            Debug.Assert(false);
-            return ptr;
-        }
-
-        public void Free<K>(ref K[] ptr)
-        {
-            numFrees++;
-            if (ptr == null)
-                return;
-            ptr = default;
-        }
-
-        public string CheckMemory(T ptr) => null;
 
         void Clear()
         {
@@ -82,6 +33,61 @@ namespace System.NumericsX.Core
             numResizes = 0;
             numFrees = 0;
         }
+
+        public void Init() { }
+        public void Shutdown() => Clear();
+        public void SetFixedBlocks(int numBlocks) { }
+        public void SetPinMemory(bool pin) { }
+        public void SetLockMemory(bool @lock) { }
+        public void FreeEmptyBaseBlocks() { }
+
+        public DynamicElement<T> Alloc(int num)
+        {
+            numAllocs++;
+            if (num <= 0)
+                return default;
+            numUsedBlocks++;
+            usedBlockMemory += num * sizeofT;
+            var block = new DynamicElement<T> { Value = factory(num * sizeofT) }; block.Memory = block.Value.AsMemory();
+            return block;
+        }
+
+        //public K[] Alloc<K>(int num)
+        //{
+        //    numAllocs++;
+        //    if (num <= 0)
+        //        return default;
+        //    numUsedBlocks++;
+        //    throw new NotImplementedException();
+        //    //usedBlockMemory += num * sizeof(type);
+        //    //return Mem_Alloc16(num * sizeof(type));
+        //}
+
+        public DynamicElement<T> Resize(DynamicElement<T> ptr, int num)
+        {
+            numResizes++;
+            if (ptr == null)
+                return Alloc(num);
+
+            if (num <= 0)
+            {
+                Free(ptr);
+                return default;
+            }
+
+            Debug.Assert(false);
+            return ptr;
+        }
+
+        public void Free(DynamicElement<T> ptr)
+        {
+            numFrees++;
+            if (ptr == null)
+                return;
+            if (ptr is IDisposable ptr1) ptr1.Dispose();
+        }
+
+        public string CheckMemory(DynamicElement<T> ptr) => null;
 
         public int NumBaseBlocks => 0;
         public int BaseBlockMemory => 0;

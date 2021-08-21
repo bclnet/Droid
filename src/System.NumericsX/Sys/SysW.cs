@@ -76,7 +76,10 @@ namespace System.NumericsX.Sys
             while (true)
             {
                 if (GetMessage(out var msg, IntPtr.Zero, 0, 0) == 0)
+                {
                     common.Quit();
+                    break;
+                }
                 TranslateMessage(ref msg);
                 DispatchMessage(ref msg);
             }
@@ -215,6 +218,7 @@ namespace System.NumericsX.Sys
         // lock and unlock memory
         public static unsafe bool LockMemory(void* ptr, int bytes)
             => VirtualLock((IntPtr)ptr, (IntPtr)bytes);
+
         public static unsafe bool UnlockMemory(void* ptr, int bytes)
             => VirtualUnlock((IntPtr)ptr, (IntPtr)bytes);
 

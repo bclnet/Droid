@@ -597,7 +597,7 @@ public class Curve_Spline_Vector4 : Curve_Vector4
 	/// </summary>
 	/// <param name="index">The index.</param>
 	/// <returns></returns>
-	protected Vector4 ValueForIndex(int index)
+	protected new Vector4 ValueForIndex(int index)
 	{
 		var n = values.Count - 1;
 		if (index < 0)
@@ -618,7 +618,7 @@ public class Curve_Spline_Vector4 : Curve_Vector4
 	/// </summary>
 	/// <param name="index">The index.</param>
 	/// <returns></returns>
-	protected float TimeForIndex(int index)
+	protected new float TimeForIndex(int index)
 	{
 		var n = times.Count - 1;
 		if (index < 0)

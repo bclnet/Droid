@@ -591,7 +591,7 @@ public class Curve_Spline_<#=type#> : Curve_<#=type#>
 	/// </summary>
 	/// <param name="index">The index.</param>
 	/// <returns></returns>
-	protected <#=type#> ValueForIndex(int index)
+	protected new <#=type#> ValueForIndex(int index)
 	{
 		var n = values.Count - 1;
 		if (index < 0)
@@ -612,7 +612,7 @@ public class Curve_Spline_<#=type#> : Curve_<#=type#>
 	/// </summary>
 	/// <param name="index">The index.</param>
 	/// <returns></returns>
-	protected float TimeForIndex(int index)
+	protected new float TimeForIndex(int index)
 	{
 		var n = times.Count - 1;
 		if (index < 0)

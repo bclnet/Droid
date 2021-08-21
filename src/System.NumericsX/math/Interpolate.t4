@@ -123,7 +123,7 @@ public class InterpolateAccelDecelLinear_<#=type#>
     float decelTime;
     <#=type#> startValue;
     <#=type#> endValue;
-    Extrapolate_<#=type#> extrapolate;
+    Extrapolate_<#=type#> extrapolate = new();
 
     void Invalidate()
         => extrapolate.Init(0, 0, extrapolate.StartValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.NONE);
@@ -221,7 +221,7 @@ public class InterpolateAccelDecelSine_<#=type#>
     float decelTime;
     <#=type#> startValue;
     <#=type#> endValue;
-    Extrapolate_<#=type#> extrapolate;
+    Extrapolate_<#=type#> extrapolate = new();
 
     void Invalidate()
         => extrapolate.Init(0, 0, extrapolate.StartValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.NONE);

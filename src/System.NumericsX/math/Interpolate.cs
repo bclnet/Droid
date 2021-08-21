@@ -125,7 +125,7 @@ public class InterpolateAccelDecelLinear_float
     float decelTime;
     float startValue;
     float endValue;
-    Extrapolate_float extrapolate;
+    Extrapolate_float extrapolate = new();
 
     void Invalidate()
         => extrapolate.Init(0, 0, extrapolate.StartValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.NONE);
@@ -223,7 +223,7 @@ public class InterpolateAccelDecelSine_float
     float decelTime;
     float startValue;
     float endValue;
-    Extrapolate_float extrapolate;
+    Extrapolate_float extrapolate = new();
 
     void Invalidate()
         => extrapolate.Init(0, 0, extrapolate.StartValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.NONE);
@@ -373,7 +373,7 @@ public class InterpolateAccelDecelLinear_Vector4
     float decelTime;
     Vector4 startValue;
     Vector4 endValue;
-    Extrapolate_Vector4 extrapolate;
+    Extrapolate_Vector4 extrapolate = new();
 
     void Invalidate()
         => extrapolate.Init(0, 0, extrapolate.StartValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.NONE);
@@ -471,7 +471,7 @@ public class InterpolateAccelDecelSine_Vector4
     float decelTime;
     Vector4 startValue;
     Vector4 endValue;
-    Extrapolate_Vector4 extrapolate;
+    Extrapolate_Vector4 extrapolate = new();
 
     void Invalidate()
         => extrapolate.Init(0, 0, extrapolate.StartValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.NONE);

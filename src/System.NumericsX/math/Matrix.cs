@@ -2601,6 +2601,10 @@ namespace System.NumericsX
             => _.Compare(a);
         public static bool operator !=(MatrixX _, MatrixX a)                         // exact compare, no epsilon
             => !_.Compare(a);
+        public override bool Equals(object obj)
+            => obj is MatrixX q && Compare(q);
+        public override int GetHashCode()
+            => base.GetHashCode();
 
         public void SetSize(int rows, int columns)                                // set the number of rows/columns
         {

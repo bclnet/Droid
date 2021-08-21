@@ -1095,6 +1095,10 @@ namespace System.NumericsX
             => _.Compare(a);
         public static bool operator !=(TraceModel _, TraceModel a)
             => !_.Compare(a);
+        public override bool Equals(object obj)
+            => obj is TraceModel q && Compare(q);
+        public override int GetHashCode()
+            => base.GetHashCode();
 
         // get the area of one of the polygons
         public unsafe float GetPolygonArea(int polyNum)

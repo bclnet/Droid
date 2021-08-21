@@ -1,29 +1,41 @@
+using System.Linq;
+
 namespace System.NumericsX.Core
 {
-    public class BlockAlloc<T>
+    public class BlockAllocElement<T>
     {
-        class Element
-        {
-            public T t;
-            public Element next;
-        }
+        internal BlockAllocElement<T> _next;
+    }
 
+    public class BlockAlloc<T> where T : BlockAllocElement<T>
+    {
         class Block
         {
-            public Element[] elements;
+            public BlockAllocElement<T>[] elements;
             public Block next;
         }
 
         int blockSize;
+        BlockAllocElement<T> model;
         Block blocks;
-        Element free;
+        BlockAllocElement<T> free;
         int total;
         int active;
 
-        public BlockAlloc(int blockSize) => this.blockSize = blockSize;
+        public BlockAlloc(int blockSize, BlockAllocElement<T> model)
+        {
+            this.blockSize = blockSize;
+            this.model = model;
+        }
 
         public void Shutdown()
         {
+            while (blocks != null)
+            {
+                var block = blocks;
+                blocks = blocks.next;
+                if (block is IDisposable block1) block1.Dispose();
+            }
             blocks = null;
             free = null;
             total = active = 0;
@@ -33,30 +45,33 @@ namespace System.NumericsX.Core
         {
             if (free == null)
             {
-                var block = blocks = new Block
+                var block = new Block
                 {
+                    elements = Enumerable.Repeat(model, blockSize).ToArray(),
                     next = blocks
                 };
+                blocks = block;
                 for (var i = 0; i < blockSize; i++)
                 {
-                    block.elements[i].next = free;
+                    block.elements[i]._next = free;
                     free = block.elements[i];
                 }
                 total += blockSize;
             }
             active++;
             var element = free;
-            free = free.next;
-            element.next = null;
-            return element.t;
+            free = free._next;
+            element._next = null;
+            return (T)element;
         }
-        public void Free(T t) => throw new NotImplementedException();
-        //{
-        //    var element = (Element)t;
-        //    element.next = free;
-        //    free = element;
-        //    active--;
-        //}
+
+        public void Free(T value)
+        {
+            var element = (BlockAllocElement<T>)value;
+            element._next = free;
+            free = element;
+            active--;
+        }
 
         public int TotalCount => total;
         public int AllocCount => active;

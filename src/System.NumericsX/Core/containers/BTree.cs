@@ -3,9 +3,9 @@ using System.Diagnostics;
 
 namespace System.NumericsX.Core
 {
-    public class BTree<TKey, TValue> where TValue : class
+    public class BTree<TValue, TKey> where TKey : IComparable<TKey>
     {
-        public class Node
+        public class Node : BlockAllocElement<Node>
         {
             public TKey key;            // key used for sorting
             public TValue value;           // if != null pointer to object stored in leaf node
@@ -20,10 +20,11 @@ namespace System.NumericsX.Core
         int maxChildrenPerNode;
 
         Node root;
-        BlockAlloc<Node> nodeAllocator = new(128);
+        BlockAlloc<Node> nodeAllocator = new(128, new Node());
 
         public BTree(int maxChildrenPerNode)
         {
+            this.maxChildrenPerNode = maxChildrenPerNode;
             Debug.Assert(maxChildrenPerNode >= 4);
             root = null;
         }
@@ -62,17 +63,17 @@ namespace System.NumericsX.Core
 
             for (node = root; node.firstChild != null; node = child)
             {
-                if (key > node.key)
+                if (key.CompareTo(node.key) > 0)
                     node.key = key;
 
                 // find the first child with a key larger equal to the key of the new node
                 for (child = node.firstChild; child.next != null; child = child.next)
-                    if (key <= child.key)
+                    if (key.CompareTo(child.key) <= 0)
                         break;
 
                 if (child.value != null)
                 {
-                    if (key <= child.key)
+                    if (key.CompareTo(child.key) <= 0)
                     {
                         // insert new node before child
                         if (child.prev != null) child.prev.next = newNode;
@@ -105,7 +106,7 @@ namespace System.NumericsX.Core
                 if (child.numChildren >= maxChildrenPerNode)
                 {
                     SplitNode(child);
-                    if (key <= child.prev.key)
+                    if (key.CompareTo(child.prev.key) <= 0)
                         child = child.prev;
                 }
             }
@@ -144,7 +145,7 @@ namespace System.NumericsX.Core
                 else if (parent.prev != null) parent = MergeNodes(parent.prev, parent);
 
                 // a parent may not use a key higher than the key of it's last child
-                if (parent.key > parent.lastChild.key)
+                if (parent.key.CompareTo(parent.lastChild.key) > 0)
                     parent.key = parent.lastChild.key;
 
                 if (parent.numChildren > maxChildrenPerNode)
@@ -155,7 +156,7 @@ namespace System.NumericsX.Core
             }
             for (; parent != null && parent.lastChild != null; parent = parent.parent)
                 // a parent may not use a key higher than the key of it's last child
-                if (parent.key > parent.lastChild.key)
+                if (parent.key.CompareTo(parent.lastChild.key) > 0)
                     parent.key = parent.lastChild.key;
 
             // free the node
@@ -181,17 +182,17 @@ namespace System.NumericsX.Core
             {
                 while (node.next != null)
                 {
-                    if (node.key >= key)
+                    if (node.key.CompareTo(key) >= 0)
                         break;
                     node = node.next;
                 }
                 if (node.value != null)
                 {
-                    if (node.key == key) return node.value;
-                    else return null;
+                    if (node.key.CompareTo(key) == 0) return node.value;
+                    else return default;
                 }
             }
-            return null;
+            return default;
         }
 
         public TValue FindSmallestLargerEqual(TKey key)                // find an object with the smallest key larger equal the given key
@@ -200,17 +201,17 @@ namespace System.NumericsX.Core
             {
                 while (node.next != null)
                 {
-                    if (node.key >= key)
+                    if (node.key.CompareTo(key) >= 0)
                         break;
                     node = node.next;
                 }
                 if (node.value != null)
                 {
-                    if (node.key >= key) return node.value;
-                    else return null;
+                    if (node.key.CompareTo(key) >= 0) return node.value;
+                    else return default;
                 }
             }
-            return null;
+            return default;
         }
 
         public TValue FindLargestSmallerEqual(TKey key)                // find an object with the largest key smaller equal the given key
@@ -219,17 +220,17 @@ namespace System.NumericsX.Core
             {
                 while (node.prev != null)
                 {
-                    if (node.key <= key)
+                    if (node.key.CompareTo(key) <= 0)
                         break;
                     node = node.prev;
                 }
                 if (node.value != null)
                 {
-                    if (node.key <= key) return node.value;
-                    else return null;
+                    if (node.key.CompareTo(key) <= 0) return node.value;
+                    else return default;
                 }
             }
-            return null;
+            return default;
         }
 
         public Node Root => root;                                        // returns the root node of the tree
@@ -280,7 +281,7 @@ namespace System.NumericsX.Core
             node.numChildren = 0;
             node.firstChild = null;
             node.lastChild = null;
-            node.value = null;
+            node.value = default;
             return node;
         }
 
@@ -364,7 +365,7 @@ namespace System.NumericsX.Core
             // the root node may have zero children and leaf nodes always have zero children, all other nodes should have at least 2 and at most maxChildrenPerNode children
             Debug.Assert(node == root || (node.value != null && node.numChildren == 0) || (node.numChildren >= 2 && node.numChildren <= maxChildrenPerNode));
             // the key of a node may never be larger than the key of it's last child
-            Debug.Assert(node.lastChild == null || node.key <= node.lastChild.key);
+            Debug.Assert(node.lastChild == null || node.key.CompareTo(node.lastChild.key) <= 0);
 
             numChildren = 0;
             for (child = node.firstChild; child != null; child = child.next)
@@ -395,7 +396,7 @@ namespace System.NumericsX.Core
             lastNode = GetNextLeaf(Root);
             if (lastNode != null)
                 for (node = GetNextLeaf(lastNode); node != null; lastNode = node, node = GetNextLeaf(node))
-                    Debug.Assert(lastNode.key <= node.key);
+                    Debug.Assert(lastNode.key.CompareTo(node.key) <= 0);
         }
     }
 }
