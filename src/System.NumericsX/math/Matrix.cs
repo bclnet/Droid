@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.NumericsX.Core;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using static System.NumericsX.LibX;
+using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
@@ -190,7 +190,7 @@ namespace System.NumericsX
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
 
         [FieldOffset(0)] internal Vector2[] mat;
 
@@ -681,7 +681,7 @@ namespace System.NumericsX
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
 
         public void TransposeMultiply(Matrix3x3 inv, Matrix3x3 b, out Matrix3x3 dst)
         {
@@ -1200,7 +1200,7 @@ namespace System.NumericsX
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
 
         [FieldOffset(0)] internal Vector4[] mat;
 
@@ -1674,7 +1674,7 @@ namespace System.NumericsX
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
 
         [FieldOffset(0)] internal Vector5[] mat;
 
@@ -2399,7 +2399,7 @@ namespace System.NumericsX
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
 
         [FieldOffset(0)] internal Vector6[] mat;
 
@@ -3656,7 +3656,7 @@ namespace System.NumericsX
         public unsafe string ToString(int precision = 2)
         {
             var dimension = Dimension;
-            return ToFloatPtr(_ => common_FloatArrayToString(_, dimension, precision));
+            return ToFloatPtr(_ => FloatArrayToString(_, dimension, precision));
         }
 
         float DeterminantGeneric()

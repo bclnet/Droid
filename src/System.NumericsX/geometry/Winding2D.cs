@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.NumericsX.Core;
 using System.Runtime.CompilerServices;
-using static System.NumericsX.LibX;
+using static System.NumericsX.Platform;
 using static System.NumericsX.Plane;
 
 namespace System.NumericsX
@@ -403,7 +403,7 @@ namespace System.NumericsX
             {
                 for (var i = 0; i < numPoints; i++)
                     for (var j = 0; j < 2; j++)
-                        if (p[i][j] <= Platform.MIN_WORLD_COORD || p[i][j] >= Platform.MAX_WORLD_COORD)
+                        if (p[i][j] <= MIN_WORLD_COORD || p[i][j] >= MAX_WORLD_COORD)
                             return true;
                 return false;
             }
@@ -412,7 +412,7 @@ namespace System.NumericsX
         public void Print()
         {
             for (var i = 0; i < numPoints; i++)
-                common_Printf($"({p[i].x:5.1}, {p[i].y:5.1})\n");
+                Printf($"({p[i].x:5.1}, {p[i].y:5.1})\n");
         }
 
         public float PlaneDistance(Vector3 plane)

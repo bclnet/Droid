@@ -1,12 +1,14 @@
 using System.Linq;
-using System.NumericsX.Core;
+using Gengine.NumericsX.Core;
 using System.Runtime.InteropServices;
 using System.Text;
-using static System.NumericsX.Core.Key;
-using static System.NumericsX.Lib;
-using static System.NumericsX.Sys.NativeW;
+using static Gengine.NumericsX.Core.Key;
+using static Gengine.NumericsX.Lib;
+using static Gengine.NumericsX.Sys.NativeW;
+using System;
+using System.NumericsX.Core;
 
-namespace System.NumericsX.Sys
+namespace Gengine.NumericsX.Sys
 {
     public class ConW
     {

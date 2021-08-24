@@ -1,8 +1,9 @@
+using System;
 using System.Text;
-using static System.NumericsX.Lib;
-using static System.NumericsX.LibX;
+using static Gengine.NumericsX.Lib;
+using static System.NumericsX.Platform;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     // lexer flags
     public enum LEXFL

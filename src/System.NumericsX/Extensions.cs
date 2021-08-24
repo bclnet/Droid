@@ -24,6 +24,10 @@ namespace System.NumericsX.Core
         {
         }
 
+        public static void SetGranularity<T>(this List<T> source, int granularity)
+        {
+        }
+
         public static void Resize<T>(this List<T> source, int newSize)
         {
         }

@@ -1,4 +1,4 @@
-namespace System.NumericsX
+namespace Gengine.NumericsX
 {
     public static class Config
     {

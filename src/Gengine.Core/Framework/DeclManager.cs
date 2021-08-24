@@ -1,7 +1,7 @@
 using Gengine.Render;
 using Gengine.Sound;
 using System;
-using System.NumericsX.Core;
+using Gengine.NumericsX.Core;
 using static Gengine.Lib;
 
 namespace Gengine.Framework

@@ -1,9 +1,10 @@
 #define FRUSTUM_DEBUG
 
-using System.NumericsX.Core;
-using System.NumericsX.Sys;
+using Gengine.NumericsX.Core;
+using Gengine.NumericsX.Sys;
+using System.NumericsX;
 
-namespace System.NumericsX
+namespace Gengine.NumericsX
 {
     public static class Lib
     {

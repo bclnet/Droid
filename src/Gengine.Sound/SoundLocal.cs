@@ -1,8 +1,8 @@
 using Gengine.Framework;
 using Gengine.Render;
 using System;
-using System.NumericsX;
-using System.NumericsX.Core;
+using Gengine.NumericsX;
+using Gengine.NumericsX.Core;
 //using ChannelType = System.Int32; // the game uses its own series of enums, and we don't want to require casts
 using FourCC = System.Int32;
 //using ALuint = System.UInt32;

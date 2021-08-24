@@ -1,9 +1,10 @@
 using System.IO;
 using System.Text;
-using static System.NumericsX.Lib;
-using static System.NumericsX.Core.Key;
+using static Gengine.NumericsX.Lib;
+using static Gengine.NumericsX.Core.Key;
+using System;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     internal struct Key2
     {

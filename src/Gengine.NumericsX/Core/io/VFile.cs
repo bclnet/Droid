@@ -1,12 +1,14 @@
 using System.Diagnostics;
 using System.IO;
-using System.NumericsX.Sys;
+using Gengine.NumericsX.Sys;
 using System.Runtime.CompilerServices;
 using System.Text;
-using static System.NumericsX.Lib;
-using static System.NumericsX.LibX;
+using static Gengine.NumericsX.Lib;
+using static System.NumericsX.Platform;
+using System;
+using System.NumericsX;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     // mode parm for Seek
     public enum FS_SEEK

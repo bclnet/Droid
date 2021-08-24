@@ -1,7 +1,7 @@
-using System.NumericsX.Core;
-using static System.NumericsX.Core.Key;
+using Gengine.NumericsX.Core;
+using static Gengine.NumericsX.Core.Key;
 
-namespace System.NumericsX.Sys
+namespace Gengine.NumericsX.Sys
 {
     public static partial class SysW
     {

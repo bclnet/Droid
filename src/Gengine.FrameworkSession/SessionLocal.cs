@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.NumericsX;
-using System.NumericsX.Core;
-using System.NumericsX.Sys;
+using Gengine.NumericsX;
+using Gengine.NumericsX.Core;
+using Gengine.NumericsX.Sys;
 using Gengine.Render;
 using Gengine.Sound;
 using Gengine.UI;
-using static System.NumericsX.Lib;
+using static Gengine.NumericsX.Lib;
 using static Gengine.Lib;
 
 namespace Gengine.Framework

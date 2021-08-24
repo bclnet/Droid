@@ -1,6 +1,6 @@
-using System.NumericsX.Sys;
+using Gengine.NumericsX.Sys;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     public interface IConsole
     {

@@ -1,4 +1,4 @@
-namespace System.NumericsX.Sys
+namespace Gengine.NumericsX.Sys
 {
     public static class PlatformW
     {

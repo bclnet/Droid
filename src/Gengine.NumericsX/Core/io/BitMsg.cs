@@ -1,11 +1,14 @@
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.NumericsX.Sys;
+using Gengine.NumericsX.Sys;
 using System.Runtime.CompilerServices;
 using System.Text;
-using static System.NumericsX.Lib;
+using static Gengine.NumericsX.Lib;
+using System.NumericsX;
+using System;
+using System.NumericsX.Core;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     public class BitMsg
     {

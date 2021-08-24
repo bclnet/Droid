@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using static System.NumericsX.Lib;
-using static System.NumericsX.Core.Token;
-using static System.NumericsX.Core.Lexer;
+using static Gengine.NumericsX.Lib;
+using static Gengine.NumericsX.Core.Token;
+using static Gengine.NumericsX.Core.Lexer;
+using System;
+using System.NumericsX;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     // macro definitions
     public class Define

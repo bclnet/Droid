@@ -1,8 +1,9 @@
 using Gengine.Framework;
 using Gengine.Render;
-using System.NumericsX;
-using System.NumericsX.Core;
+using Gengine.NumericsX;
+using Gengine.NumericsX.Core;
 using ChannelType = System.Int32; // the game uses its own series of enums, and we don't want to require casts
+using System.NumericsX;
 
 namespace Gengine.Sound
 {

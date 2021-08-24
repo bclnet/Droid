@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.NumericsX.Core;
+using Gengine.NumericsX.Core;
 
-namespace System.NumericsX.Sys
+namespace Gengine.NumericsX.Sys
 {
     struct KbdPoll
     {

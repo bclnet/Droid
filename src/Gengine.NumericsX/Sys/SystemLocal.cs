@@ -1,6 +1,7 @@
-using System.NumericsX.Core;
+using Gengine.NumericsX.Core;
+using System;
 
-namespace System.NumericsX.Sys
+namespace Gengine.NumericsX.Sys
 {
     public class SystemLocal : ISystem
     {

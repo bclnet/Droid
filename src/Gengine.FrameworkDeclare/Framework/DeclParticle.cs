@@ -1,9 +1,9 @@
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
-using System.NumericsX;
-using System.NumericsX.Core;
-using static System.NumericsX.Lib;
+using Gengine.NumericsX;
+using Gengine.NumericsX.Core;
+using static Gengine.NumericsX.Lib;
 using static Gengine.Lib;
 
 namespace Gengine.Framework

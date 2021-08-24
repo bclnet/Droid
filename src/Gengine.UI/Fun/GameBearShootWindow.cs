@@ -1,12 +1,12 @@
+using Gengine.NumericsX.Core;
+using Gengine.NumericsX.Sys;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
-using System.NumericsX.Core;
-using System.NumericsX.Sys;
 using static Gengine.Lib;
-using static System.NumericsX.Core.Key;
-using static System.NumericsX.Lib;
+using static Gengine.NumericsX.Core.Key;
+using static Gengine.NumericsX.Lib;
 
 namespace Gengine.UI
 {
@@ -68,8 +68,7 @@ namespace Gengine.UI
         {
             this.game = game;
 
-            game.ReadSaveGameString(materialName, savefile);
-            SetMaterial(materialName);
+            game.ReadSaveGameString(out materialName, savefile); SetMaterial(materialName);
 
             savefile.Read(out width);
             savefile.Read(out height);
@@ -185,7 +184,7 @@ namespace Gengine.UI
             return base.ParseInternalVar(name, src);
         }
 
-        void CommonInit()
+        new void CommonInit()
         {
             BSEntity ent;
 
@@ -373,7 +372,7 @@ namespace Gengine.UI
             bearScale = 1f;
         }
 
-        public virtual string HandleEvent(SysEvent ev, bool updateVisuals)
+        public override string HandleEvent(SysEvent ev, Action<bool> updateVisuals)
         {
             var key = (Key)ev.evValue;
 
@@ -390,7 +389,7 @@ namespace Gengine.UI
             return ret;
         }
 
-        public override WinVar GetWinVarByName(string name, bool winLookup = false, DrawWin owner = null)
+        public override WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
         {
             WinVar retVar = null;
             if (string.Equals(name, "gamerunning", StringComparison.OrdinalIgnoreCase)) retVar = gamerunning;
@@ -623,7 +622,7 @@ namespace Gengine.UI
             }
 
             goalsHit++;
-            gui.SetStateString("player_score", va("%i", goalsHit));
+            gui.SetStateString("player_score", goalsHit.ToString());
 
             // Check for level progression
             if ((goalsHit % 5) == 0)
@@ -684,12 +683,12 @@ namespace Gengine.UI
                     windForce = rnd.CRandomFloat() * (MAX_WINDFORCE * 0.75f);
                     if (windForce > 0)
                     {
-                        windForce += (MAX_WINDFORCE * 0.25f);
+                        windForce += MAX_WINDFORCE * 0.25f;
                         wind.rotation = 0;
                     }
                     else
                     {
-                        windForce -= (MAX_WINDFORCE * 0.25f);
+                        windForce -= MAX_WINDFORCE * 0.25f;
                         wind.rotation = 180;
                     }
 

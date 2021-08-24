@@ -1,6 +1,6 @@
-using static System.NumericsX.LibX;
+using static System.NumericsX.Platform;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     public class Usercmd
     {

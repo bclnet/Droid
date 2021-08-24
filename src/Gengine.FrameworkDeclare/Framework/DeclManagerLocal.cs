@@ -5,8 +5,8 @@ using Gengine.Sound;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.NumericsX.Core;
-using static System.NumericsX.Lib;
+using Gengine.NumericsX.Core;
+using static Gengine.NumericsX.Lib;
 using static Gengine.Framework.Lib2;
 
 namespace Gengine.Framework

@@ -1,8 +1,11 @@
+using System;
 using System.Diagnostics;
+using System.NumericsX;
+using System.NumericsX.Core;
 using System.Runtime.CompilerServices;
-using static System.NumericsX.Lib;
+using static Gengine.NumericsX.Lib;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     #region VCompressor
 
@@ -1531,7 +1534,7 @@ namespace System.NumericsX.Core
     /// <summary>
     /// Outputs word aligned compressed data.
     /// </summary>
-    /// <seealso cref="System.NumericsX.Core.VCompressor_LZSS" />
+    /// <seealso cref="Gengine.NumericsX.Core.VCompressor_LZSS" />
     public class VCompressor_LZSS_WordAligned : VCompressor_LZSS
     {
         public override void Init(VFile f, bool compress, int wordLength)
@@ -1650,7 +1653,7 @@ namespace System.NumericsX.Core
     /// http://www.cs.duke.edu/csed/curious/compression/lzw.html
     /// http://oldwww.rasip.fer.hr/research/compress/algorithms/fund/lz/lzw.html
     /// </summary>
-    /// <seealso cref="System.NumericsX.Core.VCompressor_BitStream" />
+    /// <seealso cref="Gengine.NumericsX.Core.VCompressor_BitStream" />
     public class VCompressor_LZW : VCompressor_BitStream
     {
         const int LZW_BLOCK_SIZE = 32767;

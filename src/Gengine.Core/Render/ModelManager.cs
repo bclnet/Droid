@@ -1,5 +1,5 @@
 using Gengine.Framework;
-using System.NumericsX.Core;
+using Gengine.NumericsX.Core;
 
 namespace Gengine.Render
 {

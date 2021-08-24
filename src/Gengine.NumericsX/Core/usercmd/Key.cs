@@ -1,4 +1,4 @@
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     // these are the key numbers that are used by the key system normal keys should be passed as lowercased ascii
     // Some high ascii (> 127) characters that are mapped directly to keys on western european keyboards are inserted in this table so that those keys

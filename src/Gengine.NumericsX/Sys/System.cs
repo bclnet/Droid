@@ -1,4 +1,6 @@
-namespace System.NumericsX.Sys
+using System;
+
+namespace Gengine.NumericsX.Sys
 {
     [Flags]
     public enum CPUID

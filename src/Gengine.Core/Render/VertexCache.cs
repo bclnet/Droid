@@ -1,13 +1,13 @@
+using Gengine.NumericsX.Core;
 using System;
-using WaveEngine.Bindings.OpenGLES;
-using static System.NumericsX.Lib;
-using static Gengine.Lib;
-using static WaveEngine.Bindings.OpenGLES.GL;
-using static Gengine.Render.QGL;
-using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
-using System.NumericsX.Core;
 using System.NumericsX;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using WaveEngine.Bindings.OpenGLES;
+using static Gengine.Lib;
+using static Gengine.NumericsX.Lib;
+using static Gengine.Render.QGL;
+using static WaveEngine.Bindings.OpenGLES.GL;
 
 // vertex cache calls should only be made by the front end
 namespace Gengine.Render

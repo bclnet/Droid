@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.NumericsX.Sys;
+using Gengine.NumericsX.Sys;
 using System.Text;
-using static System.NumericsX.Lib;
-using static System.NumericsX.LibX;
+using static Gengine.NumericsX.Lib;
+using static System.NumericsX.Platform;
+using System;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     public class VFileDemo : VFile
     {
@@ -217,7 +218,7 @@ namespace System.NumericsX.Core
         {
             var read = compressor.Read(buffer, len);
             if (read == 0 && len >= 4)
-                throw new NotImplementedException(); //*(demoSystem_t*)buffer = DS_FINISHED;
+                throw new NotImplementedException(); //*(DemoSystem)buffer = DS_FINISHED;
             return read;
         }
 

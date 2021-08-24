@@ -4,19 +4,21 @@ using OpenTK.Audio.OpenAL;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Gengine.NumericsX;
+using Gengine.NumericsX.Core;
+using static Gengine.Lib;
+using static Gengine.NumericsX.Lib;
 using System.NumericsX;
 using System.NumericsX.Core;
-using static Gengine.Lib;
-using static System.NumericsX.Lib;
 
 namespace Gengine.Sound
 {
     public class SoundCache
     {
 #if USE_SOUND_CACHE_ALLOCATOR
-		public static DynamicBlockAlloc<byte> soundCacheAllocator = new(1 << 20, 1 << 10);
+		public static DynamicBlockAlloc<byte> soundCacheAllocator = new(1 << 20, 1 << 10, x => new byte[x]);
 #else
-        public static DynamicAlloc<byte> soundCacheAllocator = new(1 << 20, 1 << 10);
+        public static DynamicAlloc<byte> soundCacheAllocator = new(1 << 20, 1 << 10, 0, x => new byte[x]);
 #endif
 
         bool insideLevelLoad;

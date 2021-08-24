@@ -1,8 +1,10 @@
+using System;
+using System.NumericsX;
 using System.Runtime.CompilerServices;
 using System.Text;
-using static System.NumericsX.Lib;
+using static Gengine.NumericsX.Lib;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     public static class StringX
     {
@@ -96,7 +98,7 @@ namespace System.NumericsX.Core
             dest[destsize - 1] = 0;
         }
 
-        public static bool CharIsPrintable(Key key)
+        public static bool CharIsPrintable(char key)
         {
             throw new NotImplementedException();
         }

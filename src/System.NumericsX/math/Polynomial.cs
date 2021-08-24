@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using static System.NumericsX.LibX;
+using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
@@ -526,7 +526,7 @@ namespace System.NumericsX
                 return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
 
         static readonly float[] Laguer_frac = new[] { 0f, 0.5f, 0.25f, 0.75f, 0.13f, 0.38f, 0.62f, 0.88f, 1f };
         unsafe int Laguer(Complex* coef, int degree, Complex r)

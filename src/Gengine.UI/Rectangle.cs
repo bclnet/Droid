@@ -128,7 +128,8 @@ namespace Gengine.UI
             }
         }
 
-        //public override string ToString();
+        public override string ToString()
+            => $"{x:2} {y:2} {w:2} {h:2}";
 
         public Vector4 ToVec4()
             => reinterpret.cast_vec4(x);

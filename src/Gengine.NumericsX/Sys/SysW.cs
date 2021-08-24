@@ -2,13 +2,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.NumericsX.Core;
+using Gengine.NumericsX.Core;
 using System.Runtime.InteropServices;
 using System.Text;
-using static System.NumericsX.Lib;
-using static System.NumericsX.Sys.NativeW;
+using static Gengine.NumericsX.Lib;
+using static Gengine.NumericsX.Sys.NativeW;
+using System;
 
-namespace System.NumericsX.Sys
+namespace Gengine.NumericsX.Sys
 {
     public static partial class SysW
     {

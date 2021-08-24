@@ -3,7 +3,7 @@ using Gengine.Sound;
 using Gengine.UI;
 using System;
 using System.Diagnostics;
-using System.NumericsX.Core;
+using Gengine.NumericsX.Core;
 
 namespace Gengine.Render
 {

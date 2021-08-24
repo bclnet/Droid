@@ -1,6 +1,7 @@
 using System.Diagnostics;
+using System.NumericsX;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     // token types
     public enum TT

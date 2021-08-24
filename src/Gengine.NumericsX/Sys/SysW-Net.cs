@@ -1,7 +1,7 @@
 //using Droid.Core;
 //using static Droid.Core.Lib;
 
-//namespace System.NumericsX.Sys
+//namespace Gengine.NumericsX.Sys
 //{
 //    public static partial class SysW
 //    {

@@ -1,7 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     public delegate object FunctionPointer(object arg); // needs to be cast to/from real type!
 

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using static System.NumericsX.Lib;
+using static Gengine.NumericsX.Lib;
 
 namespace Gengine.Render
 {

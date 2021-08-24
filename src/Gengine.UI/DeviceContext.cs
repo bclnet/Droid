@@ -1,8 +1,12 @@
+using Gengine.NumericsX.Core;
 using Gengine.Render;
 using System.Collections.Generic;
 using System.NumericsX;
 using System.NumericsX.Core;
+using System.Text;
 using static Gengine.Lib;
+using static Gengine.NumericsX.Lib;
+using GlIndex = System.Int32;
 
 namespace Gengine.UI
 {
@@ -93,7 +97,7 @@ namespace Gengine.UI
             xScale = 0f;
             SetSize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
             whiteImage = declManager.FindMaterial("guis/assets/white.tga");
-            whiteImage.Sort = SS_GUI;
+            whiteImage.Sort = (float)SS.GUI;
             mbcs = false;
             SetupFonts();
             activeFont = fonts[0];
@@ -115,15 +119,15 @@ namespace Gengine.UI
             scrollBarImages[(int)SCROLLBAR.LEFT] = declManager.FindMaterial("ui/assets/scrollbar_left.tga");
             scrollBarImages[(int)SCROLLBAR.UP] = declManager.FindMaterial("ui/assets/scrollbar_up.tga");
             scrollBarImages[(int)SCROLLBAR.DOWN] = declManager.FindMaterial("ui/assets/scrollbar_down.tga");
-            cursorImages[(int)CURSOR.ARROW].Sort = SS_GUI;
-            cursorImages[(int)CURSOR.HAND].Sort = SS_GUI;
-            scrollBarImages[(int)SCROLLBAR.HBACK].Sort = SS_GUI;
-            scrollBarImages[(int)SCROLLBAR.VBACK].Sort = SS_GUI;
-            scrollBarImages[(int)SCROLLBAR.THUMB].Sort = SS_GUI;
-            scrollBarImages[(int)SCROLLBAR.RIGHT].Sort = SS_GUI;
-            scrollBarImages[(int)SCROLLBAR.LEFT].Sort = SS_GUI;
-            scrollBarImages[(int)SCROLLBAR.UP].Sort = SS_GUI;
-            scrollBarImages[(int)SCROLLBAR.DOWN].Sort = SS_GUI;
+            cursorImages[(int)CURSOR.ARROW].Sort = (float)SS.GUI;
+            cursorImages[(int)CURSOR.HAND].Sort = (float)SS.GUI;
+            scrollBarImages[(int)SCROLLBAR.HBACK].Sort = (float)SS.GUI;
+            scrollBarImages[(int)SCROLLBAR.VBACK].Sort = (float)SS.GUI;
+            scrollBarImages[(int)SCROLLBAR.THUMB].Sort = (float)SS.GUI;
+            scrollBarImages[(int)SCROLLBAR.RIGHT].Sort = (float)SS.GUI;
+            scrollBarImages[(int)SCROLLBAR.LEFT].Sort = (float)SS.GUI;
+            scrollBarImages[(int)SCROLLBAR.UP].Sort = (float)SS.GUI;
+            scrollBarImages[(int)SCROLLBAR.DOWN].Sort = (float)SS.GUI;
             cursor = (int)CURSOR.ARROW;
             enableClipping = true;
             overStrikeMode = true;
@@ -143,6 +147,7 @@ namespace Gengine.UI
             Clear();
         }
         public bool Initialized => initialized;
+
         public void EnableLocalization();
 
         public void GetTransformInfo(out Vector3 origin, out Matrix3x3 mat)
@@ -204,34 +209,25 @@ namespace Gengine.UI
 
             renderSystem.SetColor(color);
 
-            if (ClippedCoords(ref x, ref y, ref width, ref height, null, null, null, null))
+            if (ClippedCoords(ref x, ref y, ref width, ref height))
                 return;
 
             AdjustCoords(ref x, ref y, ref width, ref height);
             DrawStretchPic(x, y, width, height, 0, 0, 0, 0, whiteImage);
         }
 
-        public int DrawText(string text, float textScale, ALIGN textAlign, Vector4 color, Rectangle rectDraw, bool wrap, int cursor = -1, bool calcOnly = false, List<int> breaks = null, int limit = 0)
+        public unsafe int DrawText(string text, float textScale, ALIGN textAlign, Vector4 color, Rectangle rectDraw, bool wrap, int cursor = -1, bool calcOnly = false, List<int> breaks = null, int limit = 0)
         {
-            const char* p, *textPtr, *newLinePtr;
-            char buff[1024];
-            int len, newLine, newLineWidth, count;
-            float y;
-            float textWidth;
-
-            float charSkip = MaxCharWidth(textScale) + 1;
-            float lineSkip = MaxCharHeight(textScale);
-
-            float cursorSkip = cursor >= 0 ? charSkip : 0;
-
-            bool lineBreak, wordBreak;
+            var charSkip = (float)MaxCharWidth(textScale) + 1;
+            var lineSkip = (float)MaxCharHeight(textScale);
+            var cursorSkip = cursor >= 0 ? charSkip : 0f;
 
             SetFontByScale(textScale);
 
-            textWidth = 0;
-            newLinePtr = null;
+            var textWidth = 0f;
+            char* newLinePtr = null;
 
-            if (!calcOnly && !(text && *text))
+            if (!calcOnly && string.IsNullOrEmpty(text))
             {
                 if (cursor == 0)
                 {
@@ -241,106 +237,106 @@ namespace Gengine.UI
                 return MathX.FtoiFast(rectDraw.w / charSkip);
             }
 
-            textPtr = text;
-
-            y = lineSkip + rectDraw.y;
-            len = 0;
-            buff[0] = '\0';
-            newLine = 0;
-            newLineWidth = 0;
-            p = textPtr;
-
-            if (breaks)
-                breaks.Add(0);
-            count = 0;
-            textWidth = 0;
-            lineBreak = false;
-            wordBreak = false;
-            while (p != null)
+            fixed (char* textPtr = text)
             {
-                if (*p == '\n' || *p == '\r' || *p == '\0')
-                {
-                    lineBreak = true;
-                    if ((*p == '\n' && *(p + 1) == '\r') || (*p == '\r' && *(p + 1) == '\n'))
-                        p++;
-                }
+                var y = lineSkip + rectDraw.y;
+                var len = 0;
+                var buf = stackalloc byte[1024]; var bufLen = 0;
+                var newLine = 0;
+                var newLineWidth = 0;
+                char* p = textPtr;
+                char* pEnd = textPtr + text.Length;
 
-                int nextCharWidth = (StringX.CharIsPrintable(*p) ? CharWidth(*p, textScale) : cursorSkip);
-                // FIXME: this is a temp hack until the guis can be fixed not not overflow the bounding rectangles the side-effect is that list boxes and edit boxes will draw over their scroll bars
-                //	The following line and the !linebreak in the if statement below should be removed
-                nextCharWidth = 0;
+                breaks?.Add(0);
+                var count = 0;
+                textWidth = 0f;
+                bool lineBreak = false, wordBreak = false;
 
-                if (!lineBreak && (textWidth + nextCharWidth) > rectDraw.w)
+                while (p != pEnd)
                 {
-                    // The next character will cause us to overflow, if we haven't yet found a suitable break spot, set it to be this character
-                    if (len > 0 && newLine == 0)
+                    if (*p == '\n' || *p == '\r' || p == pEnd)
                     {
+                        lineBreak = true;
+                        if ((*p == '\n' && *(p + 1) == '\r') || (*p == '\r' && *(p + 1) == '\n'))
+                            p++;
+                    }
+
+                    var nextCharWidth = StringX.CharIsPrintable(*p) ? CharWidth(*p, textScale) : (int)cursorSkip;
+                    // FIXME: this is a temp hack until the guis can be fixed not not overflow the bounding rectangles the side-effect is that list boxes and edit boxes will draw over their scroll bars
+                    // The following line and the !linebreak in the if statement below should be removed
+                    nextCharWidth = 0;
+
+                    if (!lineBreak && (textWidth + nextCharWidth) > rectDraw.w)
+                    {
+                        // The next character will cause us to overflow, if we haven't yet found a suitable break spot, set it to be this character
+                        if (len > 0 && newLine == 0)
+                        {
+                            newLine = len;
+                            newLinePtr = p;
+                            newLineWidth = (int)textWidth;
+                        }
+                        wordBreak = true;
+                    }
+                    else if (lineBreak || (wrap && (*p == ' ' || *p == '\t')))
+                    {
+                        // The next character is in view, so if we are a break character, store our position
                         newLine = len;
-                        newLinePtr = p;
-                        newLineWidth = textWidth;
+                        newLinePtr = p + 1;
+                        newLineWidth = (int)textWidth;
                     }
-                    wordBreak = true;
-                }
-                else if (lineBreak || (wrap && (*p == ' ' || *p == '\t')))
-                {
-                    // The next character is in view, so if we are a break character, store our position
-                    newLine = len;
-                    newLinePtr = p + 1;
-                    newLineWidth = textWidth;
-                }
 
-                if (lineBreak || wordBreak)
-                {
-                    var x = rectDraw.x;
-
-                    if (textAlign == ALIGN.RIGHT) x = rectDraw.x + rectDraw.w - newLineWidth;
-                    else if (textAlign == ALIGN.CENTER) x = rectDraw.x + (rectDraw.w - newLineWidth) / 2;
-
-                    if (wrap || newLine > 0)
+                    if (lineBreak || wordBreak)
                     {
-                        buff[newLine] = '\0';
+                        var x = rectDraw.x;
 
-                        // This is a special case to handle breaking in the middle of a word. if we didn't do this, the cursor would appear on the end of this line and the beginning of the next.
-                        if (wordBreak && cursor >= newLine && newLine == len)
-                            cursor++;
+                        if (textAlign == ALIGN.RIGHT) x = rectDraw.x + rectDraw.w - newLineWidth;
+                        else if (textAlign == ALIGN.CENTER) x = rectDraw.x + (rectDraw.w - newLineWidth) / 2;
+
+                        if (wrap || newLine > 0)
+                        {
+                            bufLen = newLine;
+
+                            // This is a special case to handle breaking in the middle of a word. if we didn't do this, the cursor would appear on the end of this line and the beginning of the next.
+                            if (wordBreak && cursor >= newLine && newLine == len)
+                                cursor++;
+                        }
+
+                        if (!calcOnly)
+                            count += DrawText(x, y, textScale, color, Encoding.ASCII.GetString(buf, bufLen), 0, 0, 0, cursor);
+
+                        if (cursor < newLine) cursor = -1;
+                        else if (cursor >= 0) cursor -= (newLine + 1);
+
+                        if (!wrap)
+                            return newLine;
+
+                        if ((limit != 0 && count > limit) || p == pEnd)
+                            break;
+
+                        y += lineSkip + 5;
+
+                        if (!calcOnly && y > rectDraw.Bottom)
+                            break;
+
+                        p = newLinePtr;
+
+                        breaks?.Add((int)(p - textPtr));
+
+                        len = 0;
+                        newLine = 0;
+                        newLineWidth = 0;
+                        textWidth = 0;
+                        lineBreak = false;
+                        wordBreak = false;
+                        continue;
                     }
 
-                    if (!calcOnly)
-                        count += DrawText(x, y, textScale, color, buff, 0, 0, 0, cursor);
-
-                    if (cursor < newLine) cursor = -1;
-                    else if (cursor >= 0) cursor -= (newLine + 1);
-
-                    if (!wrap)
-                        return newLine;
-
-                    if ((limit && count > limit) || *p == '\0')
-                        break;
-
-                    y += lineSkip + 5;
-
-                    if (!calcOnly && y > rectDraw.Bottom)
-                        break;
-
-                    p = newLinePtr;
-
-                    if (breaks)
-                        breaks.Add(p - text);
-
-                    len = 0;
-                    newLine = 0;
-                    newLineWidth = 0;
-                    textWidth = 0;
-                    lineBreak = false;
-                    wordBreak = false;
-                    continue;
+                    buf[len++] = (byte)*p++;
+                    bufLen = len;
+                    // update the width
+                    if (buf[len - 1] != C_COLOR_ESCAPE && (len <= 1 || buf[len - 2] != C_COLOR_ESCAPE))
+                        textWidth += textScale * useFont.glyphScale * useFont.glyphs[buf[len - 1]].xSkip;
                 }
-
-                buff[len++] = *p++;
-                buff[len] = '\0';
-                // update the width
-                if (buff[len - 1] != C_COLOR_ESCAPE && (len <= 1 || buff[len - 2] != C_COLOR_ESCAPE))
-                    textWidth += textScale * useFont.glyphScale * useFont.glyphs[buff[len - 1]].xSkip;
             }
 
             return MathX.FtoiFast(rectDraw.w / charSkip);
@@ -358,91 +354,41 @@ namespace Gengine.UI
             DrawMaterial(x, y + h - size, w, size, mat, color);
         }
 
-        public void DrawStretchPic(float x, float y, float w, float h, float s0, float t0, float s1, float t1, Material mat)
+        public void DrawStretchPic(float x, float y, float w, float h, float s0, float t0, float s1, float t1, Material material)
         {
-            DrawVert[] verts[4];
-            GlIndex[] indexes[6];
-            indexes[0] = 3;
-            indexes[1] = 0;
-            indexes[2] = 2;
-            indexes[3] = 2;
-            indexes[4] = 0;
-            indexes[5] = 1;
-            verts[0].xyz[0] = x;
-            verts[0].xyz[1] = y;
-            verts[0].xyz[2] = 0;
-            verts[0].st[0] = s1;
-            verts[0].st[1] = t1;
-            verts[0].normal[0] = 0;
-            verts[0].normal[1] = 0;
-            verts[0].normal[2] = 1;
-            verts[0].tangents[0][0] = 1;
-            verts[0].tangents[0][1] = 0;
-            verts[0].tangents[0][2] = 0;
-            verts[0].tangents[1][0] = 0;
-            verts[0].tangents[1][1] = 1;
-            verts[0].tangents[1][2] = 0;
-            verts[1].xyz[0] = x + w;
-            verts[1].xyz[1] = y;
-            verts[1].xyz[2] = 0;
-            verts[1].st[0] = s2;
-            verts[1].st[1] = t1;
-            verts[1].normal[0] = 0;
-            verts[1].normal[1] = 0;
-            verts[1].normal[2] = 1;
-            verts[1].tangents[0][0] = 1;
-            verts[1].tangents[0][1] = 0;
-            verts[1].tangents[0][2] = 0;
-            verts[1].tangents[1][0] = 0;
-            verts[1].tangents[1][1] = 1;
-            verts[1].tangents[1][2] = 0;
-            verts[2].xyz[0] = x + w;
-            verts[2].xyz[1] = y + h;
-            verts[2].xyz[2] = 0;
-            verts[2].st[0] = s2;
-            verts[2].st[1] = t2;
-            verts[2].normal[0] = 0;
-            verts[2].normal[1] = 0;
-            verts[2].normal[2] = 1;
-            verts[2].tangents[0][0] = 1;
-            verts[2].tangents[0][1] = 0;
-            verts[2].tangents[0][2] = 0;
-            verts[2].tangents[1][0] = 0;
-            verts[2].tangents[1][1] = 1;
-            verts[2].tangents[1][2] = 0;
-            verts[3].xyz[0] = x;
-            verts[3].xyz[1] = y + h;
-            verts[3].xyz[2] = 0;
-            verts[3].st[0] = s1;
-            verts[3].st[1] = t2;
-            verts[3].normal[0] = 0;
-            verts[3].normal[1] = 0;
-            verts[3].normal[2] = 1;
-            verts[3].tangents[0][0] = 1;
-            verts[3].tangents[0][1] = 0;
-            verts[3].tangents[0][2] = 0;
-            verts[3].tangents[1][0] = 0;
-            verts[3].tangents[1][1] = 1;
-            verts[3].tangents[1][2] = 0;
+            var indexes = new GlIndex[] { 3, 0, 2, 2, 0, 1 };
+            var verts = new DrawVert[4];
+            verts[0].xyz.x = x; verts[0].xyz.y = y; verts[0].xyz.z = 0;
+            verts[0].st.x = s0; verts[0].st.y = t0;
+            verts[0].normal.x = 0; verts[0].normal.y = 0; verts[0].normal.z = 1;
+            verts[0].tangents0.x = 1; verts[0].tangents0.y = 0; verts[0].tangents0.z = 0;
+            verts[0].tangents1.x = 0; verts[0].tangents1.y = 1; verts[0].tangents1.z = 0;
+            verts[1].xyz.x = x + w; verts[1].xyz.y = y; verts[1].xyz.z = 0;
+            verts[1].st.x = s1; verts[1].st.y = t0;
+            verts[1].normal.x = 0; verts[1].normal.y = 0; verts[1].normal.z = 1;
+            verts[1].tangents0.x = 1; verts[1].tangents0.y = 0; verts[1].tangents0.z = 0;
+            verts[1].tangents1.x = 0; verts[1].tangents1.y = 1; verts[1].tangents1.z = 0;
+            verts[2].xyz.x = x + w; verts[2].xyz.y = y + h; verts[2].xyz.z = 0;
+            verts[2].st.x = s1; verts[2].st.y = t1;
+            verts[2].normal.x = 0; verts[2].normal.y = 0; verts[2].normal.z = 1;
+            verts[2].tangents0.x = 1; verts[2].tangents0.y = 0; verts[2].tangents0.z = 0;
+            verts[2].tangents1.x = 0; verts[2].tangents1.y = 1; verts[2].tangents1.z = 0;
+            verts[3].xyz.x = x; verts[3].xyz.y = y + h; verts[3].xyz.z = 0;
+            verts[3].st.x = s0; verts[3].st.y = t1;
+            verts[3].normal.x = 0; verts[3].normal.y = 0; verts[3].normal.z = 1;
+            verts[3].tangents0.x = 1; verts[3].tangents0.y = 0; verts[3].tangents0.z = 0;
+            verts[3].tangents1.x = 0; verts[3].tangents1.y = 1; verts[3].tangents1.z = 0;
 
-            bool ident = !mat.IsIdentity;
+            var ident = !mat.IsIdentity();
             if (ident)
             {
-                verts[0].xyz -= origin;
-                verts[0].xyz *= mat;
-                verts[0].xyz += origin;
-                verts[1].xyz -= origin;
-                verts[1].xyz *= mat;
-                verts[1].xyz += origin;
-                verts[2].xyz -= origin;
-                verts[2].xyz *= mat;
-                verts[2].xyz += origin;
-                verts[3].xyz -= origin;
-                verts[3].xyz *= mat;
-                verts[3].xyz += origin;
+                verts[0].xyz -= origin; verts[0].xyz *= mat; verts[0].xyz += origin;
+                verts[1].xyz -= origin; verts[1].xyz *= mat; verts[1].xyz += origin;
+                verts[2].xyz -= origin; verts[2].xyz *= mat; verts[2].xyz += origin;
+                verts[3].xyz -= origin; verts[3].xyz *= mat; verts[3].xyz += origin;
             }
 
-            renderSystem.DrawStretchPic(&verts[0], &indexes[0], 4, 6, shader, ident);
+            renderSystem.DrawStretchPic(verts, indexes, 4, 6, material, ident);
         }
 
         public void DrawMaterialRotated(float x, float y, float w, float h, Material mat, Vector4 color, float scalex = 1f, float scaley = 1f, float angle = 0f)
@@ -469,106 +415,53 @@ namespace Gengine.UI
             DrawStretchPicRotated(x, y, w, h, s0, t0, s1, t1, mat, angle);
         }
 
-        public void DrawStretchPicRotated(float x, float y, float w, float h, float s0, float t0, float s1, float t1, Material mat, float angle = 0f)
+        public void DrawStretchPicRotated(float x, float y, float w, float h, float s0, float t0, float s1, float t1, Material material, float angle = 0f)
         {
-            DrawVert[] verts[4];
-            GlIndex[] indexes[6];
-            indexes[0] = 3;
-            indexes[1] = 0;
-            indexes[2] = 2;
-            indexes[3] = 2;
-            indexes[4] = 0;
-            indexes[5] = 1;
-            verts[0].xyz[0] = x;
-            verts[0].xyz[1] = y;
-            verts[0].xyz[2] = 0;
-            verts[0].st[0] = s1;
-            verts[0].st[1] = t1;
-            verts[0].normal[0] = 0;
-            verts[0].normal[1] = 0;
-            verts[0].normal[2] = 1;
-            verts[0].tangents[0][0] = 1;
-            verts[0].tangents[0][1] = 0;
-            verts[0].tangents[0][2] = 0;
-            verts[0].tangents[1][0] = 0;
-            verts[0].tangents[1][1] = 1;
-            verts[0].tangents[1][2] = 0;
-            verts[1].xyz[0] = x + w;
-            verts[1].xyz[1] = y;
-            verts[1].xyz[2] = 0;
-            verts[1].st[0] = s2;
-            verts[1].st[1] = t1;
-            verts[1].normal[0] = 0;
-            verts[1].normal[1] = 0;
-            verts[1].normal[2] = 1;
-            verts[1].tangents[0][0] = 1;
-            verts[1].tangents[0][1] = 0;
-            verts[1].tangents[0][2] = 0;
-            verts[1].tangents[1][0] = 0;
-            verts[1].tangents[1][1] = 1;
-            verts[1].tangents[1][2] = 0;
-            verts[2].xyz[0] = x + w;
-            verts[2].xyz[1] = y + h;
-            verts[2].xyz[2] = 0;
-            verts[2].st[0] = s2;
-            verts[2].st[1] = t2;
-            verts[2].normal[0] = 0;
-            verts[2].normal[1] = 0;
-            verts[2].normal[2] = 1;
-            verts[2].tangents[0][0] = 1;
-            verts[2].tangents[0][1] = 0;
-            verts[2].tangents[0][2] = 0;
-            verts[2].tangents[1][0] = 0;
-            verts[2].tangents[1][1] = 1;
-            verts[2].tangents[1][2] = 0;
-            verts[3].xyz[0] = x;
-            verts[3].xyz[1] = y + h;
-            verts[3].xyz[2] = 0;
-            verts[3].st[0] = s1;
-            verts[3].st[1] = t2;
-            verts[3].normal[0] = 0;
-            verts[3].normal[1] = 0;
-            verts[3].normal[2] = 1;
-            verts[3].tangents[0][0] = 1;
-            verts[3].tangents[0][1] = 0;
-            verts[3].tangents[0][2] = 0;
-            verts[3].tangents[1][0] = 0;
-            verts[3].tangents[1][1] = 1;
-            verts[3].tangents[1][2] = 0;
+            var indexes = new GlIndex[] { 3, 0, 2, 2, 0, 1 };
+            var verts = new DrawVert[4];
+            verts[0].xyz.x = x; verts[0].xyz.y = y; verts[0].xyz.z = 0;
+            verts[0].st.x = s0; verts[0].st.y = t0;
+            verts[0].normal.x = 0; verts[0].normal.y = 0; verts[0].normal.z = 1;
+            verts[0].tangents0.x = 1; verts[0].tangents0.y = 0; verts[0].tangents0.z = 0;
+            verts[0].tangents1.x = 0; verts[0].tangents1.y = 1; verts[0].tangents1.z = 0;
+            verts[1].xyz.x = x + w; verts[1].xyz.y = y; verts[1].xyz.z = 0;
+            verts[1].st.x = s1; verts[1].st.y = t0;
+            verts[1].normal.x = 0; verts[1].normal.y = 0; verts[1].normal.z = 1;
+            verts[1].tangents0.x = 1; verts[1].tangents0.y = 0; verts[1].tangents0.z = 0;
+            verts[1].tangents1.x = 0; verts[1].tangents1.y = 1; verts[1].tangents1.z = 0;
+            verts[2].xyz.x = x + w; verts[2].xyz.y = y + h; verts[2].xyz.z = 0;
+            verts[2].st.x = s1; verts[2].st.y = t1;
+            verts[2].normal.x = 0; verts[2].normal.y = 0; verts[2].normal.z = 1;
+            verts[2].tangents0.x = 1; verts[2].tangents0.y = 0; verts[2].tangents0.z = 0;
+            verts[2].tangents1.x = 0; verts[2].tangents1.y = 1; verts[2].tangents1.z = 0;
+            verts[3].xyz.x = x; verts[3].xyz.y = y + h; verts[3].xyz.z = 0;
+            verts[3].st.x = s0; verts[3].st.y = t1;
+            verts[3].normal.x = 0; verts[3].normal.y = 0; verts[3].normal.z = 1;
+            verts[3].tangents0.x = 1; verts[3].tangents0.y = 0; verts[3].tangents0.z = 0;
+            verts[3].tangents1.x = 0; verts[3].tangents1.y = 1; verts[3].tangents1.z = 0;
 
-            bool ident = !mat.IsIdentity;
+            var ident = !mat.IsIdentity();
             if (ident)
             {
-                verts[0].xyz -= origin;
-                verts[0].xyz *= mat;
-                verts[0].xyz += origin;
-                verts[1].xyz -= origin;
-                verts[1].xyz *= mat;
-                verts[1].xyz += origin;
-                verts[2].xyz -= origin;
-                verts[2].xyz *= mat;
-                verts[2].xyz += origin;
-                verts[3].xyz -= origin;
-                verts[3].xyz *= mat;
-                verts[3].xyz += origin;
+                verts[0].xyz -= origin; verts[0].xyz *= mat; verts[0].xyz += origin;
+                verts[1].xyz -= origin; verts[1].xyz *= mat; verts[1].xyz += origin;
+                verts[2].xyz -= origin; verts[2].xyz *= mat; verts[2].xyz += origin;
+                verts[3].xyz -= origin; verts[3].xyz *= mat; verts[3].xyz += origin;
             }
 
-            //Generate a translation so we can translate to the center of the image rotate and draw
+            // Generate a translation so we can translate to the center of the image rotate and draw
             Vector3 origTrans;
             origTrans.x = x + (w / 2);
             origTrans.y = y + (h / 2);
             origTrans.z = 0;
 
-
-            //Rotate the verts about the z axis before drawing them
-            Matrix4x4 rotz;
+            // Rotate the verts about the z axis before drawing them
+            Matrix4x4 rotz = new();
             rotz.Identity();
-            float sinAng = MathX.Sin(angle);
-            float cosAng = MathX.Cos(angle);
-            rotz[0][0] = cosAng;
-            rotz[0][1] = sinAng;
-            rotz[1][0] = -sinAng;
-            rotz[1][1] = cosAng;
+            var sinAng = MathX.Sin(angle);
+            var cosAng = MathX.Cos(angle);
+            rotz[0].x = cosAng; rotz[0].y = sinAng;
+            rotz[1].x = -sinAng; rotz[1].y = cosAng;
             for (var i = 0; i < 4; i++)
             {
                 //Translate to origin
@@ -581,82 +474,60 @@ namespace Gengine.UI
                 verts[i].xyz += origTrans;
             }
 
-            renderSystem.DrawStretchPic(&verts[0], &indexes[0], 4, 6, shader, (angle == 0.0) ? false : true);
+            renderSystem.DrawStretchPic(verts, indexes, 4, 6, material, angle != 0f);
         }
 
         public int CharWidth(char c, float scale)
         {
-            GlyphInfo glyph;
-            float useScale;
             SetFontByScale(scale);
-            FontInfo font = useFont;
-            useScale = scale * font.glyphScale;
-            glyph = font.glyphs[(byte)c];
+            var font = useFont;
+            var useScale = scale * font.glyphScale;
+            var glyph = font.glyphs[(byte)c];
             return MathX.FtoiFast(glyph.xSkip * useScale);
         }
 
         public int TextWidth(string text, float scale, int limit)
         {
-            int i, width;
-
             SetFontByScale(scale);
-            GlyphInfo glyphs = useFont.glyphs;
-
+            var glyphs = useFont.glyphs;
             if (text == null)
                 return 0;
 
-            width = 0;
+            int i, width = 0;
             if (limit > 0)
-                for (i = 0; text[i] != '\0' && i < limit; i++)
-                    if (StringX.IsColor(text + i)) i++;
-                    else width += glyphs[((byte)text)[i]].xSkip;
+                for (i = 0; i < text.Length && i < limit; i++)
+                    if (StringX.IsColor(text, i)) i++;
+                    else width += glyphs[text[i]].xSkip;
             else
-                for (i = 0; text[i] != '\0'; i++)
-                    if (StringX.IsColor(text + i)) i++;
-                    else width += glyphs[((byte)text)[i]].xSkip;
+                for (i = 0; i < text.Length; i++)
+                    if (StringX.IsColor(text, i)) i++;
+                    else width += glyphs[text[i]].xSkip;
             return MathX.FtoiFast(scale * useFont.glyphScale * width);
         }
 
         public int TextHeight(string text, float scale, int limit)
         {
-            int len, count;
-            float max;
-            GlyphInfo glyph;
-            float useScale;
-            string s = text;
             SetFontByScale(scale);
-            FontInfo font = useFont;
+            var font = useFont;
 
-            useScale = scale * font.glyphScale;
-            max = 0;
-            if (text)
+            var useScale = scale * font.glyphScale;
+            var max = 0f;
+            if (text != null)
             {
-                len = strlen(text);
-                if (limit > 0 && len > limit)
-                {
-                    len = limit;
-                }
-
-                count = 0;
-                while (s && *s && count < len)
-                {
-                    if (StringX.IsColor(s))
-                    {
-                        s += 2;
-                        continue;
-                    }
+                var len = text.Length;
+                if (limit > 0 && len > limit) len = limit;
+                var s = 0;
+                var count = 0;
+                while (s < text.Length && count < len)
+                    if (StringX.IsColor(text, s)) { s += 2; continue; }
                     else
                     {
-                        glyph = &font.glyphs[(byte)s];
-                        if (max < glyph.height)
-                            max = glyph.height;
-
+                        var glyph = font.glyphs[text[s]];
+                        if (max < glyph.height) max = glyph.height;
                         s++;
                         count++;
                     }
-                }
             }
-
             return MathX.FtoiFast(max * useScale);
         }
 
@@ -670,35 +541,30 @@ namespace Gengine.UI
         public int MaxCharWidth(float scale)
         {
             SetFontByScale(scale);
-            float useScale = scale * useFont.glyphScale;
-            return idMath::FtoiFast(activeFont.maxWidth * useScale);
+            var useScale = scale * useFont.glyphScale;
+            return MathX.FtoiFast(activeFont.maxWidth * useScale);
         }
 
         public int FindFont(string name)
         {
-            int c = fonts.Num();
-            for (int i = 0; i < c; i++)
-            {
-                if (idStr::Icmp(name, fonts[i].name) == 0)
-                {
+            var c = fonts.Count;
+            for (var i = 0; i < c; i++)
+                if (string.Equals(name, fonts[i].name, System.StringComparison.OrdinalIgnoreCase))
                     return i;
-                }
-            }
 
             // If the font was not found, try to register it
-            idStr fileName = name;
-            fileName.Replace("fonts", va("fonts/%s", fontLang.c_str()));
+            var fileName = name.Replace("fonts", $"fonts/{fontLang}");
 
-            fontInfoEx_t fontInfo;
-            int index = fonts.Append(fontInfo);
+            var fontInfo = new FontInfoEx();
+            var index = fonts.Add_(fontInfo);
             if (renderSystem.RegisterFont(fileName, fonts[index]))
             {
-                idStr::Copynz(fonts[index].name, name, sizeof(fonts[index].name) );
+                fonts[index].name = name;
                 return index;
             }
             else
             {
-                common.Printf("Could not register font %s [%s]\n", name, fileName.c_str());
+                common.Printf($"Could not register font {name} [{fileName}]\n");
                 return -1;
             }
         }
@@ -710,9 +576,7 @@ namespace Gengine.UI
 
             // western european languages can use the english font
             if (fontLang == "french" || fontLang == "german" || fontLang == "spanish" || fontLang == "italian")
-            {
                 fontLang = "english";
-            }
 
             // Default font has to be added first
             FindFont("fonts");
@@ -735,46 +599,24 @@ namespace Gengine.UI
         }
 
         public Material GetScrollBarImage(int index)
-        {
-            if (index >= SCROLLBAR_HBACK && index < SCROLLBAR_COUNT)
-            {
-                return scrollBarImages[index];
-            }
-            return scrollBarImages[SCROLLBAR_HBACK];
-        }
+            => index >= (int)SCROLLBAR.HBACK && index < (int)SCROLLBAR.COUNT
+                ? scrollBarImages[index]
+                : scrollBarImages[(int)SCROLLBAR.HBACK];
 
         public void DrawCursor(ref float x, ref float y, float size)
         {
-            if (*x < 0)
-            {
-                *x = 0;
-            }
-
-            if (*x >= vidWidth)
-            {
-                *x = vidWidth;
-            }
-
-            if (*y < 0)
-            {
-                *y = 0;
-            }
-
-            if (*y >= vidHeight)
-            {
-                *y = vidHeight;
-            }
-
+            if (x < 0) x = 0;
+            if (x >= vidWidth) x = vidWidth;
+            if (y < 0) y = 0;
+            if (y >= vidHeight) y = vidHeight;
             renderSystem.SetColor(colorWhite);
 
-            // DG: I use this instead of plain AdjustCursorCoords and the following lines
-            //     to scale menus and other fullscreen GUIs to 4:3 aspect ratio
+            // DG: I use this instead of plain AdjustCursorCoords and the following lines to scale menus and other fullscreen GUIs to 4:3 aspect ratio
             AdjustCursorCoords(ref x, ref y, ref size, ref size);
-            float sizeW = size * fixScaleForMenu.x;
-            float sizeH = size * fixScaleForMenu.y;
-            float fixedX = x * fixScaleForMenu.x + fixOffsetForMenu.x;
-            float fixedY = y * fixScaleForMenu.y + fixOffsetForMenu.y;
-
+            var sizeW = size * fixScaleForMenu.x;
+            var sizeH = size * fixScaleForMenu.y;
+            var fixedX = x * fixScaleForMenu.x + fixOffsetForMenu.x;
+            var fixedY = y * fixScaleForMenu.y + fixOffsetForMenu.y;
             DrawStretchPic(fixedX, fixedY, sizeW, sizeH, 0, 0, 1, 1, cursorImages[(int)cursor]);
         }
 
@@ -783,32 +625,19 @@ namespace Gengine.UI
 
         public void AdjustCoords(ref float x, ref float y, ref float w, ref float h)
         {
-            if (x)
-            {
-                *x *= xScale;
+            x *= xScale;
+            x *= fixScaleForMenu.x; // DG: for "render menus as 4:3" hack
+            x += fixOffsetForMenu.x;
 
-                *x *= fixScaleForMenu.x; // DG: for "render menus as 4:3" hack
-                *x += fixOffsetForMenu.x;
-            }
-            if (y)
-            {
-                *y *= yScale;
+            y *= yScale;
+            y *= fixScaleForMenu.y; // DG: for "render menus as 4:3" hack
+            y += fixOffsetForMenu.y;
 
-                *y *= fixScaleForMenu.y; // DG: for "render menus as 4:3" hack
-                *y += fixOffsetForMenu.y;
-            }
-            if (w)
-            {
-                *w *= xScale;
+            w *= xScale;
+            w *= fixScaleForMenu.x; // DG: for "render menus as 4:3" hack
 
-                *w *= fixScaleForMenu.x; // DG: for "render menus as 4:3" hack
-            }
-            if (h)
-            {
-                *h *= yScale;
-
-                *h *= fixScaleForMenu.y; // DG: for "render menus as 4:3" hack
-            }
+            h *= yScale;
+            h *= fixScaleForMenu.y; // DG: for "render menus as 4:3" hack
         }
 
         // DG: same as AdjustCoords, but ignore fixupMenus because for the cursor that must be handled seperately
@@ -821,7 +650,7 @@ namespace Gengine.UI
             h *= yScale;
         }
 
-        //public bool ClippedCoords(ref float x, ref float y, ref float w, ref float h);
+        public bool ClippedCoords(ref float x, ref float y, ref float w, ref float h) { var z = 0f; return ClippedCoords(ref x, ref y, ref w, ref h, ref z, ref z, ref z, ref z); }
         public bool ClippedCoords(ref float x, ref float y, ref float w, ref float h, ref float s1, ref float t1, ref float s2, ref float t2)
         {
             if (enableClipping == false || clipRects.Count == 0)
@@ -903,18 +732,10 @@ namespace Gengine.UI
                 clipRects.RemoveAt(clipRects.Count - 1);
         }
 
-        public void EnableClipping(bool b) => enableClipping = b;
+        public void EnableClipping(bool b)
+            => enableClipping = b;
         public void SetFont(int num)
-        {
-            if (num >= 0 && num < fonts.Num())
-            {
-                activeFont = &fonts[num];
-            }
-            else
-            {
-                activeFont = &fonts[0];
-            }
-        }
+            => activeFont = fonts[num >= 0 && num < fonts.Count ? num : 0];
 
         public bool OverStrike
         {
@@ -924,47 +745,40 @@ namespace Gengine.UI
 
         public void DrawEditCursor(float x, float y, float scale)
         {
-            if ((int)(com_ticNumber >> 4) & 1)
-            {
+            if (((com_ticNumber >> 4) & 1) != 0)
                 return;
-            }
             SetFontByScale(scale);
-            float useScale = scale * useFont.glyphScale;
-            const glyphInfo_t* glyph2 = &useFont.glyphs[overStrikeMode ? int('_') : int('|')];
-            float yadj = useScale * glyph2.top;
+            var useScale = scale * useFont.glyphScale;
+            var glyph2 = useFont.glyphs[overStrikeMode ? (int)'_' : (int)'|'];
+            var yadj = useScale * glyph2.top;
             PaintChar(x, y - yadj, glyph2.imageWidth, glyph2.imageHeight, useScale, glyph2.s, glyph2.t, glyph2.s2, glyph2.t2, glyph2.glyph);
         }
 
-
         // DG: this is used for the "make sure menus are rendered as 4:3" hack
+        const float SetMenuScaleFix_virtualAspectRatio = (float)VIRTUAL_WIDTH / (float)VIRTUAL_HEIGHT; // 4:3
         public void SetMenuScaleFix(bool enable)
         {
             if (enable)
             {
-                float w = renderSystem.GetScreenWidth();
-                float h = renderSystem.GetScreenHeight();
-                float aspectRatio = w / h;
-                static const float virtualAspectRatio = float(VIRTUAL_WIDTH) / float(VIRTUAL_HEIGHT); // 4:3
+                var w = renderSystem.ScreenWidth;
+                var h = renderSystem.ScreenHeight;
+                var aspectRatio = w / h;
                 if (aspectRatio > 1.4f)
                 {
-                    // widescreen (4:3 is 1.333 3:2 is 1.5, 16:10 is 1.6, 16:9 is 1.7778)
-                    // => we need to scale and offset X
-                    // All the coordinates here assume 640x480 (VIRTUAL_WIDTH x VIRTUAL_HEIGHT)
-                    // screensize, so to fit a 4:3 menu into 640x480 stretched to a widescreen,
-                    // we need do decrease the width to something smaller than 640 and center
-                    // the result with an offset
-                    float scaleX = virtualAspectRatio / aspectRatio;
-                    float offsetX = (1f - scaleX) * (VIRTUAL_WIDTH * 0.5f); // (640 - scale*640)/2
+                    // widescreen (4:3 is 1.333 3:2 is 1.5, 16:10 is 1.6, 16:9 is 1.7778) => we need to scale and offset X
+                    // All the coordinates here assume 640x480 (VIRTUAL_WIDTH x VIRTUAL_HEIGHT) screensize, so to fit a 4:3 menu into 640x480 stretched to a widescreen,
+                    // we need do decrease the width to something smaller than 640 and center the result with an offset
+                    var scaleX = SetMenuScaleFix_virtualAspectRatio / aspectRatio;
+                    var offsetX = (1f - scaleX) * (VIRTUAL_WIDTH * 0.5f); // (640 - scale*640)/2
                     fixScaleForMenu.Set(scaleX, 1);
                     fixOffsetForMenu.Set(offsetX, 0);
                 }
                 else if (aspectRatio < 1.24f)
                 {
-                    // portrait-mode, "thinner" than 5:4 (which is 1.25)
-                    // => we need to scale and offset Y
+                    // portrait-mode, "thinner" than 5:4 (which is 1.25) => we need to scale and offset Y
                     // it's analogue to the other case, but inverted and with height and Y
-                    float scaleY = aspectRatio / virtualAspectRatio;
-                    float offsetY = (1f - scaleY) * (VIRTUAL_HEIGHT * 0.5f); // (480 - scale*480)/2
+                    var scaleY = aspectRatio / SetMenuScaleFix_virtualAspectRatio;
+                    var offsetY = (1f - scaleY) * (VIRTUAL_HEIGHT * 0.5f); // (480 - scale*480)/2
                     fixScaleForMenu.Set(1, scaleY);
                     fixOffsetForMenu.Set(0, offsetY);
                 }
@@ -975,88 +789,60 @@ namespace Gengine.UI
                 fixOffsetForMenu.Set(0, 0);
             }
         }
-        public bool IsMenuScaleFixActive => fixOffsetForMenu.x != 0f || fixOffsetForMenu.y != 0f;
+        public bool IsMenuScaleFixActive
+            => fixOffsetForMenu.x != 0f || fixOffsetForMenu.y != 0f;
 
         int DrawText(float x, float y, float scale, Vector4 color, string text, float adjust, int limit, int style, int cursor = -1)
         {
-            int len, count;
-            new Vector4 newColor;
-            const glyphInfo_t* glyph;
-            float useScale;
+
             SetFontByScale(scale);
-            useScale = scale * useFont.glyphScale;
-            count = 0;
-            if (text && color.w != 0f)
+            var useScale = scale * useFont.glyphScale;
+            var count = 0;
+            if (text != null && color.w != 0f)
             {
-                const unsigned char* s = (const unsigned char*)text;
+                var s = 0;
                 renderSystem.SetColor(color);
-                memcpy(&newColor[0], &color[0], sizeof(new Vector4));
-                len = strlen(text);
+                var newColor = color; //: copy
+                var len = text.Length;
                 if (limit > 0 && len > limit)
-                {
                     len = limit;
-                }
 
-                while (s && *s && count < len)
+                GlyphInfo glyph;
+                while (s < text.Length && count < len)
                 {
-                    if (*s < GLYPH_START || *s > GLYPH_END)
-                    {
-                        s++;
-                        continue;
-                    }
-                    glyph = &useFont.glyphs[*s];
+                    if (text[s] < GLYPH_START || text[s] > GLYPH_END) { s++; continue; }
+                    glyph = useFont.glyphs[text[s]];
 
-                    //
-                    // int yadj = Assets.textFont.glyphs[text[i]].bottom +
-                    // Assets.textFont.glyphs[text[i]].top; float yadj = scale *
-                    // (Assets.textFont.glyphs[text[i]].imageHeight -
-                    // Assets.textFont.glyphs[text[i]].height);
-                    //
-                    if (idStr::IsColor((const char*)s) ) {
-                        if (*(s + 1) == C_COLOR_DEFAULT)
-                        {
-                            newColor = color;
-                        }
-                        else
-                        {
-                            newColor = idStr::ColorForIndex(*(s + 1));
-                            newColor[3] = color[3];
-                        }
+                    // int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
+                    // float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
+                    if (StringX.IsColor(text, s))
+                    {
+                        if (text[s + 1] == C_COLOR_DEFAULT) newColor = color;
+                        else { newColor = StringX.ColorForIndex(text[s + 1]); newColor.z = color.z; }
                         if (cursor == count || cursor == count + 1)
                         {
-                            float partialSkip = ((glyph.xSkip * useScale) + adjust) / 5f;
-                            if (cursor == count)
-                            {
-                                partialSkip *= 2f;
-                            }
-                            else
-                            {
-                                renderSystem.SetColor(newColor);
-                            }
+                            var partialSkip = ((glyph.xSkip * useScale) + adjust) / 5f;
+                            if (cursor == count) partialSkip *= 2f;
+                            else renderSystem.SetColor(newColor);
                             DrawEditCursor(x - partialSkip, y, scale);
                         }
                         renderSystem.SetColor(newColor);
                         s += 2;
                         count += 2;
                         continue;
-                    } else
-                    {
-                        float yadj = useScale * glyph.top;
-                        PaintChar(x, y - yadj, glyph.imageWidth, glyph.imageHeight, useScale, glyph.s, glyph.t, glyph.s2, glyph.t2, glyph.glyph);
-
-                        if (cursor == count)
-                        {
-                            DrawEditCursor(x, y, scale);
-                        }
-                        x += (glyph.xSkip * useScale) + adjust;
-                        s++;
-                        count++;
                     }
+
+                    var yadj = useScale * glyph.top;
+                    PaintChar(x, y - yadj, glyph.imageWidth, glyph.imageHeight, useScale, glyph.s, glyph.t, glyph.s2, glyph.t2, glyph.glyph);
+
+                    if (cursor == count)
+                        DrawEditCursor(x, y, scale);
+                    x += (glyph.xSkip * useScale) + adjust;
+                    s++;
+                    count++;
                 }
                 if (cursor == len)
-                {
                     DrawEditCursor(x, y, scale);
-                }
             }
             return count;
         }
@@ -1066,10 +852,10 @@ namespace Gengine.UI
             var w = width * scale;
             var h = height * scale;
 
-            if (ClippedCoords(out x, out y, out w, out h, out s, out t, out s2, out t2))
+            if (ClippedCoords(ref x, ref y, ref w, ref h, ref s, ref t, ref s2, ref t2))
                 return;
 
-            AdjustCoords(out x, out y, out w, out h);
+            AdjustCoords(ref x, ref y, ref w, ref h);
             DrawStretchPic(x, y, w, h, s, t, s2, t2, hShader);
         }
 
@@ -1101,17 +887,6 @@ namespace Gengine.UI
             useFont = null;
             activeFont = null;
             mbcs = false;
-        }
-
-        static int index = 0;
-        static string[] str = new string[48];
-
-        string String()
-        {
-            // use an array so that multiple toString's won't collide
-            var s = str[index] = $"{x:2} {y:2} {w:2} {h:2}";
-            index = (index + 1) & 7;
-            return s;
         }
     }
 }

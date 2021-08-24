@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using System.NumericsX.Core;
+using Gengine.NumericsX.Core;
 using static Gengine.Lib;
 
 namespace Gengine.Framework

@@ -1,7 +1,8 @@
+using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace System.NumericsX.Sys
+namespace Gengine.NumericsX.Sys
 {
     // http://pinvoke.net/default.aspx/user32/OpenClipboard.html
     public static class NativeW

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.NumericsX;
-using System.NumericsX.Core;
+using Gengine.NumericsX;
+using Gengine.NumericsX.Core;
 using System.Text;
-using static System.NumericsX.Lib;
+using static Gengine.NumericsX.Lib;
 
 namespace Gengine.UI
 {

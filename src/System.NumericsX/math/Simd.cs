@@ -1,4 +1,4 @@
-using static System.NumericsX.LibX;
+using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
@@ -43,7 +43,7 @@ namespace System.NumericsX
             if (newProcessor != Processor)
             {
                 Processor = newProcessor;
-                common_Printf($"{module} using {Processor.Name} for SIMD processing\n");
+                Printf($"{module} using {Processor.Name} for SIMD processing\n");
             }
 
             //if ((cpuid & CPUID.SSE) != 0)

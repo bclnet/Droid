@@ -1,11 +1,11 @@
 using Gengine.Framework;
 using System;
 using System.IO;
-using System.NumericsX;
-using System.NumericsX.Core;
+using Gengine.NumericsX;
+using Gengine.NumericsX.Core;
 using static Gengine.Lib;
 using static Gengine.Sound.Lib;
-using static System.NumericsX.Lib;
+using static Gengine.NumericsX.Lib;
 
 namespace Gengine.Sound
 {

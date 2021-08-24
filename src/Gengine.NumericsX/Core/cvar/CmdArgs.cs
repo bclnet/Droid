@@ -1,7 +1,8 @@
+using System;
 using System.Text;
-using static System.NumericsX.Lib;
+using static Gengine.NumericsX.Lib;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     // argument completion function
     public delegate void ArgCompletion(CmdArgs args, Action<string> callback);

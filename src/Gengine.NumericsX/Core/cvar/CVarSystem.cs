@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.NumericsX.Core;
 using System.Text;
-using static System.NumericsX.Lib;
+using static Gengine.NumericsX.Lib;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     public interface ICVarSystem
     {

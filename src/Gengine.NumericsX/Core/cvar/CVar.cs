@@ -1,7 +1,8 @@
+using System;
 using System.Linq;
-using static System.NumericsX.Lib;
+using static Gengine.NumericsX.Lib;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     [Flags]
     public enum CVAR

@@ -1,4 +1,4 @@
-using static System.NumericsX.LibX;
+using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
@@ -339,7 +339,7 @@ namespace System.NumericsX
         public unsafe string ToString(int precision = 2)
         {
             var dimension = Dimension;
-            return ToFloatPtr(_ => common_FloatArrayToString(_, dimension, precision));
+            return ToFloatPtr(_ => FloatArrayToString(_, dimension, precision));
         }
 
         public static Plane origin = new(0f, 0f, 0f, 0f);

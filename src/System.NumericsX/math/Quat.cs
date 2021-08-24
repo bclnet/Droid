@@ -1,4 +1,4 @@
-using static System.NumericsX.LibX;
+using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
@@ -190,7 +190,7 @@ namespace System.NumericsX
                 return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
 
         /// <summary>
         /// Spherical linear interpolation between two quaternions.
@@ -304,6 +304,6 @@ namespace System.NumericsX
                 return callback(_);
         }
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => common_FloatArrayToString(_, Dimension, precision));
+            => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
     }
 }

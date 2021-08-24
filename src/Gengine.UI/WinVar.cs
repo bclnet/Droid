@@ -2,8 +2,8 @@ using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.NumericsX;
-using System.NumericsX.Core;
+using Gengine.NumericsX;
+using Gengine.NumericsX.Core;
 using static Gengine.Lib;
 
 namespace Gengine.UI

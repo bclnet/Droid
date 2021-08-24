@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.NumericsX.Core;
 using System.Runtime.CompilerServices;
-using static System.NumericsX.LibX;
+using static System.NumericsX.Platform;
 using static System.NumericsX.Plane;
 
 namespace System.NumericsX
@@ -128,8 +128,8 @@ namespace System.NumericsX
             var org = normal * dist;
 
             normal.NormalVectors(out var vup, out var vright);
-            vup *= Platform.MAX_WORLD_SIZE;
-            vright *= Platform.MAX_WORLD_SIZE;
+            vup *= MAX_WORLD_SIZE;
+            vright *= MAX_WORLD_SIZE;
 
             EnsureAlloced(4);
             numPoints = 4;
@@ -271,7 +271,7 @@ namespace System.NumericsX
                 }
 
             if (f.numPoints > maxpts || b.numPoints > maxpts)
-                common_FatalError("Winding::Split: points exceeded estimate.");
+                FatalError("Winding::Split: points exceeded estimate.");
 
             return SIDE_CROSS;
         }
@@ -535,7 +535,7 @@ namespace System.NumericsX
         public unsafe void RemovePoint(int point)
         {
             if (point < 0 || point >= numPoints)
-                common_FatalError("Winding::removePoint: point out of range");
+                FatalError("Winding::removePoint: point out of range");
             if (point < numPoints - 1)
                 fixed (Vector5* p = this.p)
                     UnsafeX.MoveBlock(&p[point], &p[point + 1], (uint)((numPoints - point - 1) * sizeof(Vector5)));
@@ -547,10 +547,10 @@ namespace System.NumericsX
             int i;
 
             if (spot > numPoints)
-                common_FatalError("Winding::insertPoint: spot > numPoints");
+                FatalError("Winding::insertPoint: spot > numPoints");
 
             if (spot < 0)
-                common_FatalError("Winding::insertPoint: spot < 0");
+                FatalError("Winding::insertPoint: spot < 0");
 
             EnsureAlloced(numPoints + 1, true);
             for (i = numPoints; i > spot; i--)
@@ -887,7 +887,7 @@ namespace System.NumericsX
             if (numPoints < 3)
             {
                 if (print)
-                    common_Printf($"Winding::Check: only {numPoints} points.");
+                    Printf($"Winding::Check: only {numPoints} points.");
                 return false;
             }
 
@@ -895,7 +895,7 @@ namespace System.NumericsX
             if (area < 1f)
             {
                 if (print)
-                    common_Printf($"Winding::Check: tiny area: {area}");
+                    Printf($"Winding::Check: tiny area: {area}");
                 return false;
             }
 
@@ -907,10 +907,10 @@ namespace System.NumericsX
 
                 // check if the winding is huge
                 for (j = 0; j < 3; j++)
-                    if (p1[j] >= Platform.MAX_WORLD_COORD || p1[j] <= Platform.MIN_WORLD_COORD)
+                    if (p1[j] >= MAX_WORLD_COORD || p1[j] <= MIN_WORLD_COORD)
                     {
                         if (print)
-                            common_Printf($"Winding::Check: point {i} outside world {'X' + j}-axis: {p1[j]}");
+                            Printf($"Winding::Check: point {i} outside world {'X' + j}-axis: {p1[j]}");
                         return false;
                     }
 
@@ -921,7 +921,7 @@ namespace System.NumericsX
                 if (d < -ON_EPSILON || d > ON_EPSILON)
                 {
                     if (print)
-                        common_Printf($"Winding::Check: point {i} off plane.");
+                        Printf($"Winding::Check: point {i} off plane.");
                     return false;
                 }
 
@@ -932,7 +932,7 @@ namespace System.NumericsX
                 if (dir.Length < ON_EPSILON)
                 {
                     if (print)
-                        common_Printf($"Winding::Check: edge {i} is degenerate.");
+                        Printf($"Winding::Check: edge {i} is degenerate.");
                     return false;
                 }
 
@@ -951,7 +951,7 @@ namespace System.NumericsX
                     if (d > edgedist)
                     {
                         if (print)
-                            common_Printf("Winding::Check: non-convex.");
+                            Printf("Winding::Check: non-convex.");
                         return false;
                     }
                 }
@@ -1080,7 +1080,7 @@ namespace System.NumericsX
             {
                 for (var i = 0; i < numPoints; i++)
                     for (var j = 0; j < 3; j++)
-                        if (p[i][j] <= Platform.MIN_WORLD_COORD || p[i][j] >= Platform.MAX_WORLD_COORD)
+                        if (p[i][j] <= MIN_WORLD_COORD || p[i][j] >= MAX_WORLD_COORD)
                             return true;
                 return false;
             }
@@ -1088,7 +1088,7 @@ namespace System.NumericsX
         public void Print()
         {
             for (var i = 0; i < numPoints; i++)
-                common_Printf($"({p[i].x:5.1}, {p[i].y:5.1}, {p[i].z:5.1})\n");
+                Printf($"({p[i].x:5.1}, {p[i].y:5.1}, {p[i].z:5.1})\n");
         }
 
         public float PlaneDistance(Plane plane)
@@ -1458,7 +1458,7 @@ namespace System.NumericsX
 
             if (n > MAX_POINTS_ON_WINDING)
             {
-                common_Printf("WARNING: FixedWinding . MAX_POINTS_ON_WINDING overflowed\n");
+                Printf("WARNING: FixedWinding . MAX_POINTS_ON_WINDING overflowed\n");
                 return false;
             }
             return true;

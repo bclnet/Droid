@@ -1,5 +1,5 @@
 using System;
-using System.NumericsX.Core;
+using Gengine.NumericsX.Core;
 
 namespace Gengine.UI
 {

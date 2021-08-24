@@ -1,13 +1,13 @@
+using Gengine.NumericsX.Core;
+using Gengine.NumericsX.Sys;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
-using System.NumericsX.Core;
-using System.NumericsX.Sys;
 using System.Runtime.CompilerServices;
 using static Gengine.Lib;
-using static System.NumericsX.Core.Key;
-using static System.NumericsX.Lib;
+using static Gengine.NumericsX.Core.Key;
+using static Gengine.NumericsX.Lib;
 
 namespace Gengine.UI
 {

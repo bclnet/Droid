@@ -1,11 +1,11 @@
 #define EFX_VERBOSE
+using Gengine.NumericsX.Core;
 using OpenTK.Audio.OpenAL;
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
-using System.NumericsX.Core;
+using static Gengine.NumericsX.Lib;
 using static Gengine.Sound.Lib;
-using static System.NumericsX.Lib;
 
 namespace Gengine.Sound
 {

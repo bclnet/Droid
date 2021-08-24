@@ -1,6 +1,7 @@
+using System;
 using System.Collections.Generic;
 
-namespace System.NumericsX.Core
+namespace Gengine.NumericsX.Core
 {
     // modes for OpenFileByMode. used as bit mask internally
     public enum FS

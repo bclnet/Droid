@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
-using System.NumericsX.Core;
-using static System.NumericsX.Lib;
+using Gengine.NumericsX.Core;
+using static Gengine.NumericsX.Lib;
 
 namespace Gengine.Sound
 {

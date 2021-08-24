@@ -1,8 +1,8 @@
 using System.Diagnostics;
-using System.NumericsX.Core;
-using System.NumericsX.Sys;
+using Gengine.NumericsX.Core;
+using Gengine.NumericsX.Sys;
 using System.Runtime.CompilerServices;
-using static System.NumericsX.Lib;
+using static Gengine.NumericsX.Lib;
 
 namespace Gengine.Framework.Async
 {

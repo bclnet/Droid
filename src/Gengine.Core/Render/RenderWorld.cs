@@ -2,8 +2,9 @@ using Gengine.Framework;
 using Gengine.Sound;
 using Gengine.UI;
 using System;
+using Gengine.NumericsX;
+using Gengine.NumericsX.Core;
 using System.NumericsX;
-using System.NumericsX.Core;
 
 namespace Gengine.Render
 {

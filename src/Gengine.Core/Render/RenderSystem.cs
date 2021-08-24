@@ -1,8 +1,9 @@
 using Gengine.Framework;
 using System;
-using System.NumericsX;
-using System.NumericsX.Core;
+using Gengine.NumericsX;
+using Gengine.NumericsX.Core;
 using GlIndex = System.Int32;
+using System.NumericsX;
 
 namespace Gengine.Render
 {
@@ -61,7 +62,7 @@ namespace Gengine.Render
         public string name;
     }
 
-    public struct FontInfoEx
+    public class FontInfoEx
     {
         public FontInfo fontInfoSmall;
         public FontInfo fontInfoMedium;
@@ -111,7 +112,7 @@ namespace Gengine.Render
         public static CVar r_useLightPortalFlow = new("r_useLightPortalFlow", "1", CVAR.RENDERER | CVAR.BOOL, "use a more precise area reference determination");
         public static CVar r_multiSamples = new("r_multiSamples", "0", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.INTEGER, "number of antialiasing samples");
         public static CVar r_mode = new("r_mode", "3", CVAR.ARCHIVE | CVAR.RENDERER | CVAR.INTEGER, "video mode number");
-        public static CVar r_displayRefresh = new("r_displayRefresh", "0", CVAR.RENDERER | CVAR.INTEGER | CVAR.NOCHEAT, "optional display refresh rate option for vid mode", 0.0f, 200.0f);
+        public static CVar r_displayRefresh = new("r_displayRefresh", "0", CVAR.RENDERER | CVAR.INTEGER | CVAR.NOCHEAT, "optional display refresh rate option for vid mode", 0f, 200f);
         public static CVar r_fullscreen = new("r_fullscreen", "0", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.BOOL | CVAR.ROM, "0 = windowed, 1 = full screen");
         public static CVar r_customWidth = new("r_customWidth", "720", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.INTEGER, "custom screen width. set r_mode to -1 to activate");
         public static CVar r_customHeight = new("r_customHeight", "486", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.INTEGER, "custom screen height. set r_mode to -1 to activate");
@@ -131,14 +132,14 @@ namespace Gengine.Render
         public static CVar r_useStateCaching = new("r_useStateCaching", "1", CVAR.RENDERER | CVAR.BOOL, "avoid redundant state changes in GL_*() calls");
         public static CVar r_useInfiniteFarZ = new("r_useInfiniteFarZ", "1", CVAR.RENDERER | CVAR.BOOL, "use the no-far-clip-plane trick");
 
-        public static CVar r_znear = new("r_znear", "3", CVAR.RENDERER | CVAR.FLOAT, "near Z clip plane distance", 0.001f, 200.0f);
+        public static CVar r_znear = new("r_znear", "3", CVAR.RENDERER | CVAR.FLOAT, "near Z clip plane distance", 0.001f, 200f);
 
         public static CVar r_ignoreGLErrors = new("r_ignoreGLErrors", "1", CVAR.RENDERER | CVAR.BOOL, "ignore GL errors");
         public static CVar r_finish = new("r_finish", "0", CVAR.RENDERER | CVAR.BOOL, "force a call to glFinish() every frame");
         public static CVar r_swapInterval = new("r_swapInterval", "1", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.INTEGER, "changes the GL swap interval");
 
-        public static CVar r_gamma = new("r_gamma", "1", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.FLOAT, "changes gamma tables", 0.5f, 3.0f);
-        public static CVar r_brightness = new("r_brightness", "1", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.FLOAT, "changes gamma tables", 0.5f, 3.0f);
+        public static CVar r_gamma = new("r_gamma", "1", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.FLOAT, "changes gamma tables", 0.5f, 3f);
+        public static CVar r_brightness = new("r_brightness", "1", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.FLOAT, "changes gamma tables", 0.5f, 3f);
 
         public static CVar r_jitter = new("r_jitter", "0", CVAR.RENDERER | CVAR.BOOL, "randomly subpixel jitter the projection matrix");
 
@@ -309,8 +310,7 @@ namespace Gengine.Render
         void SetColor4(float r, float g, float b, float a);
         void SetHudOpacity(float opacity);
 
-        void DrawStretchPic(DrawVert verts, GlIndex indexes, int vertCount, int indexCount, Material material,
-                                            bool clip = true, float min_x = 0.0f, float min_y = 0.0f, float max_x = 640.0f, float max_y = 480.0f);
+        void DrawStretchPic(DrawVert[] verts, GlIndex[] indexes, int vertCount, int indexCount, Material material, bool clip = true, float min_x = 0f, float min_y = 0f, float max_x = 640f, float max_y = 480f);
         void DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, Material material);
 
         void DrawStretchTri(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 t1, Vector2 t2, Vector2 t3, Material material);

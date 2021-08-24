@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.NumericsX.Core;
-using System.NumericsX.Sys;
-using static System.NumericsX.Core.Key;
-using static System.NumericsX.Lib;
+using Gengine.NumericsX.Core;
+using Gengine.NumericsX.Sys;
+using static Gengine.NumericsX.Core.Key;
+using static Gengine.NumericsX.Lib;
 
 namespace Gengine.UI
 {
