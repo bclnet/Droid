@@ -285,7 +285,7 @@ namespace Gengine.NumericsX.Core
 
         public void Set(string newValue, bool force, bool fromServer)
         {
-            if (session != null && session.IsMultiplayer && !fromServer)
+            if (session_IsMultiplayer != null && session_IsMultiplayer() && !fromServer)
             {
 #if TYPEINFO //: sky
                 if ((flags & CVAR.NETWORKSYNC) != 0 && AsyncNetwork.client.IsActive())

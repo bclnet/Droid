@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.NumericsX.Core;
+using System.NumericsX;
 using System.Runtime.CompilerServices;
 using static System.NumericsX.Platform;
 using static System.NumericsX.Plane;

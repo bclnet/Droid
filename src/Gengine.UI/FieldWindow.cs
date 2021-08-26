@@ -1,5 +1,6 @@
-using System;
 using Gengine.NumericsX.Core;
+using System;
+using System.NumericsX;
 
 namespace Gengine.UI
 {
@@ -19,7 +20,7 @@ namespace Gengine.UI
             return base.ParseInternalVar(name, src);
         }
 
-        void CommonInit()
+        new void CommonInit()
         {
             cursorPos = 0;
             lastTextLength = 0;
@@ -57,15 +58,16 @@ namespace Gengine.UI
 
         public override void Draw(int time, float x, float y)
         {
+            var textS = (string)text;
             var scale = (float)textScale;
-            var len = text.Length;
+            var len = textS.Length;
             cursorPos = gui.State.GetInt(cursorVar);
             if (len != lastTextLength || cursorPos != lastCursorPos)
                 CalcPaintOffset(len);
             var rect = new Rectangle(textRect);
             if (paintOffset >= len) paintOffset = 0;
             if (cursorPos > len) cursorPos = len;
-            dc.DrawText(text[paintOffset], scale, 0, foreColor, rect, false, (flags & WIN_FOCUS) != 0 || showCursor ? cursorPos - paintOffset : -1);
+            dc.DrawText(textS[paintOffset..], scale, 0, foreColor, rect, false, (flags & WIN_FOCUS) != 0 || showCursor ? cursorPos - paintOffset : -1);
         }
     }
 }

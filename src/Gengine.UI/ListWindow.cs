@@ -1,9 +1,9 @@
+using Gengine.NumericsX.Core;
+using Gengine.NumericsX.Sys;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
-using Gengine.NumericsX.Sys;
+using System.NumericsX;
 using static Gengine.Lib;
 using static Gengine.NumericsX.Core.Key;
 using static Gengine.NumericsX.Lib;
@@ -43,7 +43,7 @@ namespace Gengine.UI
         string tabTypeStr;
         string tabIconSizeStr;
         string tabIconVOffsetStr;
-        HashTable<Material> iconMaterials = new();
+        Dictionary<string, Material> iconMaterials = new();
         bool multipleSel;
 
         List<string> listItems = new();
@@ -72,13 +72,13 @@ namespace Gengine.UI
                 mat.SetImageClassifications(1);    // just for resource tracking
                 if (mat != null && !mat.TestMaterialFlag(MF.DEFAULTED))
                     mat.Sort = (float)SS.GUI;
-                iconMaterials.Set(name, mat);
+                iconMaterials[name] = mat;
                 return true;
             }
             return base.ParseInternalVar(name, src);
         }
 
-        void CommonInit()
+        new void CommonInit()
         {
             typed = "";
             typedTime = 0;
@@ -125,7 +125,7 @@ namespace Gengine.UI
         int GetCurrentSel()
            => currentSel.Count != 0 ? currentSel[0] : 0;
 
-        public virtual string HandleEvent(SysEvent ev, bool updateVisuals)
+        public override string HandleEvent(SysEvent ev, Action<bool> updateVisuals)
         {
             // need to call this to allow proper focus and capturing on embedded children
             var ret = base.HandleEvent(ev, updateVisuals);
@@ -197,7 +197,7 @@ namespace Gengine.UI
             }
             else if (ev.evType == SE.CHAR)
             {
-                if (!StringX.CharIsPrintable(key))
+                if (!StringX.CharIsPrintable((char)key))
                     return ret;
 
                 if (gui.Time > typedTime + 1000)
@@ -205,7 +205,7 @@ namespace Gengine.UI
                 typedTime = gui.Time;
                 typed += key;
 
-                for (var i = 0; i < listItems.Num(); i++)
+                for (var i = 0; i < listItems.Count; i++)
                     if (listItems[i].StartsWith(typed, StringComparison.OrdinalIgnoreCase))
                     {
                         SetCurrentSel(i);
@@ -258,7 +258,7 @@ namespace Gengine.UI
 
             InitScroller(horizontal);
 
-            List<int> tabStops = new();
+            var tabStops = new List<int>();
             if (tabStopStr.Length != 0)
             {
                 var src = new Parser(tabStopStr, tabStopStr.Length, "tabstops", LEXFL.NOFATALERRORS | LEXFL.NOSTRINGCONCAT | LEXFL.NOSTRINGESCAPECHARS);
@@ -266,10 +266,10 @@ namespace Gengine.UI
                 {
                     if (tok == ",")
                         continue;
-                    tabStops.Add(int.Parse(tok));
+                    tabStops.Add(intX.Parse(tok));
                 }
             }
-            List<int> tabAligns = new();
+            var tabAligns = new List<int>();
             if (tabAlignStr.Length != 0)
             {
                 var src = new Parser(tabAlignStr, tabAlignStr.Length, "tabaligns", LEXFL.NOFATALERRORS | LEXFL.NOSTRINGCONCAT | LEXFL.NOSTRINGESCAPECHARS);
@@ -277,10 +277,10 @@ namespace Gengine.UI
                 {
                     if (tok == ",")
                         continue;
-                    tabAligns.Add(int.Parse(tok));
+                    tabAligns.Add(intX.Parse(tok));
                 }
             }
-            List<int> tabVAligns = new();
+            var tabVAligns = new List<int>();
             if (tabVAlignStr.Length != 0)
             {
                 var src = new Parser(tabVAlignStr, tabVAlignStr.Length, "tabvaligns", LEXFL.NOFATALERRORS | LEXFL.NOSTRINGCONCAT | LEXFL.NOSTRINGESCAPECHARS);
@@ -288,11 +288,11 @@ namespace Gengine.UI
                 {
                     if (tok == ",")
                         continue;
-                    tabVAligns.Add(int.Parse(tok));
+                    tabVAligns.Add(intX.Parse(tok));
                 }
             }
 
-            List<int> tabTypes = new();
+            var tabTypes = new List<int>();
             if (tabTypeStr.Length != 0)
             {
                 var src = new Parser(tabTypeStr, tabTypeStr.Length, "tabtypes", LEXFL.NOFATALERRORS | LEXFL.NOSTRINGCONCAT | LEXFL.NOSTRINGESCAPECHARS);
@@ -300,11 +300,11 @@ namespace Gengine.UI
                 {
                     if (tok == ",")
                         continue;
-                    tabTypes.Add(int.Parse(tok));
+                    tabTypes.Add(intX.Parse(tok));
                 }
             }
 
-            List<Vector2> tabSizes = new();
+            var tabSizes = new List<Vector2>();
             if (tabIconSizeStr.Length != 0)
             {
                 var src = new Parser(tabIconSizeStr, tabIconSizeStr.Length, "tabiconsizes", LEXFL.NOFATALERRORS | LEXFL.NOSTRINGCONCAT | LEXFL.NOSTRINGESCAPECHARS);
@@ -313,13 +313,13 @@ namespace Gengine.UI
                     if (tok == ",")
                         continue;
                     Vector2 size;
-                    size.x = int.Parse(tok); src.ReadToken(out tok); src.ReadToken(out tok);    //","
-                    size.y = int.Parse(tok);
+                    size.x = intX.Parse(tok); src.ReadToken(out tok); src.ReadToken(out tok);
+                    size.y = intX.Parse(tok);
                     tabSizes.Add(size);
                 }
             }
 
-            List<float> tabIconVOffsets = new();
+            var tabIconVOffsets = new List<float>();
             if (tabIconVOffsetStr.Length != 0)
             {
                 var src = new Parser(tabIconVOffsetStr, tabIconVOffsetStr.Length, "tabiconvoffsets", LEXFL.NOFATALERRORS | LEXFL.NOSTRINGCONCAT | LEXFL.NOSTRINGESCAPECHARS);
@@ -327,7 +327,7 @@ namespace Gengine.UI
                 {
                     if (tok == ",")
                         continue;
-                    tabIconVOffsets.Add(int.Parse(tok));
+                    tabIconVOffsets.Add(intX.Parse(tok));
                 }
             }
 
@@ -338,9 +338,9 @@ namespace Gengine.UI
                 var r = new TabRect
                 {
                     x = tabStops[i],
-                    align = doAligns ? tabAligns[i] : 0,
+                    align = (DeviceContext.ALIGN)(doAligns ? tabAligns[i] : 0),
                     valign = tabVAligns.Count > 0 && i < tabVAligns.Count ? tabVAligns[i] : 0,
-                    type = tabTypes.Count > 0 && i < tabTypes.Count ? tabTypes[i] : TAB_TYPE.TEXT,
+                    type = tabTypes.Count > 0 && i < tabTypes.Count ? (TAB_TYPE)tabTypes[i] : TAB_TYPE.TEXT,
                     iconSize = tabSizes.Count > 0 && i < tabSizes.Count ? tabSizes[i] : Vector2.origin,
                     iconVOffset = tabIconVOffsets.Count > 0 && i < tabIconVOffsets.Count ? tabIconVOffsets[i] : 0,
                 };
@@ -353,9 +353,9 @@ namespace Gengine.UI
         // This is the same as in idEditWindow
         void InitScroller(bool horizontal)
         {
-            string thumbImage = "guis/assets/scrollbar_thumb.tga";
-            string barImage = "guis/assets/scrollbarv.tga";
-            string scrollerName = "_scrollerWinV";
+            var thumbImage = "guis/assets/scrollbar_thumb.tga";
+            var barImage = "guis/assets/scrollbarv.tga";
+            var scrollerName = "_scrollerWinV";
 
             if (horizontal)
             {
@@ -431,7 +431,7 @@ namespace Gengine.UI
                 {
                     var start = 0;
                     var tab = 0;
-                    var stop = listItems[i].Find('\t', 0);
+                    var stop = listItems[i].IndexOf('\t', 0);
                     while (start < listItems[i].Length)
                     {
                         if (tab >= tabInfo.Count)
@@ -439,7 +439,7 @@ namespace Gengine.UI
                             common.Warning($"ListWindow::Draw: gui '{gui.SourceFile}' window '{name}' tabInfo.Count exceeded");
                             break;
                         }
-                        listItems[i].Mid(start, stop - start, work);
+                        work = listItems[i][start..stop];
 
                         rect.x = textRect.x + tabInfo[tab].x;
                         rect.w = (tabInfo[tab].w == -1) ? width - tabInfo[tab].x : tabInfo[tab].w;
@@ -451,7 +451,7 @@ namespace Gengine.UI
                             // leaving the icon name empty doesn't draw anything
                             if (work[0] != '\0')
                             {
-                                var iconMat = iconMaterials.Get(work, out var hashMat) == null ? declManager.FindMaterial("_default") : hashMat;
+                                var iconMat = iconMaterials.TryGetValue(work, out var hashMat) ? declManager.FindMaterial("_default") : hashMat;
 
                                 var iconRect = new Rectangle
                                 {
@@ -472,7 +472,7 @@ namespace Gengine.UI
                         dc.PopClipRect();
 
                         start = stop + 1;
-                        stop = listItems[i].Find('\t', start);
+                        stop = listItems[i].IndexOf('\t', start);
                         if (stop < 0) stop = listItems[i].Length;
                         tab++;
                     }
@@ -486,9 +486,9 @@ namespace Gengine.UI
             }
         }
 
-        public override void Activate(bool activate, string act)
+        public override void Activate(bool activate, ref string act)
         {
-            base.Activate(activate, act);
+            base.Activate(activate, ref act);
             if (activate)
                 UpdateList();
         }
@@ -500,7 +500,7 @@ namespace Gengine.UI
         {
             listItems.Clear();
             for (var i = 0; i < MAX_LIST_ITEMS; i++)
-                if (gui.State.GetString($"{listName}_item_{i}", "", out var str))
+                if (gui.State.TryGetString($"{listName}_item_{i}", "", out var str))
                 {
                     if (str.Length != 0) listItems.Add(str);
                 }
@@ -528,7 +528,7 @@ namespace Gengine.UI
 
         public override int Allocated => base.Allocated;
 
-        public override WinVar GetWinVarByName(string name, bool winLookup = false, DrawWin owner = null)
+        public override WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
             => base.GetWinVarByName(name, winLookup, owner);
     }
 }

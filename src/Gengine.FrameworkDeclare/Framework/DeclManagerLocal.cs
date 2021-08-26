@@ -1,13 +1,13 @@
 //#define USE_COMPRESSED_DECLS
 //#define GET_HUFFMAN_FREQUENCIES
+using Gengine.NumericsX.Core;
 using Gengine.Render;
 using Gengine.Sound;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Gengine.NumericsX.Core;
-using static Gengine.NumericsX.Lib;
 using static Gengine.Framework.Lib2;
+using static Gengine.NumericsX.Lib;
 
 namespace Gengine.Framework
 {
@@ -1234,8 +1234,7 @@ namespace Gengine.Framework
 
             MakeNameCanonical(name, out var canonicalName);
 
-            var fileName = _fileName;
-            fileName.BackSlashesToSlashes();
+            fileName = fileName.BackSlashesToSlashes();
 
             // see if it already exists
             hash = hashTables[typeIndex].GenerateKey(canonicalName, false);
@@ -1367,11 +1366,11 @@ namespace Gengine.Framework
 
         public virtual Material FindMaterial(string name, bool makeDefault = true) => (Material)FindType(DECL.MATERIAL, name, makeDefault);
         public virtual DeclSkin FindSkin(string name, bool makeDefault = true) => (DeclSkin)FindType(DECL.SKIN, name, makeDefault);
-        public virtual SoundShader FindSound(string name, bool makeDefault = true) => (SoundShader)FindType(DECL.SOUND, name, makeDefault);
+        public virtual ISoundShader FindSound(string name, bool makeDefault = true) => (ISoundShader)FindType(DECL.SOUND, name, makeDefault);
 
         public virtual Material MaterialByIndex(int index, bool forceParse = true) => (Material)DeclByIndex(DECL.MATERIAL, index, forceParse);
         public virtual DeclSkin SkinByIndex(int index, bool forceParse = true) => (DeclSkin)DeclByIndex(DECL.SKIN, index, forceParse);
-        public virtual SoundShader SoundByIndex(int index, bool forceParse = true) => (SoundShader)DeclByIndex(DECL.SOUND, index, forceParse);
+        public virtual ISoundShader SoundByIndex(int index, bool forceParse = true) => (ISoundShader)DeclByIndex(DECL.SOUND, index, forceParse);
 
         public static unsafe void MakeNameCanonical(string name, out string result)
         {

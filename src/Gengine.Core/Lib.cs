@@ -1,4 +1,6 @@
+using System;
 using System.Runtime.CompilerServices;
+using Gengine.Core;
 using Gengine.Framework;
 using Gengine.Render;
 using Gengine.Sound;
@@ -21,6 +23,10 @@ namespace Gengine
         public static ImageManager globalImages = new();     // pointer to global list for the rest of the system
         public static DeclManager declManager;
         public static VertexCacheX vertexCache = new();
+        public static ISession session;
         public static EventLoop eventLoop = new();
+
+        public static string R_GetVidModeListString(bool addCustom) => throw new NotImplementedException();
+        public static string R_GetVidModeValsString(bool addCustom) => throw new NotImplementedException();
     }
 }

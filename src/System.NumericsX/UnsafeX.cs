@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 
 // https://benbowen.blog/post/fun_with_makeref/
-namespace System.NumericsX.Core
+namespace System.NumericsX
 {
     [SuppressUnmanagedCodeSecurity]
     public unsafe static class UnsafeX

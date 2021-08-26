@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.NumericsX;
-using System.NumericsX.Core;
+using System.NumericsX;
 using System.Runtime.CompilerServices;
 using static Gengine.NumericsX.Lib;
 

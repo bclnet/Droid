@@ -9,6 +9,8 @@ using static Gengine.Lib;
 using static Gengine.NumericsX.Lib;
 using static Gengine.NumericsX.Core.Key;
 using System.IO;
+using System.NumericsX;
+using Gengine.Core;
 
 namespace Gengine.UI
 {
@@ -21,11 +23,11 @@ namespace Gengine.UI
 
     public class MarkerWindow : Window
     {
-        LogStats[] loggedStats = new LogStats[MAX_LOGGED_STATS];
+        LogStats[] loggedStats = new LogStats[LogStats.MAX_LOGGED_STATS];
         List<MarkerData> markerTimes = new();
         string statData;
         int numStats;
-        int[] imageBuff;
+        uint[] imageBuff;
         Material markerMat;
         Material markerStop;
         Vector4 markerColor;
@@ -35,13 +37,13 @@ namespace Gengine.UI
 
         protected override bool ParseInternalVar(string name, Parser src)
         {
-            if (string.Equals(name, "markerMat", StringComparison.OrdinalIgnoreCase)) { ParseString(src, out var str); markerMat = declManager.FindMaterial(str); markerMat.Sort = SS_GUI; return true; }
-            if (string.Equals(name, "markerStop", StringComparison.OrdinalIgnoreCase)) { ParseString(src, out var str); markerStop = declManager.FindMaterial(str); markerStop.Sort = SS_GUI; return true; }
+            if (string.Equals(name, "markerMat", StringComparison.OrdinalIgnoreCase)) { ParseString(src, out var str); markerMat = declManager.FindMaterial(str); markerMat.Sort = (float)SS.GUI; return true; }
+            if (string.Equals(name, "markerStop", StringComparison.OrdinalIgnoreCase)) { ParseString(src, out var str); markerStop = declManager.FindMaterial(str); markerStop.Sort = (float)SS.GUI; return true; }
             if (string.Equals(name, "markerColor", StringComparison.OrdinalIgnoreCase)) { ParseVec4(src, out markerColor); return true; }
             return base.ParseInternalVar(name, src);
         }
 
-        void CommonInit()
+        new void CommonInit()
         {
             numStats = 0;
             currentTime = -1;
@@ -74,8 +76,7 @@ namespace Gengine.UI
             var key = (Key)ev.evValue;
             if (ev.evValue2 != 0 && key == K_MOUSE1)
             {
-                gui.GetDesktop().SetChildWinVarVal("markerText", "text", "");
-                Rectangle r;
+                gui.Desktop.SetChildWinVarVal("markerText", "text", "");
                 var c = markerTimes.Count;
                 int i;
                 for (i = 0; i < c; i++)
@@ -100,10 +101,10 @@ namespace Gengine.UI
                     currentMarker = -1;
                     gui.SetStateInt("currentMarker", currentTime);
                     stopTime = currentTime;
-                    gui.GetDesktop().SetChildWinVarVal("markerText", "text", $"Marker set at {currentTime / 60 / 60:.2}:{currentTime / 60 % 60:.2}");
-                    gui.GetDesktop().SetChildWinVarVal("markerText", "visible", "1");
-                    gui.GetDesktop().SetChildWinVarVal("markerBackground", "matcolor", "0 0 0 0");
-                    gui.GetDesktop().SetChildWinVarVal("markerBackground", "text", "No Preview");
+                    gui.Desktop.SetChildWinVarVal("markerText", "text", $"Marker set at {currentTime / 60 / 60:.2}:{currentTime / 60 % 60:.2}");
+                    gui.Desktop.SetChildWinVarVal("markerText", "visible", "1");
+                    gui.Desktop.SetChildWinVarVal("markerBackground", "matcolor", "0 0 0 0");
+                    gui.Desktop.SetChildWinVarVal("markerBackground", "text", "No Preview");
                 }
                 var pct = gui.State.GetFloat("loadPct");
                 var len = gui.State.GetInt("loadLength");
@@ -159,8 +160,8 @@ namespace Gengine.UI
             r.y += 10;
             if (r.w > 0 && r.Contains(gui.CursorX, gui.CursorY))
             {
-                pct = (gui.CursorX() - r.x) / r.w;
-                currentTime = len * pct;
+                pct = (gui.CursorX - r.x) / r.w;
+                currentTime = (int)(len * pct);
                 r.x = gui.CursorX > r.x + r.w - 40 ? gui.CursorX - 40 : gui.CursorX;
                 r.y = gui.CursorY - 15;
                 r.w = 40;
@@ -217,7 +218,6 @@ namespace Gengine.UI
 
         void Line(int x1, int y1, int x2, int y2, uint[] o, uint color)
         {
-            o = default;
             var deltax = Math.Abs(x2 - x1);
             var deltay = Math.Abs(y2 - y1);
             var incx = x1 > x2 ? -1 : 1;
@@ -258,14 +258,14 @@ namespace Gengine.UI
             else common.Warning($"Out of bounds on point {x} : {y}");
         }
 
-        public override void Activate(bool activate, string act)
+        public unsafe override void Activate(bool activate, ref string act)
         {
-            base.Activate(activate, act);
+            base.Activate(activate, ref act);
             if (activate)
             {
                 int i;
                 gui.Desktop.SetChildWinVarVal("markerText", "text", "");
-                imageBuff = new int[512 * 64];
+                imageBuff = new uint[512 * 64];
                 markerTimes.Clear();
                 currentMarker = -1;
                 currentTime = -1;
@@ -301,9 +301,9 @@ namespace Gengine.UI
                         var md = new MarkerData
                         {
                             mat = declManager.FindMaterial(name),
-                            time = int.Parse(Path.GetFileNameWithoutExtension(name))
+                            time = intX.Parse(Path.GetFileNameWithoutExtension(name))
                         };
-                        md.mat.Sort = SS_GUI;
+                        md.mat.Sort = (float)SS.GUI;
                         markerTimes.Add(md);
                     }
                     fileSystem.FreeFileList(markers);
@@ -330,7 +330,8 @@ namespace Gengine.UI
                         Line((int)x1, (int)y1, (int)x2, (int)y2, imageBuff, 0xff00ffff);
                     }
                     var stage = background.GetStage(0);
-                    stage?.texture.image.UploadScratch((byte*)imageBuff, 512, 64);
+                    fixed (void* imageBuffV = imageBuff)
+                        stage?.texture.image.UploadScratch(imageBuffV, 512, 64);
                 }
             }
         }

@@ -1,8 +1,9 @@
+using Gengine.NumericsX.Core;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
+using System.Linq;
+using System.NumericsX;
 using System.Text;
 using static Gengine.NumericsX.Lib;
 
@@ -121,14 +122,12 @@ namespace Gengine.UI
 
         public void ReadFromSaveGame(VFile savefile)
         {
-            int len;
-
             savefile.Read(out enabled);
             savefile.Read(out type);
             savefile.Read(out regCount);
             savefile.ReadTMany(out regs, regs.Length);
 
-            savefile.Read(out len); savefile.ReadASCII(out name, len);
+            savefile.Read(out int len); savefile.ReadASCII(out name, len);
 
             var.ReadFromSaveGame(savefile);
         }
@@ -137,11 +136,6 @@ namespace Gengine.UI
     public class RegisterList
     {
         Dictionary<string, Register> regs = new(StringComparer.OrdinalIgnoreCase);
-
-        public RegisterList()
-        {
-            //regs.SetGranularity(4);
-        }
 
         public void AddReg(string name, Register.REGTYPE type, Parser src, Window win, WinVar var)
         {
@@ -220,8 +214,8 @@ namespace Gengine.UI
 
         public void ReadFromDemoFile(VFileDemo f)
         {
-            f.ReadInt(out var c);
             regs.Clear();
+            f.ReadInt(out var c);
             for (var i = 0; i < c; i++)
             {
                 var reg = new Register();
@@ -232,26 +226,28 @@ namespace Gengine.UI
 
         public void WriteToDemoFile(VFileDemo f)
         {
-            var c = regs.Count;
-            f.WriteInt(c);
-            for (var i = 0; i < c; i++)
-                regs[i].WriteToDemoFile(f);
+            f.WriteInt(regs.Count);
+            foreach (var reg in regs.Values)
+                reg.WriteToDemoFile(f);
         }
 
         public void WriteToSaveGame(VFile savefile)
         {
-            var num = regs.Count;
-            savefile.Write(num);
-
-            for (var i = 0; i < num; i++)
-                regs[i].WriteToSaveGame(savefile);
+            savefile.Write(regs.Count);
+            foreach (var reg in regs.Values)
+                reg.WriteToSaveGame(savefile);
         }
 
         public void ReadFromSaveGame(VFile savefile)
         {
+            regs.Clear();
             savefile.Read(out int num);
             for (var i = 0; i < num; i++)
-                regs[i].ReadFromSaveGame(savefile);
+            {
+                var reg = new Register();
+                reg.ReadFromSaveGame(savefile);
+                regs.Add(reg.name, reg);
+            }
         }
     }
 }

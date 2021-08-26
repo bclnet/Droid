@@ -6,7 +6,7 @@ using static Gengine.NumericsX.Core.Key;
 using static Gengine.NumericsX.Lib;
 using static Gengine.NumericsX.Sys.NativeW;
 using System;
-using System.NumericsX.Core;
+using System.NumericsX;
 
 namespace Gengine.NumericsX.Sys
 {

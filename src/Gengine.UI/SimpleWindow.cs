@@ -1,7 +1,7 @@
+using Gengine.NumericsX.Core;
 using Gengine.Render;
 using System;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
+using System.NumericsX;
 using static Gengine.Lib;
 using static Gengine.NumericsX.Lib;
 
@@ -34,13 +34,13 @@ namespace Gengine.UI
 
         protected WinStr text;
         protected WinBool visible;
-        protected WinRectangle rect;                // overall rect
-        protected WinVec4 backColor;
-        protected WinVec4 matColor;
-        protected WinVec4 foreColor;
-        protected WinVec4 borderColor;
-        protected WinFloat textScale;
-        protected WinFloat rotate;
+        protected internal WinRectangle rect;                // overall rect
+        protected internal WinVec4 backColor;
+        protected internal WinVec4 matColor;
+        protected internal WinVec4 foreColor;
+        protected internal WinVec4 borderColor;
+        protected internal WinFloat textScale;
+        protected internal WinFloat rotate;
         protected WinVec2 shear;
         protected WinBackground backGroundName;
 
@@ -223,16 +223,27 @@ namespace Gengine.UI
             textRect.Offset(-x, -y);
         }
 
+        enum OFFSET
+        {
+            RECT = 1,
+            BACKCOLOR,
+            MATCOLOR,
+            FORECOLOR,
+            BORDERCOLOR,
+            TEXTSCALE,
+            ROTATE,
+        }
+
         public int GetWinVarOffset(WinVar wv, DrawWin owner)
         {
-            int ret = -1;
-            if (wv == rect) ret = (ptrdiff_t) & this.rect - (ptrdiff_t)this;
-            if (wv == backColor) ret = (ptrdiff_t) & this.backColor - (ptrdiff_t)this;
-            if (wv == matColor) ret = (ptrdiff_t) & this.matColor - (ptrdiff_t)this;
-            if (wv == foreColor) ret = (ptrdiff_t) & this.foreColor - (ptrdiff_t)this;
-            if (wv == borderColor) ret = (ptrdiff_t) & this.borderColor - (ptrdiff_t)this;
-            if (wv == textScale) ret = (ptrdiff_t) & this.textScale - (ptrdiff_t)this;
-            if (wv == rotate) ret = (ptrdiff_t) & this.rotate - (ptrdiff_t)this;
+            var ret = -1;
+            if (wv == rect) ret = (int)OFFSET.RECT;
+            if (wv == backColor) ret = (int)OFFSET.BACKCOLOR;
+            if (wv == matColor) ret = (int)OFFSET.MATCOLOR;
+            if (wv == foreColor) ret = (int)OFFSET.FORECOLOR;
+            if (wv == borderColor) ret = (int)OFFSET.BORDERCOLOR;
+            if (wv == textScale) ret = (int)OFFSET.TEXTSCALE;
+            if (wv == rotate) ret = (int)OFFSET.ROTATE;
             if (ret != -1) owner.simp = this;
             return ret;
         }
@@ -285,17 +296,8 @@ namespace Gengine.UI
             backGroundName.WriteToSaveGame(savefile);
 
             int stringLen;
-            if (background != null)
-            {
-                stringLen = background.Name.Length;
-                savefile.Write(stringLen);
-                savefile.WriteASCII(background.Name);
-            }
-            else
-            {
-                stringLen = 0;
-                savefile.Write(stringLen);
-            }
+            if (background != null) { stringLen = background.Name.Length; savefile.Write(stringLen); savefile.WriteASCII(background.Name, stringLen); }
+            else { stringLen = 0; savefile.Write(stringLen); }
         }
 
         public virtual void ReadFromSaveGame(VFile savefile)
@@ -309,7 +311,7 @@ namespace Gengine.UI
             savefile.Read(out matScalex);
             savefile.Read(out matScaley);
             savefile.Read(out borderSize);
-            savefile.Read(out int textAlign); this.textAlign = (DeviceContext.ALIGN)textAlign;
+            savefile.Read(out textAlign);
             savefile.Read(out textAlignx);
             savefile.Read(out textAligny);
             savefile.Read(out textShadow);

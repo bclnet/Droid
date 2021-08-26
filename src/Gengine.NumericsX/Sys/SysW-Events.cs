@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.NumericsX.Core;
+using System.NumericsX;
 using Gengine.NumericsX.Core;
 
 namespace Gengine.NumericsX.Sys

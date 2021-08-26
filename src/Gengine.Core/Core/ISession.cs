@@ -1,6 +1,9 @@
+using Gengine.NumericsX.Core;
 using Gengine.NumericsX.Sys;
+using Gengine.Render;
+using Gengine.Sound;
 
-namespace Gengine.NumericsX.Core
+namespace Gengine.Core
 {
     // needed by the gui system for the load game menu
     public struct LogStats
@@ -30,8 +33,8 @@ namespace Gengine.NumericsX.Core
     public interface ISession
     {
         // The render world and sound world used for this session.
-        //IRenderWorld rw { get; }
-        //ISoundWorld sw { get; }
+        IRenderWorld rw { get; }
+        ISoundWorld sw { get; }
         //// The renderer and sound system will write changes to writeDemo.
         //// Demos can be recorded and played at the same time when splicing.
         //DemoFile readDemo;

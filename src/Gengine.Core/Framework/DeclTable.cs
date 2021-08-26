@@ -1,7 +1,7 @@
+using Gengine.NumericsX.Core;
 using System;
 using System.Collections.Generic;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
+using System.NumericsX;
 
 namespace Gengine.Framework
 {

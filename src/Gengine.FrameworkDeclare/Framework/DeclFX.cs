@@ -1,7 +1,7 @@
+using Gengine.NumericsX.Core;
 using System;
 using System.Collections.Generic;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
+using System.NumericsX;
 using static Gengine.Lib;
 using static Gengine.NumericsX.Lib;
 

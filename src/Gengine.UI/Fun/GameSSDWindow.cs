@@ -363,7 +363,7 @@ namespace Gengine.UI
     // SSDAsteroid
     class SSDAsteroid : SSDMover
     {
-        const string ASTEROID_MATERIAL = "game/SSD/asteroid";
+        internal const string ASTEROID_MATERIAL = "game/SSD/asteroid";
         public const int MAX_ASTEROIDS = 64;
         public int health;
         protected static SSDAsteroid[] asteroidPool = new SSDAsteroid[MAX_ASTEROIDS];
@@ -449,7 +449,7 @@ namespace Gengine.UI
     // SSDAstronaut
     class SSDAstronaut : SSDMover
     {
-        const string ASTRONAUT_MATERIAL = "game/SSD/astronaut";
+        internal const string ASTRONAUT_MATERIAL = "game/SSD/astronaut";
         public const int MAX_ASTRONAUT = 8;
         public int health;
         protected static SSDAstronaut[] astronautPool = new SSDAstronaut[MAX_ASTRONAUT];
@@ -531,13 +531,10 @@ namespace Gengine.UI
     // SSDExplosion
     class SSDExplosion : SSDEntity
     {
-        // #define EXPLOSION_MATERIAL "game/SSD/fball"
-        // #define EXPLOSION_TELEPORT "game/SSD/teleport"
-        static string[] explosionMaterials = {
+        internal static string[] explosionMaterials = {
             "game/SSD/fball",
             "game/SSD/teleport"
         };
-        const int EXPLOSION_MATERIAL_COUNT = 2;
 
         public enum EXPLOSION
         {
@@ -566,7 +563,7 @@ namespace Gengine.UI
         {
             base.WriteToSaveGame(savefile);
 
-            savefile.Write(finalSize);
+            savefile.WriteT(finalSize);
             savefile.Write(length);
             savefile.Write(beginTime);
             savefile.Write(endTime);
@@ -843,7 +840,7 @@ namespace Gengine.UI
 
     class SSDProjectile : SSDEntity
     {
-        const string PROJECTILE_MATERIAL = "game/SSD/fball";
+        internal const string PROJECTILE_MATERIAL = "game/SSD/fball";
         public const int MAX_PROJECTILES = 64;
 
         public Vector3 dir;
@@ -945,7 +942,7 @@ namespace Gengine.UI
                 }
         }
 
-        public static void ReadProjectiles(VFile savefile, GameSSDWindow _game)
+        public static void ReadProjectiles(VFile savefile, GameSSDWindow game)
         {
             savefile.Read(out int count);
             for (var i = 0; i < count; i++)
@@ -968,7 +965,7 @@ namespace Gengine.UI
     //	Bonus Points - Gives some bonus points when acquired
     class SSDPowerup : SSDMover
     {
-        static string[][] powerupMaterials = {
+        internal static string[][] powerupMaterials = {
             new []{ "game/SSD/powerupHealthClosed",         "game/SSD/powerupHealthOpen" },
             new []{ "game/SSD/powerupSuperBlasterClosed",   "game/SSD/powerupSuperBlasterOpen" },
             new []{ "game/SSD/powerupNukeClosed",           "game/SSD/powerupNukeOpen" },
@@ -976,8 +973,6 @@ namespace Gengine.UI
             new []{ "game/SSD/powerupBonusPointsClosed",    "game/SSD/powerupBonusPointsOpen" },
             new []{ "game/SSD/powerupDamageClosed",         "game/SSD/powerupDamageOpen" },
         };
-
-        const int POWERUP_MATERIAL_COUNT = 6;
 
         public const int MAX_POWERUPS = 64;
 
@@ -1216,7 +1211,7 @@ namespace Gengine.UI
 
         internal void memset()
         {
-            throw new NotImplementedException();
+            gameRunning = false;
         }
     }
 
@@ -1285,35 +1280,35 @@ namespace Gengine.UI
             }
             if (name.Contains("leveldata", StringComparison.OrdinalIgnoreCase))
             {
-                var level = int.Parse(name[^2..]) - 1;
+                var level = intX.Parse(name[^2..]) - 1;
                 ParseString(src, out var levelData);
                 ParseLevelData(level, levelData);
                 return true;
             }
             if (name.Contains("asteroiddata", StringComparison.OrdinalIgnoreCase))
             {
-                var level = int.Parse(name[^2..]) - 1;
+                var level = intX.Parse(name[^2..]) - 1;
                 ParseString(src, out var asteroidData);
                 ParseAsteroidData(level, asteroidData);
                 return true;
             }
             if (name.Contains("weapondata", StringComparison.OrdinalIgnoreCase))
             {
-                var weapon = int.Parse(name[^2..]) - 1;
+                var weapon = intX.Parse(name[^2..]) - 1;
                 ParseString(src, out var weaponData);
                 ParseWeaponData(weapon, weaponData);
                 return true;
             }
             if (name.Contains("astronautdata", StringComparison.OrdinalIgnoreCase))
             {
-                var level = int.Parse(name[^2..]) - 1;
+                var level = intX.Parse(name[^2..]) - 1;
                 ParseString(src, out var astronautData);
                 ParseAstronautData(level, astronautData);
                 return true;
             }
             if (name.Contains("powerupdata", StringComparison.OrdinalIgnoreCase))
             {
-                var level = int.Parse(name[^2..]) - 1;
+                var level = intX.Parse(name[^2..]) - 1;
                 ParseString(src, out var powerupData);
                 ParsePowerupData(level, powerupData);
                 return true;
@@ -1325,71 +1320,84 @@ namespace Gengine.UI
         {
             Parser parser = new();
             parser.LoadMemory(levelDataString, levelDataString.Length, "LevelData");
-            levelData[level].spawnBuffer = parser.ParseFloat();
-            levelData[level].needToWin = parser.ParseInt(); // Required Destroyed
+            levelData[level] = new SSDLevelData
+            {
+                spawnBuffer = parser.ParseFloat(),
+                needToWin = parser.ParseInt(), // Required Destroyed
+            };
         }
 
         void ParseAsteroidData(int level, string asteroidDataString)
         {
             Parser parser = new();
             parser.LoadMemory(asteroidDataString, asteroidDataString.Length, "AsteroidData");
-
-            asteroidData[level].speedMin = parser.ParseFloat(); // Speed Min
-            asteroidData[level].speedMax = parser.ParseFloat(); // Speed Max
-
-            asteroidData[level].sizeMin = parser.ParseFloat(); // Size Min
-            asteroidData[level].sizeMax = parser.ParseFloat(); // Size Max
-
-            asteroidData[level].rotateMin = parser.ParseFloat(); // Rotate Min (rotations per second)
-            asteroidData[level].rotateMax = parser.ParseFloat(); // Rotate Max (rotations per second)
-
-            asteroidData[level].spawnMin = parser.ParseInt(); // Spawn Min
-            asteroidData[level].spawnMax = parser.ParseInt(); // Spawn Max
-
-            asteroidData[level].asteroidHealth = parser.ParseInt(); // Health of the asteroid
-            asteroidData[level].asteroidDamage = parser.ParseInt(); // Asteroid Damage
-            asteroidData[level].asteroidPoints = parser.ParseInt(); // Points awarded for destruction
+            asteroidData[level] = new SSDAsteroidData
+            {
+                speedMin = parser.ParseFloat(), // Speed Min
+                speedMax = parser.ParseFloat(), // Speed Max
+                sizeMin = parser.ParseFloat(), // Size Min
+                sizeMax = parser.ParseFloat(), // Size Max
+                rotateMin = parser.ParseFloat(), // Rotate Min (rotations per second)
+                rotateMax = parser.ParseFloat(), // Rotate Max (rotations per second)
+                spawnMin = parser.ParseInt(), // Spawn Min
+                spawnMax = parser.ParseInt(), // Spawn Max
+                asteroidHealth = parser.ParseInt(), // Health of the asteroid
+                asteroidDamage = parser.ParseInt(), // Asteroid Damage
+                asteroidPoints = parser.ParseInt(), // Points awarded for destruction
+            };
         }
         void ParseWeaponData(int weapon, string weaponDataString)
         {
             Parser parser = new();
             parser.LoadMemory(weaponDataString, weaponDataString.Length, "WeaponData");
-
-            weaponData[weapon].speed = parser.ParseFloat();
-            weaponData[weapon].damage = parser.ParseFloat();
-            weaponData[weapon].size = parser.ParseFloat();
+            weaponData[weapon] = new SSDWeaponData
+            {
+                speed = parser.ParseFloat(),
+                damage = (int)parser.ParseFloat(),
+                size = (int)parser.ParseFloat(),
+            };
         }
         void ParseAstronautData(int level, string astronautDataString)
         {
             Parser parser = new();
             parser.LoadMemory(astronautDataString, astronautDataString.Length, "AstronautData");
-
-            astronautData[level].speedMin = parser.ParseFloat(); // Speed Min
-            astronautData[level].speedMax = parser.ParseFloat(); // Speed Max
-
-            astronautData[level].rotateMin = parser.ParseFloat(); // Rotate Min (rotations per second)
-            astronautData[level].rotateMax = parser.ParseFloat(); // Rotate Max (rotations per second)
-
-            astronautData[level].spawnMin = parser.ParseInt(); // Spawn Min
-            astronautData[level].spawnMax = parser.ParseInt(); // Spawn Max
-
-            astronautData[level].health = parser.ParseInt(); // Health of the asteroid
-            astronautData[level].points = parser.ParseInt(); // Asteroid Damage
-            astronautData[level].penalty = parser.ParseInt(); // Points awarded for destruction
+            astronautData[level] = new SSDAstronautData
+            {
+                speedMin = parser.ParseFloat(), // Speed Min
+                speedMax = parser.ParseFloat(), // Speed Max
+                rotateMin = parser.ParseFloat(), // Rotate Min (rotations per second)
+                rotateMax = parser.ParseFloat(), // Rotate Max (rotations per second)
+                spawnMin = parser.ParseInt(), // Spawn Min
+                spawnMax = parser.ParseInt(), // Spawn Max
+                health = parser.ParseInt(), // Health of the asteroid
+                points = parser.ParseInt(), // Asteroid Damage
+                penalty = parser.ParseInt(), // Points awarded for destruction
+            };
         }
         void ParsePowerupData(int level, string powerupDataString)
         {
             Parser parser = new();
             parser.LoadMemory(powerupDataString, powerupDataString.Length, "PowerupData");
+            powerupData[level] = new SSDPowerupData
+            {
+                speedMin = parser.ParseFloat(), // Speed Min
+                speedMax = parser.ParseFloat(), // Speed Max
+                rotateMin = parser.ParseFloat(), // Rotate Min (rotations per second)
+                rotateMax = parser.ParseFloat(), // Rotate Max (rotations per second)
+                spawnMin = parser.ParseInt(), // Spawn Min
+                spawnMax = parser.ParseInt(), // Spawn Max
+            };
+        }
 
-            powerupData[level].speedMin = parser.ParseFloat(); // Speed Min
-            powerupData[level].speedMax = parser.ParseFloat(); // Speed Max
-
-            powerupData[level].rotateMin = parser.ParseFloat(); // Rotate Min (rotations per second)
-            powerupData[level].rotateMax = parser.ParseFloat(); // Rotate Max (rotations per second)
-
-            powerupData[level].spawnMin = parser.ParseInt(); // Spawn Min
-            powerupData[level].spawnMax = parser.ParseInt(); // Spawn Max
+        public override WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
+        {
+            WinVar retVar = null;
+            if (string.Equals(name, "beginLevel", StringComparison.OrdinalIgnoreCase)) retVar = beginLevel;
+            if (string.Equals(name, "resetGame", StringComparison.OrdinalIgnoreCase)) retVar = resetGame;
+            if (string.Equals(name, "continueGame", StringComparison.OrdinalIgnoreCase)) retVar = continueGame;
+            if (string.Equals(name, "refreshGuiData", StringComparison.OrdinalIgnoreCase)) retVar = refreshGuiData;
+            if (retVar != null) return retVar;
+            return base.GetWinVarByName(name, winLookup, owner);
         }
 
         void CommonInit()
@@ -1411,16 +1419,16 @@ namespace Gengine.UI
             currentSound = 0;
 
             // Precahce all assets that are loaded dynamically
-            declManager.FindMaterial(ASTEROID_MATERIAL);
-            declManager.FindMaterial(ASTRONAUT_MATERIAL);
+            declManager.FindMaterial(SSDAsteroid.ASTEROID_MATERIAL);
+            declManager.FindMaterial(SSDAstronaut.ASTRONAUT_MATERIAL);
 
-            for (var i = 0; i < EXPLOSION_MATERIAL_COUNT; i++)
-                declManager.FindMaterial(explosionMaterials[i]);
-            declManager.FindMaterial(PROJECTILE_MATERIAL);
-            for (var i = 0; i < POWERUP_MATERIAL_COUNT; i++)
+            for (var i = 0; i < SSDExplosion.explosionMaterials.Length; i++)
+                declManager.FindMaterial(SSDExplosion.explosionMaterials[i]);
+            declManager.FindMaterial(SSDProjectile.PROJECTILE_MATERIAL);
+            for (var i = 0; i < SSDPowerup.powerupMaterials.Length; i++)
             {
-                declManager.FindMaterial(powerupMaterials[i][0]);
-                declManager.FindMaterial(powerupMaterials[i][1]);
+                declManager.FindMaterial(SSDPowerup.powerupMaterials[i][0]);
+                declManager.FindMaterial(SSDPowerup.powerupMaterials[i][1]);
             }
 
             // Precache sounds
@@ -1567,21 +1575,10 @@ namespace Gengine.UI
                 if (ev.evValue2 == 0)
                     return ret;
 
-                if (key == K_MOUSE1 || key == K_MOUSE2) FireWeapon(key);
+                if (key == K_MOUSE1 || key == K_MOUSE2) FireWeapon((int)key);
                 else return ret;
             }
             return ret;
-        }
-
-        public override WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
-        {
-            WinVar retVar = null;
-            if (string.Equals(name, "beginLevel", StringComparison.OrdinalIgnoreCase)) retVar = beginLevel;
-            if (string.Equals(name, "resetGame", StringComparison.OrdinalIgnoreCase)) retVar = resetGame;
-            if (string.Equals(name, "continueGame", StringComparison.OrdinalIgnoreCase)) retVar = continueGame;
-            if (string.Equals(name, "refreshGuiData", StringComparison.OrdinalIgnoreCase)) retVar = refreshGuiData;
-            if (retVar != null) return retVar;
-            return base.GetWinVarByName(name, winLookup, owner);
         }
 
         public override void Draw(int time, float x, float y)
@@ -1966,10 +1963,9 @@ namespace Gengine.UI
             var accuracy = gameStats.levelStats.shotCount == 0 ? 0f : (float)gameStats.levelStats.hitCount / (float)gameStats.levelStats.shotCount * 100f;
             gui.SetStateString("player_accuracy", $"{(int)accuracy}%");
 
-
             var totalAst = gameStats.levelStats.savedAstronauts + gameStats.levelStats.killedAstronauts;
             var saveAccuracy = totalAst == 0 ? 0f : (float)gameStats.levelStats.savedAstronauts / (float)totalAst * 100f;
-            gui.SetStateString("save_accuracy", va("%d%%", (int)saveAccuracy));
+            gui.SetStateString("save_accuracy", $"{(int)saveAccuracy}%");
 
             if (gameStats.levelStats.targetEnt != null)
             {

@@ -6,6 +6,7 @@ using Gengine.NumericsX.Sys;
 using static Gengine.Lib;
 using static Gengine.NumericsX.Core.Key;
 using static Gengine.NumericsX.Lib;
+using System.NumericsX;
 
 namespace Gengine.UI
 {
@@ -44,7 +45,16 @@ namespace Gengine.UI
             return base.ParseInternalVar(name, src);
         }
 
-        void CommonInit()
+        public override WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
+        {
+            if (string.Equals(name, "value", StringComparison.OrdinalIgnoreCase)) return value;
+            if (string.Equals(name, "cvar", StringComparison.OrdinalIgnoreCase)) return cvarStr;
+            if (string.Equals(name, "liveUpdate", StringComparison.OrdinalIgnoreCase)) return liveUpdate;
+            if (string.Equals(name, "cvarGroup", StringComparison.OrdinalIgnoreCase)) return cvarGroup;
+            return base.GetWinVarByName(name, winLookup, owner);
+        }
+
+        new void CommonInit()
         {
             value = 0f;
             low = 0f;
@@ -73,7 +83,6 @@ namespace Gengine.UI
         }
 
         public float Low => low;
-
         public float High => high;
 
         public float Value
@@ -82,16 +91,6 @@ namespace Gengine.UI
             set => this.value = value;
         }
 
-        public override int Allocated => base.Allocated;
-
-        public override WinVar GetWinVarByName(string name, bool winLookup = false, DrawWin owner = null)
-        {
-            if (string.Equals(name, "value", StringComparison.OrdinalIgnoreCase)) return value;
-            if (string.Equals(name, "cvar", StringComparison.OrdinalIgnoreCase)) return cvarStr;
-            if (string.Equals(name, "liveUpdate", StringComparison.OrdinalIgnoreCase)) return liveUpdate;
-            if (string.Equals(name, "cvarGroup", StringComparison.OrdinalIgnoreCase)) return cvarGroup;
-            return base.GetWinVarByName(name, winLookup, owner);
-        }
 
         public virtual string HandleEvent(SysEvent ev, bool updateVisuals)
         {
@@ -135,8 +134,6 @@ namespace Gengine.UI
             thumbMat.Sort = (float)SS.GUI;
             thumbWidth = thumbMat.ImageWidth;
             thumbHeight = thumbMat.ImageHeight;
-            //vertical = state.GetBool("vertical");
-            //scrollbar = state.GetBool("scrollbar");
             flags |= (WIN_HOLDCAPTURE | WIN_CANFOCUS);
             InitCvar();
         }
@@ -253,7 +250,7 @@ namespace Gengine.UI
                         pct = 1f - pct;
                     value = low + (high - low) * pct;
                 }
-                else if (gui.CursorY() < r.y) value = verticalFlip ? high : low;
+                else if (gui.CursorY < r.y) value = verticalFlip ? high : low;
                 else value = verticalFlip ? low : high;
             }
             else
@@ -276,17 +273,16 @@ namespace Gengine.UI
             return "";
         }
 
-
-        public override void Activate(bool activate, string act)
+        public override void Activate(bool activate, ref string act)
         {
-            base.Activate(activate, act);
+            base.Activate(activate, ref act);
             if (activate)
                 UpdateCvar(true, true);
         }
 
         void InitCvar()
         {
-            if (cvarStr[0] == '\0')
+            if (((string)cvarStr).Length == 0)
             {
                 if (buddyWin == null)
                     common.Warning($"SliderWindow::InitCvar: gui '{gui.SourceFile}' window '{name}' has an empty cvar string");
@@ -331,14 +327,14 @@ namespace Gengine.UI
             if (eventName.StartsWith("cvar read "))
             {
                 ev = eventName;
-                group = ev.Mid(10, ev.Length - 10);
+                group = ev[10..];
                 if (group == cvarGroup)
                     UpdateCvar(true, true);
             }
             else if (eventName.StartsWith("cvar write "))
             {
                 ev = eventName;
-                group = ev.Mid(11, ev.Length - 11);
+                group = ev[11..];
                 if (group == cvarGroup)
                     UpdateCvar(false, true);
             }

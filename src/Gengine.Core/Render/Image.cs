@@ -76,7 +76,7 @@ namespace Gengine.Render
 
     //#define MAX_IMAGE_NAME	256
 
-    public class Image
+    public unsafe class Image
     {
         public enum TF
         {
@@ -176,7 +176,7 @@ namespace Gengine.Render
 
         public void CopyDepthbuffer(int x, int y, int width, int height) => throw new NotImplementedException();
 
-        public void UploadScratch(byte[] pic, int width, int height) => throw new NotImplementedException();
+        public void UploadScratch(void* pic, int width, int height) => throw new NotImplementedException();
 
         // just for resource tracking
         public void SetClassification(int tag) => throw new NotImplementedException();

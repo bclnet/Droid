@@ -1,6 +1,6 @@
 //#define FRUSTUM_DEBUG
 using System.Diagnostics;
-using System.NumericsX.Core;
+using System.NumericsX;
 
 namespace System.NumericsX
 {

@@ -1,14 +1,14 @@
+using Gengine.Framework;
+using Gengine.NumericsX.Core;
+using Gengine.NumericsX.Sys;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
-using Gengine.NumericsX.Sys;
-using static Gengine.NumericsX.Lib;
-using static Gengine.NumericsX.Core.Key;
-using Gengine.Framework;
-using static Gengine.Lib;
 using System.Diagnostics;
+using System.NumericsX;
+using static Gengine.Lib;
+using static Gengine.NumericsX.Core.Key;
+using static Gengine.NumericsX.Lib;
 
 namespace Gengine.UI
 {
@@ -45,7 +45,8 @@ namespace Gengine.UI
     public class WexpOp
     {
         public WOP_TYPE opType;
-        public int a, b, c, d;
+        public object a;
+        public int b, c, d;
     }
 
     public struct RegEntry
@@ -63,12 +64,8 @@ namespace Gengine.UI
 
     public class TimeLineEvent
     {
-        public TimeLineEvent()
-        {
-            event_ = new GuiScriptList();
-        }
         public int time;
-        public GuiScriptList event_;
+        public GuiScriptList event_ = new();
         public bool pending;
         public int Size => 0 + event_.Size;
     }
@@ -186,27 +183,27 @@ namespace Gengine.UI
         // made RegisterVars a member of idWindow
         public static readonly RegEntry[] RegisterVars =
         {
-            new RegEntry( "forecolor", Register.REGTYPE.VEC4),
-            new RegEntry( "hovercolor", Register.REGTYPE.VEC4),
-            new RegEntry( "backcolor", Register.REGTYPE.VEC4),
-            new RegEntry( "bordercolor", Register.REGTYPE.VEC4),
-            new RegEntry( "rect", Register.REGTYPE.RECTANGLE),
-            new RegEntry( "matcolor", Register.REGTYPE.VEC4),
+            new RegEntry("forecolor", Register.REGTYPE.VEC4),
+            new RegEntry("hovercolor", Register.REGTYPE.VEC4),
+            new RegEntry("backcolor", Register.REGTYPE.VEC4),
+            new RegEntry("bordercolor", Register.REGTYPE.VEC4),
+            new RegEntry("rect", Register.REGTYPE.RECTANGLE),
+            new RegEntry("matcolor", Register.REGTYPE.VEC4),
             new RegEntry("scale", Register.REGTYPE.VEC2),
-            new RegEntry( "translate", Register.REGTYPE.VEC2),
+            new RegEntry("translate", Register.REGTYPE.VEC2),
             new RegEntry("rotate", Register.REGTYPE.FLOAT),
             new RegEntry("textscale", Register.REGTYPE.FLOAT),
             new RegEntry("visible", Register.REGTYPE.BOOL),
             new RegEntry("noevents", Register.REGTYPE.BOOL),
             new RegEntry("text", Register.REGTYPE.STRING),
-            new RegEntry( "background", Register.REGTYPE.STRING),
-            new RegEntry( "runscript", Register.REGTYPE.STRING),
-            new RegEntry( "varbackground", Register.REGTYPE.STRING),
-            new RegEntry( "cvar", Register.REGTYPE.STRING),
-            new RegEntry( "choices", Register.REGTYPE.STRING),
-            new RegEntry( "choiceVar", Register.REGTYPE.STRING),
-            new RegEntry( "bind", Register.REGTYPE.STRING),
-            new RegEntry( "modelRotate", Register.REGTYPE.VEC4),
+            new RegEntry("background", Register.REGTYPE.STRING),
+            new RegEntry("runscript", Register.REGTYPE.STRING),
+            new RegEntry("varbackground", Register.REGTYPE.STRING),
+            new RegEntry("cvar", Register.REGTYPE.STRING),
+            new RegEntry("choices", Register.REGTYPE.STRING),
+            new RegEntry("choiceVar", Register.REGTYPE.STRING),
+            new RegEntry("bind", Register.REGTYPE.STRING),
+            new RegEntry("modelRotate", Register.REGTYPE.VEC4),
             new RegEntry("modelOrigin", Register.REGTYPE.VEC4),
             new RegEntry("lightOrigin", Register.REGTYPE.VEC4),
             new RegEntry("lightColor", Register.REGTYPE.VEC4),
@@ -296,7 +293,72 @@ namespace Gengine.UI
 
         protected internal WinBool hideCursor;
 
-        public void CommonInit()
+        public virtual WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
+        {
+            WinVar retVar = null;
+            owner?.Invoke(null);
+            if (string.Equals(name, "notime", StringComparison.OrdinalIgnoreCase)) retVar = noTime;
+            if (string.Equals(name, "background", StringComparison.OrdinalIgnoreCase)) retVar = backGroundName;
+            if (string.Equals(name, "visible", StringComparison.OrdinalIgnoreCase)) retVar = visible;
+            if (string.Equals(name, "rect", StringComparison.OrdinalIgnoreCase)) retVar = rect;
+            if (string.Equals(name, "backColor", StringComparison.OrdinalIgnoreCase)) retVar = backColor;
+            if (string.Equals(name, "matColor", StringComparison.OrdinalIgnoreCase)) retVar = matColor;
+            if (string.Equals(name, "foreColor", StringComparison.OrdinalIgnoreCase)) retVar = foreColor;
+            if (string.Equals(name, "hoverColor", StringComparison.OrdinalIgnoreCase)) retVar = hoverColor;
+            if (string.Equals(name, "borderColor", StringComparison.OrdinalIgnoreCase)) retVar = borderColor;
+            if (string.Equals(name, "textScale", StringComparison.OrdinalIgnoreCase)) retVar = textScale;
+            if (string.Equals(name, "rotate", StringComparison.OrdinalIgnoreCase)) retVar = rotate;
+            if (string.Equals(name, "noEvents", StringComparison.OrdinalIgnoreCase)) retVar = noEvents;
+            if (string.Equals(name, "text", StringComparison.OrdinalIgnoreCase)) retVar = text;
+            if (string.Equals(name, "backGroundName", StringComparison.OrdinalIgnoreCase)) retVar = backGroundName;
+            if (string.Equals(name, "hidecursor", StringComparison.OrdinalIgnoreCase)) retVar = hideCursor;
+
+            var key = name;
+            var guiVar = key.Contains(WinVar.VAR_GUIPREFIX);
+            var c = definedVars.Count;
+            for (var i = 0; i < c; i++)
+                if (string.Equals(name, guiVar ? definedVars[i].Name : definedVars[i].Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    retVar = definedVars[i];
+                    break;
+                }
+
+            if (retVar != null)
+            {
+                if (winLookup && name[0] != '$')
+                    DisableRegister(name);
+
+                if (parent != null)
+                    owner?.Invoke(parent.FindChildByName(name));
+
+                return retVar;
+            }
+
+            var len = key.Length;
+            if (len > 5 && guiVar)
+            {
+                var var = (WinVar)new WinStr();
+                var.Init(name, this);
+                definedVars.Add(var);
+                return var;
+            }
+            else if (winLookup)
+            {
+                var n = key.IndexOf("::");
+                if (n > 0)
+                {
+                    var winName = key.Substring(0, n);
+                    var var = key[(key.Length - n - 2)..];
+                    var win = Gui.Desktop.FindChildByName(winName);
+                    if (win != null)
+                        if (win.win != null) return win.win.GetWinVarByName(var, false, owner);
+                        else { owner?.Invoke(win); return win.simp.GetWinVarByName(var); }
+                }
+            }
+            return null;
+        }
+
+        void CommonInit()
         {
             childID = 0;
             flags = 0;
@@ -356,8 +418,7 @@ namespace Gengine.UI
             CommonInit();
         }
 
-        public int Size => 0;
-
+        //public int Size => 0;
         public virtual int Allocated => 0;
 
         public DeviceContext DC
@@ -481,10 +542,6 @@ namespace Gengine.UI
                 }
         }
 
-        public void Adjust(float xd, float yd);
-
-        public void SetAdjustMode(Window child);
-
         public void Size(float x, float y, float w, float h)
         {
             rect = new Rectangle(rect)
@@ -529,7 +586,7 @@ namespace Gengine.UI
             backGroundName.SetMaterialPtr(x => background = x);
         }
 
-        static DrawWin FindChildByName_dw;
+        static readonly DrawWin FindChildByName_dw = new();
         public DrawWin FindChildByName(string name)
         {
             if (string.Equals(this.name, name, StringComparison.OrdinalIgnoreCase))
@@ -581,83 +638,29 @@ namespace Gengine.UI
         public string GetStrPtrByName(string name)
             => null;
 
-        public virtual WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
+        enum OFFSET
         {
-            WinVar retVar = null;
-            owner?.Invoke(null);
-
-            if (string.Equals(name, "notime", StringComparison.OrdinalIgnoreCase)) retVar = noTime;
-            if (string.Equals(name, "background", StringComparison.OrdinalIgnoreCase)) retVar = backGroundName;
-            if (string.Equals(name, "visible", StringComparison.OrdinalIgnoreCase)) retVar = visible;
-            if (string.Equals(name, "rect", StringComparison.OrdinalIgnoreCase)) retVar = rect;
-            if (string.Equals(name, "backColor", StringComparison.OrdinalIgnoreCase)) retVar = backColor;
-            if (string.Equals(name, "matColor", StringComparison.OrdinalIgnoreCase)) retVar = matColor;
-            if (string.Equals(name, "foreColor", StringComparison.OrdinalIgnoreCase)) retVar = foreColor;
-            if (string.Equals(name, "hoverColor", StringComparison.OrdinalIgnoreCase)) retVar = hoverColor;
-            if (string.Equals(name, "borderColor", StringComparison.OrdinalIgnoreCase)) retVar = borderColor;
-            if (string.Equals(name, "textScale", StringComparison.OrdinalIgnoreCase)) retVar = textScale;
-            if (string.Equals(name, "rotate", StringComparison.OrdinalIgnoreCase)) retVar = rotate;
-            if (string.Equals(name, "noEvents", StringComparison.OrdinalIgnoreCase)) retVar = noEvents;
-            if (string.Equals(name, "text", StringComparison.OrdinalIgnoreCase)) retVar = text;
-            if (string.Equals(name, "backGroundName", StringComparison.OrdinalIgnoreCase)) retVar = backGroundName;
-            if (string.Equals(name, "hidecursor", StringComparison.OrdinalIgnoreCase)) retVar = hideCursor;
-
-            var key = name;
-            var guiVar = key.IndexOf(WinVar.VAR_GUIPREFIX) >= 0;
-            var c = definedVars.Count;
-            for (var i = 0; i < c; i++)
-                if (string.Equals(name, guiVar ? definedVars[i].Name : definedVars[i].Name, StringComparison.OrdinalIgnoreCase))
-                {
-                    retVar = definedVars[i];
-                    break;
-                }
-
-            if (retVar != null)
-            {
-                if (winLookup && name[0] != '$')
-                    DisableRegister(name);
-
-                if (parent != null)
-                    owner?.Invoke(parent.FindChildByName(name));
-
-                return retVar;
-            }
-
-            var len = key.Length;
-            if (len > 5 && guiVar)
-            {
-                var var = (WinVar)new WinStr();
-                var.Init(name, this);
-                definedVars.Add(var);
-                return var;
-            }
-            else if (winLookup)
-            {
-                var n = key.IndexOf("::");
-                if (n > 0)
-                {
-                    var winName = key.Substring(0, n);
-                    var var = key.Substring(key.Length - n - 2);
-                    var win = Gui.Desktop.FindChildByName(winName);
-                    if (win != null)
-                        if (win.win != null) return win.win.GetWinVarByName(var, false, owner);
-                        else { owner?.Invoke(win); return win.simp.GetWinVarByName(var); }
-                }
-            }
-            return null;
+            RECT = 1,
+            BACKCOLOR,
+            MATCOLOR,
+            FORECOLOR,
+            HOVERCOVER,
+            BORDERCOLOR,
+            TEXTSCALE,
+            ROTATE,
         }
 
         public int GetWinVarOffset(WinVar wv, DrawWin owner)
         {
-            int ret = -1;
-            if (wv == rect) ret = (ptrdiff_t) & this.rect - (ptrdiff_t)this;
-            if (wv == backColor) ret = (ptrdiff_t) & this.backColor - (ptrdiff_t)this;
-            if (wv == matColor) ret = (ptrdiff_t) & this.matColor - (ptrdiff_t)this;
-            if (wv == foreColor) ret = (ptrdiff_t) & this.foreColor - (ptrdiff_t)this;
-            if (wv == hoverColor) ret = (ptrdiff_t) & this.hoverColor - (ptrdiff_t)this;
-            if (wv == borderColor) ret = (ptrdiff_t) & this.borderColor - (ptrdiff_t)this;
-            if (wv == textScale) ret = (ptrdiff_t) & this.textScale - (ptrdiff_t)this;
-            if (wv == rotate) ret = (ptrdiff_t) & this.rotate - (ptrdiff_t)this;
+            var ret = -1;
+            if (wv == rect) ret = (int)OFFSET.RECT;
+            if (wv == backColor) ret = (int)OFFSET.BACKCOLOR;
+            if (wv == matColor) ret = (int)OFFSET.MATCOLOR;
+            if (wv == foreColor) ret = (int)OFFSET.FORECOLOR;
+            if (wv == hoverColor) ret = (int)OFFSET.HOVERCOVER;
+            if (wv == borderColor) ret = (int)OFFSET.BORDERCOLOR;
+            if (wv == textScale) ret = (int)OFFSET.TEXTSCALE;
+            if (wv == rotate) ret = (int)OFFSET.ROTATE;
             if (ret != -1)
             {
                 owner.win = this;
@@ -764,7 +767,7 @@ namespace Gengine.UI
                 dc.DrawRect(drawRect.x, drawRect.y, drawRect.w, drawRect.h, borderSize, borderColor);
         }
 
-        public void DrawCaption(int time, float x, float y);
+        //public void DrawCaption(int time, float x, float y);
 
         static Matrix3x3 SetupTransforms_trans;
         static Vector3 SetupTransforms_org;
@@ -805,7 +808,7 @@ namespace Gengine.UI
 
         public virtual bool Parse(Parser src, bool rebuild = true)
         {
-            Token token2, token3, token4, token5, token6, token7;
+            Token token2;
             string work;
 
             if (rebuild)
@@ -1051,7 +1054,7 @@ namespace Gengine.UI
                         src.Error("Unexpected end of file");
                         return false;
                     }
-                    ev.time = int.Parse(token);
+                    ev.time = intX.Parse(token);
 
                     // reset the mark since we dont want it to include the time
                     src.SetMarker();
@@ -2194,7 +2197,7 @@ for (i = 0; i < c; i++)
 
             transitions.Clear();
 
-            ReadSaveGameString(cmd, savefile);
+            ReadSaveGameString(out cmd, savefile);
 
             savefile.Read(out actualX);
             savefile.Read(out actualY);
@@ -2317,28 +2320,26 @@ for (i = 0; i < c; i++)
                 var dw = gui.Desktop.FindChildByName((WinStr)transitions[i].data);
                 transitions[i].data = null;
                 if (dw != null && (dw.win != null || dw.simp != null))
-                {
                     if (dw.win != null)
                     {
-                        if (transitions[i].offset == (ptrdiff_t) & this.rect - (ptrdiff_t)this) transitions[i].data = dw.win.rect;
-                        else if (transitions[i].offset == (ptrdiff_t) & this.backColor - (ptrdiff_t)this) transitions[i].data = dw.win.backColor;
-                        else if (transitions[i].offset == (ptrdiff_t) & this.matColor - (ptrdiff_t)this) transitions[i].data = dw.win.matColor;
-                        else if (transitions[i].offset == (ptrdiff_t) & this.foreColor - (ptrdiff_t)this) transitions[i].data = dw.win.foreColor;
-                        else if (transitions[i].offset == (ptrdiff_t) & this.borderColor - (ptrdiff_t)this) transitions[i].data = dw.win.borderColor;
-                        else if (transitions[i].offset == (ptrdiff_t) & this.textScale - (ptrdiff_t)this) transitions[i].data = dw.win.textScale;
-                        else if (transitions[i].offset == (ptrdiff_t) & this.rotate - (ptrdiff_t)this) transitions[i].data = dw.win.rotate;
+                        if (transitions[i].offset == (int)OFFSET.RECT) transitions[i].data = dw.win.rect;
+                        else if (transitions[i].offset == (int)OFFSET.BACKCOLOR) transitions[i].data = dw.win.backColor;
+                        else if (transitions[i].offset == (int)OFFSET.MATCOLOR) transitions[i].data = dw.win.matColor;
+                        else if (transitions[i].offset == (int)OFFSET.FORECOLOR) transitions[i].data = dw.win.foreColor;
+                        else if (transitions[i].offset == (int)OFFSET.BORDERCOLOR) transitions[i].data = dw.win.borderColor;
+                        else if (transitions[i].offset == (int)OFFSET.TEXTSCALE) transitions[i].data = dw.win.textScale;
+                        else if (transitions[i].offset == (int)OFFSET.ROTATE) transitions[i].data = dw.win.rotate;
                     }
                     else
                     {
-                        if (transitions[i].offset == (ptrdiff_t) & this.rect - (ptrdiff_t)this) transitions[i].data = dw.simp.rect;
-                        else if (transitions[i].offset == (ptrdiff_t) & this.backColor - (ptrdiff_t)this) transitions[i].data = dw.simp.backColor;
-                        else if (transitions[i].offset == (ptrdiff_t) & this.matColor - (ptrdiff_t)this) transitions[i].data = dw.simp.matColor;
-                        else if (transitions[i].offset == (ptrdiff_t) & this.foreColor - (ptrdiff_t)this) transitions[i].data = dw.simp.foreColor;
-                        else if (transitions[i].offset == (ptrdiff_t) & this.borderColor - (ptrdiff_t)this) transitions[i].data = dw.simp.borderColor;
-                        else if (transitions[i].offset == (ptrdiff_t) & this.textScale - (ptrdiff_t)this) transitions[i].data = dw.simp.textScale;
-                        else if (transitions[i].offset == (ptrdiff_t) & this.rotate - (ptrdiff_t)this) transitions[i].data = dw.simp.rotate;
+                        if (transitions[i].offset == (int)OFFSET.RECT) transitions[i].data = dw.simp.rect;
+                        else if (transitions[i].offset == (int)OFFSET.BACKCOLOR) transitions[i].data = dw.simp.backColor;
+                        else if (transitions[i].offset == (int)OFFSET.MATCOLOR) transitions[i].data = dw.simp.matColor;
+                        else if (transitions[i].offset == (int)OFFSET.FORECOLOR) transitions[i].data = dw.simp.foreColor;
+                        else if (transitions[i].offset == (int)OFFSET.BORDERCOLOR) transitions[i].data = dw.simp.borderColor;
+                        else if (transitions[i].offset == (int)OFFSET.TEXTSCALE) transitions[i].data = dw.simp.textScale;
+                        else if (transitions[i].offset == (int)OFFSET.ROTATE) transitions[i].data = dw.simp.rotate;
                     }
-                }
                 if (transitions[i].data == null) { transitions.RemoveAt(i); i--; c--; }
             }
             for (c = 0; c < children.Count; c++)
@@ -2371,9 +2372,9 @@ for (i = 0; i < c; i++)
                 if (ops[i].b == -2)
                 {
                     // need to fix this up
-                    var p = (string)ops[i].a;
-                    var var = GetWinVarByName(p, true);
-                    ops[i].a = (intptr_t)var;
+                    var p = (WinStr)ops[i].a;
+                    var var_ = GetWinVarByName(p, true);
+                    ops[i].a = var_;
                     ops[i].b = -1;
                 }
 
@@ -2381,9 +2382,8 @@ for (i = 0; i < c; i++)
                 CalcRects(0, 0);
         }
 
-        public void GetScriptString(string name, string o);
-
-        public void SetScriptParams();
+        //public void GetScriptString(string name, string o);
+        //public void SetScriptParams();
 
         public bool HasOps => ops.Count > 0;
 
@@ -2541,10 +2541,10 @@ for (i = 0; i < c; i++)
             return true;
         }
 
-        public void SetRegs(string key, string val);
+        //public void SetRegs(string key, string val);
 
         // Returns a register index
-        public object ParseExpression(Parser src, WinVar var = null, object component = null)
+        public int ParseExpression(Parser src, WinVar var = null, object component = null)
             => ParseExpressionPriority(src, TOP_PRIORITY, var);
 
         public int ExpressionConstant(float f)
@@ -2960,7 +2960,7 @@ for (i = 0; i < c; i++)
             return true;
         }
 
-        protected void Dump();
+        //protected void Dump();
 
         protected int ExpressionTemporary()
         {
@@ -2987,7 +2987,7 @@ for (i = 0; i < c; i++)
             return ops[i];
         }
 
-        protected object EmitOp(object a, object b, WOP_TYPE opType, Action<WexpOp> opp = null)
+        protected int EmitOp(object a, int b, WOP_TYPE opType, Action<WexpOp> opp = null)
         {
 #if false
             // optimize away identity operations
@@ -3017,16 +3017,16 @@ for (i = 0; i < c; i++)
             return op.c;
         }
 
-        protected object ParseEmitOp(Parser src, object a, WOP_TYPE opType, int priority, Action<WexpOp> opp = null)
+        protected int ParseEmitOp(Parser src, object a, WOP_TYPE opType, int priority, Action<WexpOp> opp = null)
         {
             var b = ParseExpressionPriority(src, priority);
             return EmitOp(a, b, opType, opp);
         }
 
         // Returns a register index
-        protected object ParseTerm(Parser src, WinVar var = null, object component = null)
+        protected int ParseTerm(Parser src, WinVar var = null, int component = 0)
         {
-            object a, b;
+            object a; int b;
 
             src.ReadToken(out var token);
 
@@ -3034,7 +3034,7 @@ for (i = 0; i < c; i++)
             {
                 a = ParseExpression(src);
                 src.ExpectTokenString(")");
-                return a;
+                return (int)a;
             }
 
             if (string.Equals(token, "time", StringComparison.OrdinalIgnoreCase))
@@ -3057,7 +3057,7 @@ for (i = 0; i < c; i++)
             var table = (DeclTable)declManager.FindType(DECL.TABLE, token, false);
             if (table != null)
             {
-                a = table.Index();
+                a = table.Index;
                 // parse a table expression
                 src.ExpectTokenString("[");
                 b = ParseExpression(src);
@@ -3095,14 +3095,13 @@ for (i = 0; i < c; i++)
                 b = -2;
                 return EmitOp(a, b, WOP_TYPE.VAR);
             }
-
         }
 
         // Returns a register index
         const int TOP_PRIORITY = 4;
-        protected object ParseExpressionPriority(Parser src, int priority, WinVar var = null, object component = null)
+        protected int ParseExpressionPriority(Parser src, int priority, WinVar var = null, int component = 0)
         {
-            object a;
+            int a;
 
             if (priority == 0)
                 return ParseTerm(src, var, component);
@@ -3162,57 +3161,57 @@ for (i = 0; i < c; i++)
                     continue;
                 switch (op.opType)
                 {
-                    case WOP_TYPE.ADD: registers[op.c] = registers[op.a] + registers[op.b]; break;
-                    case WOP_TYPE.SUBTRACT: registers[op.c] = registers[op.a] - registers[op.b]; break;
-                    case WOP_TYPE.MULTIPLY: registers[op.c] = registers[op.a] * registers[op.b]; break;
+                    case WOP_TYPE.ADD: registers[op.c] = registers[(int)op.a] + registers[op.b]; break;
+                    case WOP_TYPE.SUBTRACT: registers[op.c] = registers[(int)op.a] - registers[op.b]; break;
+                    case WOP_TYPE.MULTIPLY: registers[op.c] = registers[(int)op.a] * registers[op.b]; break;
                     case WOP_TYPE.DIVIDE:
                         if (registers[op.b] == 0f)
                         {
                             common.Warning($"Divide by zero in window '{Name}' in {gui.SourceFile}");
-                            registers[op.c] = registers[op.a];
+                            registers[op.c] = registers[(int)op.a];
                         }
-                        else registers[op.c] = registers[op.a] / registers[op.b];
+                        else registers[op.c] = registers[(int)op.a] / registers[op.b];
                         break;
                     case WOP_TYPE.MOD:
                         b = (int)registers[op.b];
                         b = b != 0 ? b : 1;
-                        registers[op.c] = (int)registers[op.a] % b;
+                        registers[op.c] = (int)registers[(int)op.a] % b;
                         break;
                     case WOP_TYPE.TABLE:
                         {
-                            var table = (DeclTable)declManager.DeclByIndex(DECL.TABLE, op.a);
+                            var table = (DeclTable)declManager.DeclByIndex(DECL.TABLE, (int)op.a);
                             registers[op.c] = table.TableLookup(registers[op.b]);
                         }
                         break;
-                    case WOP_TYPE.GT: registers[op.c] = registers[op.a] > registers[op.b] ? 1 : 0; break;
-                    case WOP_TYPE.GE: registers[op.c] = registers[op.a] >= registers[op.b] ? 1 : 0; break;
-                    case WOP_TYPE.LT: registers[op.c] = registers[op.a] < registers[op.b] ? 1 : 0; break;
-                    case WOP_TYPE.LE: registers[op.c] = registers[op.a] <= registers[op.b] ? 1 : 0; break;
-                    case WOP_TYPE.EQ: registers[op.c] = registers[op.a] == registers[op.b] ? 1 : 0; break;
-                    case WOP_TYPE.NE: registers[op.c] = registers[op.a] != registers[op.b] ? 1 : 0; break;
-                    case WOP_TYPE.COND: registers[op.c] = registers[op.a] != 0 ? registers[op.b] : registers[op.d]; break;
-                    case WOP_TYPE.AND: registers[op.c] = registers[op.a] != 0 && registers[op.b] != 0 ? 1 : 0; break;
-                    case WOP_TYPE.OR: registers[op.c] = registers[op.a] != 0 || registers[op.b] != 0 ? 1 : 0; break;
+                    case WOP_TYPE.GT: registers[op.c] = registers[(int)op.a] > registers[op.b] ? 1 : 0; break;
+                    case WOP_TYPE.GE: registers[op.c] = registers[(int)op.a] >= registers[op.b] ? 1 : 0; break;
+                    case WOP_TYPE.LT: registers[op.c] = registers[(int)op.a] < registers[op.b] ? 1 : 0; break;
+                    case WOP_TYPE.LE: registers[op.c] = registers[(int)op.a] <= registers[op.b] ? 1 : 0; break;
+                    case WOP_TYPE.EQ: registers[op.c] = registers[(int)op.a] == registers[op.b] ? 1 : 0; break;
+                    case WOP_TYPE.NE: registers[op.c] = registers[(int)op.a] != registers[op.b] ? 1 : 0; break;
+                    case WOP_TYPE.COND: registers[op.c] = registers[(int)op.a] != 0 ? registers[op.b] : registers[op.d]; break;
+                    case WOP_TYPE.AND: registers[op.c] = registers[(int)op.a] != 0 && registers[op.b] != 0 ? 1 : 0; break;
+                    case WOP_TYPE.OR: registers[op.c] = registers[(int)op.a] != 0 || registers[op.b] != 0 ? 1 : 0; break;
                     case WOP_TYPE.VAR:
-                        if (op.a == 0) { registers[op.c] = 0; break; }
+                        if (op.a == null) { registers[op.c] = 0; break; }
                         // grabs vector components 
                         if (op.b >= 0 && registers[op.b] >= 0 && registers[op.b] < 4) { var var = (WinVec4)op.a; registers[op.c] = ((Vector4)var)[(int)registers[op.b]]; }
                         else registers[op.c] = ((WinVar)op.a).x;
                         break;
                     case WOP_TYPE.VARS:
-                        if (op.a != 0) { var var = (WinStr)op.a; registers[op.c] = float.Parse(var); }
+                        if (op.a != null) { var var = (WinStr)op.a; registers[op.c] = floatX.Parse(var); }
                         else registers[op.c] = 0;
                         break;
                     case WOP_TYPE.VARF:
-                        if (op.a != 0) { var var = (WinFloat)op.a; registers[op.c] = var; }
+                        if (op.a != null) { var var = (WinFloat)op.a; registers[op.c] = var; }
                         else registers[op.c] = 0;
                         break;
                     case WOP_TYPE.VARI:
-                        if (op.a != 0) { var var = (WinInt)op.a; registers[op.c] = var; }
+                        if (op.a != null) { var var = (WinInt)op.a; registers[op.c] = var; }
                         else registers[op.c] = 0;
                         break;
                     case WOP_TYPE.VARB:
-                        if (op.a != 0) { var var = (WinBool)op.a; registers[op.c] = var ? 1 : 0; }
+                        if (op.a != null) { var var = (WinBool)op.a; registers[op.c] = var ? 1 : 0; }
                         else registers[op.c] = 0;
                         break;
                     default: common.FatalError("R_EvaluateExpression: bad opcode"); break;
@@ -3248,8 +3247,8 @@ for (i = 0; i < c; i++)
                 switch (tok.type)
                 {
                     case TT.NUMBER:
-                        if ((tok.subtype & Token.TT_INTEGER) != 0) definedVars.Add(new WinInt(int.Parse(tok)) { Name = work });
-                        else if ((tok.subtype & Token.TT_FLOAT) != 0) definedVars.Add(new WinFloat(float.Parse(tok)) { Name = work });
+                        if ((tok.subtype & Token.TT_INTEGER) != 0) definedVars.Add(new WinInt(intX.Parse(tok)) { Name = work });
+                        else if ((tok.subtype & Token.TT_FLOAT) != 0) definedVars.Add(new WinFloat(floatX.Parse(tok)) { Name = work });
                         else definedVars.Add(new WinStr(tok) { Name = name });
                         break;
                     default: definedVars.Add(new WinStr(tok) { Name = name }); break;
@@ -3290,7 +3289,7 @@ for (i = 0; i < c; i++)
             if (string.Equals(name, "name", StringComparison.OrdinalIgnoreCase)) { ParseString(src, out name); return true; }
             if (string.Equals(name, "play", StringComparison.OrdinalIgnoreCase)) { common.Warning("play encountered during gui parse.. see Robert\n"); ParseString(src, out var _); return true; }
             if (string.Equals(name, "comment", StringComparison.OrdinalIgnoreCase)) { ParseString(src, out comment); return true; }
-            if (string.Equals(name, "font", StringComparison.OrdinalIgnoreCase)) { ParseString(src, out var fontStr); fontNum = dc.FindFont(fontStr); return true; }
+            if (string.Equals(name, "font", StringComparison.OrdinalIgnoreCase)) { ParseString(src, out var fontStr); fontNum = (byte)dc.FindFont(fontStr); return true; }
             return false;
         }
 
@@ -3299,12 +3298,12 @@ for (i = 0; i < c; i++)
 
         protected void ParseVec4(Parser src, out Vector4 o)
         {
-            src.ReadToken(out var tok); o.x = float.Parse(tok); src.ExpectTokenString(",");
-            src.ReadToken(out tok); o.y = float.Parse(tok); src.ExpectTokenString(",");
-            src.ReadToken(out tok); o.z = float.Parse(tok); src.ExpectTokenString(",");
-            src.ReadToken(out tok); o.w = float.Parse(tok);
+            src.ReadToken(out var tok); o.x = floatX.Parse(tok); src.ExpectTokenString(",");
+            src.ReadToken(out tok); o.y = floatX.Parse(tok); src.ExpectTokenString(",");
+            src.ReadToken(out tok); o.z = floatX.Parse(tok); src.ExpectTokenString(",");
+            src.ReadToken(out tok); o.w = floatX.Parse(tok);
         }
 
-        protected void ConvertRegEntry(string name, Parser src, out string o, int tabs);
+        //protected void ConvertRegEntry(string name, Parser src, out string o, int tabs);
     }
 }

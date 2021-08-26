@@ -10,13 +10,14 @@ namespace System.NumericsX
 
         public static unsafe Vector2 cast_vec2(Vector3 s) => *(Vector2*)&s;
         public static unsafe Vector2 cast_vec2(Vector4 s) => *(Vector2*)&s;
-        
+
         public static unsafe Vector3 cast_vec3(Vector4 s) => *(Vector3*)&s;
         public static unsafe Vector3 cast_vec3(Vector5 s) => *(Vector3*)&s;
         public static unsafe Vector3 cast_vec3(Plane s) => *(Vector3*)&s;
         public static unsafe Vector3 cast_vec3(float* s, int index) => *(Vector3*)&s[index];
 
         public static unsafe Vector4 cast_vec4(Plane s) => *(Vector4*)&s;
+        public static unsafe Vector4 cast_vec4(Rectangle s) => *(Vector4*)&s;
 
         public static unsafe Vector5 cast_vec5(Vector3 s) => *(Vector5*)&s;
 

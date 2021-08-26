@@ -139,8 +139,8 @@ namespace Gengine.UI
 
         const float MAX_WINDFORCE = 100f;
 
-        static CVar bearTurretAngle = new("bearTurretAngle", "0", CVAR.FLOAT, "");
-        static CVar bearTurretForce = new("bearTurretForce", "200", CVAR.FLOAT, "");
+        static readonly CVar bearTurretAngle = new("bearTurretAngle", "0", CVAR.FLOAT, "");
+        static readonly CVar bearTurretForce = new("bearTurretForce", "200", CVAR.FLOAT, "");
 
         WinBool gamerunning;
         WinBool onFire;
@@ -184,7 +184,18 @@ namespace Gengine.UI
             return base.ParseInternalVar(name, src);
         }
 
-        new void CommonInit()
+        public override WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
+        {
+            WinVar retVar = null;
+            if (string.Equals(name, "gamerunning", StringComparison.OrdinalIgnoreCase)) retVar = gamerunning;
+            else if (string.Equals(name, "onFire", StringComparison.OrdinalIgnoreCase)) retVar = onFire;
+            else if (string.Equals(name, "onContinue", StringComparison.OrdinalIgnoreCase)) retVar = onContinue;
+            else if (string.Equals(name, "onNewGame", StringComparison.OrdinalIgnoreCase)) retVar = onNewGame;
+            if (retVar != null) return retVar;
+            return base.GetWinVarByName(name, winLookup, owner);
+        }
+
+        void CommonInit()
         {
             BSEntity ent;
 
@@ -389,20 +400,6 @@ namespace Gengine.UI
             return ret;
         }
 
-        public override WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
-        {
-            WinVar retVar = null;
-            if (string.Equals(name, "gamerunning", StringComparison.OrdinalIgnoreCase)) retVar = gamerunning;
-            else if (string.Equals(name, "onFire", StringComparison.OrdinalIgnoreCase)) retVar = onFire;
-            else if (string.Equals(name, "onContinue", StringComparison.OrdinalIgnoreCase)) retVar = onContinue;
-            else if (string.Equals(name, "onNewGame", StringComparison.OrdinalIgnoreCase)) retVar = onNewGame;
-            if (retVar != null) return retVar;
-            return base.GetWinVarByName(name, winLookup, owner);
-        }
-
-        public override void PostParse()
-            => base.PostParse();
-
         public override void Draw(int time, float x, float y)
         {
             // Update the game every frame before drawing
@@ -483,7 +480,7 @@ namespace Gengine.UI
                 {
                     startShrink = true;
 
-                    bear.velocity.y *= -1.f;
+                    bear.velocity.y *= -1f;
                     bear.velocity *= 0.5f;
 
                     if (bearScale != 0f)

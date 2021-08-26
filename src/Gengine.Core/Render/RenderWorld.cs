@@ -2,9 +2,9 @@ using Gengine.Framework;
 using Gengine.Sound;
 using Gengine.UI;
 using System;
-using Gengine.NumericsX;
 using Gengine.NumericsX.Core;
 using System.NumericsX;
+using Qhandle = System.Int32;
 
 namespace Gengine.Render
 {
@@ -164,7 +164,7 @@ namespace Gengine.Render
         public int[] areas;       // areas connected by this portal
         public Winding w;             // winding points have counter clockwise ordering seen from areas[0]
         public int blockingBits;   // PS_BLOCK_VIEW, PS_BLOCK_AIR, etc
-        public IntPtr portalHandle;
+        public Qhandle portalHandle;
     }
 
     // guiPoint_t is returned by idRenderWorld::GuiTrace()
@@ -247,15 +247,15 @@ namespace Gengine.Render
 
         // entityDefs and lightDefs are added to a given world to determine what will be drawn for a rendered scene.  Most update work is defered
         // until it is determined that it is actually needed for a given view.
-        IntPtr AddEntityDef(RenderEntity re);
-        void UpdateEntityDef(IntPtr entityHandle, RenderEntity re);
-        void FreeEntityDef(IntPtr entityHandle);
-        RenderEntity GetRenderEntity(IntPtr entityHandle);
+        Qhandle AddEntityDef(RenderEntity re);
+        void UpdateEntityDef(Qhandle entityHandle, RenderEntity re);
+        void FreeEntityDef(Qhandle entityHandle);
+        RenderEntity GetRenderEntity(Qhandle entityHandle);
 
-        IntPtr AddLightDef(RenderLight rlight);
-        void UpdateLightDef(IntPtr lightHandle, RenderLight rlight);
-        void FreeLightDef(IntPtr lightHandle);
-        RenderLight GetRenderLight(IntPtr lightHandle);
+        Qhandle AddLightDef(RenderLight rlight);
+        void UpdateLightDef(Qhandle lightHandle, RenderLight rlight);
+        void FreeLightDef(Qhandle lightHandle);
+        RenderLight GetRenderLight(Qhandle lightHandle);
 
         // Force the generation of all light / surface interactions at the start of a level If this isn't called, they will all be dynamically generated
         void GenerateAllInteractions();
@@ -271,13 +271,13 @@ namespace Gengine.Render
         void ProjectDecalOntoWorld(out FixedWinding winding, out Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
 
         // Creates decals on static models.
-        void ProjectDecal(IntPtr entityHandle, out FixedWinding winding, out Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
+        void ProjectDecal(Qhandle entityHandle, out FixedWinding winding, out Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
 
         // Creates overlays on dynamic models.
-        void ProjectOverlay(IntPtr entityHandle, Plane[] localTextureAxis, Material material);
+        void ProjectOverlay(Qhandle entityHandle, Plane[] localTextureAxis, Material material);
 
         // Removes all decals and overlays from the given entity def.
-        void RemoveDecals(IntPtr entityHandle);
+        void RemoveDecals(Qhandle entityHandle);
 
         //-------------- Scene Rendering -----------------
 
@@ -296,12 +296,12 @@ namespace Gengine.Render
         // returns 0 if no portal contacts the bounds
         // This is used by the game to identify portals that are contained inside doors, so the connection between areas can be topologically
         // terminated when the door shuts.
-        IntPtr FindPortal(out Bounds b);
+        Qhandle FindPortal(out Bounds b);
 
         // doors explicitly close off portals when shut
         // multiple bits can be set to block multiple things, ie: ( PS_VIEW | PS_LOCATION | PS_AIR )
-        void SetPortalState(IntPtr portal, int blockingBits);
-        int GetPortalState(IntPtr portal);
+        void SetPortalState(Qhandle portal, int blockingBits);
+        int GetPortalState(Qhandle portal);
 
         // returns true only if a chain of portals without the given connection bits set exists between the two areas (a door doesn't separate them, etc)
         bool AreasAreConnected(int areaNum1, int areaNum2, PortalConnection connection);
@@ -326,10 +326,10 @@ namespace Gengine.Render
 
         // Checks a ray trace against any gui surfaces in an entity, returning the fraction location of the trace on the gui surface, or -1,-1 if no hit.
         // This doesn't do any occlusion testing, simply ignoring non-gui surfaces. start / end are in global world coordinates.
-        GuiPoint GuiTrace(IntPtr entityHandle, object animator, Vector3 start, Vector3 end); // Koz added animator
+        GuiPoint GuiTrace(Qhandle entityHandle, object animator, Vector3 start, Vector3 end); // Koz added animator
 
         // Traces vs the render model, possibly instantiating a dynamic version, and returns true if something was hit
-        bool ModelTrace(out ModelTrace trace, IntPtr entityHandle, out Vector3 start, out Vector3 end, float radius);
+        bool ModelTrace(out ModelTrace trace, Qhandle entityHandle, out Vector3 start, out Vector3 end, float radius);
 
         // Traces vs the whole rendered world. FIXME: we need some kind of material flags.
         bool Trace(out ModelTrace trace, out Vector3 start, out Vector3 end, float radius, bool skipDynamic = true, bool skipPlayer = false);

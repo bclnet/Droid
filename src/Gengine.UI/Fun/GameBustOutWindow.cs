@@ -375,7 +375,19 @@ namespace Gengine.UI
             return base.ParseInternalVar(name, src);
         }
 
-        new void CommonInit()
+        public override WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
+        {
+            WinVar retVar = null;
+            if (string.Equals(name, "gamerunning", StringComparison.OrdinalIgnoreCase)) retVar = gamerunning;
+            else if (string.Equals(name, "onFire", StringComparison.OrdinalIgnoreCase)) retVar = onFire;
+            else if (string.Equals(name, "onContinue", StringComparison.OrdinalIgnoreCase)) retVar = onContinue;
+            else if (string.Equals(name, "onNewGame", StringComparison.OrdinalIgnoreCase)) retVar = onNewGame;
+            else if (string.Equals(name, "onNewLevel", StringComparison.OrdinalIgnoreCase)) retVar = onNewLevel;
+            if (retVar != null) return retVar;
+            return base.GetWinVarByName(name, winLookup, owner);
+        }
+
+        void CommonInit()
         {
             BOEntity ent;
 
@@ -626,9 +638,6 @@ namespace Gengine.UI
             return ret;
         }
 
-        public override void PostParse()
-            => base.PostParse();
-
         public override void Draw(int time, float x, float y)
         {
             int i;
@@ -638,18 +647,6 @@ namespace Gengine.UI
 
             for (i = entities.Count - 1; i >= 0; i--)
                 entities[i].Draw(dc);
-        }
-
-        public override WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
-        {
-            WinVar retVar = null;
-            if (string.Equals(name, "gamerunning", StringComparison.OrdinalIgnoreCase)) retVar = gamerunning;
-            else if (string.Equals(name, "onFire", StringComparison.OrdinalIgnoreCase)) retVar = onFire;
-            else if (string.Equals(name, "onContinue", StringComparison.OrdinalIgnoreCase)) retVar = onContinue;
-            else if (string.Equals(name, "onNewGame", StringComparison.OrdinalIgnoreCase)) retVar = onNewGame;
-            else if (string.Equals(name, "onNewLevel", StringComparison.OrdinalIgnoreCase)) retVar = onNewLevel;
-            if (retVar != null) return retVar;
-            return base.GetWinVarByName(name, winLookup, owner);
         }
 
         void ClearBoard()

@@ -2,11 +2,10 @@ using Gengine.NumericsX.Core;
 
 namespace Gengine.Framework
 {
-    //#define STRTABLE_ID				"#str_"
-    //#define STRTABLE_ID_LENGTH		5
-
     public class C
     {
+        public const string STRTABLE_ID = "#str_";
+
         public static readonly CVar vr_refresh;
         public static readonly CVar vr_supersampling;
         public static readonly CVar vr_msaa;

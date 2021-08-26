@@ -2,6 +2,7 @@
 
 using Gengine.NumericsX.Core;
 using Gengine.NumericsX.Sys;
+using System;
 using System.NumericsX;
 
 namespace Gengine.NumericsX
@@ -10,6 +11,7 @@ namespace Gengine.NumericsX
     {
         public static int frameNumber = 0;
         public static volatile int com_ticNumber;   //: sky (attach)		// 60 hz tics, incremented by async function
+        public static Func<bool> session_IsMultiplayer;
 
         public static ISystem sys = new SystemLocal();
         public static ICommon common;
@@ -17,7 +19,6 @@ namespace Gengine.NumericsX
         internal static CVarSystemLocal cvarSystemLocal = new(); public static ICVarSystem cvarSystem = cvarSystemLocal;
         internal static CmdSystemLocal cmdSystemLocal = new(); public static ICmdSystem cmdSystem = cmdSystemLocal;
         public static IVFileSystem fileSystem;
-        public static ISession session;
         public static IUsercmdGen usercmdGen; //internal static CmdSystemLocal usercmdGenLocal = new(); public static IUsercmdGen usercmdGen = cmdSystemLocal;
 
 #if FRUSTUM_DEBUG

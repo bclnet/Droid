@@ -1,10 +1,11 @@
+using Gengine.NumericsX.Core;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
+using System.NumericsX;
 using static Gengine.Lib;
 using static Gengine.NumericsX.Lib;
+using Qhandle = System.Int32;
 
 namespace Gengine.UI
 {
@@ -14,7 +15,7 @@ namespace Gengine.UI
         IRenderWorld world;
         RenderEntity worldEntity;
         RenderLight rLight;
-        MD5Anim modelAnim;
+        object modelAnim; //: MD5Anim
 
         Qhandle worldModelDef;
         Qhandle lightDef;
@@ -38,7 +39,20 @@ namespace Gengine.UI
             return base.ParseInternalVar(name, src);
         }
 
-        void CommonInit()
+        public override WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
+        {
+            if (string.Equals(name, "model", StringComparison.OrdinalIgnoreCase)) return modelName;
+            if (string.Equals(name, "anim", StringComparison.OrdinalIgnoreCase)) return animName;
+            if (string.Equals(name, "lightOrigin", StringComparison.OrdinalIgnoreCase)) return lightOrigin;
+            if (string.Equals(name, "lightColor", StringComparison.OrdinalIgnoreCase)) return lightColor;
+            if (string.Equals(name, "modelOrigin", StringComparison.OrdinalIgnoreCase)) return modelOrigin;
+            if (string.Equals(name, "modelRotate", StringComparison.OrdinalIgnoreCase)) return modelRotate;
+            if (string.Equals(name, "viewOffset", StringComparison.OrdinalIgnoreCase)) return viewOffset;
+            if (string.Equals(name, "needsRender", StringComparison.OrdinalIgnoreCase)) return needsRender;
+            return base.GetWinVarByName(name, winLookup, owner);
+        }
+
+        new void CommonInit()
         {
             world = renderSystem.AllocRenderWorld();
             needsRender = true;
@@ -52,7 +66,6 @@ namespace Gengine.UI
             modelDef = -1;
             updateAnimation = true;
         }
-
 
         public RenderWindow(UserInterfaceLocal gui) : base(gui)
         {
@@ -133,7 +146,7 @@ namespace Gengine.UI
             {
                 if (updateAnimation)
                     BuildAnimation(time);
-                if (modelAnim)
+                if (modelAnim != null)
                 {
                     if (time > animEndTime)
                         animEndTime = time + animLength;
@@ -159,10 +172,10 @@ namespace Gengine.UI
             refdef.shaderParms[3] = 1;
 
             // DG: for scaling menus to 4:3 (like that spinning mars globe in the main menu)
-            float x = drawRect.x;
-            float y = drawRect.y;
-            float w = drawRect.w;
-            float h = drawRect.h;
+            var x = drawRect.x;
+            var y = drawRect.y;
+            var w = drawRect.w;
+            var h = drawRect.h;
             if (dc.IsMenuScaleFixActive)
                 dc.AdjustCoords(ref x, ref y, ref w, ref h);
 
@@ -176,24 +189,6 @@ namespace Gengine.UI
 
             refdef.time = time;
             world.RenderScene(refdef);
-        }
-
-        public override void PostParse()
-            => base.PostParse();
-
-        public override int Allocated => base.Allocated;
-
-        public override WinVar GetWinVarByName(string name, bool winLookup = false, DrawWin owner = null)
-        {
-            if (string.Equals(name, "model", StringComparison.OrdinalIgnoreCase)) return modelName;
-            if (string.Equals(name, "anim", StringComparison.OrdinalIgnoreCase)) return animName;
-            if (string.Equals(name, "lightOrigin", StringComparison.OrdinalIgnoreCase)) return lightOrigin;
-            if (string.Equals(name, "lightColor", StringComparison.OrdinalIgnoreCase)) return lightColor;
-            if (string.Equals(name, "modelOrigin", StringComparison.OrdinalIgnoreCase)) return modelOrigin;
-            if (string.Equals(name, "modelRotate", StringComparison.OrdinalIgnoreCase)) return modelRotate;
-            if (string.Equals(name, "viewOffset", StringComparison.OrdinalIgnoreCase)) return viewOffset;
-            if (string.Equals(name, "needsRender", StringComparison.OrdinalIgnoreCase)) return needsRender;
-            return base.GetWinVarByName(name, winLookup, owner);
         }
     }
 }

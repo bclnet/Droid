@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.NumericsX.Core;
+using System.NumericsX;
 using System.Text;
 using static Gengine.NumericsX.Lib;
 
@@ -345,7 +345,7 @@ namespace Gengine.NumericsX.Core
                     cmd.next = commands;
                     commands = cmd;
 
-                    if ((cmd.flags & (CMD_FL.CHEAT | CMD_FL.TOOL)) != 0 && session != null && session.IsMultiplayer && !cvarSystem.GetCVarBool("net_allowCheats"))
+                    if ((cmd.flags & (CMD_FL.CHEAT | CMD_FL.TOOL)) != 0 && session_IsMultiplayer != null && session_IsMultiplayer() && !cvarSystem.GetCVarBool("net_allowCheats"))
                     {
                         common.Printf($"Command '{cmd.name}' not valid in multiplayer mode.\n");
                         return;

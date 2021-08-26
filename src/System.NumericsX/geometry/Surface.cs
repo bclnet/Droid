@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.NumericsX.Core;
+using System.NumericsX;
 using System.Runtime.CompilerServices;
 using static System.NumericsX.Plane;
 

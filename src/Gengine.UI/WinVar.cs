@@ -1,9 +1,9 @@
+using Gengine.NumericsX.Core;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
+using System.NumericsX;
 using static Gengine.Lib;
 
 namespace Gengine.UI
@@ -28,19 +28,13 @@ namespace Gengine.UI
             eval = true;
         }
 
-        public void SetGuiInfo(Dictionary<string, string> gd, string name)
-        {
-            guiDict = gd;
-            Name = name;
-        }
-
         public string Name
         {
             get
             {
                 if (name != null)
                     return guiDict != null && name[0] == '*'
-                        ? guiDict.GetString(name[1])
+                        ? guiDict[name[1..]]
                         : name;
                 return string.Empty;
             }
@@ -57,11 +51,17 @@ namespace Gengine.UI
             var len = key.Length;
             if (len > 5 && key[0] == 'g' && key[1] == 'u' && key[2] == 'i' && key[3] == ':')
             {
-                key = key.Right(len - VAR_GUIPREFIX.Length);
+                key = key[^(len - VAR_GUIPREFIX.Length)..];
                 SetGuiInfo(win.Gui.StateDict, key);
                 win.AddUpdateVar(this);
             }
             else Set(name);
+        }
+
+        public void SetGuiInfo(Dictionary<string, string> gd, string name)
+        {
+            guiDict = gd;
+            Name = name;
         }
 
         public abstract void Set(string val);
@@ -99,6 +99,8 @@ namespace Gengine.UI
         public static bool operator !=(WinBool _, bool a) => _.data != a;
         public static implicit operator WinBool(bool s) => new(s);
         public static implicit operator bool(WinBool t) => t.data;
+        public override bool Equals(object obj) => obj is WinBool q && this == q;
+        public override int GetHashCode() => data.GetHashCode();
         public override string ToString() => $"{data}";
 
         public override void Init(string name, Window win)
@@ -110,7 +112,7 @@ namespace Gengine.UI
 
         public override void Set(string val)
         {
-            data = int.Parse(val) != 0;
+            data = intX.Parse(val) != 0;
             guiDict?.SetBool(Name, data);
         }
 
@@ -124,13 +126,13 @@ namespace Gengine.UI
         // SaveGames
         public override void WriteToSaveGame(VFile savefile)
         {
-            savefile.Write(eval, sizeof(bool));
-            savefile.Write(data, sizeof(bool));
+            savefile.Write(eval);
+            savefile.Write(data);
         }
         public override void ReadFromSaveGame(VFile savefile)
         {
-            savefile.Read(eval, sizeof(bool));
-            savefile.Read(data, sizeof(bool));
+            savefile.Read(out eval);
+            savefile.Read(out data);
         }
     }
 
@@ -141,7 +143,8 @@ namespace Gengine.UI
         public WinStr(string other)
         {
             data = other;
-            guiDict?.Set(Name, data);
+            if (guiDict != null)
+                guiDict[Name] = data;
         }
         public WinStr(WinStr other) : base(other)
             => data = other.data;
@@ -152,6 +155,8 @@ namespace Gengine.UI
         public static bool operator !=(WinStr _, string a) => _.data != a;
         public static implicit operator WinStr(string s) => new(s);
         public static implicit operator string(WinStr t) => t.data;
+        public override bool Equals(object obj) => obj is WinStr q && this == q;
+        public override int GetHashCode() => data.GetHashCode();
         public override string ToString() => data;
 
         // return whether string is emtpy
@@ -170,7 +175,7 @@ namespace Gengine.UI
             {
                 if (guiDict != null && !string.IsNullOrEmpty(name))
                     data = guiDict.GetString(Name);
-                return data.LengthWithoutColors;
+                return data.LengthWithoutColors();
             }
         }
         public int Length
@@ -193,12 +198,13 @@ namespace Gengine.UI
         public override void Set(string val)
         {
             data = val;
-            guiDict?.Set(Name, data);
+            if (guiDict != null)
+                guiDict[Name] = data;
         }
 
         public override void Update()
         {
-            var s = Name();
+            var s = Name;
             if (guiDict != null && s.Length > 0)
                 data = guiDict.GetString(s);
         }
@@ -240,6 +246,8 @@ namespace Gengine.UI
         public static bool operator !=(WinInt _, int a) => _.data != a;
         public static implicit operator WinInt(int s) => new(s);
         public static implicit operator int(WinInt t) => t.data;
+        public override bool Equals(object obj) => obj is WinInt q && this == q;
+        public override int GetHashCode() => data.GetHashCode();
         public override string ToString() => $"{data}";
 
         // no suitable conversion
@@ -254,7 +262,7 @@ namespace Gengine.UI
 
         public override void Set(string val)
         {
-            data = int.Parse(val);
+            data = intX.Parse(val);
             guiDict?.SetInt(Name, data);
         }
 
@@ -295,6 +303,8 @@ namespace Gengine.UI
         public static bool operator !=(WinFloat _, float a) => _.data != a;
         public static implicit operator WinFloat(float s) => new(s);
         public static implicit operator float(WinFloat t) => t.data;
+        public override bool Equals(object obj) => obj is WinFloat q && this == q;
+        public override int GetHashCode() => data.GetHashCode();
         public override string ToString() => $"{data}";
 
         public override float x => data;
@@ -308,7 +318,7 @@ namespace Gengine.UI
 
         public override void Set(string val)
         {
-            data = int.Parse(val);
+            data = intX.Parse(val);
             guiDict?.SetFloat(Name, data);
         }
         public override void Update()
@@ -320,13 +330,13 @@ namespace Gengine.UI
 
         public override void WriteToSaveGame(VFile savefile)
         {
-            savefile.Write(eval, sizeof(bool));
-            savefile.Write(data, sizeof(float));
+            savefile.Write(eval);
+            savefile.Write(data);
         }
         public override void ReadFromSaveGame(VFile savefile)
         {
-            savefile.Read(eval, sizeof(bool));
-            savefile.Read(data, sizeof(float));
+            savefile.Read(out eval);
+            savefile.Read(out data);
         }
     }
 
@@ -338,13 +348,13 @@ namespace Gengine.UI
             => data = other.data;
         public WinRectangle(Vector4 other)
         {
-            data = other;
+            data = new Rectangle(other);
             guiDict?.SetVec4(Name, other);
         }
         public WinRectangle(Rectangle other)
         {
             data = other;
-            guiDict?.SetVec4(Name, data.ToVec4);
+            guiDict?.SetVec4(Name, data.ToVec4());
         }
         public WinRectangle() : base() { }
 
@@ -353,9 +363,11 @@ namespace Gengine.UI
         public static implicit operator WinRectangle(Vector4 s) => new(s);
         public static implicit operator WinRectangle(Rectangle s) => new(s);
         public static implicit operator Rectangle(WinRectangle t) => t.data;
+        public override bool Equals(object obj) => obj is WinRectangle q && this == q;
+        public override int GetHashCode() => data.GetHashCode();
         public override string ToString() => $"{data.ToVec4()}";
 
-        public float x => data.x;
+        public override float x => data.x;
         public float y => data.y;
         public float w => data.w;
         public float h => data.h;
@@ -378,9 +390,8 @@ namespace Gengine.UI
 
         public override void Set(string val)
         {
-            if (strchr(val, ',')) sscanf(val, "%f,%f,%f,%f", data.x, data.y, data.w, data.h);
-            else sscanf(val, "%f %f %f %f", data.x, data.y, data.w, data.h);
-            guiDict?.SetVec4(Name, data.ToVec4);
+            stringX.sscanf(val, val.Contains(',') ? "%f,%f,%f,%f": "%f %f %f %f", out data.x, out data.y, out data.w, out data.h);
+            guiDict?.SetVec4(Name, data.ToVec4());
         }
 
         public override void Update()
@@ -398,13 +409,13 @@ namespace Gengine.UI
 
         public override void WriteToSaveGame(VFile savefile)
         {
-            savefile.Write(eval, sizeof(bool));
-            savefile.Write(data, sizeof(Rectangle));
+            savefile.Write(eval);
+            savefile.WriteT(data);
         }
         public override void ReadFromSaveGame(VFile savefile)
         {
-            savefile.Read(eval, sizeof(bool));
-            savefile.Read(data, sizeof(Rectangle));
+            savefile.Read(out eval);
+            savefile.ReadT(out data);
         }
     }
 
@@ -425,9 +436,11 @@ namespace Gengine.UI
         public static bool operator !=(WinVec2 _, Vector2 a) => _.data != a;
         public static implicit operator WinVec2(Vector2 s) => new(s);
         public static implicit operator Vector2(WinVec2 t) => t.data;
+        public override bool Equals(object obj) => obj is WinVec2 q && this == q;
+        public override int GetHashCode() => data.GetHashCode();
         public override string ToString() => $"{data}";
 
-        public float x => data.x;
+        public override float x => data.x;
         public float y => data.y;
 
         public override void Init(string name, Window win)
@@ -439,8 +452,7 @@ namespace Gengine.UI
 
         public override void Set(string val)
         {
-            if (strchr(val, ',')) sscanf(val, "%f,%f", data.x, data.y);
-            else sscanf(val, "%f %f", data.x, data.y);
+            stringX.sscanf(val, val.Contains(',') ? "%f,%f" : "%f %f", out data.x, out data.y);
             guiDict?.SetVec2(Name, data);
         }
 
@@ -455,13 +467,13 @@ namespace Gengine.UI
 
         public override void WriteToSaveGame(VFile savefile)
         {
-            savefile.Write(eval, sizeof(bool));
-            savefile.Write(data, sizeof(Vector2));
+            savefile.Write(eval);
+            savefile.WriteT(data);
         }
         public override void ReadFromSaveGame(VFile savefile)
         {
-            savefile.Read(eval, sizeof(bool));
-            savefile.Read(data, sizeof(Vector2));
+            savefile.Read(out eval);
+            savefile.ReadT(out data);
         }
     }
 
@@ -489,15 +501,17 @@ namespace Gengine.UI
         public static bool operator !=(WinVec3 _, Vector3 a) => _.data != a;
         public static implicit operator WinVec3(Vector3 s) => new(s);
         public static implicit operator Vector3(WinVec3 t) => t.data;
+        public override bool Equals(object obj) => obj is WinVec3 q && this == q;
+        public override int GetHashCode() => data.GetHashCode();
         public override string ToString() => $"{data}";
 
-        public float x => data.x;
+        public override float x => data.x;
         public float y => data.y;
         public float z => data.z;
 
         public override void Set(string val)
         {
-            sscanf(val, "%f %f %f", data.x, data.y, data.z);
+            stringX.sscanf(val, "%f %f %f", out data.x, out data.y, out data.z);
             guiDict?.SetVector(Name, data);
         }
 
@@ -518,12 +532,12 @@ namespace Gengine.UI
         public override void WriteToSaveGame(VFile savefile)
         {
             savefile.Write(eval);
-            savefile.Write(data, sizeof(Vector3));
+            savefile.WriteT(data);
         }
         public override void ReadFromSaveGame(VFile savefile)
         {
             savefile.Read(out eval);
-            savefile.Read(data, sizeof(Vector3));
+            savefile.ReadT(out data);
         }
     }
 
@@ -544,9 +558,11 @@ namespace Gengine.UI
         public static bool operator !=(WinVec4 _, Vector4 a) => _.data != a;
         public static implicit operator WinVec4(Vector4 s) => new(s);
         public static implicit operator Vector4(WinVec4 t) => t.data;
+        public override bool Equals(object obj) => obj is WinVec4 q && this == q;
+        public override int GetHashCode() => data.GetHashCode();
         public override string ToString() => $"{data}";
 
-        public float x => data.x;
+        public override float x => data.x;
         public float y => data.y;
         public float z => data.z;
         public float w => data.w;
@@ -560,8 +576,7 @@ namespace Gengine.UI
 
         public override void Set(string val)
         {
-            if (strchr(val, ',')) sscanf(val, "%f,%f,%f,%f", data.x, data.y, data.z, data.w);
-            else sscanf(val, "%f %f %f %f", data.x, data.y, data.z, data.w);
+            stringX.sscanf(val, val.Contains(',') ? "%f,%f,%f,%f" : "%f %f %f %f", out data.x, out data.y, out data.z, out data.w);
             guiDict?.SetVec4(Name, data);
         }
 
@@ -582,25 +597,26 @@ namespace Gengine.UI
 
         public override void WriteToSaveGame(VFile savefile)
         {
-            savefile.Write(eval, sizeof(bool));
-            savefile.Write(data, sizeof(Vector4));
+            savefile.Write(eval);
+            savefile.WriteT(data);
         }
         public override void ReadFromSaveGame(VFile savefile)
         {
-            savefile.Read(eval, sizeof(eval));
-            savefile.Read(data, sizeof(Vector4));
+            savefile.Read(out eval);
+            savefile.ReadT(out data);
         }
     }
 
     public class WinBackground : WinStr
     {
-        protected string data;
+        protected new string data;
         protected Action<Material> mat;
 
         public WinBackground(string other)
         {
             data = other;
-            guiDict?.Set(Name, data);
+            if (guiDict != null)
+                guiDict[Name] = data;
             mat?.Invoke(data == "" ? null : declManager.FindMaterial(data));
         }
         public WinBackground(WinBackground other) : base((WinStr)other)
@@ -617,21 +633,23 @@ namespace Gengine.UI
         public static bool operator !=(WinBackground _, string a) => _.data != a;
         public static implicit operator WinBackground(string s) => new(s);
         public static implicit operator string(WinBackground t) => t.data;
+        public override bool Equals(object obj) => obj is WinBackground q && this == q;
+        public override int GetHashCode() => data.GetHashCode();
         public override string ToString() => $"{data}";
 
         public override void Init(string name, Window win)
         {
             base.Init(name, win);
             if (guiDict != null)
-                data = guiDict.GetString(Name);
+                data = guiDict[Name];
         }
 
-        public int Length
+        public new int Length
         {
             get
             {
                 if (guiDict != null)
-                    data = guiDict.GetString(Name);
+                    data = guiDict[Name];
                 return data.Length;
             }
         }
@@ -639,7 +657,8 @@ namespace Gengine.UI
         public override void Set(string val)
         {
             data = val;
-            guiDict?.Set(Name, data);
+            if (guiDict != null)
+                guiDict[Name] = data;
             mat?.Invoke(data == "" ? null : declManager.FindMaterial(data));
         }
 
@@ -658,23 +677,20 @@ namespace Gengine.UI
 
         public override void WriteToSaveGame(VFile savefile)
         {
-            savefile.Write(eval, sizeof(bool));
+            savefile.Write(eval);
 
             var len = data.Length;
-            savefile.Write(len, sizeof(int));
+            savefile.Write(len);
             if (len > 0)
-                savefile.Write(data, len);
+                savefile.WriteASCII(data, len);
         }
         public override void ReadFromSaveGame(VFile savefile)
         {
-            savefile.Read(eval, sizeof(eval));
+            savefile.Read(out eval);
 
-            savefile.Read(out int len, sizeof(int));
+            savefile.Read(out int len);
             if (len > 0)
-            {
-                data.Fill(' ', len);
-                savefile.Read(data[0], len);
-            }
+                savefile.ReadASCII(out data, len);
             mat?.Invoke(len > 0 ? declManager.FindMaterial(data) : null);
         }
     }

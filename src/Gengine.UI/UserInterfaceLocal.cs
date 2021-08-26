@@ -8,6 +8,7 @@ using Gengine.NumericsX.Sys;
 using static Gengine.Lib;
 using static Gengine.NumericsX.Core.Key;
 using static Gengine.NumericsX.Lib;
+using System.NumericsX;
 
 namespace Gengine.UI
 {
@@ -108,7 +109,7 @@ namespace Gengine.UI
 
             interactive = desktop.Interactive;
 
-            if (uiManagerLocal.guis.Find(this) == null)
+            if (!uiManagerLocal.guis.Contains(this))
                 uiManagerLocal.guis.Add(this);
 
             loading = false;
@@ -117,7 +118,7 @@ namespace Gengine.UI
         }
 
         const float HandleEvent_virtualAspectRatio = (float)DeviceContext.VIRTUAL_WIDTH / (float)DeviceContext.VIRTUAL_HEIGHT; // 4:3
-        public string HandleEvent(SysEvent ev, int time, out bool updateVisuals)
+        public string HandleEvent(SysEvent ev, int time, Action<bool> updateVisuals)
         {
             this.time = time;
 
@@ -142,7 +143,7 @@ namespace Gengine.UI
                         h = DeviceContext.VIRTUAL_HEIGHT;
                     }
 
-                    if (r_scaleMenusTo43.Bool)
+                    if (R.r_scaleMenusTo43.Bool)
                     {
                         // in case we're scaling menus to 4:3, we need to take that into account when scaling the mouse events.
                         // no, we can't just call uiManagerLocal.dc.GetFixScaleForMenu() or sth like that,
@@ -176,7 +177,7 @@ namespace Gengine.UI
 
         public void Redraw(int time)
         {
-            if (r_skipGuiShaders.Integer > 5)
+            if (R.r_skipGuiShaders.Integer > 5)
                 return;
             if (!loading && desktop != null)
             {
@@ -209,18 +210,17 @@ namespace Gengine.UI
             if (desktop != null)
             {
                 // DG: little hack: allow game DLLs to do
-                //     ui.SetStateBool("scaleto43", true);
-                //     ui.StateChanged(gameLocal.time);
-                //     so we can force cursors.gui (crosshair) to be scaled, for example
+                // ui.SetStateBool("scaleto43", true);
+                // ui.StateChanged(gameLocal.time);
+                // so we can force cursors.gui (crosshair) to be scaled, for example
                 var scaleTo43 = false;
-                if (state.GetBool("scaleto43", "0", scaleTo43))
+                if (state.TryGetBool("scaleto43", "0", out scaleTo43))
                     if (scaleTo43) desktop.Flags = Window.WIN_SCALETO43;
                     else desktop.ClearFlag(Window.WIN_SCALETO43);
 
                 desktop.StateChanged(redraw);
             }
-            interactive = state.GetBool("noninteractive") ? false
-                : desktop != null && desktop.Interactive;
+            interactive = !state.GetBool("noninteractive") && desktop != null && desktop.Interactive;
         }
 
         public string Activate(bool activate, int time)
@@ -230,7 +230,7 @@ namespace Gengine.UI
             if (desktop != null)
             {
                 activateStr = "";
-                desktop.Activate(activate, activateStr);
+                desktop.Activate(activate, ref activateStr);
                 return activateStr;
             }
             return "";
@@ -370,9 +370,11 @@ namespace Gengine.UI
             RecurseSetKeyBindingNames(desktop);
         }
 
-        public bool IsUniqued => uniqued;
-
-        public void SetUniqued(bool b) => uniqued = b;
+        public bool IsUniqued
+        {
+            get => uniqued;
+            set => uniqued = value;
+        }
 
         public void SetCursor(float x, float y)
         {
@@ -561,7 +563,7 @@ namespace Gengine.UI
                 var gui = Alloc();
                 if (gui.InitFromFile(qpath))
                 {
-                    gui.Uniqued = !forceNotUnique && needInteractive;
+                    gui.IsUniqued = !forceNotUnique && needInteractive;
                     return gui;
                 }
             }

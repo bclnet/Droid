@@ -21,6 +21,17 @@ namespace System.NumericsX
         public static Action<string> FatalError = x => Console.Write(x);
         public static Action<string> Printf = x => Console.Write(x);
 
+        internal static void RotateVector(ref Vector3 v, Vector3 origin, float a, float c, float s)
+        {
+            if (a != 0)
+            {
+                var x2 = ((v.x - origin.x) * c) - ((v.y - origin.y) * s) + origin.x;
+                var y2 = ((v.x - origin.x) * s) + ((v.y - origin.y) * c) + origin.y;
+                v.x = x2;
+                v.y = y2;
+            }
+        }
+
         public static unsafe string FloatArrayToString(float* array, int length, int precision)
         {
             //static int index = 0;

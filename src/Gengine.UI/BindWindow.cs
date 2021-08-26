@@ -1,8 +1,9 @@
 using Gengine.NumericsX.Core;
 using Gengine.NumericsX.Sys;
-using static Gengine.NumericsX.Lib;
+using System;
+using System.NumericsX;
 using static Gengine.NumericsX.Core.Key;
-using Gengine.NumericsX;
+using static Gengine.NumericsX.Lib;
 
 namespace Gengine.UI
 {
@@ -11,21 +12,27 @@ namespace Gengine.UI
         WinStr bindName;
         bool waitingOnKey;
 
-        void CommonInit()
+        new void CommonInit()
         {
             bindName = "";
             waitingOnKey = false;
         }
 
-        public BindWindow(UserInterfaceLocal gui)
+        public override WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
         {
-            gui = g;
+            if (string.Equals(name, "bind", System.StringComparison.OrdinalIgnoreCase)) return bindName;
+            return base.GetWinVarByName(name, winLookup, owner);
+        }
+
+        public BindWindow(UserInterfaceLocal gui) : base(gui)
+        {
+            this.gui = gui;
             CommonInit();
         }
-        public BindWindow(DeviceContext d, UserInterfaceLocal gui)
+        public BindWindow(DeviceContext dc, UserInterfaceLocal gui) : base(dc, gui)
         {
-            dc = d;
-            gui = g;
+            this.dc = dc;
+            this.gui = gui;
             CommonInit();
         }
 
@@ -49,7 +56,6 @@ namespace Gengine.UI
                 gui.SetBindHandler(this);
                 return "";
             }
-
             return "";
         }
 
@@ -58,7 +64,6 @@ namespace Gengine.UI
             base.PostParse();
             bindName.SetGuiInfo(gui.StateDict, bindName);
             bindName.Update();
-            //bindName = state.GetString("bind");
             flags |= (WIN_HOLDCAPTURE | WIN_CANFOCUS);
         }
 
@@ -68,26 +73,17 @@ namespace Gengine.UI
 
             var str = waitingOnKey ? common.LanguageDictGetString("#str_07000")
                 : bindName.Length != 0 ? bindName
-                :  common.LanguageDictGetString("#str_07001");
+                : common.LanguageDictGetString("#str_07001");
 
-            if (waitingOnKey || (hover && !noEvents && Contains(gui.CursorX, gui.CursorY)))  color = hoverColor;
+            if (waitingOnKey || (hover && !noEvents && Contains(gui.CursorX, gui.CursorY))) color = hoverColor;
             else hover = false;
 
             dc.DrawText(str, textScale, textAlign, color, textRect, false, -1);
         }
 
-        public override int Allocated => base.Allocated;
-
-        public override WinVar GetWinVarByName(string name, bool winLookup = false, DrawWin owner = null)
+        public override void Activate(bool activate, ref string act)
         {
-            if (string.Equals(name, "bind", System.StringComparison.OrdinalIgnoreCase))
-                return bindName;
-            return base.GetWinVarByName(name, winLookup, owner);
-        }
-
-        public override void Activate(bool activate, string act)
-        {
-            base.Activate(activate, act);
+            base.Activate(activate, ref act);
             bindName.Update();
         }
     }

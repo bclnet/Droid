@@ -1,9 +1,11 @@
+using Gengine.NumericsX.Core;
+using Gengine.NumericsX.Sys;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
-using Gengine.NumericsX.Sys;
+using System.NumericsX;
+using System.Runtime.CompilerServices;
+using System.Text;
 using static Gengine.Lib;
 using static Gengine.NumericsX.Core.Key;
 using static Gengine.NumericsX.Lib;
@@ -49,7 +51,7 @@ namespace Gengine.UI
             return base.ParseInternalVar(name, src);
         }
 
-        public override WinVar GetWinVarByName(string name, bool winLookup = false, DrawWin owner = null)
+        public override WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
         {
             if (string.Equals(name, "cvar", StringComparison.InvariantCultureIgnoreCase)) return cvarStr;
             if (string.Equals(name, "password", StringComparison.InvariantCultureIgnoreCase)) return password;
@@ -107,24 +109,13 @@ namespace Gengine.UI
             var len = text.Length;
             if (len != lastTextLength)
             {
-                scroller.SetValue(0.0f);
+                scroller.Value = 0f;
                 EnsureCursorVisible();
                 lastTextLength = len;
             }
             float scale = textScale;
 
-            string pass;
-            string buffer;
-            if (password)
-            {
-                string temp = text;
-                for (; temp; temp++)
-                    pass += "*";
-                buffer = pass;
-            }
-            else
-                buffer = text;
-
+            var buffer = password ? new string('*', text.Length) : (string)text;
             if (cursorPos > len)
                 cursorPos = len;
 
@@ -133,28 +124,28 @@ namespace Gengine.UI
             rect.x -= paintOffset;
             rect.w += paintOffset;
 
-            if (wrap && scroller.GetHigh() > 0.0f)
+            if (wrap && scroller.High > 0f)
             {
-                float lineHeight = GetMaxCharHeight() + 5;
-                rect.y -= scroller.GetValue() * lineHeight;
+                var lineHeight = MaxCharHeight + 5;
+                rect.y -= scroller.Value * lineHeight;
                 rect.w -= sizeBias;
-                rect.h = (breaks.Num() + 1) * lineHeight;
+                rect.h = (breaks.Count + 1) * lineHeight;
             }
 
-            if (hover && !noEvents && Contains(gui.CursorX(), gui.CursorY()))
+            if (hover && !noEvents && Contains(gui.CursorX, gui.CursorY))
                 color = hoverColor;
             else
                 hover = false;
             if ((flags & WIN_FOCUS) != 0)
                 color = hoverColor;
 
-            dc.DrawText(buffer, scale, 0, color, rect, wrap, (flags & WIN_FOCUS) ? cursorPos : -1);
+            dc.DrawText(buffer, scale, 0, color, rect, wrap, (flags & WIN_FOCUS) != 0 ? cursorPos : -1);
         }
 
-        static string HandleEvent_buffer;
+        static readonly byte[] HandleEvent_buffer = new byte[MAX_EDITFIELD];
         public override string HandleEvent(SysEvent ev, Action<bool> updateVisuals)
         {
-            string ret = "";
+            var ret = "";
 
             if (wrap)
             {
@@ -167,7 +158,8 @@ namespace Gengine.UI
             if (ev.evType != SE.CHAR && ev.evType != SE.KEY)
                 return ret;
 
-            HandleEvent_buffer = text;
+            var textB = Encoding.ASCII.GetBytes(text);
+            Unsafe.CopyBlock(ref HandleEvent_buffer[0], ref textB[0], (uint)textB.Length);
             var key = (Key)ev.evValue;
             var len = text.Length;
 
@@ -203,16 +195,16 @@ namespace Gengine.UI
                     {
                         if (cursorPos >= len)
                         {
-                            buffer[len - 1] = 0;
+                            HandleEvent_buffer[len - 1] = 0;
                             cursorPos = len - 1;
                         }
                         else
                         {
-                            memmove(&buffer[cursorPos - 1], &buffer[cursorPos], len + 1 - cursorPos);
+                            Buffer.BlockCopy(HandleEvent_buffer, cursorPos, HandleEvent_buffer, cursorPos - 1, len + 1 - cursorPos);
                             cursorPos--;
                         }
 
-                        text = buffer;
+                        text = Encoding.ASCII.GetString(HandleEvent_buffer);
                         UpdateCvar(false);
                         RunScript(SCRIPT.ON_ACTION);
                     }
@@ -222,25 +214,25 @@ namespace Gengine.UI
 
                 // ignore any non printable chars (except enter when wrap is enabled)
                 if (wrap && (key == K_ENTER || key == K_KP_ENTER)) { }
-                else if (!StringX.CharIsPrintable(key)) return "";
+                else if (!StringX.CharIsPrintable((char)key)) return "";
 
                 if (numeric)
-                    if ((key < '0' || key > '9') && key != '.')
+                    if ((key < (Key)'0' || key > (Key)'9') && key != (Key)'.')
                         return "";
 
-                if (dc.GetOverStrike())
-                    if (maxChars && cursorPos >= maxChars)
+                if (dc.OverStrike)
+                    if (maxChars != 0 && cursorPos >= maxChars)
                         return "";
                     else
                     {
-                        if ((len == MAX_EDITFIELD - 1) || (maxChars && len >= maxChars))
+                        if ((len == MAX_EDITFIELD - 1) || (maxChars != 0 && len >= maxChars))
                             return "";
-                        memmove(&buffer[cursorPos + 1], &buffer[cursorPos], len + 1 - cursorPos);
+                        Buffer.BlockCopy(HandleEvent_buffer, cursorPos, HandleEvent_buffer, cursorPos + 1, len + 1 - cursorPos);
                     }
 
-                buffer[cursorPos] = key;
+                HandleEvent_buffer[cursorPos] = (byte)key;
 
-                text = buffer;
+                text = Encoding.ASCII.GetString(HandleEvent_buffer);
                 UpdateCvar(false);
                 RunScript(SCRIPT.ON_ACTION);
 
@@ -259,8 +251,8 @@ namespace Gengine.UI
                         return ret;
                     if (cursorPos < len)
                     {
-                        memmove(&buffer[cursorPos], &buffer[cursorPos + 1], len - cursorPos);
-                        text = buffer;
+                        Buffer.BlockCopy(HandleEvent_buffer, cursorPos + 1, HandleEvent_buffer, cursorPos, len - cursorPos);
+                        HandleEvent_buffer[cursorPos] = (byte)key;
                         UpdateCvar(false);
                         RunScript(SCRIPT.ON_ACTION);
                     }
@@ -273,8 +265,8 @@ namespace Gengine.UI
                         if (KeyInput.IsDown(K_CTRL))
                         {
                             // skip to next word
-                            while ((cursorPos < len) && (buffer[cursorPos] != ' ')) cursorPos++;
-                            while ((cursorPos < len) && (buffer[cursorPos] == ' ')) cursorPos++;
+                            while ((cursorPos < len) && (HandleEvent_buffer[cursorPos] != ' ')) cursorPos++;
+                            while ((cursorPos < len) && (HandleEvent_buffer[cursorPos] == ' ')) cursorPos++;
                         }
                         else if (cursorPos < len) cursorPos++;
 
@@ -287,8 +279,8 @@ namespace Gengine.UI
                     if (KeyInput.IsDown(K_CTRL))
                     {
                         // skip to previous word
-                        while ((cursorPos > 0) && (buffer[cursorPos - 1] == ' ')) cursorPos--;
-                        while ((cursorPos > 0) && (buffer[cursorPos - 1] != ' ')) cursorPos--;
+                        while ((cursorPos > 0) && (HandleEvent_buffer[cursorPos - 1] == ' ')) cursorPos--;
+                        while ((cursorPos > 0) && (HandleEvent_buffer[cursorPos - 1] != ' ')) cursorPos--;
                     }
                     else if (cursorPos > 0) cursorPos--;
 
@@ -320,8 +312,8 @@ namespace Gengine.UI
                 if (key == K_DOWNARROW)
                 {
                     if (KeyInput.IsDown(K_CTRL))
-                        scroller.SetValue(scroller.GetValue() + 1.0f);
-                    else if (cursorLine < breaks.Num() - 1)
+                        scroller.Value++;
+                    else if (cursorLine < breaks.Count - 1)
                     {
                         var offset = cursorPos - breaks[cursorLine];
                         cursorPos = breaks[cursorLine + 1] + offset;
@@ -332,7 +324,7 @@ namespace Gengine.UI
                 if (key == K_UPARROW)
                 {
                     if (KeyInput.IsDown(K_CTRL))
-                        scroller.SetValue(scroller.GetValue() - 1.0f);
+                        scroller.Value--;
                     else if (cursorLine > 0)
                     {
                         var offset = cursorPos - breaks[cursorLine];
@@ -377,7 +369,7 @@ namespace Gengine.UI
             if (sourceFile.Length != 0)
             {
                 fileSystem.ReadFile(sourceFile, out var buffer, out var _);
-                text = buffer;
+                text = Encoding.ASCII.GetString(buffer);
                 fileSystem.FreeFile(buffer);
             }
 
@@ -403,7 +395,7 @@ namespace Gengine.UI
             }
 
             var mat = declManager.FindMaterial(barImage);
-            mat.Sort = SS.GUI;
+            mat.Sort = (float)SS.GUI;
             sizeBias = mat.ImageWidth;
 
             var scrollRect = new Rectangle();
@@ -428,14 +420,9 @@ namespace Gengine.UI
             scroller.SetBuddy(this);
         }
 
-
         public override int Allocated => base.Allocated;
 
-
-
         public override void HandleBuddyUpdate(Window buddy) { }
-
-
 
         void EnsureCursorVisible()
         {
@@ -455,29 +442,21 @@ namespace Gengine.UI
                 {
                     var i = 0;
                     while (i < text.Length && i < cursorPos)
-                    {
-                        if (StringX.IsColor(text[i]))
-                            i += 2;
-                        else
-                        {
-                            cursorX += dc.CharWidth(text[i], textScale);
-                            i++;
-                        }
-                    }
+                        if (StringX.IsColor((string)text, i)) i += 2;
+                        else { cursorX += dc.CharWidth(((string)text)[i], textScale); i++; }
                 }
                 var maxWidth = MaxCharWidth;
                 var left = cursorX - maxWidth;
                 var right = (cursorX - textRect.w) + maxWidth;
 
-                if (paintOffset > left) paintOffset = left - maxWidth * 6; // When we go past the left side, we want the text to jump 6 characters
-                if (paintOffset < right) paintOffset = right;
+                if (paintOffset > left) paintOffset = (int)(left - maxWidth * 6); // When we go past the left side, we want the text to jump 6 characters
+                if (paintOffset < right) paintOffset = (int)right;
                 if (paintOffset < 0) paintOffset = 0;
-                scroller.SetRange(0.0f, 0.0f, 1.0f);
+                scroller.SetRange(0f, 0f, 1f);
             }
             else
             {
                 // Word wrap
-
                 breaks.Clear();
                 var rect = new Rectangle(textRect);
                 rect.w -= sizeBias;
@@ -486,9 +465,9 @@ namespace Gengine.UI
                 var fit = textRect.h / (MaxCharHeight + 5);
                 if (fit < breaks.Count + 1) scroller.SetRange(0, breaks.Count + 1 - fit, 1);
                 // The text fits completely in the box
-                else scroller.SetRange(0.0f, 0.0f, 1.0f);
+                else scroller.SetRange(0f, 0f, 1f);
 
-                if (forceScroll) scroller.SetValue(breaks.Count - fit);
+                if (forceScroll) scroller.Value = breaks.Count - fit;
                 else if (readonly_) { }
                 else
                 {
@@ -496,16 +475,16 @@ namespace Gengine.UI
                     for (var i = 1; i < breaks.Count; i++)
                         if (cursorPos >= breaks[i]) cursorLine = i;
                         else break;
-                    var topLine = MathX.FtoiFast(scroller.GetValue());
-                    if (cursorLine < topLine) scroller.SetValue(cursorLine);
-                    else if (cursorLine >= topLine + fit) scroller.SetValue((cursorLine - fit) + 1);
+                    var topLine = MathX.FtoiFast(scroller.Value);
+                    if (cursorLine < topLine) scroller.Value = cursorLine;
+                    else if (cursorLine >= topLine + fit) scroller.Value = (cursorLine - fit) + 1;
                 }
             }
         }
 
-        public override void Activate(bool activate, string act)
+        public override void Activate(bool activate, ref string act)
         {
-            base.Activate(activate, act);
+            base.Activate(activate, ref act);
             if (activate)
             {
                 UpdateCvar(true, true);
@@ -515,7 +494,7 @@ namespace Gengine.UI
 
         void InitCvar()
         {
-            if (cvarStr[0] == '\0')
+            if (((string)cvarStr).Length == 0)
             {
                 if (text.Name == null)
                     common.Warning($"EditWindow::InitCvar: gui '{gui.SourceFile}' window '{name}' has an empty cvar string");
@@ -555,7 +534,7 @@ namespace Gengine.UI
             if (eventName.StartsWith("cvar read "))
             {
                 ev = eventName;
-                group = ev.Mid(10, ev.Length - 10);
+                group = ev[10..];
                 if (group == cvarGroup)
                     UpdateCvar(true, true);
             }
@@ -563,7 +542,7 @@ namespace Gengine.UI
             {
 
                 ev = eventName;
-                group = ev.Mid(11, ev.Length - 11);
+                group = ev[11..];
                 if (group == cvarGroup)
                     UpdateCvar(false, true);
             }

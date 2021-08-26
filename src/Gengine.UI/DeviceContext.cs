@@ -2,7 +2,6 @@ using Gengine.NumericsX.Core;
 using Gengine.Render;
 using System.Collections.Generic;
 using System.NumericsX;
-using System.NumericsX.Core;
 using System.Text;
 using static Gengine.Lib;
 using static Gengine.NumericsX.Lib;
@@ -139,6 +138,7 @@ namespace Gengine.UI
             fixScaleForMenu.Set(1, 1);
             fixOffsetForMenu.Set(0, 0);
         }
+        
         public void Shutdown()
         {
             fontName = string.Empty;
@@ -146,9 +146,10 @@ namespace Gengine.UI
             fonts.Clear();
             Clear();
         }
+
         public bool Initialized => initialized;
 
-        public void EnableLocalization();
+        //public void EnableLocalization();
 
         public void GetTransformInfo(out Vector3 origin, out Matrix3x3 mat)
         {
@@ -166,7 +167,6 @@ namespace Gengine.UI
             renderSystem.SetColor(color);
 
             float s0, s1, t0, t1;
-            //
             //  handle negative scales as well
             if (scalex < 0) { w *= -1; scalex *= -1; }
             if (scaley < 0) { h *= -1; scaley *= -1; }
@@ -192,7 +192,7 @@ namespace Gengine.UI
 
             renderSystem.SetColor(color);
 
-            if (ClippedCoords(ref x, ref y, ref width, ref height, null, null, null, null))
+            if (ClippedCoords(ref x, ref y, ref width, ref height))
                 return;
 
             AdjustCoords(ref x, ref y, ref width, ref height);
@@ -568,6 +568,7 @@ namespace Gengine.UI
                 return -1;
             }
         }
+
         public void SetupFonts()
         {
             fonts.SetGranularity(1);
@@ -726,6 +727,7 @@ namespace Gengine.UI
             => clipRects.Add(new Rectangle(x, y, w, h));
         public void PushClipRect(Rectangle r)
             => clipRects.Add(r);
+
         public void PopClipRect()
         {
             if (clipRects.Count != 0)
@@ -734,6 +736,7 @@ namespace Gengine.UI
 
         public void EnableClipping(bool b)
             => enableClipping = b;
+        
         public void SetFont(int num)
             => activeFont = fonts[num >= 0 && num < fonts.Count ? num : 0];
 
@@ -789,12 +792,12 @@ namespace Gengine.UI
                 fixOffsetForMenu.Set(0, 0);
             }
         }
+
         public bool IsMenuScaleFixActive
             => fixOffsetForMenu.x != 0f || fixOffsetForMenu.y != 0f;
 
         int DrawText(float x, float y, float scale, Vector4 color, string text, float adjust, int limit, int style, int cursor = -1)
         {
-
             SetFontByScale(scale);
             var useScale = scale * useFont.glyphScale;
             var count = 0;
@@ -810,7 +813,7 @@ namespace Gengine.UI
                 GlyphInfo glyph;
                 while (s < text.Length && count < len)
                 {
-                    if (text[s] < GLYPH_START || text[s] > GLYPH_END) { s++; continue; }
+                    if (text[s] < R.GLYPH_START || text[s] > R.GLYPH_END) { s++; continue; }
                     glyph = useFont.glyphs[text[s]];
 
                     // int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;

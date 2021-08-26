@@ -1,7 +1,10 @@
+using Gengine.Framework;
+using Gengine.NumericsX.Core;
+using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Gengine.NumericsX.Core;
+using System.NumericsX;
 using static Gengine.Lib;
 using static Gengine.NumericsX.Lib;
 
@@ -12,6 +15,7 @@ namespace Gengine.UI
         public static void Set(Window window, List<GSWinVar> src)
         {
             string val;
+
             var dest = (WinStr)src[0].var;
             if (dest != null)
                 if (string.Equals(dest, "cmd", StringComparison.OrdinalIgnoreCase))
@@ -47,8 +51,8 @@ namespace Gengine.UI
         {
             var parm = (WinStr)src[0].var;
             if (parm != null)
-                if (int.Parse(parm) != 0) window.Gui.Desktop.ClearFlag(WIN_NOCURSOR);
-                else window.Gui.Desktop.SetFlag(WIN_NOCURSOR);
+                if (intX.Parse(parm) != 0) window.Gui.Desktop.ClearFlag(Window.WIN_NOCURSOR);
+                else window.Gui.Desktop.SetFlag(Window.WIN_NOCURSOR);
         }
 
         // run scripts must come after any set cmd set's in the script
@@ -86,12 +90,12 @@ namespace Gengine.UI
             }
             if (win != null && win.win != null)
             {
-                win.win.ResetTime(int.Parse(parm));
+                win.win.ResetTime(intX.Parse(parm));
                 win.win.EvalRegs(-1, true);
             }
             else
             {
-                window.ResetTime(int.Parse(parm));
+                window.ResetTime(intX.Parse(parm));
                 window.EvalRegs(-1, true);
             }
         }
@@ -123,13 +127,13 @@ namespace Gengine.UI
                     common.Warning($"Bad transition in gui {window.Gui.SourceFile} in window {window.Name}\n");
                     return;
                 }
-                var time = int.Parse(timeStr);
+                var time = intX.Parse(timeStr);
                 float ac = 0f, dc = 0f;
                 if (src.Count > 4)
                 {
                     var acv = (WinStr)src[4].var; var dcv = (WinStr)src[5].var;
                     Debug.Assert(acv != null && dcv != null);
-                    ac = float.Parse(acv); dc = float.Parse(dcv);
+                    ac = floatX.Parse(acv); dc = floatX.Parse(dcv);
                 }
 
                 if (vec4 != null) { vec4.Eval = false; window.AddTransition(vec4, from, to, time, ac, dc); }
@@ -274,9 +278,7 @@ namespace Gengine.UI
                 var dest = win.GetWinVarByName(str, true);
                 if (dest != null)
                 {
-                    parms[0].var = dest;
-                    parms[0].own = false;
-
+                    parms[0] = new GSWinVar { var = dest, own = false };
                     if ((WinBackground)dest != null)
                         precacheBackground = true;
                 }
@@ -293,36 +295,29 @@ namespace Gengine.UI
                         var defvar = new WinStr();
                         defvar.Init(str, win);
                         win.AddDefinedVar(defvar);
-                        parms[i].var = defvar;
-                        parms[i].own = false;
+                        parms[i] = new GSWinVar { var = defvar, own = false };
 
-                        //dest = win.GetWinVarByName(*str, true);
-                        //if (dest) {
-                        //	parms[i].var = dest;
-                        //	parms[i].own = false;
-                        //}
+                        //dest = win.GetWinVarByName(str, true);
+                        //if (dest != null)
+                        //    parms[i] = new GSWinVar { var = dest, own = false };
                     }
                     else if (((string)str)[0] == '$')
                     {
                         //  dont include the $ when asking for variable
-                        dest = win.Gui.Desktop.GetWinVarByName((str) + 1, true);
+                        dest = win.Gui.Desktop.GetWinVarByName(((string)str)[1..], true);
                         if (dest != null)
-                        {
-                            parms[i].var = dest;
-                            parms[i].own = false;
-                        }
+                            parms[i] = new GSWinVar { var = dest, own = false };
                     }
-                    else if (((string)str).StartsWith(STRTABLE_ID))
+                    else if (((string)str).StartsWith(C.STRTABLE_ID))
                         str.Set(common.LanguageDictGetString(str));
                     else if (precacheBackground)
                     {
                         var mat = declManager.FindMaterial(str);
-                        mat.Sort = SS_GUI;
+                        mat.Sort = (float)SS.GUI;
                     }
                     else if (precacheSounds)
                     {
                         // Search for "play <...>"
-
                         var parser = new Parser(LEXFL.NOSTRINGCONCAT | LEXFL.ALLOWMULTICHARLITERALS | LEXFL.ALLOWBACKSLASHSTRINGCONCAT);
                         parser.LoadMemory(str, str.Length, "command");
 
@@ -341,42 +336,37 @@ namespace Gengine.UI
                 Debug.Assert(str != null);
 
                 //
-                DrawWin destowner;
-                var dest = win.GetWinVarByName(str, true, destowner);
-                if (dest != null)
-                {
-                    parms[0].var = dest;
-                    parms[0].own = false;
-                }
+                DrawWin destowner = null;
+                var dest = win.GetWinVarByName(str, true, x => destowner = x);
+                if (dest != null) parms[0] = new GSWinVar { var = dest, own = false };
                 else common.Warning($"Window {win.Name} in gui {win.Gui.SourceFile}: a transition does not have a valid destination var {str}");
 
-                //  support variables as parameters
+                // support variables as parameters
                 for (var c = 1; c < 3; c++)
                 {
                     str = (WinStr)parms[c].var;
 
                     var v4 = new WinVec4();
-                    parms[c].var = v4;
-                    parms[c].own = true;
+                    parms[c] = new GSWinVar { var = v4, own = true };
 
-                    DrawWin owner;
+                    DrawWin owner = null;
 
-                    dest = str[0] == '$' ? win.GetWinVarByName(str + 1, true, owner) : null;
+                    dest = ((string)str)[0] == '$' ? win.GetWinVarByName(((string)str)[1..], true, x => owner = x) : null;
                     if (dest != null)
                     {
                         Window ownerparent;
                         Window destparent;
                         if (owner != null)
                         {
-                            ownerparent = owner.simp ? owner.simp.Parent : owner.win.Parent;
-                            destparent = destowner.simp ? destowner.simp.Parent : destowner.win.Parent;
+                            ownerparent = owner.simp != null ? owner.simp.Parent : owner.win.Parent;
+                            destparent = destowner.simp != null ? destowner.simp.Parent : destowner.win.Parent;
 
                             // If its the rectangle they are referencing then adjust it
-                            if (ownerparent != null && destparent != null && (dest == owner.simp ? owner.simp.GetWinVarByName("rect") : owner.win.GetWinVarByName("rect")))
+                            if (ownerparent != null && destparent != null && (dest == (owner.simp != null ? owner.simp.GetWinVarByName("rect") : owner.win.GetWinVarByName("rect"))))
                             {
-                                Rectangle rect = (WinRectangle)dest;
-                                ownerparent.ClientToScreen(rect);
-                                destparent.ScreenToClient(rect);
+                                var rect = (Rectangle)(WinRectangle)dest;
+                                ownerparent.ClientToScreen(ref rect);
+                                destparent.ScreenToClient(ref rect);
                                 v4 = rect.ToVec4();
                             }
                             else v4.Set(dest.ToString());
@@ -387,10 +377,8 @@ namespace Gengine.UI
                 }
             }
             else
-            {
                 for (var i = 0; i < parms.Count; i++)
                     parms[i].var.Init(parms[i].var.ToString(), win);
-            }
         }
 
         public int Size => 0;
@@ -405,7 +393,7 @@ namespace Gengine.UI
         public void Execute(Window win)
         {
             var c = list.Count;
-            for (int i = 0; i < c; i++)
+            for (var i = 0; i < c; i++)
             {
                 var gs = list[i];
                 Debug.Assert(gs != null);

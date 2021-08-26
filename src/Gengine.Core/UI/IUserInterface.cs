@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Gengine.NumericsX.Core;
 using Gengine.NumericsX.Sys;
@@ -15,13 +16,13 @@ namespace Gengine.UI
         // Returns true if the gui is interactive.
         bool IsInteractive { get; }
 
-        bool Uniqued { get; set; }
+        bool IsUniqued { get; set; }
 
         // returns false if it failed to load
         bool InitFromFile(string qpath, bool rebuild = true, bool cache = true);
 
         // handles an event, can return an action string, the caller interprets any return and acts accordingly
-        string HandleEvent(SysEvent e, int time, out bool updateVisuals);
+        string HandleEvent(SysEvent e, int time, Action<bool> updateVisuals);
 
         // handles a named event
         void HandleNamedEvent(string eventName);
@@ -33,7 +34,7 @@ namespace Gengine.UI
         void DrawCursor();
 
         // Provides read access to the idDict that holds this gui's state.
-        Dictionary<string, object> State { get; }
+        Dictionary<string, string> State { get; }
 
         // Removes a gui state variable
         void DeleteStateVar(string varName);

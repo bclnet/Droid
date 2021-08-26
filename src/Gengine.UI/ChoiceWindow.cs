@@ -1,15 +1,13 @@
-using System;
-using System.Collections.Generic;
 using Gengine.NumericsX.Core;
 using Gengine.NumericsX.Sys;
+using System;
+using System.Collections.Generic;
+using System.NumericsX;
 using static Gengine.NumericsX.Core.Key;
 using static Gengine.NumericsX.Lib;
 
 namespace Gengine.UI
 {
-    //string R_GetVidModeListString(bool addCustom);
-    //string R_GetVidModeValsString(bool addCustom);
-
     public class ChoiceWindow : Window
     {
         int currentChoice;
@@ -29,7 +27,7 @@ namespace Gengine.UI
         WinBool liveUpdate;
         WinStr updateGroup;
 
-        void CommonInit()
+        new void CommonInit()
         {
             currentChoice = 0;
             choiceType = 0;
@@ -37,6 +35,25 @@ namespace Gengine.UI
             liveUpdate = true;
             choices.Clear();
         }
+
+        protected override bool ParseInternalVar(string name, Parser src)
+        {
+            if (string.Equals(name, "choicetype", StringComparison.OrdinalIgnoreCase)) { choiceType = src.ParseInt(); return true; }
+            if (string.Equals(name, "currentchoice", StringComparison.OrdinalIgnoreCase)) { currentChoice = src.ParseInt(); return true; }
+            return base.ParseInternalVar(name, src);
+        }
+
+        public override WinVar GetWinVarByName(string name, bool winLookup = false, Action<DrawWin> owner = null)
+        {
+            if (string.Equals(name, "choices", StringComparison.OrdinalIgnoreCase)) return choicesStr;
+            if (string.Equals(name, "values", StringComparison.OrdinalIgnoreCase)) return choiceVals;
+            if (string.Equals(name, "cvar", StringComparison.OrdinalIgnoreCase)) return cvarStr;
+            if (string.Equals(name, "gui", StringComparison.OrdinalIgnoreCase)) return guiStr;
+            if (string.Equals(name, "liveUpdate", StringComparison.OrdinalIgnoreCase)) return liveUpdate;
+            if (string.Equals(name, "updateGroup", StringComparison.OrdinalIgnoreCase)) return updateGroup;
+            return base.GetWinVarByName(name, winLookup, owner);
+        }
+
         public ChoiceWindow(UserInterfaceLocal gui) : base(gui)
         {
             this.gui = gui;
@@ -49,7 +66,7 @@ namespace Gengine.UI
             CommonInit();
         }
 
-        public override string HandleEvent(SysEvent ev, bool updateVisuals)
+        public override string HandleEvent(SysEvent ev, Action<bool> updateVisuals)
         {
             Key key; bool runAction = false, runAction2 = false;
 
@@ -60,7 +77,7 @@ namespace Gengine.UI
                 if (key == K_RIGHTARROW || key == K_KP_RIGHTARROW || key == K_MOUSE1)
                 {
                     // never affects the state, but we want to execute script handlers anyway
-                    if (ev.evValue2 == 0) { RunScript(ON_ACTIONRELEASE); return cmd; }
+                    if (ev.evValue2 == 0) { RunScript(SCRIPT.ON_ACTIONRELEASE); return cmd; }
                     currentChoice++;
                     if (currentChoice >= choices.Count)
                         currentChoice = 0;
@@ -70,15 +87,15 @@ namespace Gengine.UI
                 if (key == K_LEFTARROW || key == K_KP_LEFTARROW || key == K_MOUSE2)
                 {
                     // never affects the state, but we want to execute script handlers anyway
-                    if (ev.evValue2 == 0) { RunScript(ON_ACTIONRELEASE); return cmd; }
+                    if (ev.evValue2 == 0) { RunScript(SCRIPT.ON_ACTIONRELEASE); return cmd; }
                     currentChoice--;
                     if (currentChoice < 0)
                         currentChoice = choices.Count - 1;
                     runAction = true;
                 }
 
+                // is a key release with no action catch
                 if (ev.evValue2 == 0)
-                    // is a key release with no action catch
                     return "";
             }
             else if (ev.evType == SE.CHAR)
@@ -99,7 +116,7 @@ namespace Gengine.UI
             else return "";
 
             if (runAction)
-                RunScript(ON_ACTION);
+                RunScript(SCRIPT.ON_ACTION);
 
             if (choiceType == 0) cvarStr.Set($"{currentChoice}");
             else if (values.Count != 0) cvarStr.Set(values[currentChoice]);
@@ -108,7 +125,7 @@ namespace Gengine.UI
             UpdateVars(false);
 
             if (runAction2)
-                RunScript(ON_ACTIONRELEASE);
+                RunScript(SCRIPT.ON_ACTIONRELEASE);
 
             return cmd;
         }
@@ -121,13 +138,11 @@ namespace Gengine.UI
             var injectResolutions = false;
             var injectCustomMode = true;
 
-            /*
-             * Mods that have their own video settings menu can tell dhewm3 to replace the "choices" and "values" entries in their choiceDef with the resolutions supported by
-             * dhewm3 (and corresponding modes). So if we add new video modes to dhewm3, they'll automatically appear in the menu without changing the .gui
-             * To enable this, the mod authors only need to add an "injectResolutions 1" entry to their resolution choiceDef. By default, the first entry will be "r_custom*"
-             * for r_mode -1, which means "custom resolution, use r_customWidth and r_customHeight". If that entry shoud be disabled for the mod, just add another entry:
-             * "injectCustomResolutionMode 0"
-             */
+            // Mods that have their own video settings menu can tell dhewm3 to replace the "choices" and "values" entries in their choiceDef with the resolutions supported by
+            // dhewm3 (and corresponding modes). So if we add new video modes to dhewm3, they'll automatically appear in the menu without changing the .gui
+            // To enable this, the mod authors only need to add an "injectResolutions 1" entry to their resolution choiceDef. By default, the first entry will be "r_custom*"
+            // for r_mode -1, which means "custom resolution, use r_customWidth and r_customHeight". If that entry shoud be disabled for the mod, just add another entry:
+            // "injectCustomResolutionMode 0"
             var wv = GetWinVarByName("injectResolutions");
             if (wv != null)
             {
@@ -150,8 +165,8 @@ namespace Gengine.UI
 
             if (injectResolutions)
             {
-                choicesStr.Set(R_GetVidModeListString(injectCustomMode));
-                choiceVals.Set(R_GetVidModeValsString(injectCustomMode));
+                choicesStr.Set(Lib.R_GetVidModeListString(injectCustomMode));
+                choiceVals.Set(Lib.R_GetVidModeValsString(injectCustomMode));
             }
             // DG end
 
@@ -172,14 +187,14 @@ namespace Gengine.UI
             UpdateChoice();
 
             // FIXME: It'd be really cool if textAlign worked, but a lot of the guis have it set wrong because it used to not work
-            textAlign = (char)0;
+            textAlign = 0;
 
-            if (textShadow!=0)
+            if (textShadow != 0)
             {
                 var shadowText = choices[currentChoice];
                 var shadowRect = new Rectangle(textRect);
 
-                shadowText.RemoveColors();
+                shadowText = shadowText.RemoveColors();
                 shadowRect.x += textShadow;
                 shadowRect.y += textShadow;
 
@@ -194,52 +209,32 @@ namespace Gengine.UI
             dc.DrawText(choices[currentChoice], textScale, textAlign, color, textRect, false, -1);
         }
 
-        public override void Activate(bool activate, string act)
+        public override void Activate(bool activate, ref string act)
         {
-            base.Activate(activate, act);
+            base.Activate(activate, ref act);
+            // sets the gui state based on the current choice the window contains
             if (activate)
-                // sets the gui state based on the current choice the window contains
                 UpdateChoice();
         }
 
-        public override int Allocated => base.Allocated;
-
-        public override WinVar GetWinVarByName(string name, bool winLookup = false, DrawWin owner = null)
-        {
-            if (string.Equals(name, "choices", StringComparison.OrdinalIgnoreCase)) return choicesStr;
-            if (string.Equals(name, "values", StringComparison.OrdinalIgnoreCase)) return choiceVals;
-            if (string.Equals(name, "cvar", StringComparison.OrdinalIgnoreCase)) return cvarStr;
-            if (string.Equals(name, "gui", StringComparison.OrdinalIgnoreCase)) return guiStr;
-            if (string.Equals(name, "liveUpdate", StringComparison.OrdinalIgnoreCase)) return liveUpdate;
-            if (string.Equals(name, "updateGroup", StringComparison.OrdinalIgnoreCase)) return updateGroup;
-            return base.GetWinVarByName(name, winLookup, owner);
-        }
-
-        public void RunNamedEvent(string eventName)
+        public override void RunNamedEvent(string eventName)
         {
             string event_, group;
 
             if (eventName.StartsWith("cvar read "))
             {
                 event_ = eventName;
-                group = event_.Mid(10, event_.Length - 10);
+                group = event_[10..];
                 if (group == updateGroup)
                     UpdateVars(true, true);
             }
             else if (eventName.StartsWith("cvar write "))
             {
                 event_ = eventName;
-                group = event_.Mid(11, event_.Length - 11);
+                group = event_[11..];
                 if (group == updateGroup)
                     UpdateVars(false, true);
             }
-        }
-
-        override bool ParseInternalVar(string name, Parser src)
-        {
-            if (string.Equals(name, "choicetype", StringComparison.OrdinalIgnoreCase)) { choiceType = src.ParseInt(); return true; }
-            if (string.Equals(name, "currentchoice", StringComparison.OrdinalIgnoreCase)) { currentChoice = src.ParseInt(); return true; }
-            return base.ParseInternalVar(name, src);
         }
 
         void UpdateChoice()
@@ -252,7 +247,7 @@ namespace Gengine.UI
             {
                 // ChoiceType 0 stores current as an integer in either cvar or gui If both cvar and gui are defined then cvar wins, but they are both updated
                 if (updateStr[0].NeedsUpdate)
-                    currentChoice = int.Parse(updateStr[0].ToString());
+                    currentChoice = intX.Parse(updateStr[0].ToString());
                 ValidateChoice();
             }
             else
@@ -272,15 +267,15 @@ namespace Gengine.UI
 
         void ValidateChoice()
         {
-            if (currentChoice < 0 || currentChoice >= choices.Num())
+            if (currentChoice < 0 || currentChoice >= choices.Count)
                 currentChoice = 0;
-            if (choices.Num() == 0)
-                choices.Append("No Choices Defined");
+            if (choices.Count == 0)
+                choices.Add("No Choices Defined");
         }
 
         void InitVars()
         {
-            if (cvarStr.Length!=0)
+            if (cvarStr.Length != 0)
             {
                 cvar = cvarSystem.Find(cvarStr);
                 if (cvar == null)
@@ -293,9 +288,10 @@ namespace Gengine.UI
             }
             if (guiStr.Length != 0)
                 updateStr.Add(guiStr);
-            updateStr.SetGuiInfo(gui.GetStateDict());
+            updateStr.SetGuiInfo(gui.StateDict);
             updateStr.Update();
         }
+
         // true: read the updated cvar from cvar system, gui from dict
         // false: write to the cvar system, to the gui dict
         // force == true overrides liveUpdate 0
@@ -303,109 +299,68 @@ namespace Gengine.UI
         {
             if (force || liveUpdate)
             {
-                if (cvar && cvarStr.NeedsUpdate())
-                {
-                    if (read)
-                    {
-                        cvarStr.Set(cvar.GetString());
-                    }
-                    else
-                    {
-                        cvar.SetString(cvarStr.c_str());
-                    }
-                }
-                if (!read && guiStr.NeedsUpdate())
-                {
-                    guiStr.Set(va("%i", currentChoice));
-                }
+                if (cvar != null && cvarStr.NeedsUpdate)
+                    if (read) cvarStr.Set(cvar.String);
+                    else cvar.String = cvarStr;
+                if (!read && guiStr.NeedsUpdate)
+                    guiStr.Set(currentChoice.ToString());
             }
         }
 
         // update the lists whenever the WinVar have changed
         void UpdateChoicesAndVals()
         {
-            idToken token;
-            idStr str2, str3;
-            idLexer src;
+            Lexer src = new(); Token token; var str2 = "";
 
-            if (latchedChoices.Icmp(choicesStr))
+            if (string.Equals(latchedChoices, choicesStr, StringComparison.OrdinalIgnoreCase))
             {
                 choices.Clear();
                 src.FreeSource();
-                src.SetFlags(LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT);
-                src.LoadMemory(choicesStr, choicesStr.Length(), "<ChoiceList>");
-                if (src.IsLoaded())
+                src.Flags = LEXFL.NOFATALERRORS | LEXFL.ALLOWPATHNAMES | LEXFL.ALLOWMULTICHARLITERALS | LEXFL.ALLOWBACKSLASHSTRINGCONCAT;
+                src.LoadMemory(choicesStr, choicesStr.Length, "<ChoiceList>");
+                if (src.IsLoaded)
                 {
-                    while (src.ReadToken(&token))
+                    while (src.ReadToken(out token))
                     {
                         if (token == ";")
                         {
-                            if (str2.Length())
-                            {
-                                str2.StripTrailingWhitespace();
-                                str2 = common.GetLanguageDict().GetString(str2);
-                                choices.Append(str2);
-                                str2 = "";
-                            }
+                            if (str2.Length != 0) { str2 = common.LanguageDictGetString(str2.StripTrailingWhitespace()); choices.Add(str2); str2 = ""; }
                             continue;
                         }
                         str2 += token;
                         str2 += " ";
                     }
-                    if (str2.Length())
-                    {
-                        str2.StripTrailingWhitespace();
-                        choices.Append(str2);
-                    }
+                    if (str2.Length != 0) choices.Add(str2.StripTrailingWhitespace());
                 }
-                latchedChoices = choicesStr.c_str();
+                latchedChoices = choicesStr;
             }
-            if (choiceVals.Length() && latchedVals.Icmp(choiceVals))
+            if (choiceVals.Length != 0 && string.Equals(latchedVals, choiceVals, StringComparison.OrdinalIgnoreCase))
             {
                 values.Clear();
                 src.FreeSource();
-                src.SetFlags(LEXFL_ALLOWPATHNAMES | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT);
-                src.LoadMemory(choiceVals, choiceVals.Length(), "<ChoiceVals>");
+                src.Flags = LEXFL.ALLOWPATHNAMES | LEXFL.ALLOWMULTICHARLITERALS | LEXFL.ALLOWBACKSLASHSTRINGCONCAT;
+                src.LoadMemory(choiceVals, choiceVals.Length, "<ChoiceVals>");
                 str2 = "";
-                bool negNum = false;
-                if (src.IsLoaded())
+                var negNum = false;
+                if (src.IsLoaded)
                 {
-                    while (src.ReadToken(&token))
+                    while (src.ReadToken(out token))
                     {
-                        if (token == "-")
-                        {
-                            negNum = true;
-                            continue;
-                        }
+                        if (token == "-") { negNum = true; continue; }
                         if (token == ";")
                         {
-                            if (str2.Length())
-                            {
-                                str2.StripTrailingWhitespace();
-                                values.Append(str2);
-                                str2 = "";
-                            }
+                            if (str2.Length != 0) { str2 = str2.StripTrailingWhitespace(); values.Add(str2); str2 = ""; }
                             continue;
                         }
-                        if (negNum)
-                        {
-                            str2 += "-";
-                            negNum = false;
-                        }
+                        if (negNum) { str2 += "-"; negNum = false; }
                         str2 += token;
                         str2 += " ";
                     }
-                    if (str2.Length())
-                    {
-                        str2.StripTrailingWhitespace();
-                        values.Append(str2);
-                    }
+                    if (str2.Length != 0) values.Add(str2.StripTrailingWhitespace());
                 }
-                if (choices.Num() != values.Num())
-                {
-                    common.Warning("idChoiceWindow:: gui '%s' window '%s' has value count unequal to choices count", gui.GetSourceFile(), name.c_str());
-                }
-                latchedVals = choiceVals.c_str();
+                if (choices.Count != values.Count)
+                    common.Warning($"ChoiceWindow:: gui '{gui.SourceFile}' window '{name}' has value count unequal to choices count");
+                latchedVals = choiceVals;
             }
         }
     }
