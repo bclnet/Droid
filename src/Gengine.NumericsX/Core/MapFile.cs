@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
+using static Gengine.NumericsX.Lib;
 
 namespace Gengine.NumericsX.Core
 {
@@ -50,7 +51,7 @@ namespace Gengine.NumericsX.Core
         public void GetTextureMatrix(Vector3 mat1, Vector3 mat2) { mat1 = texMat0; mat2 = texMat1; }
         public void GetTextureVectors(Vector4[] v)
         {
-            Other.ComputeAxisBase(plane.Normal, out var texX, out var texY);
+            Compute.ComputeAxisBase(plane.Normal, out var texX, out var texY);
             // unroll
             v[0].x = texX.x * texMat0.x + texY.x * texMat0.y;
             v[0].y = texX.y * texMat0.x + texY.y * texMat0.y;
@@ -254,8 +255,8 @@ namespace Gengine.NumericsX.Core
                 {
                     var mapSide = GetSide(i);
                     for (var j = 0; j < 4; j++)
-                        crc ^= Other.FloatCRC(mapSide.Plane[j]);
-                    crc ^= Other.StringCRC(mapSide.Material);
+                        crc ^= Compute.FloatCRC(mapSide.Plane[j]);
+                    crc ^= Compute.StringCRC(mapSide.Material);
                 }
                 return crc;
             }
@@ -423,11 +424,11 @@ namespace Gengine.NumericsX.Core
                 for (var i = 0; i < Patch.Width; i++)
                     for (var j = 0; j < Patch.Height; j++)
                     {
-                        crc ^= Other.FloatCRC(Patch.verts[j * Patch.Width + i].xyz.x);
-                        crc ^= Other.FloatCRC(Patch.verts[j * Patch.Width + i].xyz.y);
-                        crc ^= Other.FloatCRC(Patch.verts[j * Patch.Width + i].xyz.z);
+                        crc ^= Compute.FloatCRC(Patch.verts[j * Patch.Width + i].xyz.x);
+                        crc ^= Compute.FloatCRC(Patch.verts[j * Patch.Width + i].xyz.y);
+                        crc ^= Compute.FloatCRC(Patch.verts[j * Patch.Width + i].xyz.z);
                     }
-                crc ^= Other.StringCRC(Material);
+                crc ^= Compute.StringCRC(Material);
                 return crc;
             }
         }
@@ -439,132 +440,89 @@ namespace Gengine.NumericsX.Core
 
         public Dictionary<string, string> epairs = new();
 
-        public MapEntity() { epairs.SetHashSize(64); }
         public static MapEntity Parse(Lexer src, bool worldSpawn = false, float version = MapFile.CURRENT_MAP_VERSION)
         {
-            idToken token;
-            idMapEntity* mapEnt;
-            idMapPatch* mapPatch;
-            idMapBrush* mapBrush;
-            bool worldent;
-            idVec3 origin;
-            double v1, v2, v3;
+            MapPatch mapPatch; MapBrush mapBrush;
 
-            if (!src.ReadToken(&token))
-            {
+            if (!src.ReadToken(out var token))
                 return null;
-            }
 
-            if (token != "{")
-            {
-                src.Error("idMapEntity::Parse: { not found, found %s", token.c_str());
-                return null;
-            }
+            if (token != "{") { src.Error($"MapEntity::Parse: {{ not found, found {token}"); return null; }
 
-            mapEnt = new idMapEntity();
-
+            var mapEnt = new MapEntity();
             if (worldSpawn)
-            {
                 mapEnt.primitives.Resize(1024, 256);
-            }
 
-            origin.Zero();
-            worldent = false;
+            var origin = new Vector3();
+            var worldent = false;
             do
             {
-                if (!src.ReadToken(&token))
-                {
-                    src.Error("idMapEntity::Parse: EOF without closing brace");
-                    return null;
-                }
-                if (token == "}")
-                {
-                    break;
-                }
-
+                if (!src.ReadToken(out token)) { src.Error("MapEntity::Parse: EOF without closing brace"); return null; }
+                if (token == "}") break;
                 if (token == "{")
                 {
                     // parse a brush or patch
-                    if (!src.ReadToken(&token))
-                    {
-                        src.Error("idMapEntity::Parse: unexpected EOF");
-                        return null;
-                    }
-
+                    if (!src.ReadToken(out token)) { src.Error("MapEntity::Parse: unexpected EOF"); return null; }
                     if (worldent)
-                    {
                         origin.Zero();
-                    }
-
                     // if is it a brush: brush, brushDef, brushDef2, brushDef3
-                    if (token.Icmpn("brush", 5) == 0)
+                    var tokenS = (string)token;
+                    if (tokenS.StartsWith("brush", StringComparison.OrdinalIgnoreCase))
                     {
-                        mapBrush = idMapBrush::Parse(src, origin, (!token.Icmp("brushDef2") || !token.Icmp("brushDef3")), version);
-                        if (!mapBrush)
-                        {
+                        mapBrush = MapBrush.Parse(src, origin, (string.Equals(token, "brushDef2", StringComparison.OrdinalIgnoreCase) || string.Equals(token, "brushDef3", StringComparison.OrdinalIgnoreCase)), version);
+                        if (mapBrush == null)
                             return null;
-                        }
                         mapEnt.AddPrimitive(mapBrush);
                     }
                     // if is it a patch: patchDef2, patchDef3
-                    else if (token.Icmpn("patch", 5) == 0)
+                    else if (tokenS.StartsWith("patch", StringComparison.OrdinalIgnoreCase))
                     {
-                        mapPatch = idMapPatch::Parse(src, origin, !token.Icmp("patchDef3"), version);
-                        if (!mapPatch)
-                        {
+                        mapPatch = MapPatch.Parse(src, origin, string.Equals(token, "patchDef3", StringComparison.OrdinalIgnoreCase), version);
+                        if (mapPatch == null)
                             return null;
-                        }
                         mapEnt.AddPrimitive(mapPatch);
                     }
                     // assume it's a brush in Q3 or older style
                     else
                     {
-                        src.UnreadToken(&token);
-                        mapBrush = idMapBrush::ParseQ3(src, origin);
-                        if (!mapBrush)
-                        {
+                        src.UnreadToken(token);
+                        mapBrush = MapBrush.ParseQ3(src, origin);
+                        if (mapBrush == null)
                             return null;
-                        }
                         mapEnt.AddPrimitive(mapBrush);
                     }
                 }
                 else
                 {
-                    idStr key, value;
-
                     // parse a key / value pair
-                    key = token;
-                    src.ReadTokenOnLine(&token);
-                    value = token;
+                    var key = (string)token;
+                    src.ReadTokenOnLine(out token);
+                    var value = (string)token;
 
-                    // strip trailing spaces that sometimes get accidentally
-                    // added in the editor
-                    value.StripTrailingWhitespace();
-                    key.StripTrailingWhitespace();
+                    // strip trailing spaces that sometimes get accidentally added in the editor
+                    value = value.StripTrailingWhitespace();
+                    key = key.StripTrailingWhitespace();
 
-                    mapEnt.epairs.Set(key, value);
+                    mapEnt.epairs[key] = value;
 
-                    if (!idStr::Icmp(key, "origin"))
+                    if (string.Equals(key, "origin", StringComparison.OrdinalIgnoreCase))
                     {
                         // scanf into doubles, then assign, so it is idVec size independent
-                        v1 = v2 = v3 = 0;
-                        sscanf(value, "%lf %lf %lf", &v1, &v2, &v3);
-                        origin.x = v1;
-                        origin.y = v2;
-                        origin.z = v3;
+                        stringX.sscanf(value, "%lf %lf %lf", out double v1, out double v2, out double v3);
+                        origin.x = (float)v1;
+                        origin.y = (float)v2;
+                        origin.z = (float)v3;
                     }
-                    else if (!idStr::Icmp(key, "classname") && !idStr::Icmp(value, "worldspawn"))
-                    {
+                    else if (string.Equals(key, "classname", StringComparison.OrdinalIgnoreCase) && string.Equals(value, "worldspawn", StringComparison.OrdinalIgnoreCase))
                         worldent = true;
-                    }
                 }
-            } while (1);
+            } while (true);
 
             return mapEnt;
         }
         public bool Write(VFile fp, int entityNum)
         {
-            fp.WriteFloatString("// entity %d\n{\n", entityNum);
+            fp.WriteFloatString($"// entity {entityNum}\n{{\n");
 
             // write entity epairs
             foreach (var epair in epairs)
@@ -744,53 +702,37 @@ namespace Gengine.NumericsX.Core
             hasPrimitiveData = true;
             return true;
         }
+
         public bool Write(string fileName, string ext, bool fromBasePath = true)
         {
-            int i;
-            idStr qpath;
-            idFile* fp;
+            var qpath = fileName.SetFileExtension(ext);
 
-            qpath = fileName;
-            qpath.SetFileExtension(ext);
+            common.Printf("writing {qpath}...\n");
 
-            idLib::common.Printf("writing %s...\n", qpath.c_str());
-
-            if (fromBasePath)
+            var fp = fromBasePath
+                ? fileSystem.OpenFileWrite(qpath, "fs_devpath")
+                : fileSystem.OpenExplicitFileWrite(qpath);
+            if (fp == null)
             {
-                fp = idLib::fileSystem.OpenFileWrite(qpath, "fs_devpath");
-            }
-            else
-            {
-                fp = idLib::fileSystem.OpenExplicitFileWrite(qpath);
-            }
-
-            if (!fp)
-            {
-                idLib::common.Warning("Couldn't open %s\n", qpath.c_str());
+                common.Warning($"Couldn't open {qpath}\n");
                 return false;
             }
 
-            fp.WriteFloatString("Version %f\n", (float)CURRENT_MAP_VERSION);
+            fp.WriteFloatString($"Version {(float)CURRENT_MAP_VERSION}\n");
 
-            for (i = 0; i < entities.Num(); i++)
-            {
+            for (var i = 0; i < entities.Count; i++)
                 entities[i].Write(fp, i);
-            }
 
-            idLib::fileSystem.CloseFile(fp);
+            fileSystem.CloseFile(fp);
 
             return true;
         }
 
         void SetGeometryCRC()
         {
-            int i;
-
-            geometryCRC = 0;
-            for (i = 0; i < entities.Num(); i++)
-            {
-                geometryCRC ^= entities[i].GetGeometryCRC();
-            }
+            var geometryCRC = 0U;
+            for (var i = 0; i < entities.Count; i++)
+                geometryCRC ^= entities[i].GeometryCRC;
         }
 
         // get the number of entities in the map
@@ -798,42 +740,24 @@ namespace Gengine.NumericsX.Core
         // get the specified entity
         public MapEntity GetEntity(int i) => entities[i];
         // get the name without file extension
-        public string GetName() => name;
+        public string Name => name;
         // get the file time
         public DateTime FileTime => fileTime;
         // get CRC for the map geometry. texture coordinates and entity key/value pairs are not taken into account
         public uint GeometryCRC => geometryCRC;
         // returns true if the file on disk changed
-        public bool NeedsReload
-        {
-            get
-            {
-                if (name.Length())
-                {
-                    ID_TIME_T time = (ID_TIME_T) - 1;
-                    if (idLib::fileSystem.ReadFile(name, null, &time) > 0)
-                    {
-                        return (time > fileTime);
-                    }
-                }
-                return true;
-            }
-        }
+        public bool NeedsReload => name.Length == 0 || fileSystem.ReadFile(name, out var time) <= 0 || time > fileTime;
 
-        public int AddEntity(MapEntity mapentity)
-        {
-            int ret = entities.Append(mapEnt);
-            return ret;
-        }
+        public int AddEntity(MapEntity ent)
+            => entities.Add_(ent);
+
         public MapEntity FindEntity(string name)
         {
-            for (int i = 0; i < entities.Num(); i++)
+            for (var i = 0; i < entities.Count; i++)
             {
-                idMapEntity* ent = entities[i];
-                if (idStr::Icmp(ent.epairs.GetString("name"), name) == 0)
-                {
+                var ent = entities[i];
+                if (string.Equals(ent.epairs.GetString("name"), name, StringComparison.OrdinalIgnoreCase))
                     return ent;
-                }
             }
             return null;
         }
@@ -841,37 +765,34 @@ namespace Gengine.NumericsX.Core
             => entities.Remove(mapEnt);
         public void RemoveEntities(string classname)
         {
-            for (int i = 0; i < entities.Num(); i++)
+            for (var i = 0; i < entities.Count; i++)
             {
-                idMapEntity* ent = entities[i];
-                if (idStr::Icmp(ent.epairs.GetString("classname"), classname) == 0)
+                var ent = entities[i];
+                if (string.Equals(ent.epairs.GetString("classname"), classname, StringComparison.OrdinalIgnoreCase))
                 {
-                    delete entities[i];
-                    entities.RemoveIndex(i);
+                    entities.RemoveAt(i);
                     i--;
                 }
             }
         }
         public void RemoveAllEntities()
         {
-            entities.DeleteContents(true);
+            entities.Clear();
             hasPrimitiveData = false;
         }
         public void RemovePrimitiveData()
         {
-            for (int i = 0; i < entities.Num(); i++)
+            for (var i = 0; i < entities.Count; i++)
             {
-                idMapEntity* ent = entities[i];
+                var ent = entities[i];
                 ent.RemovePrimitiveData();
             }
             hasPrimitiveData = false;
         }
         public bool HasPrimitiveData => hasPrimitiveData;
-
-
     }
 
-    static class Other
+    static class Compute
     {
         public static unsafe uint FloatCRC(float f) => *(uint*)&f;
 
