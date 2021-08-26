@@ -76,7 +76,7 @@ namespace Gengine.Framework
                 dict.SetDefaults(defList[i].dict);
 
             // precache all referenced media do this as long as we arent in modview
-            if (!(com_editors & (EDITOR.RADIANT | EDITOR.AAS)))
+            if ((C.com_editors & (EDITOR.RADIANT | EDITOR.AAS)) == 0)
                 game.CacheDictionaryMedia(dict);
 
             return true;

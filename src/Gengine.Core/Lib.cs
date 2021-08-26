@@ -1,13 +1,17 @@
+#define __DOOM_DLL__
 using System;
 using System.Runtime.CompilerServices;
+using Gengine.CM;
 using Gengine.Core;
 using Gengine.Framework;
+using Gengine.Game;
 using Gengine.Render;
 using Gengine.Sound;
 using Gengine.UI;
 //using GL_INDEX_TYPE = System.UInt32; // GL_UNSIGNED_INT
 //using GlIndex = System.Int32;
 [assembly: InternalsVisibleTo("Gengine.Sound")]
+[assembly: InternalsVisibleTo("Gengine.FrameworkDeclare")]
 
 namespace Gengine
 {
@@ -20,11 +24,16 @@ namespace Gengine
         public static IUserInterfaceManager uiManager;
         public static ISoundSystem soundSystem;
         public static IRenderSystem renderSystem; // public static RenderSystemLocal tr; 
+        public static IRenderModelManager renderModelManager;
         public static ImageManager globalImages = new();     // pointer to global list for the rest of the system
         public static DeclManager declManager;
         public static VertexCacheX vertexCache = new();
         public static ISession session;
         public static EventLoop eventLoop = new();
+        public static ICollisionModelManager collisionModelManager;
+
+        public static IGame game;
+        public static IGameEdit gameEdit;
 
         public static string R_GetVidModeListString(bool addCustom) => throw new NotImplementedException();
         public static string R_GetVidModeValsString(bool addCustom) => throw new NotImplementedException();

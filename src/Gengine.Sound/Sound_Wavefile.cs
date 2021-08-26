@@ -1,6 +1,6 @@
+using Gengine.NumericsX.Core;
 using System;
 using System.Diagnostics;
-using Gengine.NumericsX.Core;
 using static Gengine.NumericsX.Lib;
 
 namespace Gengine.Sound

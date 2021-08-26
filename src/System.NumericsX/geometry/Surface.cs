@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.NumericsX;
 using System.Runtime.CompilerServices;
 using static System.NumericsX.Plane;
 
@@ -20,7 +19,7 @@ namespace System.NumericsX
 
     public class Surface
     {
-        protected List<DrawVert> verts = new();     // vertices
+        protected internal List<DrawVert> verts = new();     // vertices
         protected List<int> indexes = new();        // 3 references to vertices for each triangle
         protected List<SurfaceEdge> edges = new();  // edges
         protected List<int> edgeIndexes = new();    // 3 references to edges for each triangle, may be negative for reversed edge

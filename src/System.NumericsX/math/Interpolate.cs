@@ -1,13 +1,22 @@
 namespace System.NumericsX
 {
-public class Interpolate_float
+public struct Interpolate_float
 {
+    float startTime;
+    float duration;
+    float startValue;
+    float endValue;
+    float currentTime;
+    float currentValue;
+
+    /*
     public Interpolate_float()
     {
         currentTime = startTime = duration = 0;
         currentValue = default;
         startValue = endValue = currentValue;
     }
+    */
 
     public void Init(float startTime, float duration, float startValue, float endValue)
     {
@@ -54,23 +63,26 @@ public class Interpolate_float
         get => endValue;
         set => endValue = value;
     }
-
-    float startTime;
-    float duration;
-    float startValue;
-    float endValue;
-    float currentTime;
-    float currentValue;
 }
 
-public class InterpolateAccelDecelLinear_float
+public struct InterpolateAccelDecelLinear_float
 {
+    float startTime;
+    float accelTime;
+    float linearTime;
+    float decelTime;
+    float startValue;
+    float endValue;
+    Extrapolate_float extrapolate; // = new();
+
+    /*
     public InterpolateAccelDecelLinear_float()
     {
         startTime = accelTime = linearTime = decelTime = 0;
         startValue = default;
         endValue = startValue;
     }
+    */
 
     public void Init(float startTime, float accelTime, float decelTime, float duration, float startValue, float endValue)
     {
@@ -119,14 +131,6 @@ public class InterpolateAccelDecelLinear_float
     public float StartValue => startValue;
     public float EndValue => endValue;
 
-    float startTime;
-    float accelTime;
-    float linearTime;
-    float decelTime;
-    float startValue;
-    float endValue;
-    Extrapolate_float extrapolate = new();
-
     void Invalidate()
         => extrapolate.Init(0, 0, extrapolate.StartValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.NONE);
     void SetPhase(float time)
@@ -152,14 +156,24 @@ public class InterpolateAccelDecelLinear_float
     }
 }
 
-public class InterpolateAccelDecelSine_float
+public struct InterpolateAccelDecelSine_float
 {
+    float startTime;
+    float accelTime;
+    float linearTime;
+    float decelTime;
+    float startValue;
+    float endValue;
+    Extrapolate_float extrapolate; // = new();
+
+    /*
     public InterpolateAccelDecelSine_float()
     {
         startTime = accelTime = linearTime = decelTime = 0;
         startValue = default;
         endValue = startValue;
     }
+    */
 
     public void Init(float startTime, float accelTime, float decelTime, float duration, float startValue, float endValue)
     {
@@ -217,14 +231,6 @@ public class InterpolateAccelDecelSine_float
         set { endValue = value; Invalidate(); }
     }
 
-    float startTime;
-    float accelTime;
-    float linearTime;
-    float decelTime;
-    float startValue;
-    float endValue;
-    Extrapolate_float extrapolate = new();
-
     void Invalidate()
         => extrapolate.Init(0, 0, extrapolate.StartValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.NONE);
     void SetPhase(float time)
@@ -248,14 +254,23 @@ public class InterpolateAccelDecelSine_float
     }
 }
 
-public class Interpolate_Vector4
+public struct Interpolate_Vector4
 {
+    float startTime;
+    float duration;
+    Vector4 startValue;
+    Vector4 endValue;
+    float currentTime;
+    Vector4 currentValue;
+
+    /*
     public Interpolate_Vector4()
     {
         currentTime = startTime = duration = 0;
         currentValue = default;
         startValue = endValue = currentValue;
     }
+    */
 
     public void Init(float startTime, float duration, Vector4 startValue, Vector4 endValue)
     {
@@ -302,23 +317,26 @@ public class Interpolate_Vector4
         get => endValue;
         set => endValue = value;
     }
-
-    float startTime;
-    float duration;
-    Vector4 startValue;
-    Vector4 endValue;
-    float currentTime;
-    Vector4 currentValue;
 }
 
-public class InterpolateAccelDecelLinear_Vector4
+public struct InterpolateAccelDecelLinear_Vector4
 {
+    float startTime;
+    float accelTime;
+    float linearTime;
+    float decelTime;
+    Vector4 startValue;
+    Vector4 endValue;
+    Extrapolate_Vector4 extrapolate; // = new();
+
+    /*
     public InterpolateAccelDecelLinear_Vector4()
     {
         startTime = accelTime = linearTime = decelTime = 0;
         startValue = default;
         endValue = startValue;
     }
+    */
 
     public void Init(float startTime, float accelTime, float decelTime, float duration, Vector4 startValue, Vector4 endValue)
     {
@@ -367,14 +385,6 @@ public class InterpolateAccelDecelLinear_Vector4
     public Vector4 StartValue => startValue;
     public Vector4 EndValue => endValue;
 
-    float startTime;
-    float accelTime;
-    float linearTime;
-    float decelTime;
-    Vector4 startValue;
-    Vector4 endValue;
-    Extrapolate_Vector4 extrapolate = new();
-
     void Invalidate()
         => extrapolate.Init(0, 0, extrapolate.StartValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.NONE);
     void SetPhase(float time)
@@ -400,14 +410,24 @@ public class InterpolateAccelDecelLinear_Vector4
     }
 }
 
-public class InterpolateAccelDecelSine_Vector4
+public struct InterpolateAccelDecelSine_Vector4
 {
+    float startTime;
+    float accelTime;
+    float linearTime;
+    float decelTime;
+    Vector4 startValue;
+    Vector4 endValue;
+    Extrapolate_Vector4 extrapolate; // = new();
+
+    /*
     public InterpolateAccelDecelSine_Vector4()
     {
         startTime = accelTime = linearTime = decelTime = 0;
         startValue = default;
         endValue = startValue;
     }
+    */
 
     public void Init(float startTime, float accelTime, float decelTime, float duration, Vector4 startValue, Vector4 endValue)
     {
@@ -464,14 +484,6 @@ public class InterpolateAccelDecelSine_Vector4
         get => endValue;
         set { endValue = value; Invalidate(); }
     }
-
-    float startTime;
-    float accelTime;
-    float linearTime;
-    float decelTime;
-    Vector4 startValue;
-    Vector4 endValue;
-    Extrapolate_Vector4 extrapolate = new();
 
     void Invalidate()
         => extrapolate.Init(0, 0, extrapolate.StartValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.NONE);

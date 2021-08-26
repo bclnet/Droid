@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.NumericsX;
 using System.Runtime.InteropServices;
 using static Gengine.NumericsX.Lib;
 
@@ -120,11 +121,11 @@ namespace Gengine.Render
 
         public MD5Mesh()
         {
-            scaledWeights = NULL;
-            weightIndex = NULL;
-            shader = NULL;
+            scaledWeights = null;
+            weightIndex = null;
+            shader = null;
             numTris = 0;
-            deformInfo = NULL;
+            deformInfo = null;
             surfaceNum = 0;
         }
 
@@ -378,7 +379,7 @@ namespace Gengine.Render
             tri.dominantTris = deformInfo.dominantTris;
             tri.numVerts = deformInfo.numOutputVerts;
 
-            if (tri.verts == NULL)
+            if (tri.verts == null)
             {
                 R_AllocStaticTriSurfVerts(tri, tri.numVerts);
                 for (i = 0; i < deformInfo.numSourceVerts; i++)
@@ -566,7 +567,7 @@ namespace Gengine.Render
             num = parser.ParseInt();
             if (num < 0)
             {
-                joint.parent = NULL;
+                joint.parent = null;
             }
             else
             {
@@ -792,7 +793,7 @@ namespace Gengine.Render
                 materialName = meshes[i].shader.GetName();
                 if (materialName.IsEmpty())
                 {
-                    meshes[i].shader = NULL;
+                    meshes[i].shader = null;
                 }
                 else
                 {
@@ -833,7 +834,7 @@ namespace Gengine.Render
                     pdasurface.shader = declManager.FindMaterial("_pdaImage");
 
                     srfTriangles_t* pdageometry = AllocSurfaceTriangles(meshes[i].NumVerts(), meshes[i].deformInfo.numIndexes);
-                    assert(pdageometry != NULL);
+                    assert(pdageometry != null);
 
                     // infinite bounds
                     pdageometry.bounds[0][0] =
@@ -888,7 +889,7 @@ namespace Gengine.Render
             CalculateBounds(poseMat3);
 
             // set the timestamp for reloadmodels
-            fileSystem.ReadFile(name, NULL, &timeStamp);
+            fileSystem.ReadFile(name, null, &timeStamp);
         }
 
         public override int Memory()
@@ -927,7 +928,7 @@ namespace Gengine.Render
             if (cachedModel && !r_useCachedDynamicModels.GetBool())
             {
                 delete cachedModel;
-                cachedModel = NULL;
+                cachedModel = null;
             }
 
             if (purged)
@@ -938,22 +939,22 @@ namespace Gengine.Render
 
             if (!ent.joints)
             {
-                common.Printf("idRenderModelMD5::InstantiateDynamicModel: NULL joints on renderEntity for '%s'\n", Name());
+                common.Printf("idRenderModelMD5::InstantiateDynamicModel: null joints on renderEntity for '%s'\n", Name());
                 delete cachedModel;
-                return NULL;
+                return null;
             }
             else if (ent.numJoints != joints.Num())
             {
                 common.Printf("idRenderModelMD5::InstantiateDynamicModel: renderEntity has different number of joints than model for '%s'\n", Name());
                 delete cachedModel;
-                return NULL;
+                return null;
             }
 
             tr.pc.c_generateMd5++;
 
             if (cachedModel)
             {
-                assert(dynamic_cast<idRenderModelStatic*>(cachedModel) != NULL);
+                assert(dynamic_cast<idRenderModelStatic*>(cachedModel) != null);
                 assert(idStr::Icmp(cachedModel.Name(), MD5_SnapshotName) == 0);
                 staticModel = static_cast<idRenderModelStatic*>(cachedModel);
             }
@@ -967,7 +968,7 @@ namespace Gengine.Render
 
             if (r_showSkel.GetInteger())
             {
-                if ((view != NULL) && (!r_skipSuppress.GetBool() || !ent.suppressSurfaceInViewID || (ent.suppressSurfaceInViewID != view.renderView.viewID)))
+                if ((view != null) && (!r_skipSuppress.GetBool() || !ent.suppressSurfaceInViewID || (ent.suppressSurfaceInViewID != view.renderView.viewID)))
                 {
                     // only draw the skeleton
                     DrawJoints(ent, view);
@@ -1012,8 +1013,8 @@ namespace Gengine.Render
 
                     mesh.surfaceNum = staticModel.NumSurfaces();
                     surf = &staticModel.surfaces.Alloc();
-                    surf.geometry = NULL;
-                    surf.shader = NULL;
+                    surf.geometry = null;
+                    surf.shader = null;
                     surf.id = i;
                 }
 

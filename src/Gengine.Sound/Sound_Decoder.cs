@@ -21,7 +21,7 @@ namespace Gengine.Sound
     // Each OggVorbis decoder consumes about 150kB of memory.
     static class _decoder
     {
-        static DynamicBlockAlloc<byte> decoderMemoryAllocator = new(1 << 20, 128, 0, x => new byte[x]);
+        internal static DynamicBlockAlloc<byte> decoderMemoryAllocator = new(1 << 20, 128, 0, x => new byte[x]);
         const int MIN_OGGVORBIS_MEMORY = 768 * 1024;
 
         static DynamicElement<byte> malloc(int size)
@@ -77,7 +77,7 @@ namespace Gengine.Sound
         static long FS_TellOGG(object fh)
         {
             var f = (VFile)fh;
-            return f.Tell();
+            return f.Tell;
         }
 
         static int ov_openFile(VFile f, OggVorbis_File vf)
@@ -108,7 +108,7 @@ namespace Gengine.Sound
 
             SysW.EnterCriticalSection(CRITICAL_SECTION.SECTION_ONE);
 
-            ov = new OggVorbis_File;
+            ov = new OggVorbis_File();
 
             if (ov_openFile(mhmmio, ov) < 0)
             {
@@ -189,10 +189,10 @@ namespace Gengine.Sound
             OggVorbis_File* ov = (OggVorbis_File*)ogg;
             if (ov != NULL)
             {
-                Sys_EnterCriticalSection(CRITICAL_SECTION_ONE);
+                SysW.EnterCriticalSection(CRITICAL_SECTION.SECTION_ONE);
                 ov_clear(ov);
                 delete ov;
-                Sys_LeaveCriticalSection(CRITICAL_SECTION_ONE);
+                SysW.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE);
                 fileSystem.CloseFile(mhmmio);
                 mhmmio = NULL;
                 ogg = NULL;
@@ -206,13 +206,13 @@ namespace Gengine.Sound
     {
         public static void Init()
         {
-            decoderMemoryAllocator.Init();
-            decoderMemoryAllocator.SetLockMemory(true);
-            decoderMemoryAllocator.SetFixedBlocks(idSoundSystemLocal::s_realTimeDecoding.GetBool() ? 10 : 1);
+            _decoder.decoderMemoryAllocator.Init();
+            _decoder.decoderMemoryAllocator.SetLockMemory(true);
+            _decoder.decoderMemoryAllocator.SetFixedBlocks(SoundSystemLocal.s_realTimeDecoding.Bool ? 10 : 1);
         }
         public static void Shutdown()
         {
-            decoderMemoryAllocator.Shutdown();
+            _decoder.decoderMemoryAllocator.Shutdown();
             sampleDecoderAllocator.Shutdown();
         }
         public static ISampleDecoder Alloc()

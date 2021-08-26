@@ -6,17 +6,13 @@ using Gengine.Sound;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using static Gengine.Framework.Lib2;
+using System.NumericsX;
+using static Gengine.Lib;
+using static Gengine.Lib2;
 using static Gengine.NumericsX.Lib;
 
 namespace Gengine.Framework
 {
-    static class Lib2
-    {
-        public static DeclManagerLocal declManagerLocal = new();
-        public static DeclManager declManager = declManagerLocal;
-    }
-
     class DeclType_
     {
         public string typeName;
@@ -43,7 +39,7 @@ namespace Gengine.Framework
         internal int sourceTextOffset;       // offset in source file to decl text
         internal int sourceTextLength;       // length of decl text in source file
         internal int sourceLine;             // this is where the actual declaration token starts
-        int checksum;               // checksum of the decl text
+        internal int checksum;               // checksum of the decl text
         internal DECL type;                  // decl type
         internal DeclState declState;                // decl state
         internal int index;                  // index in the per-type list
@@ -104,7 +100,7 @@ namespace Gengine.Framework
         public override int TextLength => textLength;
         public override void SetText(string text) => SetTextLocal(text, text.Length);
         // Set textSource possible with compression.
-        protected void SetTextLocal(string text, int length)
+        protected internal void SetTextLocal(string text, int length)
         {
             checksum = MD5_BlockChecksum(text, length);
 
@@ -1003,17 +999,16 @@ namespace Gengine.Framework
             fileSystem.FreeFileList(fileList);
         }
 
-        public virtual int GetChecksum()
+        public unsafe virtual int GetChecksum()
         {
             int i, j, total, num;
-            int* checksumData;
 
             // get the total number of decls
             total = 0;
             for (i = 0; i < (int)DECL.MAX_TYPES; i++)
                 total += linearLists[i].Count;
 
-            checksumData = (int*)_alloca16(total * 2 * sizeof(int));
+            var checksumData = stackalloc int[total * 2];
 
             total = 0;
             for (i = 0; i < (int)DECL.MAX_TYPES; i++)
@@ -1181,7 +1176,7 @@ namespace Gengine.Framework
             }
 
             common.Printf("--------------------\n");
-            common.Printf($"{printed} of {count} {declTypes[type].typeName}\n");
+            common.Printf($"{printed} of {count} {declTypes[(int)type].typeName}\n");
         }
 
         public virtual void PrintType(CmdArgs args, DECL type)
@@ -1292,7 +1287,7 @@ namespace Gengine.Framework
 
             // add it to the hash table and linear list
             decl.index = linearLists[typeIndex].Count;
-            hashTables[typeIndex].Add(hash, linearLists[typeIndex].Add(decl));
+            hashTables[typeIndex].Add(hash, linearLists[typeIndex].Add_(decl));
 
             return decl.self;
         }
@@ -1430,7 +1425,7 @@ namespace Gengine.Framework
                 // add it to the linear list and hash table
                 index = linearLists[typeIndex].Count
             };
-            hashTables[typeIndex].Add(hash, linearLists[typeIndex].Add(decl));
+            hashTables[typeIndex].Add(hash, linearLists[typeIndex].Add_(decl));
 
             return decl;
         }

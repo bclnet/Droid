@@ -1,12 +1,12 @@
 using Gengine.Framework;
+using Gengine.NumericsX.Core;
 using Gengine.Render;
 using System;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
-//using ChannelType = System.Int32; // the game uses its own series of enums, and we don't want to require casts
-using FourCC = System.Int32;
 //using ALuint = System.UInt32;
 using System.Collections.Generic;
+using System.NumericsX;
+//using ChannelType = System.Int32; // the game uses its own series of enums, and we don't want to require casts
+using FourCC = System.Int32;
 
 namespace Gengine.Sound
 {
@@ -194,8 +194,8 @@ namespace Gengine.Sound
             set => channel = value;
         }
 
-        public void SetContinuitySamples(float in1, float in2, float out1, float out2) { continuitySamples[0] = in1; continuitySamples[1] = in2; continuitySamples[2] = out1; continuitySamples[3] = out2; };      // FIXME?
-        public void GetContinuitySamples(out float in1, out float in2, out float out1, out float out2) { in1 = continuitySamples[0]; in2 = continuitySamples[1]; out1 = continuitySamples[2]; out2 = continuitySamples[3]; };
+        public void SetContinuitySamples(float in1, float in2, float out1, float out2) { continuitySamples[0] = in1; continuitySamples[1] = in2; continuitySamples[2] = out1; continuitySamples[3] = out2; }      // FIXME?
+        public void GetContinuitySamples(out float in1, out float in2, out float out1, out float out2) { in1 = continuitySamples[0]; in2 = continuitySamples[1]; out1 = continuitySamples[2]; out2 = continuitySamples[3]; }
 
         public void SetParameter(float val) => param = val;
     }

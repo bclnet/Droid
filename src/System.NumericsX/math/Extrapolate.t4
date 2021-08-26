@@ -1,5 +1,6 @@
-public class Extrapolate_<#=type#>
+public struct Extrapolate_<#=type#>
 {
+    /*
     public Extrapolate_<#=type#>()
     {
         extrapolationType = EXTRAPOLATION.NONE;
@@ -10,6 +11,7 @@ public class Extrapolate_<#=type#>
         currentTime = -1;
         currentValue = startValue;
     }
+    */
 
     public void Init(float startTime, float duration, <#=type#> startValue, <#=type#> baseSpeed, <#=type#> speed, EXTRAPOLATION extrapolationType)
     {

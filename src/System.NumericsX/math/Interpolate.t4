@@ -1,11 +1,20 @@
-public class Interpolate_<#=type#>
+public struct Interpolate_<#=type#>
 {
+    float startTime;
+    float duration;
+    <#=type#> startValue;
+    <#=type#> endValue;
+    float currentTime;
+    <#=type#> currentValue;
+
+    /*
     public Interpolate_<#=type#>()
     {
         currentTime = startTime = duration = 0;
         currentValue = default;
         startValue = endValue = currentValue;
     }
+    */
 
     public void Init(float startTime, float duration, <#=type#> startValue, <#=type#> endValue)
     {
@@ -52,23 +61,26 @@ public class Interpolate_<#=type#>
         get => endValue;
         set => endValue = value;
     }
-
-    float startTime;
-    float duration;
-    <#=type#> startValue;
-    <#=type#> endValue;
-    float currentTime;
-    <#=type#> currentValue;
 }
 
-public class InterpolateAccelDecelLinear_<#=type#>
+public struct InterpolateAccelDecelLinear_<#=type#>
 {
+    float startTime;
+    float accelTime;
+    float linearTime;
+    float decelTime;
+    <#=type#> startValue;
+    <#=type#> endValue;
+    Extrapolate_<#=type#> extrapolate; // = new();
+
+    /*
     public InterpolateAccelDecelLinear_<#=type#>()
     {
         startTime = accelTime = linearTime = decelTime = 0;
         startValue = default;
         endValue = startValue;
     }
+    */
 
     public void Init(float startTime, float accelTime, float decelTime, float duration, <#=type#> startValue, <#=type#> endValue)
     {
@@ -117,14 +129,6 @@ public class InterpolateAccelDecelLinear_<#=type#>
     public <#=type#> StartValue => startValue;
     public <#=type#> EndValue => endValue;
 
-    float startTime;
-    float accelTime;
-    float linearTime;
-    float decelTime;
-    <#=type#> startValue;
-    <#=type#> endValue;
-    Extrapolate_<#=type#> extrapolate = new();
-
     void Invalidate()
         => extrapolate.Init(0, 0, extrapolate.StartValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.NONE);
     void SetPhase(float time)
@@ -150,14 +154,24 @@ public class InterpolateAccelDecelLinear_<#=type#>
     }
 }
 
-public class InterpolateAccelDecelSine_<#=type#>
+public struct InterpolateAccelDecelSine_<#=type#>
 {
+    float startTime;
+    float accelTime;
+    float linearTime;
+    float decelTime;
+    <#=type#> startValue;
+    <#=type#> endValue;
+    Extrapolate_<#=type#> extrapolate; // = new();
+
+    /*
     public InterpolateAccelDecelSine_<#=type#>()
     {
         startTime = accelTime = linearTime = decelTime = 0;
         startValue = default;
         endValue = startValue;
     }
+    */
 
     public void Init(float startTime, float accelTime, float decelTime, float duration, <#=type#> startValue, <#=type#> endValue)
     {
@@ -214,14 +228,6 @@ public class InterpolateAccelDecelSine_<#=type#>
         get => endValue;
         set { endValue = value; Invalidate(); }
     }
-
-    float startTime;
-    float accelTime;
-    float linearTime;
-    float decelTime;
-    <#=type#> startValue;
-    <#=type#> endValue;
-    Extrapolate_<#=type#> extrapolate = new();
 
     void Invalidate()
         => extrapolate.Init(0, 0, extrapolate.StartValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.NONE);

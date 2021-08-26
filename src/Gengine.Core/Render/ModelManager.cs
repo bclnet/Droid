@@ -52,7 +52,4 @@ namespace Gengine.Render
         // print memory info
         void PrintMemInfo(MemInfo mi);
     }
-
-    // this will be statically pointed at a private implementation
-    //static IRenderModelManager	renderModelManager;
 }

@@ -1,15 +1,15 @@
 using Gengine.Framework;
+using Gengine.NumericsX.Core;
+using Gengine.NumericsX.Sys;
 using Gengine.Render;
 using OpenTK.Audio.OpenAL;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
-using Gengine.NumericsX.Sys;
+using System.NumericsX;
 using static Gengine.Lib;
-using static Gengine.Sound.Lib;
 using static Gengine.NumericsX.Lib;
+using static Gengine.Sound.Lib;
 
 namespace Gengine.Sound
 {

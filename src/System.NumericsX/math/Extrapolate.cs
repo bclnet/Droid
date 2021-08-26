@@ -11,8 +11,9 @@ namespace System.NumericsX
         NOSTOP = 0x40   // do not stop at startTime + duration
     }
 
-public class Extrapolate_float
+public struct Extrapolate_float
 {
+    /*
     public Extrapolate_float()
     {
         extrapolationType = EXTRAPOLATION.NONE;
@@ -23,6 +24,7 @@ public class Extrapolate_float
         currentTime = -1;
         currentValue = startValue;
     }
+    */
 
     public void Init(float startTime, float duration, float startValue, float baseSpeed, float speed, EXTRAPOLATION extrapolationType)
     {
@@ -188,8 +190,9 @@ public class Extrapolate_float
     float currentValue;
 }
 
-public class Extrapolate_Vector4
+public struct Extrapolate_Vector4
 {
+    /*
     public Extrapolate_Vector4()
     {
         extrapolationType = EXTRAPOLATION.NONE;
@@ -200,6 +203,7 @@ public class Extrapolate_Vector4
         currentTime = -1;
         currentValue = startValue;
     }
+    */
 
     public void Init(float startTime, float duration, Vector4 startValue, Vector4 baseSpeed, Vector4 speed, EXTRAPOLATION extrapolationType)
     {

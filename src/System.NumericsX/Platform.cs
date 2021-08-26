@@ -1,6 +1,9 @@
 //#define FRUSTUM_DEBUG
 using System.Buffers.Binary;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Gengine.NumericsX")]
 
 namespace System.NumericsX
 {
