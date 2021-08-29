@@ -1,9 +1,10 @@
-using Gengine.NumericsX.Core;
+using Gengine.Library;
+using Gengine.Library.Core;
 using Gengine.Render;
 using System;
 using System.NumericsX;
 using static Gengine.Lib;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 
 namespace Gengine.UI
 {
@@ -208,7 +209,7 @@ namespace Gengine.UI
                 var shadowText = (string)text;
                 var shadowRect = new Rectangle(textRect);
 
-                shadowText.RemoveColors();
+                shadowText = shadowText.RemoveColors();
                 shadowRect.x += textShadow;
                 shadowRect.y += textShadow;
 

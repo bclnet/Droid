@@ -1,10 +1,12 @@
-using Gengine.NumericsX.Core;
+using Gengine.Library;
+using Gengine.Library.Core;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
+using System.Text;
 using static Gengine.Lib;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 
 namespace Gengine.Framework
 {
@@ -15,17 +17,11 @@ namespace Gengine.Framework
         public float to;
 
         public float Eval(float frac, RandomX rand)
-            => table != null
-                ? table.TableLookup(frac)
-                : from + frac * (to - from);
+            => table != null ? table.TableLookup(frac) : from + frac * (to - from);
 
         public float Integrate(float frac, RandomX rand)
         {
-            if (table != null)
-            {
-                common.Printf("ParticleParm::Integrate: can't integrate tables\n");
-                return 0;
-            }
+            if (table != null) { common.Printf("ParticleParm::Integrate: can't integrate tables\n"); return 0; }
             return (from + frac * (to - from) * 0.5f) * frac;
         }
     }
@@ -249,7 +245,6 @@ namespace Gengine.Framework
         public virtual int NumQuadsPerParticle()
         {
             var count = 1;
-
             if (orientation == POR.AIMED)
             {
                 var trails = MathX.Ftoi(orientationParms[0]);
@@ -258,9 +253,7 @@ namespace Gengine.Framework
             }
 
             // if we are doing strip-animation, we need to double the number and cross fade them
-            if (animationFrames > 1)
-                count *= 2;
-
+            if (animationFrames > 1) count *= 2;
             return count;
         }
 
@@ -419,31 +412,23 @@ namespace Gengine.Framework
                 switch (directionType)
                 {
                     case PDIR.CONE:
-                        {
-                            // angle is the full angle, so 360 degrees is any spherical direction
-                            angle1 = g.random.CRandomFloat() * directionParms[0] * MathX.M_DEG2RAD;
-                            angle2 = g.random.CRandomFloat() * MathX.PI;
+                        // angle is the full angle, so 360 degrees is any spherical direction
+                        angle1 = g.random.CRandomFloat() * directionParms[0] * MathX.M_DEG2RAD;
+                        angle2 = g.random.CRandomFloat() * MathX.PI;
 
-                            MathX.SinCos16(angle1, out var s1, out var c1);
-                            MathX.SinCos16(angle2, out var s2, out var c2);
+                        MathX.SinCos16(angle1, out var s1, out var c1);
+                        MathX.SinCos16(angle2, out var s2, out var c2);
 
-                            dir.x = s1 * c2;
-                            dir.y = s1 * s2;
-                            dir.z = c1;
-                            break;
-                        }
+                        dir.x = s1 * c2;
+                        dir.y = s1 * s2;
+                        dir.z = c1;
+                        break;
                     case PDIR.OUTWARD:
-                        {
-                            dir = origin;
-                            dir.Normalize();
-                            dir[2] += directionParms[0];
-                            break;
-                        }
-                    default:
-                        {
-                            common.Error("ParticleStage::ParticleOrigin: bad direction");
-                            return;
-                        }
+                        dir = origin;
+                        dir.Normalize();
+                        dir[2] += directionParms[0];
+                        break;
+                    default: common.Error("ParticleStage::ParticleOrigin: bad direction"); return;
                 }
 
                 // add speed
@@ -526,8 +511,7 @@ namespace Gengine.Framework
                 gra *= g.renderEnt.axis.Transpose();
                 origin += gra * g.age * g.age;
             }
-            else
-                origin.z -= gravity * g.age * g.age;
+            else origin.z -= gravity * g.age * g.age;
         }
 
         public int ParticleVerts(ParticleGen g, Vector3 origin, DrawVert[] verts)
@@ -546,20 +530,17 @@ namespace Gengine.Framework
                 var currentRandom = g.random;
                 var currentAge = g.age;
                 var currentFrac = g.frac;
-                var verts_p = verts;
+                var verts_p = 0;
                 var stepOrigin = origin;
                 var stepLeft = new Vector3();
                 var numTrails = MathX.Ftoi(orientationParms[0]);
-                var trailTime = orientationParms[1];
 
                 stepLeft.Zero();
-
-                if (trailTime == 0)
-                    trailTime = 0.5f;
+                var trailTime = orientationParms[1];
+                if (trailTime == 0) trailTime = 0.5f;
 
                 var height2 = 1f / (1 + numTrails);
                 var t = 0f;
-
                 for (var i = 0; i <= numTrails; i++)
                 {
                     g.random = g.originalRandom;
@@ -567,48 +548,37 @@ namespace Gengine.Framework
                     g.frac = g.age / particleLife;
 
                     ParticleOrigin(g, out var oldOrigin);
-
                     up = stepOrigin - oldOrigin;    // along the direction of travel
-
                     g.renderEnt.axis.ProjectVector(g.renderView.viewaxis[0], out var forwardDir);
-
-                    up -= (up * forwardDir) * forwardDir;
-
+                    up -= up * forwardDir * forwardDir;
                     up.Normalize();
 
                     left = up.Cross(forwardDir);
                     left *= psize;
 
-                    verts_p[0] = verts[0];
-                    verts_p[1] = verts[1];
-                    verts_p[2] = verts[2];
-                    verts_p[3] = verts[3];
+                    verts[verts_p + 0] = verts[0];
+                    verts[verts_p + 1] = verts[1];
+                    verts[verts_p + 2] = verts[2];
+                    verts[verts_p + 3] = verts[3];
 
                     if (i == 0)
                     {
-                        verts_p[0].xyz = stepOrigin - left;
-                        verts_p[1].xyz = stepOrigin + left;
+                        verts[verts_p + 0].xyz = stepOrigin - left;
+                        verts[verts_p + 1].xyz = stepOrigin + left;
                     }
                     else
                     {
-                        verts_p[0].xyz = stepOrigin - stepLeft;
-                        verts_p[1].xyz = stepOrigin + stepLeft;
+                        verts[verts_p + 0].xyz = stepOrigin - stepLeft;
+                        verts[verts_p + 1].xyz = stepOrigin + stepLeft;
                     }
-                    verts_p[2].xyz = oldOrigin - left;
-                    verts_p[3].xyz = oldOrigin + left;
+                    verts[verts_p + 2].xyz = oldOrigin - left;
+                    verts[verts_p + 3].xyz = oldOrigin + left;
 
                     // modify texcoords
-                    verts_p[0].st.x = verts[0].st.x;
-                    verts_p[0].st.y = t;
-
-                    verts_p[1].st.x = verts[1].st.x;
-                    verts_p[1].st.y = t;
-
-                    verts_p[2].st.x = verts[2].st.x;
-                    verts_p[2].st.y = t + height2;
-
-                    verts_p[3].st.x = verts[3].st.x;
-                    verts_p[3].st.y = t + height2;
+                    verts[verts_p + 0].st.x = verts[0].st.x; verts[verts_p + 0].st.y = t;
+                    verts[verts_p + 1].st.x = verts[1].st.x; verts[verts_p + 1].st.y = t;
+                    verts[verts_p + 2].st.x = verts[2].st.x; verts[verts_p + 2].st.y = t + height2;
+                    verts[verts_p + 3].st.x = verts[3].st.x; verts[verts_p + 3].st.y = t + height2;
 
                     t += height2;
 
@@ -625,9 +595,7 @@ namespace Gengine.Framework
                 return 4 * (numTrails + 1);
             }
 
-            //
             // constant rotation
-            //
             var angle = initialAngle != 0f ? initialAngle : 360 * g.random.RandomFloat();
 
             var angleMove = rotationSpeed.Integrate(g.frac, g.random) * particleLife;
@@ -730,16 +698,15 @@ namespace Gengine.Framework
 
             for (var i = 0; i < 4; i++)
             {
-                var fcolor = ((entityColor) ? g.renderEnt.shaderParms[i] : color[i]) * fadeFraction + fadeColor[i] * (1f - fadeFraction);
-                var icolor = MathX.FtoiFast(fcolor * 255f);
-                if (icolor < 0)
-                    icolor = 0;
-                else if (icolor > 255)
-                    icolor = 255;
-                verts[0].color[i] =
-                verts[1].color[i] =
-                verts[2].color[i] =
-                verts[3].color[i] = icolor;
+                var fcolor = (entityColor ? g.renderEnt.shaderParms[i] : color[i]) * fadeFraction + fadeColor[i] * (1f - fadeFraction);
+                var icolor = (byte)MathX.FtoiFast(fcolor * 255f);
+                if (icolor < 0) icolor = 0;
+                else if (icolor > 255) icolor = 255;
+
+                if (i == 0) verts[0].color0 = verts[1].color0 = verts[2].color0 = verts[3].color0 = icolor;
+                else if (i == 1) verts[0].color1 = verts[1].color1 = verts[2].color1 = verts[3].color1 = icolor;
+                else if (i == 2) verts[0].color2 = verts[1].color2 = verts[2].color2 = verts[3].color2 = icolor;
+                else if (i == 3) verts[0].color3 = verts[1].color3 = verts[2].color3 = verts[3].color3 = icolor;
             }
         }
 
@@ -884,11 +851,10 @@ namespace Gengine.Framework
 		time  1.0
 	}
 }";
-        public override bool Parse(string text, int textLength)
+        public override bool Parse(string text)
         {
             Lexer src = new();
-
-            src.LoadMemory(text, textLength, FileName, LineNum);
+            src.LoadMemory(text, FileName, LineNum);
             src.Flags = DeclBase.DECL_LEXER_FLAGS;
             src.SkipUntilString("{");
 
@@ -896,11 +862,8 @@ namespace Gengine.Framework
 
             while (true)
             {
-                if (!src.ReadToken(out var token))
-                    break;
-                if (token == "}")
-                    break;
-
+                if (!src.ReadToken(out var token)) break;
+                if (token == "}") break;
                 if (token == "{")
                 {
                     var stage = ParseParticleStage(src);
@@ -915,9 +878,7 @@ namespace Gengine.Framework
                 }
                 if (string.Equals(token, "depthHack", StringComparison.OrdinalIgnoreCase)) { depthHack = src.ParseFloat(); continue; }
 
-                src.Warning($"bad token {token}");
-                MakeDefault();
-                return false;
+                src.Warning($"bad token {token}"); MakeDefault(); return false;
             }
 
             // calculate the bounds
@@ -966,7 +927,7 @@ namespace Gengine.Framework
 
             f.WriteFloatString("}");
 
-            SetText(f.DataPtr);
+            Text = Encoding.ASCII.GetString(f.DataPtr);
 
             return true;
         }
@@ -978,14 +939,8 @@ namespace Gengine.Framework
             // this isn't absolutely guaranteed, but it should be close
             var g = new ParticleGen
             {
-                renderEnt = new RenderEntity
-                {
-                    axis = Matrix3x3.identity
-                },
-                renderView = new RenderView
-                {
-                    viewaxis = Matrix3x3.identity
-                },
+                renderEnt = new RenderEntity { axis = Matrix3x3.identity },
+                renderView = new RenderView { viewaxis = Matrix3x3.identity },
                 axis = Matrix3x3.identity,
             };
             g.origin.Zero();
@@ -1000,16 +955,13 @@ namespace Gengine.Framework
                 var maxMsec = (int)(stage.particleLife * 1000);
                 for (var inCycleTime = 0; inCycleTime < maxMsec; inCycleTime += 16)
                 {
-
                     // make sure we get the very last tic, which may make up an extreme edge
-                    if (inCycleTime + 16 > maxMsec)
-                        inCycleTime = maxMsec - 1;
+                    if (inCycleTime + 16 > maxMsec) inCycleTime = maxMsec - 1;
 
                     g.frac = (float)inCycleTime / (stage.particleLife * 1000);
                     g.age = inCycleTime * 0.001f;
 
                     // if the particle doesn't get drawn because it is faded out or beyond a kill region, don't increment the verts
-
                     stage.ParticleOrigin(g, out var origin);
                     stage.bounds.AddPoint(origin);
                 }
@@ -1022,10 +974,8 @@ namespace Gengine.Framework
             {
                 var size = stage.size.Eval(f, steppingRandom);
                 var aspect = stage.aspect.Eval(f, steppingRandom);
-                if (aspect > 1)
-                    size *= aspect;
-                if (size > maxSize)
-                    maxSize = size;
+                if (aspect > 1) size *= aspect;
+                if (size > maxSize) maxSize = size;
             }
 
             maxSize += 8;   // just for good measure. users can specify a per-stage bounds expansion to handle odd cases
@@ -1039,19 +989,10 @@ namespace Gengine.Framework
 
             while (true)
             {
-                if (src.HadError)
-                    break;
-                if (!src.ReadToken(out var token))
-                    break;
-                if (token == "}")
-                    break;
-
-                if (string.Equals(token, "material", StringComparison.OrdinalIgnoreCase))
-                {
-                    src.ReadToken(out token);
-                    stage.material = declManager.FindMaterial(token);
-                    continue;
-                }
+                if (src.HadError) break;
+                if (!src.ReadToken(out var token)) break;
+                if (token == "}") break;
+                if (string.Equals(token, "material", StringComparison.OrdinalIgnoreCase)) { src.ReadToken(out token); stage.material = declManager.FindMaterial(token); continue; }
                 if (string.Equals(token, "count", StringComparison.OrdinalIgnoreCase)) { stage.totalParticles = src.ParseInt(); continue; }
                 if (string.Equals(token, "time", StringComparison.OrdinalIgnoreCase)) { stage.particleLife = src.ParseFloat(); continue; }
                 if (string.Equals(token, "cycles", StringComparison.OrdinalIgnoreCase)) { stage.cycles = src.ParseFloat(); continue; }
@@ -1141,15 +1082,9 @@ namespace Gengine.Framework
             var count = 0;
             while (true)
             {
-                if (!src.ReadTokenOnLine(out var token))
-                    return;
-                if (count == maxParms)
-                {
-                    src.Error("too many parms on line");
-                    return;
-                }
-                token.StripQuotes();
-                parms[count] = float.Parse(token);
+                if (!src.ReadTokenOnLine(out var token)) return;
+                if (count == maxParms) { src.Error("too many parms on line"); return; }
+                parms[count] = float.Parse(StringX.StripQuotes(token));
                 count++;
             }
         }
@@ -1158,24 +1093,15 @@ namespace Gengine.Framework
         {
             parm = new();
 
-            if (!src.ReadToken(out var token))
-            {
-                src.Error("not enough parameters");
-                return;
-            }
-
-            if (token.IsNumeric())
+            if (!src.ReadToken(out var token)) { src.Error("not enough parameters"); return; }
+            if (stringX.IsNumeric(token))
             {
                 // can have a to + 2nd parm
                 parm.from = parm.to = float.Parse(token);
                 if (src.ReadToken(out token))
                     if (string.Equals(token, "to", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (!src.ReadToken(out token))
-                        {
-                            src.Error("missing second parameter");
-                            return;
-                        }
+                        if (!src.ReadToken(out token)) { src.Error("missing second parameter"); return; }
                         parm.to = float.Parse(token);
                     }
                     else src.UnreadToken(token);
@@ -1191,53 +1117,41 @@ namespace Gengine.Framework
             f.WriteFloatString("\t{\n");
             f.WriteFloatString($"\t\tcount\t\t\t\t{stage.totalParticles}\n");
             f.WriteFloatString($"\t\tmaterial\t\t\t{stage.material.Name}\n");
-            if (stage.animationFrames != 0)
-                f.WriteFloatString($"\t\tanimationFrames \t{stage.animationFrames}\n");
-            if (stage.animationRate != 0f)
-                f.WriteFloatString($"\t\tanimationRate \t\t{stage.animationRate:3}\n");
+            if (stage.animationFrames != 0) f.WriteFloatString($"\t\tanimationFrames \t{stage.animationFrames}\n");
+            if (stage.animationRate != 0f) f.WriteFloatString($"\t\tanimationRate \t\t{stage.animationRate:3}\n");
             f.WriteFloatString($"\t\ttime\t\t\t\t{stage.particleLife:3}\n");
             f.WriteFloatString($"\t\tcycles\t\t\t\t{stage.cycles:3}\n");
-            if (stage.timeOffset != 0f)
-                f.WriteFloatString($"\t\ttimeOffset\t\t\t{stage.timeOffset:3}\n");
-            if (stage.deadTime != 0f)
-                f.WriteFloatString($"\t\tdeadTime\t\t\t{stage.deadTime:3}\n");
+            if (stage.timeOffset != 0f) f.WriteFloatString($"\t\ttimeOffset\t\t\t{stage.timeOffset:3}\n");
+            if (stage.deadTime != 0f) f.WriteFloatString($"\t\tdeadTime\t\t\t{stage.deadTime:3}\n");
             f.WriteFloatString($"\t\tbunching\t\t\t{stage.spawnBunching:3}\n");
 
             f.WriteFloatString($"\t\tdistribution\t\t{ParticleDistributionDesc[(int)stage.distributionType].name} ");
-            for (i = 0; i < ParticleDistributionDesc[(int)stage.distributionType].count; i++)
-                f.WriteFloatString($"{stage.distributionParms[i]:3} ");
+            for (i = 0; i < ParticleDistributionDesc[(int)stage.distributionType].count; i++) f.WriteFloatString($"{stage.distributionParms[i]:3} ");
             f.WriteFloatString("\n");
 
             f.WriteFloatString("\t\tdirection\t\t\t%s ", ParticleDirectionDesc[(int)stage.directionType].name);
-            for (i = 0; i < ParticleDirectionDesc[(int)stage.directionType].count; i++)
-                f.WriteFloatString($"\"{stage.directionParms[i]:3}\" ");
+            for (i = 0; i < ParticleDirectionDesc[(int)stage.directionType].count; i++) f.WriteFloatString($"\"{stage.directionParms[i]:3}\" ");
             f.WriteFloatString("\n");
 
             f.WriteFloatString($"\t\torientation\t\t\t{ParticleOrientationDesc[(int)stage.orientation].name} ");
-            for (i = 0; i < ParticleOrientationDesc[(int)stage.orientation].count; i++)
-                f.WriteFloatString($"{stage.orientationParms[i]:3} ");
+            for (i = 0; i < ParticleOrientationDesc[(int)stage.orientation].count; i++) f.WriteFloatString($"{stage.orientationParms[i]:3} ");
             f.WriteFloatString("\n");
 
             if (stage.customPathType != ParticleStage.PPATH.STANDARD)
             {
                 f.WriteFloatString($"\t\tcustomPath {ParticleCustomDesc[(int)stage.customPathType].name} ");
-                for (i = 0; i < ParticleCustomDesc[(int)stage.customPathType].count; i++)
-                    f.WriteFloatString($"{stage.customPathParms[i]:3} ");
+                for (i = 0; i < ParticleCustomDesc[(int)stage.customPathType].count; i++) f.WriteFloatString($"{stage.customPathParms[i]:3} ");
                 f.WriteFloatString("\n");
             }
 
-            if (stage.entityColor)
-                f.WriteFloatString("\t\tentityColor\t\t\t1\n");
+            if (stage.entityColor) f.WriteFloatString("\t\tentityColor\t\t\t1\n");
 
             WriteParticleParm(f, stage.speed, "speed");
             WriteParticleParm(f, stage.size, "size");
             WriteParticleParm(f, stage.aspect, "aspect");
 
-            if (stage.rotationSpeed.from != 0f)
-                WriteParticleParm(f, stage.rotationSpeed, "rotation");
-
-            if (stage.initialAngle != 0f)
-                f.WriteFloatString($"\t\tangle\t\t\t\t{stage.initialAngle}\n");
+            if (stage.rotationSpeed.from != 0f) WriteParticleParm(f, stage.rotationSpeed, "rotation");
+            if (stage.initialAngle != 0f) f.WriteFloatString($"\t\tangle\t\t\t\t{stage.initialAngle}\n");
 
             f.WriteFloatString($"\t\trandomDistribution\t\t\t\t{(stage.randomDistribution ? 1 : 0)}\n");
             f.WriteFloatString($"\t\tboundsExpansion\t\t\t\t{stage.boundsExpansion:3}\n");
@@ -1251,8 +1165,7 @@ namespace Gengine.Framework
 
             f.WriteFloatString($"\t\toffset \t\t\t\t{stage.offset.x:3} {stage.offset.y:3} {stage.offset.z:3}\n");
             f.WriteFloatString("\t\tgravity \t\t\t");
-            if (stage.worldGravity)
-                f.WriteFloatString("world ");
+            if (stage.worldGravity) f.WriteFloatString("world ");
             f.WriteFloatString("{stage.gravity:3}\n");
             f.WriteFloatString("\t}\n");
         }
@@ -1260,8 +1173,7 @@ namespace Gengine.Framework
         void WriteParticleParm(VFile f, ParticleParm parm, string name)
         {
             f.WriteFloatString($"\t\t{name}\t\t\t\t ");
-            if (parm.table != null)
-                f.WriteFloatString($"{parm.table.Name}\n");
+            if (parm.table != null) f.WriteFloatString($"{parm.table.Name}\n");
             else
             {
                 f.WriteFloatString($"\"{parm.from:3}\" ");

@@ -1,5 +1,3 @@
-using System.NumericsX;
-
 namespace System.NumericsX
 {
     public class Surface_SweptSpline : Surface

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
-using static Gengine.NumericsX.Lib;
+using Gengine.Library;
+using Gengine.Library.Core;
+using static Gengine.Library.Lib;
 using GlIndex = System.Int32;
 
 namespace Gengine.Render

@@ -1,11 +1,12 @@
 using Gengine.Framework;
 using System;
 using System.IO;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
+using Gengine.Library;
+using Gengine.Library.Core;
 using static Gengine.Lib;
 using static Gengine.Sound.Lib;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
+using System.NumericsX;
 
 namespace Gengine.Sound
 {
@@ -13,7 +14,7 @@ namespace Gengine.Sound
     public class SoundShader : Decl, ISoundShader
     {
         // options from sound shader text
-        SoundShaderParms parms;                       // can be overriden on a per-channel basis
+        internal SoundShaderParms parms;                       // can be overriden on a per-channel basis
 
         bool onDemand;                  // only load when played, and free when finished
         internal int speakerMask;
@@ -22,10 +23,10 @@ namespace Gengine.Sound
         bool errorDuringParse;
         internal float leadinVolume;             // allows light breaking leadin sounds to be much louder than the broken loop
 
-        SoundSample[] leadins = new SoundSample[ISoundSystem.SOUND_MAX_LIST_WAVS];
+        internal SoundSample[] leadins = new SoundSample[ISoundSystem.SOUND_MAX_LIST_WAVS];
         internal int numLeadins;
         internal SoundSample[] entries = new SoundSample[ISoundSystem.SOUND_MAX_LIST_WAVS];
-        int numEntries;
+        internal int numEntries;
 
         public SoundShader()
             => Init();
@@ -36,9 +37,8 @@ namespace Gengine.Sound
         {
             var wavname = Name;
             if (Path.GetExtension(wavname).Length == 0) wavname = $"{wavname}.wav"; // if the name has .ogg in it, that will stay
-
             // if there exists a wav file with the same name //if (fileSystem.ReadFile(wavname, null) == -1) return false;
-            SetText($"sound {Name} // IMPLICITLY GENERATED\n{{\n{wavname}\n}}\n");
+            Text = $"sound {Name} // IMPLICITLY GENERATED\n{{\n{wavname}\n}}\n";
             return true;
         }
 
@@ -47,10 +47,10 @@ namespace Gengine.Sound
     _default.wav
 }";
 
-        public override bool Parse(string text, int textLength)
+        public override bool Parse(string text)
         {
             Lexer src = new();
-            src.LoadMemory(text, textLength, FileName, LineNum);
+            src.LoadMemory(text, FileName, LineNum);
             src.Flags = DeclBase.DECL_LEXER_FLAGS;
             src.SkipUntilString("{");
             // deeper functions can set this, which will cause MakeDefault() to be called at the end
@@ -68,19 +68,16 @@ namespace Gengine.Sound
         public override void List()
         {
             common.Printf($"{Index:4}: {Name}\n");
-            if (!string.Equals(Description, "<no description>", StringComparison.OrdinalIgnoreCase))
-                common.Printf($"      description: {Description}\n");
+            if (!string.Equals(Description, "<no description>", StringComparison.OrdinalIgnoreCase)) common.Printf($"      description: {Description}\n");
             for (var k = 0; k < numLeadins; k++)
             {
                 var objectp = leadins[k];
-                if (objectp != null)
-                    common.Printf($"      {soundSystemLocal.SamplesToMilliseconds(objectp.LengthIn44kHzSamples):5}ms {objectp.objectMemSize / 1024:4}Kb {objectp.name} (LEADIN)\n");
+                if (objectp != null) common.Printf($"      {soundSystemLocal.SamplesToMilliseconds(objectp.LengthIn44kHzSamples):5}ms {objectp.objectMemSize / 1024:4}Kb {objectp.name} (LEADIN)\n");
             }
             for (var k = 0; k < numEntries; k++)
             {
                 var objectp = entries[k];
-                if (objectp != null)
-                    common.Printf($"      {soundSystemLocal.SamplesToMilliseconds(objectp.LengthIn44kHzSamples):5}ms {objectp.objectMemSize / 1024:4}Kb {objectp.name}\n");
+                if (objectp != null) common.Printf($"      {soundSystemLocal.SamplesToMilliseconds(objectp.LengthIn44kHzSamples):5}ms {objectp.objectMemSize / 1024:4}Kb {objectp.name}\n");
             }
         }
 
@@ -109,11 +106,9 @@ namespace Gengine.Sound
         {
             if (index >= 0)
             {
-                if (index < numLeadins)
-                    return leadins[index].name;
+                if (index < numLeadins) return leadins[index].name;
                 index -= numLeadins;
-                if (index < numEntries)
-                    return entries[index].name;
+                if (index < numEntries) return entries[index].name;
             }
             return "";
         }
@@ -123,17 +118,9 @@ namespace Gengine.Sound
             int i; var ret = false;
 
             for (i = 0; i < numLeadins; i++)
-                if (leadins[i].objectInfo.wFormatTag == (short)WAVE_FORMAT_TAG.OGG)
-                {
-                    common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{leadins[i].name}'");
-                    ret = true;
-                }
+                if (leadins[i].objectInfo.wFormatTag == (short)WAVE_FORMAT_TAG.OGG) { common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{leadins[i].name}'"); ret = true; }
             for (i = 0; i < numEntries; i++)
-                if (entries[i].objectInfo.wFormatTag == (short)WAVE_FORMAT_TAG.OGG)
-                {
-                    common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{entries[i].name}'");
-                    ret = true;
-                }
+                if (entries[i].objectInfo.wFormatTag == (short)WAVE_FORMAT_TAG.OGG) { common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{entries[i].name}'"); ret = true; }
             return ret;
         }
 
@@ -275,18 +262,18 @@ namespace Gengine.Sound
                     // add to the wav list
                     if (soundSystemLocal.soundCache != null && numEntries < maxSamples)
                     {
-                        var tokenS2 = tokenS.Replace('\\', '/');
+                        var tokenS2 = PathX.BackSlashesToSlashes(tokenS);
                         var lang = cvarSystem.GetCVarString("sys_lang");
                         if (!string.Equals(lang, "english", StringComparison.OrdinalIgnoreCase) && tokenS2.IndexOf("sound/vo/", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
                             var work = tokenS2.ToLowerInvariant();
-                            work.StripLeading("sound/vo/");
+                            work = work.StripLeading("sound/vo/");
                             work = $"sound/vo/{lang}/{work}";
                             if (fileSystem.ReadFile(work) > 0) token = work;
                             else
                             {
                                 // also try to find it with the .ogg extension
-                                work.SetFileExtension(".ogg");
+                                work = PathX.SetFileExtension(work, ".ogg");
                                 if (fileSystem.ReadFile(work) > 0)
                                     token = work;
                             }
@@ -298,9 +285,7 @@ namespace Gengine.Sound
                 else { src.Warning($"unknown token '{token}'"); return false; }
             }
 
-            if (parms.shakes > 0f)
-                CheckShakesAndOgg();
-
+            if (parms.shakes > 0f) CheckShakesAndOgg();
             return true;
         }
 

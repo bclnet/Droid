@@ -1,15 +1,18 @@
 //#define USE_COMPRESSED_DECLS
-//#define GET_HUFFMAN_FREQUENCIES
-using Gengine.NumericsX.Core;
+#define GET_HUFFMAN_FREQUENCIES
+using Gengine.Library;
+using Gengine.Library.Core;
 using Gengine.Render;
 using Gengine.Sound;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.NumericsX;
+using System.Runtime.CompilerServices;
+using System.Text;
 using static Gengine.Lib;
 using static Gengine.Lib2;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 
 namespace Gengine.Framework
 {
@@ -32,7 +35,7 @@ namespace Gengine.Framework
         internal Decl self;
 
         internal string name;                    // name of the decl
-        internal string textSource;              // decl text definition
+        internal string text;              // decl text definition
         internal int textLength;             // length of textSource
         int compressedLength;       // compressed length
         internal DeclFile sourceFile;                // source file in which the decl was defined
@@ -53,7 +56,7 @@ namespace Gengine.Framework
         public DeclLocal()
         {
             name = "unnamed";
-            textSource = null;
+            text = null;
             textLength = 0;
             compressedLength = 0;
             sourceFile = null;
@@ -87,49 +90,47 @@ namespace Gengine.Framework
         public override int LineNum => sourceLine;
         public override string FileName => sourceFile != null ? sourceFile.fileName : "*invalid*";
         public override int Size => 0;
-        public override string GetText()
+        public override string Text
         {
-            string text = null;
+            get
+            {
 #if USE_COMPRESSED_DECLS
-            Huffman.HuffmanDecompressText(text, textLength, textSource, compressedLength);
+                Huffman.HuffmanDecompressText(out text, text, compressedLength);
 #else
-            memcpy(text, textSource, textLength + 1);
+                return text;
 #endif
-            return text;
+            }
+            // Set text possibly with compression.
+            set
+            {
+                checksum = stringX.MD5Checksum(value);
+#if GET_HUFFMAN_FREQUENCIES
+                unchecked
+                {
+                    for (var i = 0; i < value.Length; i++)
+                        Huffman.HuffmanFrequencies[value[i]]++;
+                }
+#endif
+#if USE_COMPRESSED_DECLS
+                var maxBytesPerCode = (Huffman.maxHuffmanBits + 7) >> 3;
+                byte* compressed = (byte*)_alloca(length * maxBytesPerCode);
+                compressedLength = Huffman.HuffmanCompressText(value, length, compressed);
+                textSource = (char*)Mem_Alloc(compressedLength);
+                memcpy(textSource, compressed, compressedLength);
+#else
+                compressedLength = value.Length;
+                text = value;
+#endif
+                textLength = value.Length;
+            }
         }
         public override int TextLength => textLength;
-        public override void SetText(string text) => SetTextLocal(text, text.Length);
-        // Set textSource possible with compression.
-        protected internal void SetTextLocal(string text, int length)
-        {
-            checksum = MD5_BlockChecksum(text, length);
 
-#if GET_HUFFMAN_FREQUENCIES
-            for (var i = 0; i < length; i++)
-                huffmanFrequencies[((const unsigned char*)text)[i]]++;
-#endif
-
-#if USE_COMPRESSED_DECLS
-            var maxBytesPerCode = (Huffman.maxHuffmanBits + 7) >> 3;
-            byte* compressed = (byte*)_alloca(length * maxBytesPerCode);
-            compressedLength = Huffman.HuffmanCompressText(text, length, compressed, length * maxBytesPerCode);
-            textSource = (char*)Mem_Alloc(compressedLength);
-            memcpy(textSource, compressed, compressedLength);
-#else
-            compressedLength = length;
-            textSource = text;
-#endif
-            textLength = length;
-        }
         public override bool ReplaceSourceFileText()
         {
             common.Printf($"Writing \'{Name}\' to \'{FileName}\'...\n");
 
-            if (sourceFile == declManagerLocal.implicitDecls)
-            {
-                common.Warning($"Can't save implicit declaration {Name}.");
-                return false;
-            }
+            if (sourceFile == declManagerLocal.implicitDecls) { common.Warning($"Can't save implicit declaration {Name}."); return false; }
 
             // get length and allocate buffer to hold the file
             var oldFileLength = sourceFile.fileSize;
@@ -141,50 +142,28 @@ namespace Gengine.Framework
             if (sourceFile.fileSize != 0)
             {
                 file = fileSystem.OpenFileRead(FileName);
-                if (file == null)
-                {
-                    common.Warning($"Couldn't open {FileName} for reading.");
-                    return false;
-                }
-
-                if (file.Length != sourceFile.fileSize || file.Timestamp != sourceFile.timestamp)
-                {
-                    common.Warning($"The file {FileName} has been modified outside of the engine.");
-                    return false;
-                }
-
+                if (file == null) { common.Warning($"Couldn't open {FileName} for reading."); return false; }
+                if (file.Length != sourceFile.fileSize || file.Timestamp != sourceFile.timestamp) { common.Warning($"The file {FileName} has been modified outside of the engine."); return false; }
                 file.Read(buffer, oldFileLength);
                 fileSystem.CloseFile(file);
-
-                if (MD5_BlockChecksum(buffer, oldFileLength) != sourceFile.checksum)
-                {
-                    common.Warning($"The file {FileName} has been modified outside of the engine.");
-                    return false;
-                }
+                if (stringX.MD5Checksum(buffer) != sourceFile.checksum) { common.Warning($"The file {FileName} has been modified outside of the engine."); return false; }
             }
 
             // insert new text
-            var declText = GetText();
-            memmove(buffer + sourceTextOffset + textLength, buffer + sourceTextOffset + sourceTextLength, oldFileLength - sourceTextOffset - sourceTextLength);
-            memcpy(buffer + sourceTextOffset, declText, textLength);
+            var declText = Encoding.ASCII.GetBytes(Text);
+            Unsafe.CopyBlock(ref buffer[sourceTextOffset + textLength], ref buffer[sourceTextOffset + sourceTextLength], (uint)(oldFileLength - sourceTextOffset - sourceTextLength));
+            Unsafe.CopyBlock(ref buffer[sourceTextOffset], ref declText[0], (uint)textLength);
 
             // write out new file
             file = fileSystem.OpenFileWrite(FileName, "fs_devpath");
-            if (file == null)
-            {
-                common.Warning($"Couldn't open {FileName} for writing.");
-                return false;
-            }
+            if (file == null) { common.Warning($"Couldn't open {FileName} for writing."); return false; }
             file.Write(buffer, newFileLength);
             fileSystem.CloseFile(file);
 
             // set new file size, checksum and timestamp
             sourceFile.fileSize = newFileLength;
-            sourceFile.checksum = MD5_BlockChecksum(buffer, newFileLength);
+            sourceFile.checksum = stringX.MD5Checksum(buffer);
             fileSystem.ReadFile(FileName, out _, out sourceFile.timestamp);
-
-            // free buffer
-            buffer = null;
 
             // move all decls in the same file
             for (var decl = sourceFile.decls; decl != null; decl = decl.nextInFile)
@@ -196,6 +175,7 @@ namespace Gengine.Framework
 
             return true;
         }
+
         public override bool SourceFileChanged()
         {
             if (sourceFile.fileSize <= 0)
@@ -204,17 +184,16 @@ namespace Gengine.Framework
             var newLength = fileSystem.ReadFile(FileName, out _, out var newTimestamp);
             return newLength != sourceFile.fileSize || newTimestamp != sourceFile.timestamp;
         }
+
         static int MakeDefault_recursionLevel;
         public override void MakeDefault()
         {
-            string defaultText;
-
             declManagerLocal.MediaPrint("DEFAULTED\n");
             declState = DeclState.DS_DEFAULTED;
 
             AllocateSelf();
 
-            defaultText = self.DefaultDefinition;
+            var defaultText = self.DefaultDefinition;
 
             // a parse error inside a DefaultDefinition() string could cause an infinite loop, but normal default definitions could
             // still reference other default definitions, so we can't just dump out on the first recursion
@@ -225,27 +204,32 @@ namespace Gengine.Framework
             self.FreeData();
 
             // parse
-            self.Parse(defaultText, defaultText.Length);
+            self.Parse(defaultText);
 
             // we could still eventually hit the recursion if we have enough Error() calls inside Parse...
             --MakeDefault_recursionLevel;
         }
+
         public override bool EverReferenced => everReferenced;
 
         public override bool SetDefaultText() => false;
+
         public override string DefaultDefinition => "{ }";
-        public override bool Parse(string text, int textLength)
+
+        public override bool Parse(string text)
         {
             Lexer src = new();
-
-            src.LoadMemory(text, textLength, FileName, LineNum);
+            src.LoadMemory(text, FileName, LineNum);
             src.Flags = DECL_LEXER_FLAGS;
             src.SkipUntilString("{");
             src.SkipBracedSection(false);
             return true;
         }
+
         public override void FreeData() { }
+
         public override void List() => common.Printf($"{Name}\n");
+
         public override void Print() { }
 
         protected internal void AllocateSelf()
@@ -260,7 +244,7 @@ namespace Gengine.Framework
         // Parses the decl definition. After calling parse, a decl will be guaranteed usable.
         protected internal void ParseLocal()
         {
-            bool generatedDefaultText = false;
+            var generatedDefaultText = false;
 
             AllocateSelf();
 
@@ -270,14 +254,14 @@ namespace Gengine.Framework
             declManagerLocal.MediaPrint($"parsing {declManagerLocal.declTypes[(int)type].typeName} {name}\n");
 
             // if no text source try to generate default text
-            if (textSource == null)
+            if (text == null)
                 generatedDefaultText = self.SetDefaultText();
 
             // indent for DEFAULTED or media file references
             declManagerLocal.indent++;
 
             // no text immediately causes a MakeDefault()
-            if (textSource == null)
+            if (text == null)
             {
                 MakeDefault();
                 declManagerLocal.indent--;
@@ -287,13 +271,13 @@ namespace Gengine.Framework
             declState = DeclState.DS_PARSED;
 
             // parse
-            GetText(out var declText);
-            self.Parse(declText, TextLength);
+            var declText = Text;
+            self.Parse(declText);
 
             // free generated text
             if (generatedDefaultText)
             {
-                textSource = null;
+                text = null;
                 textLength = 0;
             }
 
@@ -335,7 +319,7 @@ namespace Gengine.Framework
         }
 
         // compression ratio = 64%
-        static int[] HuffmanFrequencies = {
+        public static int[] HuffmanFrequencies = {
             0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
             0x00000001, 0x00078fb6, 0x000352a7, 0x00000002, 0x00000001, 0x0002795e, 0x00000001, 0x00000001,
             0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001, 0x00000001,
@@ -377,7 +361,7 @@ namespace Gengine.Framework
         static int totalCompressedLength = 0;
         public static int maxHuffmanBits = 0;
 
-        static void ClearHuffmanFrequencies()
+        public static void ClearHuffmanFrequencies()
         {
             for (var i = 0; i < MAX_HUFFMAN_SYMBOLS; i++)
                 HuffmanFrequencies[i] = 1;
@@ -385,25 +369,16 @@ namespace Gengine.Framework
 
         static HuffmanNode InsertHuffmanNode(HuffmanNode firstNode, HuffmanNode node)
         {
-            HuffmanNode n, lastNode;
+            HuffmanNode n, lastNode = null;
 
-            lastNode = null;
             for (n = firstNode; n != null; n = n.next)
             {
                 if (node.frequency <= n.frequency)
                     break;
                 lastNode = n;
             }
-            if (lastNode != null)
-            {
-                node.next = lastNode.next;
-                lastNode.next = node;
-            }
-            else
-            {
-                node.next = firstNode;
-                firstNode = node;
-            }
+            if (lastNode != null) { node.next = lastNode.next; lastNode.next = node; }
+            else { node.next = firstNode; firstNode = node; }
             return firstNode;
         }
 
@@ -411,13 +386,12 @@ namespace Gengine.Framework
         {
             if (node.symbol == -1)
             {
-                HuffmanCode newCode = code;
+                var newCode = code;
                 Debug.Assert(code.numBits < sizeof(ulong) * 8);
                 newCode.numBits++;
-                if (code.numBits > maxHuffmanBits)
-                    maxHuffmanBits = newCode.numBits;
+                if (code.numBits > maxHuffmanBits) maxHuffmanBits = newCode.numBits;
                 BuildHuffmanCode_r(node.children0, newCode, codes);
-                newCode.bits[code.numBits >> 5] |= (1 << (code.numBits & 31));
+                newCode.bits[code.numBits >> 5] |= (uint)(1 << (code.numBits & 31));
                 BuildHuffmanCode_r(node.children1, newCode, codes);
             }
             else
@@ -440,8 +414,8 @@ namespace Gengine.Framework
         {
             if (node == null)
                 return -1;
-            int left = HuffmanHeight_r(node.children0);
-            int right = HuffmanHeight_r(node.children1);
+            var left = HuffmanHeight_r(node.children0);
+            var right = HuffmanHeight_r(node.children1);
             return left > right ? left + 1 : right + 1;
         }
 
@@ -494,14 +468,14 @@ namespace Gengine.Framework
                 FreeHuffmanTree_r(huffmanTree);
         }
 
-        public static int HuffmanCompressText(string text, int textLength, byte[] compressed, int maxCompressedSize)
+        public static int HuffmanCompressText(string text, int textLength, byte[] compressed)
         {
             int i, j;
             BitMsg msg = new();
 
             totalUncompressedLength += textLength;
 
-            msg.InitW(compressed, maxCompressedSize);
+            msg.InitW(compressed);
             msg.BeginWriting();
             for (i = 0; i < textLength; i++)
             {
@@ -517,24 +491,24 @@ namespace Gengine.Framework
             return msg.Size;
         }
 
-        public static int HuffmanDecompressText(string text, int textLength, byte[] compressed, int compressedSize)
+        public unsafe static int HuffmanDecompressText(out string text, int textLength, byte[] compressed)
         {
-            BitMsg msg = new();
-            HuffmanNode node;
+            int i; BitMsg msg = new(); HuffmanNode node;
 
-            msg.InitW(compressed, compressedSize);
-            msg.Size = compressedSize;
+            msg.InitW(compressed);
+            msg.Size = compressed.Length;
             msg.BeginReading();
-            for (var i = 0; i < textLength; i++)
+            var buffer = stackalloc char[textLength];
+            for (i = 0; i < textLength; i++)
             {
                 node = huffmanTree;
                 do node = msg.ReadBits(1) == 0
                     ? node.children0
                     : node.children1;
                 while (node.symbol == -1);
-                text[i] = node.symbol;
+                buffer[i] = (char)node.symbol;
             }
-            text[i] = '\0';
+            text = new string(buffer, 0, i);
             return msg.ReadCount;
         }
 
@@ -616,18 +590,8 @@ namespace Gengine.Framework
             // load the text
             common.DPrintf($"...loading '{fileName}'\n");
             length = fileSystem.ReadFile(fileName, out var buffer, out timestamp);
-            if (length == -1)
-            {
-                common.FatalError($"couldn't load {fileName}");
-                return 0;
-            }
-
-            if (!src.LoadMemory(buffer, length, fileName))
-            {
-                common.Error($"Couldn't parse {fileName}");
-                buffer = null;
-                return 0;
-            }
+            if (length == -1) { common.FatalError($"couldn't load {fileName}"); return 0; }
+            if (!src.LoadMemory(Encoding.ASCII.GetString(buffer), fileName)) { common.Error($"Couldn't parse {fileName}"); return 0; }
 
             // mark all the defs that were from the last reload of this file
             for (var decl = decls; decl != null; decl = decl.nextInFile)
@@ -635,7 +599,7 @@ namespace Gengine.Framework
 
             src.Flags = DeclBase.DECL_LEXER_FLAGS;
 
-            checksum = MD5_BlockChecksum(buffer, length);
+            checksum = stringX.MD5Checksum(buffer);
 
             fileSize = length;
 
@@ -664,7 +628,6 @@ namespace Gengine.Framework
                 }
 
                 if (i >= numTypes)
-                {
                     if (token == "{")
                     {
                         // if we ever see an open brace, we somehow missed the [type] <name> prefix
@@ -674,52 +637,26 @@ namespace Gengine.Framework
                     }
                     else
                     {
-                        if (defaultType == DECL.MAX_TYPES)
-                        {
-                            src.Warning("No type");
-                            continue;
-                        }
+                        if (defaultType == DECL.MAX_TYPES) { src.Warning("No type"); continue; }
                         src.UnreadToken(token);
                         // use the default type
                         identifiedType = defaultType;
                     }
-                }
 
                 // now parse the name
-                if (!src.ReadToken(out token))
-                {
-                    src.Warning("Type without definition at end of file");
-                    break;
-                }
+                if (!src.ReadToken(out token)) { src.Warning("Type without definition at end of file"); break; }
 
-                if (token == "{")
-                {
-                    // if we ever see an open brace, we somehow missed the [type] <name> prefix
-                    src.Warning("Missing decl name");
-                    src.SkipBracedSection(false);
-                    continue;
-                }
+                // if we ever see an open brace, we somehow missed the [type] <name> prefix
+                if (token == "{") { src.Warning("Missing decl name"); src.SkipBracedSection(false); continue; }
 
                 // FIXME: export decls are only used by the model exporter, they are skipped here for now
-                if (identifiedType == DECL.MODELEXPORT)
-                {
-                    src.SkipBracedSection();
-                    continue;
-                }
+                if (identifiedType == DECL.MODELEXPORT) { src.SkipBracedSection(); continue; }
 
                 name = token;
 
                 // make sure there's a '{'
-                if (!src.ReadToken(out token))
-                {
-                    src.Warning("Type without definition at end of file");
-                    break;
-                }
-                if (token != "{")
-                {
-                    src.Warning($"Expecting '{{' but found '{token}'");
-                    continue;
-                }
+                if (!src.ReadToken(out token)) { src.Warning("Type without definition at end of file"); break; }
+                if (token != "{") { src.Warning($"Expecting '{{' but found '{token}'"); continue; }
                 src.UnreadToken(token);
 
                 // now take everything until a matched closing brace
@@ -732,13 +669,8 @@ namespace Gengine.Framework
                 if (newDecl != null)
                 {
                     // update the existing copy
-                    if (newDecl.sourceFile != this || newDecl.redefinedInReload)
-                    {
-                        src.Warning($"{declManagerLocal.GetDeclNameFromType(identifiedType)} '{name}' previously defined at {newDecl.sourceFile.fileName}:{newDecl.sourceLine}");
-                        continue;
-                    }
-                    if (newDecl.declState != DeclState.DS_UNPARSED)
-                        reparse = true;
+                    if (newDecl.sourceFile != this || newDecl.redefinedInReload) { src.Warning($"{declManagerLocal.GetDeclNameFromType(identifiedType)} '{name}' previously defined at {newDecl.sourceFile.fileName}:{newDecl.sourceLine}"); continue; }
+                    if (newDecl.declState != DeclState.DS_UNPARSED) reparse = true;
                 }
                 else
                 {
@@ -750,10 +682,10 @@ namespace Gengine.Framework
 
                 newDecl.redefinedInReload = true;
 
-                if (newDecl.textSource != null)
-                    newDecl.textSource = null;
+                if (newDecl.text != null)
+                    newDecl.text = null;
 
-                newDecl.SetTextLocal(buffer + startMarker, size);
+                newDecl.Text = Encoding.ASCII.GetString(buffer, startMarker, size);
                 newDecl.sourceFile = this;
                 newDecl.sourceTextOffset = startMarker;
                 newDecl.sourceTextLength = size;
@@ -766,8 +698,6 @@ namespace Gengine.Framework
             }
 
             numLines = src.LineNum;
-
-            buffer = null;
 
             // any defs that weren't redefinedInReload should now be defaulted
             for (var decl = decls; decl != null; decl = decl.nextInFile)
@@ -829,7 +759,7 @@ namespace Gengine.Framework
 #endif
 
 #if GET_HUFFMAN_FREQUENCIES
-            ClearHuffmanFrequencies();
+            Huffman.ClearHuffmanFrequencies();
 #endif
 
             // decls used throughout the engine
@@ -902,8 +832,8 @@ namespace Gengine.Framework
                 {
                     decl = linearLists[i][j];
                     decl.self?.FreeData();
-                    if (decl.textSource != null)
-                        decl.textSource = null;
+                    if (decl.text != null)
+                        decl.text = null;
                 }
                 linearLists[i].Clear();
                 hashTables[i].Free();
@@ -945,11 +875,7 @@ namespace Gengine.Framework
 
         public virtual void RegisterDeclType(string typeName, DECL type, Func<Decl> allocator)
         {
-            if ((int)type < declTypes.Count && declTypes[(int)type] != null)
-            {
-                common.Warning($"DeclManager::RegisterDeclType: type '{typeName}' already exists");
-                return;
-            }
+            if ((int)type < declTypes.Count && declTypes[(int)type] != null) { common.Warning($"DeclManager::RegisterDeclType: type '{typeName}' already exists"); return; }
 
             var declType = new DeclType_
             {
@@ -959,7 +885,7 @@ namespace Gengine.Framework
             };
 
             if ((int)type + 1 > declTypes.Count)
-                declTypes.AssureSize((int)type + 1, null);
+                declTypes.AssureSize((int)type + 1);
             declTypes[(int)type] = declType;
         }
 
@@ -1008,33 +934,35 @@ namespace Gengine.Framework
             for (i = 0; i < (int)DECL.MAX_TYPES; i++)
                 total += linearLists[i].Count;
 
-            var checksumData = stackalloc int[total * 2];
-
-            total = 0;
-            for (i = 0; i < (int)DECL.MAX_TYPES; i++)
+            var checksumData = new byte[total * 2 * sizeof(int)];
+            fixed (byte* checksumDataB = checksumData)
             {
-                var type = (DECL)i;
+                var checksumDataI = (int*)checksumDataB;
 
-                // FIXME: not particularly pretty but PDAs and associated decls are localized and should not be checksummed
-                if (type == DECL.PDA || type == DECL.VIDEO || type == DECL.AUDIO || type == DECL.EMAIL)
-                    continue;
-
-                num = linearLists[i].Count;
-                for (j = 0; j < num; j++)
+                total = 0;
+                for (i = 0; i < (int)DECL.MAX_TYPES; i++)
                 {
-                    var decl = linearLists[i][j];
+                    var type = (DECL)i;
 
-                    if (decl.sourceFile == implicitDecls)
+                    // FIXME: not particularly pretty but PDAs and associated decls are localized and should not be checksummed
+                    if (type == DECL.PDA || type == DECL.VIDEO || type == DECL.AUDIO || type == DECL.EMAIL)
                         continue;
 
-                    checksumData[total * 2 + 0] = total;
-                    checksumData[total * 2 + 1] = decl.checksum;
-                    total++;
+                    num = linearLists[i].Count;
+                    for (j = 0; j < num; j++)
+                    {
+                        var decl = linearLists[i][j];
+                        if (decl.sourceFile == implicitDecls)
+                            continue;
+                        checksumDataI[total * 2 + 0] = total;
+                        checksumDataI[total * 2 + 1] = decl.checksum;
+                        total++;
+                    }
                 }
-            }
 
-            LittleRevBytes(checksumData, sizeof(int), total * 2);
-            return MD5_BlockChecksum(checksumData, total * 2 * sizeof(int));
+                Platform.LittleRevBytes(checksumDataB, sizeof(int), total * 2);
+            }
+            return stringX.MD5Checksum(checksumData);
         }
 
         public virtual int NumDeclTypes
@@ -1043,16 +971,14 @@ namespace Gengine.Framework
         public virtual int GetNumDecls(DECL type)
         {
             var typeIndex = (int)type;
-            if (typeIndex < 0 || typeIndex >= declTypes.Count || declTypes[typeIndex] == null)
-                common.FatalError($"DeclManager::GetNumDecls: bad type: {typeIndex}");
+            if (typeIndex < 0 || typeIndex >= declTypes.Count || declTypes[typeIndex] == null) common.FatalError($"DeclManager::GetNumDecls: bad type: {typeIndex}");
             return linearLists[typeIndex].Count;
         }
 
         public virtual string GetDeclNameFromType(DECL type)
         {
             var typeIndex = (int)type;
-            if (typeIndex < 0 || typeIndex >= declTypes.Count || declTypes[typeIndex] == null)
-                common.FatalError($"DeclManager::GetDeclNameFromType: bad type: {typeIndex}");
+            if (typeIndex < 0 || typeIndex >= declTypes.Count || declTypes[typeIndex] == null) common.FatalError($"DeclManager::GetDeclNameFromType: bad type: {typeIndex}");
             return declTypes[typeIndex].typeName;
         }
 
@@ -1098,10 +1024,8 @@ namespace Gengine.Framework
         {
             var typeIndex = (int)type;
 
-            if (typeIndex < 0 || typeIndex >= declTypes.Count || declTypes[typeIndex] == null)
-                common.FatalError($"DeclManager::DeclByIndex: bad type: {typeIndex}");
-            if (index < 0 || index >= linearLists[typeIndex].Count)
-                common.Error($"DeclManager::DeclByIndex: out of range");
+            if (typeIndex < 0 || typeIndex >= declTypes.Count || declTypes[typeIndex] == null) common.FatalError($"DeclManager::DeclByIndex: bad type: {typeIndex}");
+            if (index < 0 || index >= linearLists[typeIndex].Count) common.Error($"DeclManager::DeclByIndex: out of range");
             var decl = linearLists[typeIndex][index];
 
             decl.AllocateSelf();
@@ -1156,10 +1080,8 @@ namespace Gengine.Framework
             for (var i = 0; i < count; i++)
             {
                 var decl = linearLists[(int)type][i];
-
                 if (!all && decl.declState == DeclState.DS_UNPARSED)
                     continue;
-
                 if (!all && !ever && !decl.referencedThisLevel)
                     continue;
 
@@ -1182,25 +1104,17 @@ namespace Gengine.Framework
         public virtual void PrintType(CmdArgs args, DECL type)
         {
             // individual decl types may use additional command parameters
-            if (args.Count < 2)
-            {
-                common.Printf("USAGE: Print<decl type> <decl name> [type specific parms]\n");
-                return;
-            }
+            if (args.Count < 2) { common.Printf("USAGE: Print<decl type> <decl name> [type specific parms]\n"); return; }
 
             // look it up, skipping the public path so it won't parse or reference
             var decl = FindTypeWithoutParsing(type, args[1], false);
-            if (decl == null)
-            {
-                common.Printf($"{declTypes[(int)type].typeName} '{args[1]}' not found.\n");
-                return;
-            }
+            if (decl == null) { common.Printf($"{declTypes[(int)type].typeName} '{args[1]}' not found.\n"); return; }
 
             // print information common to all decls
             common.Printf($"{declTypes[(int)type].typeName} {decl.name}:\n");
             common.Printf($"source: {decl.sourceFile.fileName}:{decl.sourceLine}\n");
             common.Printf("----------\n");
-            if (decl.textSource != null) { decl.GetText(out var declText); common.Printf($"{declText}\n"); }
+            if (decl.text != null) common.Printf($"{decl.Text}\n");
             else common.Printf("NO SOURCE\n");
             common.Printf("----------\n");
             switch (decl.declState)
@@ -1224,12 +1138,11 @@ namespace Gengine.Framework
             var typeIndex = (int)type;
             int i, hash;
 
-            if (typeIndex < 0 || typeIndex >= declTypes.Count || declTypes[typeIndex] == null)
-                common.FatalError($"DeclManager::CreateNewDecl: bad type: {typeIndex}");
+            if (typeIndex < 0 || typeIndex >= declTypes.Count || declTypes[typeIndex] == null) common.FatalError($"DeclManager::CreateNewDecl: bad type: {typeIndex}");
 
             MakeNameCanonical(name, out var canonicalName);
 
-            fileName = fileName.BackSlashesToSlashes();
+            fileName = PathX.BackSlashesToSlashes(fileName);
 
             // see if it already exists
             hash = hashTables[typeIndex].GenerateKey(canonicalName, false);
@@ -1246,39 +1159,21 @@ namespace Gengine.Framework
             for (i = 0; i < loadedFiles.Count; i++)
                 if (string.Equals(loadedFiles[i].fileName, fileName, StringComparison.OrdinalIgnoreCase))
                     break;
-            if (i < loadedFiles.Count)
-                sourceFile = loadedFiles[i];
-            else
-            {
-                sourceFile = new DeclFile(fileName, type);
-                loadedFiles.Add(sourceFile);
-            }
+            if (i < loadedFiles.Count) sourceFile = loadedFiles[i];
+            else loadedFiles.Add(sourceFile = new DeclFile(fileName, type));
 
             var decl = new DeclLocal
             {
                 name = canonicalName,
                 type = type,
-                declState = DeclState.DS_UNPARSED
+                declState = DeclState.DS_UNPARSED,
+                sourceFile = sourceFile,
+                sourceTextOffset = sourceFile.fileSize,
+                sourceTextLength = 0,
+                sourceLine = sourceFile.numLines,
             };
             decl.AllocateSelf();
-            var header = declTypes[typeIndex].typeName;
-            var defaultText = decl.self.DefaultDefinition;
-
-            var size = header.Length + 1 + canonicalName.Length + 1 + defaultText.Length;
-            var declText = stackalloc char[size + 1];
-
-            memcpy(declText, header, header.Length);
-            declText[header.Length] = ' ';
-            memcpy(declText + header.Length + 1, canonicalName, canonicalName.Length);
-            declText[header.Length + 1 + canonicalName.Length] = ' ';
-            memcpy(declText + header.Length + 1 + canonicalName.Length + 1, defaultText, defaultText.Length + 1);
-
-            decl.SetTextLocal(declText, size);
-            decl.sourceFile = sourceFile;
-            decl.sourceTextOffset = sourceFile.fileSize;
-            decl.sourceTextLength = 0;
-            decl.sourceLine = sourceFile.numLines;
-
+            decl.Text = $"{declTypes[typeIndex].typeName} {canonicalName} {decl.self.DefaultDefinition}";
             decl.ParseLocal();
 
             // add this decl to the source file list
@@ -1340,17 +1235,13 @@ namespace Gengine.Framework
         {
             for (var i = 0; i < declTypes.Count; i++)
             {
-                if (declTypes[i] == null)
-                    continue;
+                if (declTypes[i] == null) continue;
 
                 var num = linearLists[i].Count;
-
                 for (var j = 0; j < num; j++)
                 {
                     var decl = linearLists[i][j];
-
-                    if (!decl.referencedThisLevel)
-                        continue;
+                    if (!decl.referencedThisLevel) continue;
 
                     var str = $"touch {declTypes[i].typeName} {decl.Name}\n";
                     common.Printf(str);
@@ -1401,8 +1292,7 @@ namespace Gengine.Framework
                 if (string.Equals(linearLists[typeIndex][i].name, canonicalName, StringComparison.OrdinalIgnoreCase))
                 {
                     // only print these when decl_show is set to 2, because it can be a lot of clutter
-                    if (decl_show.Integer > 1)
-                        MediaPrint($"referencing {declTypes[(int)type].typeName} {name}\n");
+                    if (decl_show.Integer > 1) MediaPrint($"referencing {declTypes[(int)type].typeName} {name}\n");
                     return linearLists[typeIndex][i];
                 }
             }
@@ -1416,7 +1306,7 @@ namespace Gengine.Framework
                 name = canonicalName,
                 type = type,
                 declState = DeclState.DS_UNPARSED,
-                textSource = null,
+                text = null,
                 textLength = 0,
                 sourceFile = implicitDecls,
                 referencedThisLevel = false,
@@ -1441,8 +1331,7 @@ namespace Gengine.Framework
             {
                 int size, num;
 
-                if (declManagerLocal.declTypes[i] == null)
-                    continue;
+                if (declManagerLocal.declTypes[i] == null) continue;
 
                 num = declManagerLocal.linearLists[i].Count;
                 totalDecls += num;
@@ -1473,17 +1362,8 @@ namespace Gengine.Framework
         static void ReloadDecls_f(CmdArgs args)
         {
             bool force;
-
-            if (string.Equals(args[1], "all", StringComparison.OrdinalIgnoreCase))
-            {
-                force = true;
-                common.Printf("reloading all decl files:\n");
-            }
-            else
-            {
-                force = false;
-                common.Printf("reloading changed decl files:\n");
-            }
+            if (string.Equals(args[1], "all", StringComparison.OrdinalIgnoreCase)) { force = true; common.Printf("reloading all decl files:\n"); }
+            else { force = false; common.Printf("reloading changed decl files:\n"); }
 
             soundSystem.SetMute(true);
 
@@ -1501,8 +1381,7 @@ namespace Gengine.Framework
                 common.Printf("usage: touch <type> <name>\n");
                 common.Printf("valid types: ");
                 for (i = 0; i < declManagerLocal.declTypes.Count; i++)
-                    if (declManagerLocal.declTypes[i] != null)
-                        common.Printf($"{declManagerLocal.declTypes[i].typeName} ");
+                    if (declManagerLocal.declTypes[i] != null) common.Printf($"{declManagerLocal.declTypes[i].typeName} ");
                 common.Printf("\n");
                 return;
             }
@@ -1510,15 +1389,10 @@ namespace Gengine.Framework
             for (i = 0; i < declManagerLocal.declTypes.Count; i++)
                 if (declManagerLocal.declTypes[i] != null && string.Equals(declManagerLocal.declTypes[i].typeName, args[1], StringComparison.OrdinalIgnoreCase))
                     break;
-            if (i >= declManagerLocal.declTypes.Count)
-            {
-                common.Printf($"unknown decl type '{args[1]}'\n");
-                return;
-            }
+            if (i >= declManagerLocal.declTypes.Count) { common.Printf($"unknown decl type '{args[1]}'\n"); return; }
 
             var decl = declManagerLocal.FindType((DECL)i, args[2], false);
-            if (decl == null)
-                common.Printf($"{declManagerLocal.declTypes[i].typeName} '{args[2]}' not found\n");
+            if (decl == null) common.Printf($"{declManagerLocal.declTypes[i].typeName} '{args[2]}' not found\n");
         }
     }
 }

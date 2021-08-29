@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Gengine.NumericsX.Core;
-using Gengine.NumericsX.Sys;
+using Gengine.Library.Core;
+using Gengine.Library.Sys;
 
 namespace Gengine.UI
 {

@@ -44,8 +44,7 @@ namespace System.NumericsX
         public DynamicElement<T> Alloc(int num)
         {
             numAllocs++;
-            if (num <= 0)
-                return default;
+            if (num <= 0) return default;
             numUsedBlocks++;
             usedBlockMemory += num * sizeofT;
             var block = new DynamicElement<T> { Value = factory(num * sizeofT) }; block.Memory = block.Value.AsMemory();

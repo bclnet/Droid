@@ -18,6 +18,11 @@
     <Compile Remove="Framework\Async\AsyncServer.cs" />
     <Compile Remove="Framework\Async\NetworkSystem.cs" />
     <Compile Remove="Framework\Async\ServerScan.cs" />
+    <Compile Remove="Framework\UsercmdGenLocal.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Framework\UsercmdGenLocal.cs" />
   </ItemGroup>
 
   <ItemGroup>

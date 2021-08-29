@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Gengine.NumericsX\Gengine.NumericsX.csproj" />
+    <ProjectReference Include="..\Gengine.Library\Gengine.Library.csproj" />
   </ItemGroup>
 
   <ItemGroup>

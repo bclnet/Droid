@@ -1,5 +1,5 @@
 using Gengine.Framework;
-using Gengine.NumericsX.Core;
+using Gengine.Library.Core;
 using Gengine.Render;
 using System.NumericsX;
 using ChannelType = System.Int32; // the game uses its own series of enums, and we don't want to require casts
@@ -7,7 +7,7 @@ using ChannelType = System.Int32; // the game uses its own series of enums, and 
 namespace Gengine.Sound
 {
     // these options can be overriden from sound shader defaults on a per-emitter and per-channel basis
-    public struct SoundShaderParms
+    public class SoundShaderParms
     {
         public float minDistance;
         public float maxDistance;
@@ -15,6 +15,11 @@ namespace Gengine.Sound
         public float shakes;
         public int soundShaderFlags;        // SSF_* bit flags
         public int soundClass;              // for global fading of sounds
+
+        internal void memset()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
     public interface ISoundShader { }
@@ -131,7 +136,7 @@ namespace Gengine.Sound
         public const int SSF_NO_FLICKER = 1 << 8;   // always return 1.0 for volume queries
         public const int SSF_NO_DUPS = 1 << 9;  // try not to play the same sound twice in a row
 
-        const int SOUND_MAX_LIST_WAVS = 32;
+        internal const int SOUND_MAX_LIST_WAVS = 32;
         // sound classes are used to fade most sounds down inside cinematics, leaving dialog flagged with a non-zero class full volume
         const int SOUND_MAX_CLASSES = 4;
 
@@ -173,12 +178,10 @@ namespace Gengine.Sound
         // if rw == NULL, no portal occlusion or rendered debugging is available
         ISoundWorld AllocSoundWorld(IRenderWorld rw);
 
-        // specifying NULL will cause silence to be played
-        void SetPlayingSoundWorld(ISoundWorld soundWorld);
-
         // some tools, like the sound dialog, may be used in both the game and the editor
+        // specifying NULL will cause silence to be played
         // This can return NULL, so check!
-        ISoundWorld GetPlayingSoundWorld();
+        ISoundWorld PlayingSoundWorld { get; set; }
 
         // Mark all soundSamples as currently unused,
         // but don't free anything.

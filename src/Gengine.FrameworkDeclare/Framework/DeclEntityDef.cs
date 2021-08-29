@@ -1,5 +1,6 @@
+using Gengine.Library;
+using Gengine.Library.Core;
 using System.Collections.Generic;
-using Gengine.NumericsX.Core;
 using static Gengine.Lib;
 
 namespace Gengine.Framework
@@ -14,37 +15,20 @@ namespace Gengine.Framework
 	DEFAULTED ""1""
 }";
 
-        public override bool Parse(string text, int textLength)
+        public override bool Parse(string text)
         {
             Lexer src = new();
-
-            src.LoadMemory(text, textLength, FileName, LineNum);
+            src.LoadMemory(text, FileName, LineNum);
             src.Flags = DeclBase.DECL_LEXER_FLAGS;
             src.SkipUntilString("{");
 
             while (true)
             {
-                if (!src.ReadToken(out var token))
-                    break;
-
-                if (token == "}")
-                    break;
-                if (token.type != TT.STRING)
-                {
-                    src.Warning($"Expected quoted string, but found '{token}'");
-                    MakeDefault();
-                    return false;
-                }
-
-                if (!src.ReadToken(out var token2))
-                {
-                    src.Warning("Unexpected end of file");
-                    MakeDefault();
-                    return false;
-                }
-
-                if (dict.ContainsKey(token))
-                    src.Warning($"'{token}' already defined");
+                if (!src.ReadToken(out var token)) break;
+                if (token == "}") break;
+                if (token.type != TT.STRING) { src.Warning($"Expected quoted string, but found '{token}'"); MakeDefault(); return false; }
+                if (!src.ReadToken(out var token2)) { src.Warning("Unexpected end of file"); MakeDefault(); return false; }
+                if (dict.ContainsKey(token)) src.Warning($"'{token}' already defined");
                 dict[token] = token2;
             }
 
@@ -59,9 +43,8 @@ namespace Gengine.Framework
 
             while (true)
             {
-                var kv = dict.MatchPrefix("inherit", null);
-                if (kv == null)
-                    break;
+                var kv = dict.MatchPrefix("inherit");
+                if (kv.Key == null) break;
 
                 var copy = (DeclEntityDef)declManager.FindType(DECL.ENTITYDEF, kv.Value, false);
                 if (copy == null) src.Warning($"Unknown entityDef '{kv.Value}' inherited by '{Name}'");

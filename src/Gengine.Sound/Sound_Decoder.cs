@@ -1,53 +1,76 @@
 //#define OV_EXCLUDE_STATIC_CALLBACKS
 //#include <vorbis/codec.h>
 //#include <vorbis/vorbisfile.h>
-
-using Gengine.Framework;
-using OpenTK.Audio.OpenAL;
+using Gengine.Library.Core;
+using Gengine.Library.Sys;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
-using static Gengine.Lib;
-using static Gengine.NumericsX.Lib;
 using System.NumericsX;
-using Gengine.NumericsX.Sys;
+using static Gengine.Library.Lib;
+using FourCC = System.Int32;
 
 namespace Gengine.Sound
 {
-    // Thread safe decoder memory allocator.
-    // Each OggVorbis decoder consumes about 150kB of memory.
-    static class _decoder
+    // flags for wFormatTag field of WAVEFORMAT
+    public enum WAVE_FORMAT_TAG : short
     {
-        internal static DynamicBlockAlloc<byte> decoderMemoryAllocator = new(1 << 20, 128, 0, x => new byte[x]);
-        const int MIN_OGGVORBIS_MEMORY = 768 * 1024;
+        PCM = 1,
+        OGG = 2
+    }
 
-        static DynamicElement<byte> malloc(int size)
+    public struct WaveformatEx
+    {
+        public WAVE_FORMAT_TAG wFormatTag;        // format type
+        public short nChannels;         // number of channels (i.e. mono, stereo...)
+        public int nSamplesPerSec;    // sample rate
+        public int nAvgBytesPerSec;   // for buffer estimation
+        public short nBlockAlign;       // block size of data
+        public short wBitsPerSample;    // Number of bits per sample of mono data
+        public short cbSize;            // The count in bytes of the size of extra information (after cbSize)
+        internal void memset() => this = new WaveformatEx();
+    }
+
+    // OLD general waveform format structure (information common to all formats)
+    public struct Waveformat
+    {
+        public WAVE_FORMAT_TAG wFormatTag;        // format type
+        public short nChannels;         // number of channels (i.e. mono, stereo, etc.)
+        public int nSamplesPerSec;    // sample rate
+        public int nAvgBytesPerSec;   // for buffer estimation
+        public short nBlockAlign;       // block size of data
+    }
+
+    // specific waveform format structure for PCM data
+    public struct Pcmwaveformat
+    {
+        public Waveformat wf;
+        public short wBitsPerSample;
+    }
+
+    public struct WaveformatExtensible
+    {
+        public WaveformatEx Format;
+        //      union {
+        //short wValidBitsPerSample;       // bits of precision 
+        //      short wSamplesPerBlock;          // valid if wBitsPerSample==0
+        //      short wReserved;                 // If neither applies, set to zero
+        //      } Samples;
+        public int dwChannelMask;      // which channels are
+        public int SubFormat; // present in stream 
+
+        internal void memset()
         {
-            var ptr = decoderMemoryAllocator.Alloc(size);
-            Debug.Assert(size == 0 || ptr != null);
-            return ptr;
+            throw new NotImplementedException();
         }
+    }
 
-        static DynamicElement<byte> calloc(int num, int size)
-        {
-            var ptr = decoderMemoryAllocator.Alloc(num * size);
-            Debug.Assert((num * size) == 0 || ptr != null);
-            //memset(ptr, 0, num * size);
-            return ptr;
-        }
-
-        static DynamicElement<byte> realloc(DynamicElement<byte> memblock, int size)
-        {
-            var ptr = decoderMemoryAllocator.Resize(memblock, size);
-            Debug.Assert(size == 0 || ptr.Value != null);
-            return ptr;
-        }
-
-        static void free(DynamicElement<byte> memblock)
-            => decoderMemoryAllocator.Free(memblock);
+    // RIFF chunk information data structure
+    public struct Mminfo
+    {
+        public FourCC ckid;           // chunk ID //
+        public uint cksize;         // chunk size //
+        public FourCC fccType;        // form type or list type //
+        public int dwDataOffset;   // offset of data portion of chunk //
     }
 
     // OggVorbis file loading/decoding.
@@ -94,7 +117,7 @@ namespace Gengine.Sound
         }
     }
 
-    partial class WaveFile
+    public partial class WaveFile
     {
         int OpenOGG(string strFileName, WaveformatEx pwfx)
         {
@@ -183,7 +206,6 @@ namespace Gengine.Sound
             return dwSizeToRead;
         }
 
-
         int CloseOGG()
         {
             OggVorbis_File* ov = (OggVorbis_File*)ogg;
@@ -202,28 +224,59 @@ namespace Gengine.Sound
         }
     }
 
+    // Sound sample decoder
     public interface ISampleDecoder
     {
+        const int MIN_OGGVORBIS_MEMORY = 768 * 1024;
+        // Thread safe decoder memory allocator. Each OggVorbis decoder consumes about 150kB of memory.
+        internal static DynamicBlockAlloc<byte> decoderMemoryAllocator = new(1 << 20, 128, 0, x => new byte[x]);
+        internal static BlockAlloc<SampleDecoderLocal> sampleDecoderAllocator = new(64, new SampleDecoderLocal());
+
+        static DynamicElement<byte> decoder_malloc(int size)
+        {
+            var ptr = decoderMemoryAllocator.Alloc(size);
+            Debug.Assert(size == 0 || ptr != null);
+            return ptr;
+        }
+
+        static DynamicElement<byte> decoder_calloc(int num, int size)
+        {
+            var ptr = decoderMemoryAllocator.Alloc(num * size);
+            Debug.Assert((num * size) == 0 || ptr != null);
+            return ptr;
+        }
+
+        static DynamicElement<byte> decoder_realloc(DynamicElement<byte> memblock, int size)
+        {
+            var ptr = decoderMemoryAllocator.Resize(memblock, size);
+            Debug.Assert(size == 0 || ptr.Value != null);
+            return ptr;
+        }
+
+        static void decoder_free(DynamicElement<byte> memblock)
+            => decoderMemoryAllocator.Free(memblock);
+
         public static void Init()
         {
-            _decoder.decoderMemoryAllocator.Init();
-            _decoder.decoderMemoryAllocator.SetLockMemory(true);
-            _decoder.decoderMemoryAllocator.SetFixedBlocks(SoundSystemLocal.s_realTimeDecoding.Bool ? 10 : 1);
+            decoderMemoryAllocator.Init();
+            decoderMemoryAllocator.SetLockMemory(true);
+            decoderMemoryAllocator.SetFixedBlocks(SoundSystemLocal.s_realTimeDecoding.Bool ? 10 : 1);
         }
+
         public static void Shutdown()
         {
-            _decoder.decoderMemoryAllocator.Shutdown();
+            decoderMemoryAllocator.Shutdown();
             sampleDecoderAllocator.Shutdown();
         }
         public static ISampleDecoder Alloc()
         {
-            idSampleDecoderLocal* decoder = sampleDecoderAllocator.Alloc();
+            var decoder = sampleDecoderAllocator.Alloc();
             decoder.Clear();
             return decoder;
         }
         public static void Free(ISampleDecoder decoder)
         {
-            idSampleDecoderLocal* localDecoder = static_cast<idSampleDecoderLocal*>(decoder);
+            var localDecoder = (SampleDecoderLocal)decoder;
             localDecoder.ClearDecoder();
             sampleDecoderAllocator.Free(localDecoder);
         }
@@ -240,17 +293,14 @@ namespace Gengine.Sound
         int LastDecodeTime { get; }
     }
 
-
-    public class SampleDecoderLocal : ISampleDecoder
+    public class SampleDecoderLocal : BlockAllocElement<SampleDecoderLocal>, ISampleDecoder
     {
-        public static BlockAlloc<SampleDecoderLocal> sampleDecoderAllocator = new(64);
-
         bool failed;                // set if decoding failed
         int lastFormat;         // last format being decoded
         SoundSample lastSample;         // last sample being decoded
         int lastSampleOffset;   // last offset into the decoded sample
         int lastDecodeTime;     // last time decoding sound
-        VMemoryFile file;               // encoded file in memory
+        VFile_Memory file;               // encoded file in memory
 
         OggVorbis_File ogg;             // OggVorbis file
 
@@ -350,7 +400,7 @@ namespace Gengine.Sound
             if (lastSample == null)
             {
                 // make sure there is enough space for another decoder
-                if (decoderMemoryAllocator.FreeBlockMemory < MIN_OGGVORBIS_MEMORY)
+                if (ISampleDecoder.decoderMemoryAllocator.FreeBlockMemory < ISampleDecoder.MIN_OGGVORBIS_MEMORY)
                     return 0;
                 if (sample.nonCacheData == null)
                 {
@@ -358,7 +408,7 @@ namespace Gengine.Sound
                     failed = true;
                     return 0;
                 }
-                file.SetData((string)sample.nonCacheData, sample.objectMemSize );
+                file.SetData(sample.nonCacheData.Value, sample.objectMemSize);
                 if (ov_openFile(file, ogg) < 0)
                 {
                     failed = true;
@@ -374,7 +424,7 @@ namespace Gengine.Sound
                 {
                     failed = true;
                     return 0;
-            }
+                }
 
             lastSampleOffset = sampleOffset;
 
@@ -405,7 +455,7 @@ namespace Gengine.Sound
 
             lastSampleOffset += readSamples;
 
-            return (readSamples << shift);
+            return readSamples << shift;
         }
     }
 }

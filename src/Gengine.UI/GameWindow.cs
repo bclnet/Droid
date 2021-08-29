@@ -1,4 +1,4 @@
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 
 namespace Gengine.UI
 {

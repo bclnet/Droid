@@ -1,4 +1,3 @@
-using System.NumericsX;
 using static System.NumericsX.Plane;
 
 namespace System.NumericsX

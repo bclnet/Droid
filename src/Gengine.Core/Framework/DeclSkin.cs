@@ -1,7 +1,7 @@
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
-using Gengine.NumericsX.Core;
+using Gengine.Library.Core;
 using static Gengine.Lib;
 
 namespace Gengine.Framework
@@ -29,7 +29,7 @@ namespace Gengine.Framework
 $@"skin {Name} // IMPLICITLY GENERATED {{
     _default {Name}
 }}";
-                SetText(generated);
+                Text = generated;
                 return true;
             }
             return false;
@@ -40,11 +40,10 @@ $@"skin {Name} // IMPLICITLY GENERATED {{
 	""*"" _default
 }";
 
-        public override bool Parse(string text, int textLength)
+        public override bool Parse(string text)
         {
             Lexer src = new();
-
-            src.LoadMemory(text, textLength, FileName, LineNum);
+            src.LoadMemory(text, FileName, LineNum);
             src.Flags = DeclBase.DECL_LEXER_FLAGS;
             src.SkipUntilString("{");
 

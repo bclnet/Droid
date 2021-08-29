@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Gengine.NumericsX.Core;
+using Gengine.Library.Core;
 using static Gengine.Lib;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 
 namespace Gengine.Framework
 {
@@ -31,11 +31,10 @@ namespace Gengine.Framework
 		from 5No one
 	}
 }";
-        public override bool Parse(string text, int textLength)
+        public override bool Parse(string text)
         {
             Lexer src = new();
-
-            src.LoadMemory(text, textLength, FileName, LineNum);
+            src.LoadMemory(text, FileName, LineNum);
             src.Flags = LEXFL.NOSTRINGCONCAT | LEXFL.ALLOWPATHNAMES | LEXFL.ALLOWMULTICHARLITERALS | LEXFL.ALLOWBACKSLASHSTRINGCONCAT | LEXFL.NOFATALERRORS;
             src.SkipUntilString("{");
 
@@ -91,11 +90,11 @@ namespace Gengine.Framework
 		name 5Default Video
 	}
 }";
-        public override bool Parse(string text, int textLength)
+        public override bool Parse(string text)
         {
             Lexer src = new();
 
-            src.LoadMemory(text, textLength, FileName, LineNum);
+            src.LoadMemory(text, FileName, LineNum);
             src.Flags = LEXFL.NOSTRINGCONCAT | LEXFL.ALLOWPATHNAMES | LEXFL.ALLOWMULTICHARLITERALS | LEXFL.ALLOWBACKSLASHSTRINGCONCAT | LEXFL.NOFATALERRORS;
             src.SkipUntilString("{");
 
@@ -142,11 +141,10 @@ namespace Gengine.Framework
 		name 5Default Audio
 	}
 }";
-        public override bool Parse(string text, int textLength)
+        public override bool Parse(string text)
         {
             Lexer src = new();
-
-            src.LoadMemory(text, textLength, FileName, LineNum);
+            src.LoadMemory(text, FileName, LineNum);
             src.Flags = LEXFL.NOSTRINGCONCAT | LEXFL.ALLOWPATHNAMES | LEXFL.ALLOWMULTICHARLITERALS | LEXFL.ALLOWBACKSLASHSTRINGCONCAT | LEXFL.NOFATALERRORS;
             src.SkipUntilString("{");
 
@@ -202,11 +200,10 @@ namespace Gengine.Framework
     name ""default pda""
 }";
 
-        public override bool Parse(string text, int textLength)
+        public override bool Parse(string text)
         {
             Lexer src = new();
-
-            src.LoadMemory(text, textLength, FileName, LineNum);
+            src.LoadMemory(text, FileName, LineNum);
             src.Flags = DeclBase.DECL_LEXER_FLAGS;
             src.SkipUntilString("{");
 

@@ -1,9 +1,9 @@
-using Gengine.NumericsX.Core;
+using Gengine.Library.Core;
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
 using static Gengine.Lib;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 
 namespace Gengine.Framework
 {
@@ -77,42 +77,23 @@ namespace Gengine.Framework
 	}
 }";
 
-        public override bool Parse(string text, int textLength)
+        public override bool Parse(string text)
         {
             Lexer src = new();
-            src.LoadMemory(text, textLength, FileName, LineNum);
+            src.LoadMemory(text, FileName, LineNum);
             src.Flags = DeclBase.DECL_LEXER_FLAGS;
             src.SkipUntilString("{");
 
             // scan through, identifying each individual parameter
             while (true)
             {
-                if (!src.ReadToken(out var token))
-                    break;
-
-                if (token == "}")
-                    break;
-
-                if (string.Equals(token, "bindto", StringComparison.OrdinalIgnoreCase))
-                {
-                    src.ReadToken(out token);
-                    joint = token;
-                    continue;
-                }
-
-                if (token == "{")
-                {
-                    ParseSingleFXAction(src, out var action);
-                    events.Add(action);
-                    continue;
-                }
+                if (!src.ReadToken(out var token)) break;
+                if (token == "}") break;
+                if (string.Equals(token, "bindto", StringComparison.OrdinalIgnoreCase)) { src.ReadToken(out token); joint = token; continue; }
+                if (token == "{") { ParseSingleFXAction(src, out var action); events.Add(action); continue; }
             }
 
-            if (src.HadError)
-            {
-                src.Warning($"FX decl '{Name}' had a parse error");
-                return false;
-            }
+            if (src.HadError) { src.Warning($"FX decl '{Name}' had a parse error"); return false; }
             return true;
         }
 
@@ -125,7 +106,7 @@ namespace Gengine.Framework
 
             common.Printf($"{list.events.Count} events\n");
             for (var i = 0; i < list.events.Count; i++)
-                switch ((FX)list.events[i].type)
+                switch (list.events[i].type)
                 {
                     case FX.LIGHT: common.Printf($"FX_LIGHT {list.events[i].data}\n"); break;
                     case FX.PARTICLE: common.Printf($"FX_PARTICLE {list.events[i].data}\n"); break;
@@ -185,10 +166,8 @@ namespace Gengine.Framework
 
             while (true)
             {
-                if (!src.ReadToken(out var token))
-                    break;
-                if (token == "}")
-                    break;
+                if (!src.ReadToken(out var token)) break;
+                if (token == "}") break;
                 if (string.Equals(token, "shake", StringComparison.OrdinalIgnoreCase))
                 {
                     FXAction.type = FX.SHAKE;

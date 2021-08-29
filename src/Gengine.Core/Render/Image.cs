@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using GLuint = System.Int32;
 using GLenum = System.Int32;
-using Gengine.NumericsX.Core;
+using Gengine.Library.Core;
 using Gengine.Framework;
 
 namespace Gengine.Render

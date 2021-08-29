@@ -1,10 +1,11 @@
-using Gengine.NumericsX.Core;
+using Gengine.Library;
+using Gengine.Library.Core;
 using Gengine.Render;
 using System.Collections.Generic;
 using System.NumericsX;
 using System.Text;
 using static Gengine.Lib;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 using GlIndex = System.Int32;
 
 namespace Gengine.UI

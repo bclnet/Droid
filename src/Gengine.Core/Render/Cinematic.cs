@@ -20,6 +20,11 @@ namespace Gengine.Render
         public int imageWidth, imageHeight; // will be a power of 2
         public byte[] image;                // RGBA format, alpha will be 255
         public int status;
+
+        internal void memset()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class Cinematic

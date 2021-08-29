@@ -1,9 +1,9 @@
-using Gengine.NumericsX.Core;
-using Gengine.NumericsX.Sys;
+using Gengine.Library.Core;
+using Gengine.Library.Sys;
 using System;
 using System.NumericsX;
-using static Gengine.NumericsX.Core.Key;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Core.Key;
+using static Gengine.Library.Lib;
 
 namespace Gengine.UI
 {

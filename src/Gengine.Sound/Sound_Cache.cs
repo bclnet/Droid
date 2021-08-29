@@ -1,18 +1,18 @@
 //#define USE_SOUND_CACHE_ALLOCATOR
 using Gengine.Framework;
+using Gengine.Library;
+using Gengine.Library.Core;
 using OpenTK.Audio.OpenAL;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
-using static Gengine.Lib;
-using static Gengine.NumericsX.Lib;
 using System.NumericsX;
-using System.NumericsX.Core;
+using static Gengine.Lib;
+using static Gengine.Library.Lib;
 
 namespace Gengine.Sound
 {
+    // The actual sound cache
     public class SoundCache
     {
 #if USE_SOUND_CACHE_ALLOCATOR
@@ -28,7 +28,7 @@ namespace Gengine.Sound
         {
             soundCacheAllocator.Init();
             soundCacheAllocator.SetLockMemory(true);
-            listCache.AssureSize(1024, null);
+            listCache.AssureSize(1024);
             listCache.SetGranularity(256);
             insideLevelLoad = false;
         }
@@ -42,7 +42,7 @@ namespace Gengine.Sound
         // Adds a sound object to the cache and returns a handle for it.
         public SoundSample FindSound(string filename, bool loadOnDemandOnly)
         {
-            var fname = filename.Replace('\\', '/').ToLowerInvariant();
+            var fname = PathX.BackSlashesToSlashes(filename).ToLowerInvariant();
 
             declManager.MediaPrint($"{fname}\n");
 
@@ -54,8 +54,7 @@ namespace Gengine.Sound
                 if (def != null && def.name == fname)
                 {
                     def.levelLoadReferenced = true;
-                    if (def.purged && !loadOnDemandOnly)
-                        def.Load();
+                    if (def.purged && !loadOnDemandOnly) def.Load();
                     return def;
                 }
             }
@@ -73,9 +72,7 @@ namespace Gengine.Sound
             def.purged = true;
 
             // this may make it a default sound if it can't be loaded
-            if (!loadOnDemandOnly)
-                def.Load();
-
+            if (!loadOnDemandOnly) def.Load();
             return def;
         }
 
@@ -101,19 +98,13 @@ namespace Gengine.Sound
         public void BeginLevelLoad()
         {
             insideLevelLoad = true;
-
             for (var i = 0; i < listCache.Count; i++)
             {
                 var sample = listCache[i];
-                if (sample == null)
-                    continue;
-
-                if (C.com_purgeAll.Bool)
-                    sample.PurgeSoundSample();
-
+                if (sample == null) continue;
+                if (C.com_purgeAll.Bool) sample.PurgeSoundSample();
                 sample.levelLoadReferenced = false;
             }
-
             soundCacheAllocator.FreeEmptyBaseBlocks();
         }
 
@@ -122,7 +113,6 @@ namespace Gengine.Sound
         {
             int useCount, purgeCount;
             common.Printf("----- SoundCache::EndLevelLoad -----\n");
-
             insideLevelLoad = false;
 
             // purge the ones we don't need
@@ -131,10 +121,8 @@ namespace Gengine.Sound
             for (var i = 0; i < listCache.Count; i++)
             {
                 var sample = listCache[i];
-                if (sample == null)
-                    continue;
-                if (sample.purged)
-                    continue;
+                if (sample == null) continue;
+                if (sample.purged) continue;
                 if (!sample.levelLoadReferenced)
                 {
                     //common.Printf($"Purging {sample.name}\n");
@@ -200,9 +188,25 @@ namespace Gengine.Sound
         }
     }
 
+    // This class holds the actual wavefile bitmap, size, and info
     public class SoundSample
     {
         public const int SCACHE_SIZE = SIMD.MIXBUFFER_SAMPLES * 20; // 1/2 of a second (aroundabout)
+
+        public string name;                     // name of the sample file
+        public DateTime timestamp;              // the most recent of all images used in creation, for reloadImages command
+
+        public WaveformatEx objectInfo;         // what are we caching
+        public int objectSize;                  // size of waveform in samples, excludes the header
+        public int objectMemSize;               // object size in memory
+        public DynamicElement<byte> nonCacheData;             // if it's not cached
+        public DynamicElement<byte> amplitudeData;                // precomputed min,max amplitude pairs
+        public int openalBuffer;                // openal buffer
+        public bool hardwareBuffer;
+        public bool defaultSound;
+        public bool onDemand;
+        public bool purged;
+        public bool levelLoadReferenced;        // so we can tell which samples aren't needed any more
 
         public SoundSample()
         {
@@ -221,21 +225,6 @@ namespace Gengine.Sound
 
         public void Dispose()
             => PurgeSoundSample();
-
-        public string name;                     // name of the sample file
-        public DateTime timestamp;                    // the most recent of all images used in creation, for reloadImages command
-
-        public WaveformatEx objectInfo;                  // what are we caching
-        public int objectSize;                 // size of waveform in samples, excludes the header
-        public int objectMemSize;              // object size in memory
-        public byte[] nonCacheData;             // if it's not cached
-        public byte[] amplitudeData;                // precomputed min,max amplitude pairs
-        public int openalBuffer;                // openal buffer
-        public bool hardwareBuffer;
-        public bool defaultSound;
-        public bool onDemand;
-        public bool purged;
-        public bool levelLoadReferenced;       // so we can tell which samples aren't needed any more
 
         // objectSize is samples
         public int LengthIn44kHzSamples
@@ -262,14 +251,9 @@ namespace Gengine.Sound
             }
         }
 
-        public void MakeDefault()             // turns it into a beep
+        public unsafe void MakeDefault()             // turns it into a beep
         {
-            int i;
-            float v;
-            int sample;
-
             objectInfo.memset();
-
             objectInfo.nChannels = 1;
             objectInfo.wBitsPerSample = 16;
             objectInfo.nSamplesPerSec = 44100;
@@ -277,30 +261,27 @@ namespace Gengine.Sound
             objectSize = SIMD.MIXBUFFER_SAMPLES * 2;
             objectMemSize = objectSize * sizeof(short);
 
-            nonCacheData = (byte*)SoundCache.soundCacheAllocator.Alloc(objectMemSize);
+            nonCacheData = SoundCache.soundCacheAllocator.Alloc(objectMemSize);
 
-            short* ncd = (short*)nonCacheData;
-
-            for (i = 0; i < SIMD.MIXBUFFER_SAMPLES; i++)
+            fixed (byte* valueB = nonCacheData.Value)
             {
-                v = (float)Math.Sin(MathX.PI * 2 * i / 64);
-                sample = v * 0x4000;
-                ncd[i * 2 + 0] = sample;
-                ncd[i * 2 + 1] = sample;
+                var ncd = (short*)valueB;
+                for (var i = 0; i < SIMD.MIXBUFFER_SAMPLES; i++)
+                {
+                    var v = (float)Math.Sin(MathX.PI * 2 * i / 64);
+                    var sample = (short)(v * 0x4000);
+                    ncd[i * 2 + 0] = sample;
+                    ncd[i * 2 + 1] = sample;
+                }
             }
 
             AL.GetError();
             AL.GenBuffers(1, ref openalBuffer);
-            if (AL.GetError() != ALError.NoError)
-                common.Error("idSoundCache: error generating OpenAL hardware buffer");
+            if (AL.GetError() != ALError.NoError) common.Error("SoundCache: error generating OpenAL hardware buffer");
 
             AL.GetError();
-            AL.BufferData(openalBuffer, objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, nonCacheData, objectMemSize, objectInfo.nSamplesPerSec);
-            if (AL.GetError() != ALError.NoError)
-            {
-                common.Warning("idSoundCache: error loading data into OpenAL hardware buffer");
-                hardwareBuffer = false;
-            }
+            AL.BufferData(openalBuffer, objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, ref nonCacheData.Value[0], objectMemSize, objectInfo.nSamplesPerSec);
+            if (AL.GetError() != ALError.NoError) { common.Warning("SoundCache: error loading data into OpenAL hardware buffer"); }
             else hardwareBuffer = true;
 
             defaultSound = true;
@@ -315,54 +296,21 @@ namespace Gengine.Sound
 
             timestamp = NewTimeStamp;
 
-            if (timestamp == DateTime.MinValue)
-            {
-                common.Warning($"Couldn't load sound '{name}' using default");
-                MakeDefault();
-                return;
-            }
+            if (timestamp == DateTime.MinValue) { common.Warning($"Couldn't load sound '{name}' using default"); MakeDefault(); return; }
 
             // load it
-            WaveFile fh = new();
-            WaveformatEx info = null;
-
-            if (fh.Open(name, x => info = x) == -1)
-            {
-                common.Warning($"Couldn't load sound '{name}' using default");
-                MakeDefault();
-                return;
-            }
-
-            if (info.nChannels != 1 && info.nChannels != 2)
-            {
-                common.Warning($"SoundSample: {name} has {info.nChannels} channels, using default");
-                fh.Close();
-                MakeDefault();
-                return;
-            }
-
-            if (info.wBitsPerSample != 16)
-            {
-                common.Warning($"SoundSample: {name} is {info.wBitsPerSample}bits, expected 16bits using default");
-                fh.Close();
-                MakeDefault();
-                return;
-            }
-
-            if (info.nSamplesPerSec != 44100 && info.nSamplesPerSec != 22050 && info.nSamplesPerSec != 11025)
-            {
-                common.Warning("SoundCache: {name} is {info.nSamplesPerSec}Hz, expected 11025, 22050 or 44100 Hz. Using default");
-                fh.Close();
-                MakeDefault();
-                return;
-            }
+            WaveFile fh = new(); WaveformatEx info = default;
+            if (fh.Open(name, x => info = x) == -1) { common.Warning($"Couldn't load sound '{name}' using default"); MakeDefault(); return; }
+            if (info.nChannels != 1 && info.nChannels != 2) { common.Warning($"SoundSample: {name} has {info.nChannels} channels, using default"); fh.Close(); MakeDefault(); return; }
+            if (info.wBitsPerSample != 16) { common.Warning($"SoundSample: {name} is {info.wBitsPerSample}bits, expected 16bits using default"); fh.Close(); MakeDefault(); return; }
+            if (info.nSamplesPerSec != 44100 && info.nSamplesPerSec != 22050 && info.nSamplesPerSec != 11025) { common.Warning("SoundCache: {name} is {info.nSamplesPerSec}Hz, expected 11025, 22050 or 44100 Hz. Using default"); fh.Close(); MakeDefault(); return; }
 
             objectInfo = info;
             objectSize = fh.OutputSize;
             objectMemSize = fh.MemorySize;
 
             nonCacheData = SoundCache.soundCacheAllocator.Alloc(objectMemSize);
-            fh.Read(nonCacheData, objectMemSize, out var _);
+            fh.Read(nonCacheData.Value, objectMemSize, out var _);
 
             // optionally convert it to 22kHz to save memory
             CheckForDownSample();
@@ -377,12 +325,8 @@ namespace Gengine.Sound
                 if (AL.IsBuffer(openalBuffer))
                 {
                     AL.GetError();
-                    AL.BufferData(openalBuffer, objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, nonCacheData, objectMemSize, objectInfo.nSamplesPerSec);
-                    if (AL.GetError() != ALError.NoError)
-                    {
-                        common.Warning("SoundCache: error loading data into OpenAL hardware buffer");
-                        hardwareBuffer = false;
-                    }
+                    AL.BufferData(openalBuffer, objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, ref nonCacheData.Value[0], objectMemSize, objectInfo.nSamplesPerSec);
+                    if (AL.GetError() != ALError.NoError) { common.Warning("SoundCache: error loading data into OpenAL hardware buffer"); hardwareBuffer = false; }
                     else hardwareBuffer = true;
                 }
 
@@ -396,47 +340,44 @@ namespace Gengine.Sound
                     if (AL.IsBuffer(openalBuffer))
                     {
                         var decoder = ISampleDecoder.Alloc();
-                        var destData = SoundCache.soundCacheAllocator.Alloc<float>((LengthIn44kHzSamples + 1) * sizeof(float));
-                        fixed (float* destDataF = destData)
+                        var destData = SoundCache.soundCacheAllocator.Alloc((LengthIn44kHzSamples + 1) * sizeof(float));
+                        fixed (byte* destDataB = destData.Value)
                         {
-                            var destDataS = (short*)destDataF;
+                            var destDataF = (float*)destDataB;
+                            var destDataS = (short*)destDataB;
 
                             // Decoder *always* outputs 44 kHz data
-                            decoder.Decode(this, 0, LengthIn44kHzSamples, destData);
+                            decoder.Decode(this, 0, LengthIn44kHzSamples, destDataF);
 
                             // Downsample back to original frequency (save memory)
                             if (objectInfo.nSamplesPerSec == 11025)
                                 for (var i = 0; i < objectSize; i++)
                                 {
-                                    if (destData[i * 4] < -32768.0f) destDataS[i] = -32768;
-                                    else if (destData[i * 4] > 32767.0f) destDataS[i] = 32767;
-                                    else destDataS[i] = (short)MathX.FtoiFast(destData[i * 4]);
+                                    if (destDataF[i * 4] < -32768.0f) destDataS[i] = -32768;
+                                    else if (destDataF[i * 4] > 32767.0f) destDataS[i] = 32767;
+                                    else destDataS[i] = (short)MathX.FtoiFast(destDataF[i * 4]);
                                 }
                             else if (objectInfo.nSamplesPerSec == 22050)
                                 for (var i = 0; i < objectSize; i++)
                                 {
-                                    if (destData[i * 2] < -32768.0f) destDataS[i] = -32768;
-                                    else if (destData[i * 2] > 32767.0f) destDataS[i] = 32767;
-                                    else destDataS[i] = (short)MathX.FtoiFast(destData[i * 2]);
+                                    if (destDataF[i * 2] < -32768.0f) destDataS[i] = -32768;
+                                    else if (destDataF[i * 2] > 32767.0f) destDataS[i] = 32767;
+                                    else destDataS[i] = (short)MathX.FtoiFast(destDataF[i * 2]);
                                 }
                             else
                                 for (var i = 0; i < objectSize; i++)
                                 {
-                                    if (destData[i] < -32768.0f) destDataS[i] = -32768;
-                                    else if (destData[i] > 32767.0f) destDataS[i] = 32767;
-                                    else destDataS[i] = (short)MathX.FtoiFast(destData[i]);
+                                    if (destDataF[i] < -32768.0f) destDataS[i] = -32768;
+                                    else if (destDataF[i] > 32767.0f) destDataS[i] = 32767;
+                                    else destDataS[i] = (short)MathX.FtoiFast(destDataF[i]);
                                 }
 
                             AL.GetError();
-                            AL.BufferData(openalBuffer, objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, destData, objectSize * sizeof(short), objectInfo.nSamplesPerSec);
-                            if (AL.GetError() != ALError.NoError)
-                            {
-                                common.Warning("SoundCache: error loading data into OpenAL hardware buffer");
-                                hardwareBuffer = false;
-                            }
+                            AL.BufferData(openalBuffer, objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, ref destData.Value[0], objectSize * sizeof(short), objectInfo.nSamplesPerSec);
+                            if (AL.GetError() != ALError.NoError) { common.Warning("SoundCache: error loading data into OpenAL hardware buffer"); hardwareBuffer = false; }
                             else hardwareBuffer = true;
 
-                            SoundCache.soundCacheAllocator.Free(ref destData);
+                            SoundCache.soundCacheAllocator.Free(destData);
                         }
                         ISampleDecoder.Free(decoder);
                     }
@@ -454,11 +395,7 @@ namespace Gengine.Sound
                 var newTimestamp = NewTimeStamp;
                 if (newTimestamp == DateTime.MinValue)
                 {
-                    if (!defaultSound)
-                    {
-                        common.Warning($"Couldn't load sound '{name}' using default");
-                        MakeDefault();
-                    }
+                    if (!defaultSound) { common.Warning($"Couldn't load sound '{name}' using default"); MakeDefault(); }
                     return;
                 }
                 if (newTimestamp == timestamp)
@@ -476,17 +413,13 @@ namespace Gengine.Sound
 
             AL.GetError();
             AL.DeleteBuffers(1, ref openalBuffer);
-            if (AL.GetError() != ALError.NoError)
-                common.Warning("SoundCache: error unloading data from OpenAL hardware buffer");
+            if (AL.GetError() != ALError.NoError) common.Warning("SoundCache: error unloading data from OpenAL hardware buffer");
 
             openalBuffer = 0;
             hardwareBuffer = false;
 
-            if (amplitudeData != null)
-                SoundCache.soundCacheAllocator.Free(ref amplitudeData);
-
-            if (nonCacheData != null)
-                SoundCache.soundCacheAllocator.Free(ref nonCacheData);
+            if (amplitudeData != null) SoundCache.soundCacheAllocator.Free(amplitudeData);
+            if (nonCacheData != null) SoundCache.soundCacheAllocator.Free(nonCacheData);
         }
 
         public unsafe void CheckForDownSample()      // down sample if required
@@ -497,7 +430,7 @@ namespace Gengine.Sound
                 return;
             var shortSamples = objectSize >> 1;
             var converted = SoundCache.soundCacheAllocator.Alloc(shortSamples * sizeof(short));
-            fixed (byte* nonCacheDataB = nonCacheData, convertedB = converted)
+            fixed (byte* nonCacheDataB = nonCacheData.Value, convertedB = converted.Value)
             {
                 var nonCacheDataS = (short*)nonCacheDataB;
                 var convertedS = (short*)convertedB;
@@ -510,7 +443,7 @@ namespace Gengine.Sound
                         convertedS[i + 0] = nonCacheDataS[i * 2 + 0];
                         convertedS[i + 1] = nonCacheDataS[i * 2 + 1];
                     }
-                SoundCache.soundCacheAllocator.Free(ref nonCacheData);
+                SoundCache.soundCacheAllocator.Free(nonCacheData);
                 nonCacheData = converted;
                 objectSize >>= 1;
                 objectMemSize >>= 1;
@@ -532,7 +465,7 @@ namespace Gengine.Sound
                 return false;
             }
 
-            output = nonCacheData.AsMemory(offset);
+            output = nonCacheData.Value.AsMemory(offset);
             position = 0;
             size = objectSize * sizeof(short) - offset;
             if (size > SCACHE_SIZE) size = SCACHE_SIZE;

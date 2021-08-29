@@ -1,10 +1,10 @@
-using Gengine.NumericsX.Core;
+using Gengine.Library.Core;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
 using static Gengine.Lib;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 using Qhandle = System.Int32;
 
 namespace Gengine.UI

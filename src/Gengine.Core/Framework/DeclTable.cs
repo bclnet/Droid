@@ -1,4 +1,4 @@
-using Gengine.NumericsX.Core;
+using Gengine.Library.Core;
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
@@ -14,12 +14,12 @@ namespace Gengine.Framework
         public override int Size => 0;
         public override string DefaultDefinition => "{ { 0 } }";
 
-        public override bool Parse(string text, int textLength)
+        public override bool Parse(string text)
         {
             Lexer src = new();
             float v;
 
-            src.LoadMemory(text, textLength, FileName, LineNum);
+            src.LoadMemory(text, FileName, LineNum);
             src.Flags = DeclBase.DECL_LEXER_FLAGS;
             src.SkipUntilString("{");
 

@@ -1,7 +1,7 @@
 using System;
 using System.NumericsX;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
+using Gengine.Library;
+using Gengine.Library.Core;
 using GL_INDEX_TYPE = System.UInt32; // GL_UNSIGNED_INT
 using GlIndex = System.Int32;
 

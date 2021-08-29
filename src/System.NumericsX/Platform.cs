@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Gengine.NumericsX")]
+[assembly: InternalsVisibleTo("Gengine.Library")]
 
 namespace System.NumericsX
 {

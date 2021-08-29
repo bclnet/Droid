@@ -1,10 +1,11 @@
-using Gengine.NumericsX.Core;
-using Gengine.NumericsX.Sys;
+using Gengine.Library;
+using Gengine.Library.Core;
+using Gengine.Library.Sys;
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
-using static Gengine.NumericsX.Core.Key;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Core.Key;
+using static Gengine.Library.Lib;
 
 namespace Gengine.UI
 {
@@ -317,7 +318,7 @@ namespace Gengine.UI
                 choices.Clear();
                 src.FreeSource();
                 src.Flags = LEXFL.NOFATALERRORS | LEXFL.ALLOWPATHNAMES | LEXFL.ALLOWMULTICHARLITERALS | LEXFL.ALLOWBACKSLASHSTRINGCONCAT;
-                src.LoadMemory(choicesStr, choicesStr.Length, "<ChoiceList>");
+                src.LoadMemory(choicesStr, "<ChoiceList>");
                 if (src.IsLoaded)
                 {
                     while (src.ReadToken(out token))
@@ -339,7 +340,7 @@ namespace Gengine.UI
                 values.Clear();
                 src.FreeSource();
                 src.Flags = LEXFL.ALLOWPATHNAMES | LEXFL.ALLOWMULTICHARLITERALS | LEXFL.ALLOWBACKSLASHSTRINGCONCAT;
-                src.LoadMemory(choiceVals, choiceVals.Length, "<ChoiceVals>");
+                src.LoadMemory(choiceVals, "<ChoiceVals>");
                 str2 = "";
                 var negNum = false;
                 if (src.IsLoaded)

@@ -207,7 +207,8 @@ namespace Gengine.Framework.Async
 
                 if (currentUserCmd.duplicateCount > Config.MAX_USERCMD_DUPLICATION)
                 {
-                    currentUserCmd.buttons = unchecked((byte)(currentUserCmd.buttons & ~Usercmd.BUTTON_ATTACK));
+                    //currentUserCmd.buttons = unchecked((byte)(currentUserCmd.buttons & ~Usercmd.BUTTON_ATTACK));
+                    currentUserCmd.buttons &= ~BUTTON_ATTACK;
                     if (Math.Abs(currentUserCmd.forwardmove) > 2) currentUserCmd.forwardmove >>= 1;
                     if (Math.Abs(currentUserCmd.rightmove) > 2) currentUserCmd.rightmove >>= 1;
                     if (Math.Abs(currentUserCmd.upmove) > 2) currentUserCmd.upmove >>= 1;

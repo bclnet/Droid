@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.NumericsX;
 using static System.NumericsX.Platform;
 
 namespace System.NumericsX

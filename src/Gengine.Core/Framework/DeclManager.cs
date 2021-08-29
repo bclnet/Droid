@@ -1,8 +1,7 @@
+using Gengine.Library.Core;
 using Gengine.Render;
 using Gengine.Sound;
 using System;
-using Gengine.NumericsX.Core;
-using static Gengine.Lib;
 
 namespace Gengine.Framework
 {
@@ -54,16 +53,15 @@ namespace Gengine.Framework
         public abstract int Index { get; }
         public abstract int LineNum { get; }
         public abstract string FileName { get; }
-        public abstract string GetText();
+        public abstract string Text { get; set; }
         public abstract int TextLength { get; }
-        public abstract void SetText(string text);
         public abstract bool ReplaceSourceFileText();
         public abstract bool SourceFileChanged();
         public abstract void MakeDefault();
         public abstract bool EverReferenced { get; }
         public abstract bool SetDefaultText();
         public abstract string DefaultDefinition { get; }
-        public abstract bool Parse(string text, int textLength);
+        public abstract bool Parse(string text);
         public abstract void FreeData();
         public abstract int Size { get; }
         public abstract void List();
@@ -72,6 +70,8 @@ namespace Gengine.Framework
 
     public class Decl
     {
+        protected internal DeclBase base_;
+
         // Returns the name of the decl.
         public string Name => base_.Name;
 
@@ -103,17 +103,19 @@ namespace Gengine.Framework
         // Returns the name of the file in which the decl is defined.
         public string FileName => base_.FileName;
 
-        // Returns the decl text.
-        public string GetText() => base_.GetText();
+        // Gets or sets the decl text.
+        public string Text
+        {
+            get => base_.Text;
+            set => base_.Text = value;
+        }
 
         // Returns the length of the decl text.
         public int TextLength => base_.TextLength;
 
-        // Sets new decl text.
-        public void SetText(string text) => base_.SetText(text);
-
         // Saves out new text for the decl. Used by decl editors to replace the decl text in the source file.
         public bool ReplaceSourceFileText() => base_.ReplaceSourceFileText();
+
         // Returns true if the source file changed since it was loaded and parsed.
         public bool SourceFileChanged() => base_.SourceFileChanged();
 
@@ -134,7 +136,7 @@ namespace Gengine.Framework
 
         // The manager will have already parsed past the type, name and opening brace. All necessary media will be touched before return.
         // The manager will have called FreeData() before issuing a Parse(). The subclass can call MakeDefault() internally at any point if there are parse errors.
-        public virtual bool Parse(string text, int textLength) => base_.Parse(text, textLength);
+        public virtual bool Parse(string text) => base_.Parse(text);
 
         // Frees any pointers held by the subclass. This may be called before any Parse(), so the constructor must have set sane values. The decl will be
         // invalid after issuing this call, but it will always be immediately followed by a Parse()
@@ -149,8 +151,6 @@ namespace Gengine.Framework
 
         // The print function will already have dumped the text source and common data, subclasses can override this to dump more explicit data.
         public virtual void Print() => base_.Print();
-
-        protected internal DeclBase base_;
     }
 
     public interface DeclManager

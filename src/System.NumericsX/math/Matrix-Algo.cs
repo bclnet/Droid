@@ -1,6 +1,5 @@
 //#define MATX_SIMD
 using System.Diagnostics;
-using System.NumericsX;
 using System.Runtime.CompilerServices;
 
 namespace System.NumericsX

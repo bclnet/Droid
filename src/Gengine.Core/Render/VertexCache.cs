@@ -1,11 +1,11 @@
-using Gengine.NumericsX.Core;
+using Gengine.Library.Core;
 using System;
 using System.NumericsX;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using WaveEngine.Bindings.OpenGLES;
 using static Gengine.Lib;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 using static Gengine.Render.QGL;
 using static WaveEngine.Bindings.OpenGLES.GL;
 

@@ -25,7 +25,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.Render", "Gengine.R
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenAL", "System.NumericsX.OpenAL\System.NumericsX.OpenAL.csproj", "{ACC3CC82-EC38-4550-94E4-F7A772FAA089}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.NumericsX", "Gengine.NumericsX\Gengine.NumericsX.csproj", "{BF65D27B-AF0E-4C4C-AC14-80643A47960B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.Library", "Gengine.Library\Gengine.Library.csproj", "{BF65D27B-AF0E-4C4C-AC14-80643A47960B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

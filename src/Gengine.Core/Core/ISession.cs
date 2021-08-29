@@ -1,5 +1,5 @@
-using Gengine.NumericsX.Core;
-using Gengine.NumericsX.Sys;
+using Gengine.Library.Core;
+using Gengine.Library.Sys;
 using Gengine.Render;
 using Gengine.Sound;
 

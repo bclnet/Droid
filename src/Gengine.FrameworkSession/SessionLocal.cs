@@ -1,16 +1,35 @@
 using System;
 using System.Collections.Generic;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
-using Gengine.NumericsX.Sys;
+using Gengine.Library;
+using Gengine.Library.Core;
+using Gengine.Library.Sys;
 using Gengine.Render;
 using Gengine.Sound;
 using Gengine.UI;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 using static Gengine.Lib;
 
 namespace Gengine.Framework
 {
+    /*
+ IsConnectedToServer();
+ IsGameLoaded();
+ IsGuiActive();
+ IsPlayingRenderDemo();
+
+ if connected to a server
+     if handshaking
+     if map loading
+     if in game
+ else if a game loaded
+     if in load game menu
+     if main menu up
+ else if playing render demo
+ else
+     if error dialog
+     full console
+ */
+
     public struct LogCmd
     {
         public Usercmd cmd;

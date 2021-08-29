@@ -1,9 +1,9 @@
 using Gengine.Render;
 using Gengine.Sound;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Sys;
+using Gengine.Library;
+using Gengine.Library.Sys;
 using static Gengine.Lib;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 using System.NumericsX;
 
 namespace Gengine.Framework

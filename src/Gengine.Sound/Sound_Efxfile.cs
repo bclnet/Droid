@@ -1,10 +1,10 @@
 #define EFX_VERBOSE
-using Gengine.NumericsX.Core;
+using Gengine.Library.Core;
 using OpenTK.Audio.OpenAL;
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 using static Gengine.Sound.Lib;
 
 namespace Gengine.Sound
@@ -27,19 +27,11 @@ namespace Gengine.Sound
 
             soundSystemLocal.alGenEffects(1, effect);
             var e = AL.GetError();
-            if (e != ALError.NoError)
-            {
-                common.Warning($"SoundEffect::alloc: alGenEffects failed: 0x{e}");
-                return false;
-            }
+            if (e != ALError.NoError) { common.Warning($"SoundEffect::alloc: alGenEffects failed: 0x{e}"); return false; }
 
             soundSystemLocal.alEffecti(effect, AL_EFFECT_TYPE, AL_EFFECT_EAXREVERB);
             e = AL.GetError();
-            if (e != ALError.NoError)
-            {
-                common.Warning($"SoundEffect::alloc: alEffecti failed: 0x{e}");
-                return false;
-            }
+            if (e != ALError.NoError) { common.Warning($"SoundEffect::alloc: alEffecti failed: 0x{e}"); return false; }
             return true;
         }
     }
@@ -67,7 +59,7 @@ namespace Gengine.Sound
             return false;
         }
 
-        bool LoadFile(string filename, bool OSPath = false)
+        public bool LoadFile(string filename, bool OSPath = false)
         {
             var src = new Lexer(LEXFL.NOSTRINGCONCAT);
 
@@ -79,12 +71,7 @@ namespace Gengine.Sound
             while (!src.EndOfFile())
             {
                 var effect = new SoundEffect();
-                if (!effect.Alloc())
-                {
-                    Clear();
-                    return false;
-                }
-
+                if (!effect.Alloc()) { Clear(); return false; }
                 if (ReadEffect(src, effect))
                     effects.Add(effect);
             }
@@ -92,7 +79,7 @@ namespace Gengine.Sound
             return true;
         }
 
-        void Clear() => effects.Clear();
+        public void Clear() => effects.Clear();
 
         bool ReadEffect(Lexer src, SoundEffect effect)
         {
@@ -103,8 +90,7 @@ namespace Gengine.Sound
                     EFXprintf($"alEffecti({paramName}, {v})\n");
                     soundSystemLocal.alEffecti(effect.effect, param, v);
                     var err = AL.GetError();
-                    if (err != ALError.NoError)
-                        common.Warning($"alEffecti({paramName}, {v}) failed: 0x{err}");
+                    if (err != ALError.NoError) common.Warning($"alEffecti({paramName}, {v}) failed: 0x{err}");
                 } while (false);
             }
 
@@ -115,8 +101,7 @@ namespace Gengine.Sound
                     EFXprintf($"alEffectf({paramName}, {v:.3})\n");
                     soundSystemLocal.alEffectf(effect.effect, param, v);
                     var err = AL.GetError();
-                    if (err != ALError.NoError)
-                        common.Warning($"alEffectf({paramName}, {v:.3}) failed: 0x{err}");
+                    if (err != ALError.NoError) common.Warning($"alEffectf({paramName}, {v:.3}) failed: 0x{err}");
                 } while (false);
             }
 
@@ -128,33 +113,17 @@ namespace Gengine.Sound
                     EFXprintf($"alEffectfv({paramName}, {v[0]:.3}, {v[1]:.3}, {v[2]:.3})\n");
                     soundSystemLocal.alEffectfv(effect.effect, param, v);
                     var err = AL.GetError();
-                    if (err != ALError.NoError)
-                        common.Warning($"alEffectfv({paramName}, {v[0]:.3}, {v[1]:.3}, {v[2]:.3}) failed: 0x{err}");
+                    if (err != ALError.NoError) common.Warning($"alEffectfv({paramName}, {v[0]:.3}, {v[1]:.3}, {v[2]:.3}) failed: 0x{err}");
                 } while (false);
             }
 
-            if (!src.ReadToken(out var token))
-                return false;
-
-            // reverb effect
-            if (token != "reverb")
-            {
-                // other effect (not supported at the moment)
-                src.Error("EFXFile::ReadEffect: Unknown effect definition");
-                return false;
-            }
-
+            if (!src.ReadToken(out var token)) return false;
+            // reverb effect - other effect (not supported at the moment)
+            if (token != "reverb") { src.Error("EFXFile::ReadEffect: Unknown effect definition"); return false; }
             src.ReadTokenOnLine(out token);
             var name = token;
-
-            if (!src.ReadToken(out token))
-                return false;
-
-            if (token != "{")
-            {
-                src.Error($"EFXFile::ReadEffect: {{ not found, found {token}");
-                return false;
-            }
+            if (!src.ReadToken(out token)) return false;
+            if (token != "{") { src.Error($"EFXFile::ReadEffect: {{ not found, found {token}"); return false; }
 
             AL.GetError();
             EFXprintf($"Loading EFX effect '{name}' (#{effect.effect})\n");

@@ -6,6 +6,7 @@ namespace Gengine.Game
 {
     public interface IGame
     {
+        void CacheDictionaryMedia(Dictionary<string, string> dict);
     }
 
     public interface IGameEdit

@@ -3,7 +3,7 @@ using Gengine.Sound;
 using Gengine.UI;
 using System;
 using System.Diagnostics;
-using Gengine.NumericsX.Core;
+using Gengine.Library.Core;
 
 namespace Gengine.Render
 {
@@ -311,7 +311,7 @@ namespace Gengine.Render
         public override int Size => throw new NotImplementedException();
         public override bool SetDefaultText() => throw new NotImplementedException();
         public override string DefaultDefinition => throw new NotImplementedException();
-        public override bool Parse(string text, int textLength) => throw new NotImplementedException();
+        public override bool Parse(string text) => throw new NotImplementedException();
         public override void FreeData() => throw new NotImplementedException();
         public override void Print() => throw new NotImplementedException();
 

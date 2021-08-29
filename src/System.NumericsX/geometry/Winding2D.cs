@@ -1,8 +1,7 @@
 using System.Diagnostics;
-using System.NumericsX;
 using System.Runtime.CompilerServices;
-using static System.NumericsX.Platform;
 using static System.NumericsX.Plane;
+using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {

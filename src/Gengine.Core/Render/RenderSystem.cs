@@ -1,7 +1,7 @@
 using Gengine.Framework;
 using System;
-using Gengine.NumericsX;
-using Gengine.NumericsX.Core;
+using Gengine.Library;
+using Gengine.Library.Core;
 using GlIndex = System.Int32;
 using System.NumericsX;
 

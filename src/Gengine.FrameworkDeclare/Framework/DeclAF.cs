@@ -1,10 +1,11 @@
-using Gengine.NumericsX.Core;
+using Gengine.Library.Core;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.NumericsX;
-using static Gengine.NumericsX.Lib;
+using System.Text;
+using static Gengine.Library.Lib;
 
 namespace Gengine.Framework
 {
@@ -53,15 +54,9 @@ namespace Gengine.Framework
 
         public bool Parse(Lexer src)
         {
-            if (!src.ReadToken(out var token))
-                return false;
+            if (!src.ReadToken(out var token)) return false;
 
-            if (token == "-")
-            {
-                negate = true;
-                if (!src.ReadToken(out token))
-                    return false;
-            }
+            if (token == "-") { negate = true; if (!src.ReadToken(out token)) return false; }
             else negate = false;
 
             if (token == "(")
@@ -102,7 +97,6 @@ namespace Gengine.Framework
         public bool Finish(string fileName, GetJointTransform GetJointTransform, JointMat frame, object model)
         {
             Vector3 start, end;
-
             switch (type)
             {
                 case VEC.COORDS:
@@ -125,16 +119,13 @@ namespace Gengine.Framework
                     break;
             }
 
-            if (negate)
-                vec = -vec;
-
+            if (negate) vec = -vec;
             return true;
         }
 
         public bool Write(VFile f)
         {
-            if (negate)
-                f.WriteFloatString("-");
+            if (negate) f.WriteFloatString("-");
             switch (type)
             {
                 case VEC.COORDS: f.WriteFloatString($"( {vec.x}, {vec.y}, {vec.z} )"); break;
@@ -156,8 +147,7 @@ namespace Gengine.Framework
                 VEC.BONEDIR => $"bonedir( \"{joint1}\", \"{joint2}\" )",
                 _ => string.Empty,
             };
-            if (negate)
-                str = "-" + str;
+            if (negate) str = "-" + str;
             return str;
         }
 
@@ -264,7 +254,7 @@ namespace Gengine.Framework
             => FreeData();
 
         public override int Size
-            => throw new NotImplementedException();
+            => 0;
 
         public override string DefaultDefinition =>
 @"{
@@ -364,34 +354,20 @@ namespace Gengine.Framework
         public void RenameBody(string oldName, string newName)
         {
             for (var i = 0; i < bodies.Count; i++)
-                if (string.Equals(bodies[i].name, oldName, StringComparison.OrdinalIgnoreCase))
-                {
-                    bodies[i].name = newName;
-                    break;
-                }
+                if (string.Equals(bodies[i].name, oldName, StringComparison.OrdinalIgnoreCase)) { bodies[i].name = newName; break; }
             for (var i = 0; i < constraints.Count; i++)
-                if (string.Equals(constraints[i].body1, oldName, StringComparison.OrdinalIgnoreCase))
-                    constraints[i].body1 = newName;
-                else if (string.Equals(constraints[i].body2, oldName, StringComparison.OrdinalIgnoreCase))
-                    constraints[i].body2 = newName;
+                if (string.Equals(constraints[i].body1, oldName, StringComparison.OrdinalIgnoreCase)) constraints[i].body1 = newName;
+                else if (string.Equals(constraints[i].body2, oldName, StringComparison.OrdinalIgnoreCase)) constraints[i].body2 = newName;
         }
 
         // delete the body with the given name and delete all constraints that reference the body
         public void DeleteBody(string name)
         {
             for (var i = 0; i < bodies.Count; i++)
-                if (string.Equals(bodies[i].name, name, StringComparison.OrdinalIgnoreCase))
-                {
-                    bodies.RemoveAt(i);
-                    break;
-                }
+                if (string.Equals(bodies[i].name, name, StringComparison.OrdinalIgnoreCase)) { bodies.RemoveAt(i); break; }
             for (var i = 0; i < constraints.Count; i++)
                 if (string.Equals(constraints[i].body1, name, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(constraints[i].body2, name, StringComparison.OrdinalIgnoreCase))
-                {
-                    constraints.RemoveAt(i);
-                    i--;
-                }
+                    string.Equals(constraints[i].body2, name, StringComparison.OrdinalIgnoreCase)) { constraints.RemoveAt(i); i--; }
         }
 
         #endregion
@@ -408,20 +384,12 @@ namespace Gengine.Framework
         public void RenameConstraint(string oldName, string newName)
         {
             for (var i = 0; i < constraints.Count; i++)
-                if (string.Equals(constraints[i].name, oldName, StringComparison.OrdinalIgnoreCase))
-                {
-                    constraints[i].name = newName;
-                    return;
-                }
+                if (string.Equals(constraints[i].name, oldName, StringComparison.OrdinalIgnoreCase)) { constraints[i].name = newName; return; }
         }
         public void DeleteConstraint(string name)
         {
             for (var i = 0; i < constraints.Count; i++)
-                if (string.Equals(constraints[i].name, name, StringComparison.OrdinalIgnoreCase))
-                {
-                    constraints.RemoveAt(i);
-                    return;
-                }
+                if (string.Equals(constraints[i].name, name, StringComparison.OrdinalIgnoreCase)) { constraints.RemoveAt(i); return; }
         }
 
         #endregion
@@ -430,9 +398,8 @@ namespace Gengine.Framework
 
         public static CONTENTS ContentsFromString(string str)
         {
-            Lexer src = new(str, str.Length, "DeclAF::ContentsFromString");
-
             CONTENTS c = 0;
+            Lexer src = new(str, str.Length, "DeclAF::ContentsFromString");
             while (src.ReadToken(out var token))
             {
                 if (string.Equals(token, "none", StringComparison.OrdinalIgnoreCase)) c = 0;
@@ -504,33 +471,31 @@ namespace Gengine.Framework
         static bool ParseContents(Lexer src, out CONTENTS c)
         {
             var str = string.Empty;
-
             while (src.ReadToken(out var token))
             {
                 str += token;
-                if (!src.CheckTokenString(","))
-                    break;
+                if (!src.CheckTokenString(",")) break;
                 str += ",";
             }
             c = ContentsFromString(str);
             return true;
         }
 
-        bool ParseBody(Lexer src)
+        unsafe bool ParseBody(Lexer src)
         {
             var hasJoint = false;
             AFVector angles = new();
             DeclAF_Body body = new();
 
-            bodies.Alloc() = body;
-
             body.SetDefault(this);
+            bodies.Add(body);
 
             if (!src.ExpectTokenType(TT.STRING, 0, out var token) || !src.ExpectTokenString("{"))
                 return false;
 
             body.name = token;
-            if (string.Equals(body.name, "origin", StringComparison.OrdinalIgnoreCase) || string.Equals(body.name, "world", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(body.name, "origin", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(body.name, "world", StringComparison.OrdinalIgnoreCase))
             {
                 src.Error("a body may not be named \"origin\" or \"world\"");
                 return false;
@@ -582,7 +547,7 @@ namespace Gengine.Framework
                 else if (string.Equals(token, "joint", StringComparison.OrdinalIgnoreCase)) { if (!src.ExpectTokenType(TT.STRING, 0, out token)) return false; body.jointName = token; hasJoint = true; }
                 else if (string.Equals(token, "mod", StringComparison.OrdinalIgnoreCase)) { if (!src.ExpectAnyToken(out token)) return false; body.jointMod = JointModFromString(token); }
                 else if (string.Equals(token, "density", StringComparison.OrdinalIgnoreCase)) body.density = src.ParseFloat();
-                else if (string.Equals(token, "inertiaScale", StringComparison.OrdinalIgnoreCase)) src.Parse1DMatrix(9, body.inertiaScale[0].ToFloatPtr());
+                else if (string.Equals(token, "inertiaScale", StringComparison.OrdinalIgnoreCase)) body.inertiaScale[0].ToFloatPtr(x => src.Parse1DMatrix(9, x));
                 else if (string.Equals(token, "friction", StringComparison.OrdinalIgnoreCase))
                 {
                     body.linearFriction = src.ParseFloat(); src.ExpectTokenString(",");
@@ -599,17 +564,8 @@ namespace Gengine.Framework
                 else { src.Error($"unknown token {token} in body"); return false; }
             }
 
-            if (body.modelType == TRM.INVALID)
-            {
-                src.Error("no model set for body");
-                return false;
-            }
-
-            if (!hasJoint)
-            {
-                src.Error("no joint set for body");
-                return false;
-            }
+            if (body.modelType == TRM.INVALID) { src.Error("no model set for body"); return false; }
+            if (!hasJoint) { src.Error("no joint set for body"); return false; }
 
             body.clipMask |= CONTENTS.MOVEABLECLIP;
 
@@ -621,7 +577,7 @@ namespace Gengine.Framework
             DeclAF_Constraint constraint = new();
 
             constraint.SetDefault(this);
-            constraints.Alloc() = constraint;
+            constraints.Add(constraint);
 
             if (!src.ExpectTokenType(TT.STRING, 0, out var token) || !src.ExpectTokenString("{"))
                 return false;
@@ -645,7 +601,7 @@ namespace Gengine.Framework
             DeclAF_Constraint constraint = new();
 
             constraint.SetDefault(this);
-            constraints.Alloc() = constraint;
+            constraints.Add(constraint);
 
             if (!src.ExpectTokenType(TT.STRING, 0, out var token) || !src.ExpectTokenString("{"))
                 return false;
@@ -689,7 +645,7 @@ namespace Gengine.Framework
             DeclAF_Constraint constraint = new();
 
             constraint.SetDefault(this);
-            constraints.Alloc() = constraint;
+            constraints.Add(constraint);
 
             if (!src.ExpectTokenType(TT.STRING, 0, out var token) || !src.ExpectTokenString("{"))
                 return false;
@@ -735,7 +691,7 @@ namespace Gengine.Framework
             DeclAF_Constraint constraint = new();
 
             constraint.SetDefault(this);
-            constraints.Alloc() = constraint;
+            constraints.Add(constraint);
 
             if (!src.ExpectTokenType(TT.STRING, 0, out var token) || !src.ExpectTokenString("{"))
                 return false;
@@ -773,7 +729,7 @@ namespace Gengine.Framework
             DeclAF_Constraint constraint = new();
 
             constraint.SetDefault(this);
-            constraints.Alloc() = constraint;
+            constraints.Add(constraint);
 
             if (!src.ExpectTokenType(TT.STRING, 0, out var token) || !src.ExpectTokenString("{"))
                 return false;
@@ -801,7 +757,7 @@ namespace Gengine.Framework
             DeclAF_Constraint constraint = new();
 
             constraint.SetDefault(this);
-            constraints.Alloc() = constraint;
+            constraints.Add(constraint);
 
             if (!src.ExpectTokenType(TT.STRING, 0, out var token) || !src.ExpectTokenString("{"))
                 return false;
@@ -871,12 +827,12 @@ namespace Gengine.Framework
             return true;
         }
 
-        public override bool Parse(string text, int textLength)
+        public override bool Parse(string text)
         {
             int i, j;
+            
             Lexer src = new();
-
-            src.LoadMemory(text, textLength, FileName, LineNum);
+            src.LoadMemory(text, FileName, LineNum);
             src.Flags = DeclBase.DECL_LEXER_FLAGS;
             src.SkipUntilString("{");
 
@@ -917,10 +873,7 @@ namespace Gengine.Framework
             for (i = 0; i < bodies.Count; i++)
                 if (bodies[i].jointName == "origin")
                 {
-                    if (i != 0)
-                    {
-                        var b = bodies[0]; bodies[0] = bodies[i]; bodies[i] = b;
-                    }
+                    if (i != 0) { var b = bodies[0]; bodies[0] = bodies[i]; bodies[i] = b; }
                     break;
                 }
 
@@ -1206,7 +1159,7 @@ Do not edit directly but launch the game and type 'editAFs' on the console.
 
             f.WriteFloatString("\n}");
 
-            SetText(f.DataPtr);
+            Text = Encoding.ASCII.GetString(f.DataPtr);
 
             return true;
         }

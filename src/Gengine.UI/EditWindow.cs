@@ -1,5 +1,6 @@
-using Gengine.NumericsX.Core;
-using Gengine.NumericsX.Sys;
+using Gengine.Library;
+using Gengine.Library.Core;
+using Gengine.Library.Sys;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
@@ -7,8 +8,8 @@ using System.NumericsX;
 using System.Runtime.CompilerServices;
 using System.Text;
 using static Gengine.Lib;
-using static Gengine.NumericsX.Core.Key;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Core.Key;
+using static Gengine.Library.Lib;
 
 namespace Gengine.UI
 {

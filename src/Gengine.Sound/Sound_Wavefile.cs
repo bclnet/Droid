@@ -1,7 +1,8 @@
-using Gengine.NumericsX.Core;
+using Gengine.Library;
+using Gengine.Library.Core;
 using System;
 using System.Diagnostics;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 
 namespace Gengine.Sound
 {
@@ -63,7 +64,7 @@ namespace Gengine.Sound
             var name = strFileName;
 
             // note: used to only check for .wav when making a build
-            name.SetFileExtension(".ogg");
+            name = PathX.SetFileExtension(name, ".ogg");
             if (fileSystem.ReadFile(name, out var _) != -1)
                 return OpenOGG(name, pwfx);
 
@@ -152,7 +153,7 @@ namespace Gengine.Sound
             memcpy(&mpwfx, &pcmWaveFormat, sizeof(pcmWaveFormat));
 
             // Allocate the waveformatex_t, but if its not pcm format, read the next word, and thats how many extra bytes to allocate.
-            if (pcmWaveFormat.wf.wFormatTag == WAVE_FORMAT_TAG_PCM)
+            if (pcmWaveFormat.wf.wFormatTag == WAVE_FORMAT_TAG.PCM)
                 mpwfx.Format.cbSize = 0;
             else
             {
@@ -188,7 +189,7 @@ namespace Gengine.Sound
                     return -1;
 
                 // Seek to the data
-                if (mhmmio.Seek(mckRiff.dwDataOffset + sizeof(fourcc), FS_SEEK_SET) == -1)
+                if (mhmmio.Seek(mckRiff.dwDataOffset + sizeof(fourcc), FS_SEEK.SET) == -1)
                     return -1;
 
                 // Search the input file for for the 'fmt ' chunk.
@@ -286,10 +287,8 @@ namespace Gengine.Sound
 
         public int MemorySize => mMemSize;
 
-        int OpenOGG(string strFileName, WaveformatEx pwfx = null);
-
-        int ReadOGG(byte[] pBuffer, int dwSizeToRead, out int pdwSizeRead);
-
-        int CloseOGG();
+        //int OpenOGG(string strFileName, WaveformatEx pwfx = null);
+        //int ReadOGG(byte[] pBuffer, int dwSizeToRead, out int pdwSizeRead);
+        //int CloseOGG();
     }
 }

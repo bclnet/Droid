@@ -2,7 +2,7 @@ using Gengine.Framework;
 using Gengine.Sound;
 using Gengine.UI;
 using System;
-using Gengine.NumericsX.Core;
+using Gengine.Library.Core;
 using System.NumericsX;
 using Qhandle = System.Int32;
 

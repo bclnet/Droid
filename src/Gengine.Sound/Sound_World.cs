@@ -1,6 +1,6 @@
 using Gengine.Framework;
-using Gengine.NumericsX.Core;
-using Gengine.NumericsX.Sys;
+using Gengine.Library.Core;
+using Gengine.Library.Sys;
 using Gengine.Render;
 using OpenTK.Audio.OpenAL;
 using System;
@@ -8,11 +8,41 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.NumericsX;
 using static Gengine.Lib;
-using static Gengine.NumericsX.Lib;
+using static Gengine.Library.Lib;
 using static Gengine.Sound.Lib;
 
 namespace Gengine.Sound
 {
+    // demo sound commands
+    public enum SCMD : int
+    {
+        STATE,             // followed by a load game state
+        PLACE_LISTENER,
+        ALLOC_EMITTER,
+        FREE,
+        UPDATE,
+        START,
+        MODIFY,
+        STOP,
+        FADE
+    }
+
+    public class SoundStats
+    {
+        public int rinuse;
+        public int runs = 1;
+        public int timeinprocess;
+        public int missedWindow;
+        public int missedUpdateWindow;
+        public int activeSounds;
+    }
+
+    public class SoundPortalTrace
+    {
+        public int portalArea;
+        public SoundPortalTrace prevStack;
+    }
+
     public class SoundWorldLocal : ISoundWorld
     {
         // call at each map start
