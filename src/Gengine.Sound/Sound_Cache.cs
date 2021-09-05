@@ -1,14 +1,13 @@
 //#define USE_SOUND_CACHE_ALLOCATOR
 using Gengine.Framework;
-using Gengine.Library;
-using Gengine.Library.Core;
-using OpenTK.Audio.OpenAL;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.NumericsX;
+using System.NumericsX.OpenAL;
+using System.NumericsX.OpenStack;
 using static Gengine.Lib;
-using static Gengine.Library.Lib;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Sound
 {
@@ -210,7 +209,7 @@ namespace Gengine.Sound
 
         public SoundSample()
         {
-            objectInfo.memset();
+            objectInfo = default;
             objectSize = 0;
             objectMemSize = 0;
             nonCacheData = null;
@@ -253,7 +252,7 @@ namespace Gengine.Sound
 
         public unsafe void MakeDefault()             // turns it into a beep
         {
-            objectInfo.memset();
+            objectInfo = default;
             objectInfo.nChannels = 1;
             objectInfo.wBitsPerSample = 16;
             objectInfo.nSamplesPerSec = 44100;
@@ -316,7 +315,7 @@ namespace Gengine.Sound
             CheckForDownSample();
 
             // create hardware audio buffers. PCM loads directly
-            if (objectInfo.wFormatTag == (short)WAVE_FORMAT_TAG.PCM)
+            if (objectInfo.wFormatTag == WAVE_FORMAT_TAG.PCM)
             {
                 AL.GetError();
                 AL.GenBuffers(1, ref openalBuffer);
@@ -331,7 +330,7 @@ namespace Gengine.Sound
                 }
 
                 // OGG decompressed at load time (when smaller than s_decompressionLimit seconds, 6 seconds by default)
-                if (objectInfo.wFormatTag == (int)WAVE_FORMAT_TAG.OGG && objectSize < (objectInfo.nSamplesPerSec * SoundSystemLocal.s_decompressionLimit.Integer))
+                if (objectInfo.wFormatTag == WAVE_FORMAT_TAG.OGG && objectSize < (objectInfo.nSamplesPerSec * SoundSystemLocal.s_decompressionLimit.Integer))
                 {
                     AL.GetError();
                     AL.GenBuffers(1, ref openalBuffer);
@@ -426,7 +425,7 @@ namespace Gengine.Sound
         {
             if (!SoundSystemLocal.s_force22kHz.Bool)
                 return;
-            if (objectInfo.wFormatTag != (short)WAVE_FORMAT_TAG.PCM || objectInfo.nSamplesPerSec != 44100)
+            if (objectInfo.wFormatTag != WAVE_FORMAT_TAG.PCM || objectInfo.nSamplesPerSec != 44100)
                 return;
             var shortSamples = objectSize >> 1;
             var converted = SoundCache.soundCacheAllocator.Alloc(shortSamples * sizeof(short));

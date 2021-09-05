@@ -4,3 +4,7 @@ Removing droid/droidjs/src/main/java/
 Removing droid/droidnet/libs/
 Removing droid/droidvr/libs/
 Removing droid/droidvr/src/main/libs/
+
+
+
+https://www.nuget.org/packages/openal.redist/

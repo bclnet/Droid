@@ -34,7 +34,7 @@ namespace System.NumericsX
         }
 
         // Delegate to parse a type
-        protected delegate bool ParseValue(TextParser input, FormatSpecifier spec);
+        protected delegate bool ParseValue(TextVisiter input, FormatSpecifier spec);
 
         // Class to associate format type with type parser
         protected class TypeParser
@@ -88,8 +88,8 @@ namespace System.NumericsX
         /// <param name="format">Specifies rules for parsing input</param>
         public int Parse(string input, string format)
         {
-            TextParser inp = new TextParser(input);
-            TextParser fmt = new TextParser(format);
+            TextVisiter inp = new TextVisiter(input);
+            TextVisiter fmt = new TextVisiter(format);
             List<object> results = new List<object>();
             FormatSpecifier spec = new FormatSpecifier();
             int count = 0;
@@ -131,7 +131,7 @@ namespace System.NumericsX
         /// <summary>
         /// Attempts to parse a field format specifier from the format string.
         /// </summary>
-        protected bool ParseFormatSpecifier(TextParser format, FormatSpecifier spec)
+        protected bool ParseFormatSpecifier(TextVisiter format, FormatSpecifier spec)
         {
             // Return if not a field format specifier
             if (format.Peek() != '%')
@@ -245,7 +245,7 @@ namespace System.NumericsX
         /// <summary>
         /// Parse a character field
         /// </summary>
-        private bool ParseCharacter(TextParser input, FormatSpecifier spec)
+        private bool ParseCharacter(TextVisiter input, FormatSpecifier spec)
         {
             // Parse character(s)
             int start = input.Position;
@@ -272,7 +272,7 @@ namespace System.NumericsX
         /// <summary>
         /// Parse integer field
         /// </summary>
-        private bool ParseDecimal(TextParser input, FormatSpecifier spec)
+        private bool ParseDecimal(TextVisiter input, FormatSpecifier spec)
         {
             int radix = 10;
 
@@ -329,7 +329,7 @@ namespace System.NumericsX
         /// <summary>
         /// Parse a floating-point field
         /// </summary>
-        private bool ParseFloat(TextParser input, FormatSpecifier spec)
+        private bool ParseFloat(TextVisiter input, FormatSpecifier spec)
         {
             // Skip any whitespace
             input.MovePastWhitespace();
@@ -396,7 +396,7 @@ namespace System.NumericsX
         /// <summary>
         /// Parse hexadecimal field
         /// </summary>
-        protected bool ParseHexadecimal(TextParser input, FormatSpecifier spec)
+        protected bool ParseHexadecimal(TextVisiter input, FormatSpecifier spec)
         {
             // Skip any whitespace
             input.MovePastWhitespace();
@@ -431,7 +431,7 @@ namespace System.NumericsX
         /// <summary>
         /// Parse an octal field
         /// </summary>
-        private bool ParseOctal(TextParser input, FormatSpecifier spec)
+        private bool ParseOctal(TextVisiter input, FormatSpecifier spec)
         {
             // Skip any whitespace
             input.MovePastWhitespace();
@@ -462,7 +462,7 @@ namespace System.NumericsX
         /// <summary>
         /// Parse a scan-set field
         /// </summary>
-        protected bool ParseScanSet(TextParser input, FormatSpecifier spec)
+        protected bool ParseScanSet(TextVisiter input, FormatSpecifier spec)
         {
             // Parse characters
             int start = input.Position;
@@ -498,7 +498,7 @@ namespace System.NumericsX
         /// <summary>
         /// Parse a string field
         /// </summary>
-        private bool ParseString(TextParser input, FormatSpecifier spec)
+        private bool ParseString(TextVisiter input, FormatSpecifier spec)
         {
             // Skip any whitespace
             input.MovePastWhitespace();

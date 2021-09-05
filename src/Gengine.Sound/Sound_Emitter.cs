@@ -1,16 +1,11 @@
-using Gengine.Framework;
-using Gengine.Library;
-using Gengine.Library.Core;
-using Gengine.Library.Sys;
 using Gengine.Render;
-using OpenTK.Audio.OpenAL;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.NumericsX;
+using System.NumericsX.OpenAL;
+using System.NumericsX.OpenStack;
 using static Gengine.Lib;
-using static Gengine.Library.Lib;
 using static Gengine.Sound.Lib;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Sound
 {
@@ -91,7 +86,7 @@ namespace Gengine.Sound
         SoundFX_LowpassFast lowpass;
 
         // functions
-        unsafe void GenerateSlowChannel(ref FracTime playPos, int sampleCount44k, float[] finalBuffer)
+        unsafe void GenerateSlowChannel(ref FracTime playPos, int sampleCount44k, float* finalBuffer)
         {
             int i, zeroedPos, count = 0;
 
@@ -168,7 +163,7 @@ namespace Gengine.Sound
             throw new NotImplementedException();
         }
 
-        public void GatherChannelSamples(int sampleOffset44k, int sampleCount44k, float[] dest)
+        public unsafe void GatherChannelSamples(int sampleOffset44k, int sampleCount44k, float* dest)
         {
             PLAYBACK state = 0;
 
@@ -295,19 +290,20 @@ namespace Gengine.Sound
 
         // Will always return 44kHz samples for the given range, even if it deeply looped or out of the range of the unlooped samples.  Handles looping between multiple different
         // samples and leadins
-        public unsafe void GatherChannelSamples(int sampleOffset44k, int sampleCount44k, float[] dest)
+        public unsafe void GatherChannelSamples(int sampleOffset44k, int sampleCount44k, float* dest)
         {
             int len;
 
             //Sys_DebugPrintf( "msec:%i sample:%i : %i : %i\n", Sys_Milliseconds(), soundSystemLocal.GetCurrent44kHzTime(), sampleOffset44k, sampleCount44k );	//!@#
-            fixed (float* dest_p = dest)
+            var destF = dest;
             {
+                var dest_p = destF;
                 // negative offset times will just zero fill
                 if (sampleOffset44k < 0)
                 {
                     len = -sampleOffset44k;
                     if (len > sampleCount44k) len = sampleCount44k;
-                    memset(dest_p, 0, len * sizeof(dest_p[0]));
+                    memset(dest_p, 0, len * sizeof(float));
                     dest_p += len;
                     sampleCount44k -= len;
                     sampleOffset44k += len;
@@ -317,7 +313,7 @@ namespace Gengine.Sound
                 var leadin = leadinSample;
                 if (leadin == null || sampleOffset44k < 0 || sampleCount44k <= 0)
                 {
-                    memset(dest_p, 0, sampleCount44k * sizeof(dest_p[0]));
+                    memset(dest_p, 0, sampleCount44k * sizeof(float));
                     return;
                 }
 
@@ -337,7 +333,7 @@ namespace Gengine.Sound
                 // if not looping, zero fill any remaining spots
                 if (soundShader == null || (parms.soundShaderFlags & ISoundSystem.SSF_LOOPING) == 0)
                 {
-                    memset(dest_p, 0, sampleCount44k * sizeof(dest_p[0]));
+                    memset(dest_p, 0, sampleCount44k * sizeof(float));
                     return;
                 }
 
@@ -345,7 +341,7 @@ namespace Gengine.Sound
                 var loop = soundShader.entries[0];
                 if (loop != null)
                 {
-                    memset(dest_p, 0, sampleCount44k * sizeof(dest_p[0]));
+                    memset(dest_p, 0, sampleCount44k * sizeof(float));
                     return;
                 }
 
@@ -428,20 +424,21 @@ namespace Gengine.Sound
         }
 
         // returns the length of the started sound in msec
-        public virtual int StartSound(SoundShader shader, int channel, float diversity = 0, int shaderFlags = 0, bool allowSlow = true /* D3XP */ )
+        public virtual int StartSound(ISoundShader shader, int channel, float diversity = 0, int shaderFlags = 0, bool allowSlow = true /* D3XP */ )
         {
             int i;
 
             if (shader == null) return 0;
+            var shader2 = (SoundShader)shader;
 
-            if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf($"StartSound {soundWorld.gameMsec}ms ({index},{channel},{shader.Name}) = ");
+            if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf($"StartSound {soundWorld.gameMsec}ms ({index},{channel},{shader2.Name}) = ");
 
             if (soundWorld != null && soundWorld.writeDemo != null)
             {
                 soundWorld.writeDemo.WriteInt((int)VFileDemo.DS.SOUND);
                 soundWorld.writeDemo.WriteInt((int)SCMD.START);
                 soundWorld.writeDemo.WriteInt(index);
-                soundWorld.writeDemo.WriteHashString(shader.Name);
+                soundWorld.writeDemo.WriteHashString(shader2.Name);
                 soundWorld.writeDemo.WriteInt(channel);
                 soundWorld.writeDemo.WriteFloat(diversity);
                 soundWorld.writeDemo.WriteInt(shaderFlags);
@@ -450,12 +447,12 @@ namespace Gengine.Sound
             // build the channel parameters by taking the shader parms and optionally overriding
             SoundShaderParms chanParms;
 
-            chanParms = shader.parms;
+            chanParms = shader2.parms;
             OverrideParms(chanParms, this.parms, out chanParms);
             chanParms.soundShaderFlags |= shaderFlags;
 
             if (chanParms.shakes > 0f)
-                shader.CheckShakesAndOgg();
+                shader2.CheckShakesAndOgg();
 
             // this is the sample time it will be first mixed
             var start44kHz = soundWorld.fpa[0] != null
@@ -463,24 +460,24 @@ namespace Gengine.Sound
                 : soundSystemLocal.Current44kHzTime + SIMD.MIXBUFFER_SAMPLES;
 
             // pick which sound to play from the shader
-            if (shader.numEntries == 0)
+            if (shader2.numEntries == 0)
             {
                 if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf("no samples in sound shader\n");
                 return 0; // no sounds
             }
 
             // pick a sound from the list based on the passed diversity
-            var choice = (int)(diversity * shader.numEntries);
-            if (choice < 0 || choice >= shader.numEntries) choice = 0;
+            var choice = (int)(diversity * shader2.numEntries);
+            if (choice < 0 || choice >= shader2.numEntries) choice = 0;
 
             // bump the choice if the exact sound was just played and we are NO_DUPS
             if ((chanParms.soundShaderFlags & ISoundSystem.SSF_NO_DUPS) != 0)
             {
-                var sample = shader.leadins[choice] ?? shader.entries[choice];
+                var sample = shader2.leadins[choice] ?? shader2.entries[choice];
                 for (i = 0; i < SoundSystemLocal.SOUND_MAX_CHANNELS; i++)
                 {
                     var chan2 = channels[i];
-                    if (chan2.leadinSample == sample) { choice = (choice + 1) % shader.numEntries; break; }
+                    if (chan2.leadinSample == sample) { choice = (choice + 1) % shader2.numEntries; break; }
                 }
             }
 
@@ -489,14 +486,14 @@ namespace Gengine.Sound
                 for (i = 0; i < SoundSystemLocal.SOUND_MAX_CHANNELS; i++)
                 {
                     var chan2 = channels[i];
-                    if (chan2.triggerState && chan2.soundShader == shader) { if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf("PLAY_ONCE not restarting\n"); return 0; }
+                    if (chan2.triggerState && chan2.soundShader == shader2) { if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf("PLAY_ONCE not restarting\n"); return 0; }
                 }
 
             // never play the same sound twice with the same starting time, even if they are on different channels
             for (i = 0; i < SoundSystemLocal.SOUND_MAX_CHANNELS; i++)
             {
                 var chan2 = channels[i];
-                if (chan2.triggerState && chan2.soundShader == shader && chan2.trigger44kHzTime == start44kHz) { if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf("already started this frame\n"); return 0; }
+                if (chan2.triggerState && chan2.soundShader == shader2 && chan2.trigger44kHzTime == start44kHz) { if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf("already started this frame\n"); return 0; }
             }
 
             SysW.EnterCriticalSection();
@@ -533,7 +530,7 @@ namespace Gengine.Sound
             }
 
             chan = channels[i];
-            chan.leadinSample = shader.leadins[choice] != null ? shader.leadins[choice] : shader.entries[choice];
+            chan.leadinSample = shader2.leadins[choice] != null ? shader2.leadins[choice] : shader2.entries[choice];
 
             // if the sample is onDemand (voice mails, etc), load it now
             if (chan.leadinSample.purged)
@@ -559,7 +556,7 @@ namespace Gengine.Sound
             chan.trigger44kHzTime = start44kHz;
             chan.parms = chanParms;
             chan.triggerGame44kHzTime = soundWorld.game44kHz;
-            chan.soundShader = shader;
+            chan.soundShader = shader2;
             chan.triggerChannel = channel;
             chan.stopped = false;
             chan.Start();

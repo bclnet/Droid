@@ -21,8 +21,10 @@ namespace System.NumericsX
         public const int MAX_WORLD_SIZE = MAX_WORLD_COORD - MIN_WORLD_COORD;
 
         public static Action<string> Warning = x => Console.Write(x);
+        public static Action<string> Error = x => Console.Write(x);
         public static Action<string> FatalError = x => Console.Write(x);
         public static Action<string> Printf = x => Console.Write(x);
+        public static Func<string, string> LanguageDictGetString = x => x;
 
         internal static void RotateVector(ref Vector3 v, Vector3 origin, float a, float c, float s)
         {
@@ -161,7 +163,7 @@ namespace System.NumericsX
         }
 
         // little/big endian conversion
-        public static bool BigEndian
+        public static bool IsBigEndian
 #if !BIG_ENDIAN
             => false;
 #else

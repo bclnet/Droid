@@ -1,8 +1,8 @@
-using Gengine.Library;
-using Gengine.Library.Core;
 using System;
 using System.Diagnostics;
-using static Gengine.Library.Lib;
+using System.NumericsX.OpenStack;
+using static System.NumericsX.OpenStack.OpenStack;
+using static System.NumericsX.Platform;
 
 namespace Gengine.Sound
 {
@@ -104,14 +104,14 @@ namespace Gengine.Sound
         }
 
         // Support function for reading from a multimedia I/O stream. mhmmio must be valid before calling.  This function uses it to update mckRiff, and mpwfx.
-        int ReadMMIO()
+        unsafe int ReadMMIO()
         {
             Mminfo ckIn;           // chunk info. for general use.
             Pcmwaveformat pcmWaveFormat;  // Temp PCM structure to load in.
 
             mpwfx.memset();
 
-            mhmmio.Read(mckRiff, 12);
+            mhmmio.Read((byte*)&mckRiff, 12);
             Debug.Assert(!isOgg);
             mckRiff.ckid = LittleInt(mckRiff.ckid);
             mckRiff.cksize = LittleInt(mckRiff.cksize);
@@ -119,7 +119,7 @@ namespace Gengine.Sound
             mckRiff.dwDataOffset = 12;
 
             // Check to make sure this is a valid wave file
-            if (mckRiff.ckid != fourcc_riff || mckRiff.fccType != mmioFOURCC('W', 'A', 'V', 'E'))
+            if (mckRiff.ckid != SoundSystemLocal.fourcc_riff || mckRiff.fccType != SoundSystemLocal.mmioFOURCC('W', 'A', 'V', 'E'))
                 return -1;
 
             // Search the input file for for the 'fmt ' chunk.
@@ -150,7 +150,7 @@ namespace Gengine.Sound
             pcmWaveFormat.wBitsPerSample = LittleShort(pcmWaveFormat.wBitsPerSample);
 
             // Copy the bytes from the pcm structure to the waveformatex_t structure
-            memcpy(&mpwfx, &pcmWaveFormat, sizeof(pcmWaveFormat));
+            mpwfx = pcmWaveFormat;
 
             // Allocate the waveformatex_t, but if its not pcm format, read the next word, and thats how many extra bytes to allocate.
             if (pcmWaveFormat.wf.wFormatTag == WAVE_FORMAT_TAG.PCM)
@@ -179,7 +179,7 @@ namespace Gengine.Sound
         }
 
         // Resets the internal mck pointer so reading starts from the beginning of the file again
-        public int ResetFile()
+        public unsafe int ResetFile()
         {
             if (mbIsReadingFromMemory)
                 mpbDataCur = mpbData;
@@ -189,7 +189,7 @@ namespace Gengine.Sound
                     return -1;
 
                 // Seek to the data
-                if (mhmmio.Seek(mckRiff.dwDataOffset + sizeof(fourcc), FS_SEEK.SET) == -1)
+                if (mhmmio.Seek(mckRiff.dwDataOffset + sizeof(int), FS_SEEK.SET) == -1)
                     return -1;
 
                 // Search the input file for for the 'fmt ' chunk.
@@ -200,11 +200,12 @@ namespace Gengine.Sound
                     if (mhmmio.Read(&ioin, 1) == 0)
                         return -1;
                     mck.ckid = (mck.ckid >> 8) | (ioin << 24);
-                } while (mck.ckid != mmioFOURCC('d', 'a', 't', 'a'));
+                } while (mck.ckid != SoundSystemLocal.mmioFOURCC('d', 'a', 't', 'a'));
 
-                mhmmio.Read(&mck.cksize, 4);
+                uint mck_cksize;
+                mhmmio.Read((byte*)&mck_cksize, 4);
                 Debug.Assert(!isOgg);
-                mck.cksize = LittleInt(mck.cksize);
+                mck.cksize = LittleInt(mck_cksize);
                 mseekBase = mhmmio.Tell;
             }
 
@@ -214,7 +215,7 @@ namespace Gengine.Sound
         // Reads section of data from a wave file into pBuffer and returns how much read in pdwSizeRead, reading not more than dwSizeToRead.
         // This uses mck to determine where to start reading from.  So subsequent calls will be continue where the last left off unless
         // Reset() is called.
-        public int Read(byte[] pBuffer, int dwSizeToRead, out int pdwSizeRead)
+        public unsafe int Read(byte* pBuffer, int dwSizeToRead, out int pdwSizeRead)
         {
             if (ogg != null)
                 return ReadOGG(pBuffer, dwSizeToRead, pdwSizeRead);

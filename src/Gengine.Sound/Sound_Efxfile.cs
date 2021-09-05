@@ -1,11 +1,13 @@
 #define EFX_VERBOSE
-using Gengine.Library.Core;
-using OpenTK.Audio.OpenAL;
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
-using static Gengine.Library.Lib;
+using System.NumericsX.OpenAL;
+using System.NumericsX.OpenAL.Extensions.Creative.EFX;
+using System.NumericsX.OpenAL.Extensions.Creative.EFX.Ranges;
+using System.NumericsX.OpenStack;
 using static Gengine.Sound.Lib;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Sound
 {
@@ -18,18 +20,18 @@ namespace Gengine.Sound
         public void Dispose()
         {
             if (soundSystemLocal.alIsEffect(effect))
-                soundSystemLocal.alDeleteEffects(1, effect);
+                soundSystemLocal.alDeleteEffects(1, ref effect);
         }
 
         public bool Alloc()
         {
             AL.GetError();
 
-            soundSystemLocal.alGenEffects(1, effect);
+            soundSystemLocal.alGenEffects(1, ref effect);
             var e = AL.GetError();
             if (e != ALError.NoError) { common.Warning($"SoundEffect::alloc: alGenEffects failed: 0x{e}"); return false; }
 
-            soundSystemLocal.alEffecti(effect, AL_EFFECT_TYPE, AL_EFFECT_EAXREVERB);
+            soundSystemLocal.alEffecti(effect, EffectInteger.EffectType, (int)EffectType.EaxReverb);
             e = AL.GetError();
             if (e != ALError.NoError) { common.Warning($"SoundEffect::alloc: alEffecti failed: 0x{e}"); return false; }
             return true;
@@ -38,10 +40,6 @@ namespace Gengine.Sound
 
     public class EFXFile
     {
-        //static float mB_to_gain(float millibels, property) _mB_to_gain(millibels,AL_EAXREVERB_MIN_ ## property, AL_EAXREVERB_MAX_ ## property)
-        static float _mB_to_gain(float millibels, float min, float max)
-            => MathX.ClampFloat(min, max, MathX.Pow(10f, millibels / 2000f));
-
         List<SoundEffect> effects = new();
 
         public EFXFile() => throw new NotImplementedException();
@@ -83,7 +81,10 @@ namespace Gengine.Sound
 
         bool ReadEffect(Lexer src, SoundEffect effect)
         {
-            void efxi(string paramName, object param, int v)
+            static float mb2gain(float millibels, float min, float max)
+                => MathX.ClampFloat(min, max, MathX.Pow(10f, millibels / 2000f));
+
+            void efxi(string paramName, EffectInteger param, int v)
             {
                 do
                 {
@@ -94,7 +95,7 @@ namespace Gengine.Sound
                 } while (false);
             }
 
-            void efxf(string paramName, object param, float v)
+            void efxf(string paramName, EffectFloat param, float v)
             {
                 do
                 {
@@ -105,7 +106,7 @@ namespace Gengine.Sound
                 } while (false);
             }
 
-            void efxfv(string paramName, object param, float value0, float value1, float value2)
+            void efxfv(string paramName, EffectVector3 param, float value0, float value1, float value2)
             {
                 do
                 {
@@ -133,29 +134,29 @@ namespace Gengine.Sound
                 if (!src.ReadToken(out token)) { src.Error("EFXFile::ReadEffect: EOF without closing brace"); return false; }
                 if (token == "}") { effect.name = name; break; }
                 if (token == "environment") src.ParseInt(); // the "environment" token should be ignored (efx has nothing equatable to it)
-                else if (token == "environment size") { var size = src.ParseFloat(); efxf(AL_EAXREVERB_DENSITY, size < 2f ? size - 1f : 1f); }
-                else if (token == "environment diffusion") efxf(AL_EAXREVERB_DIFFUSION, src.ParseFloat());
-                else if (token == "room") efxf(AL_EAXREVERB_GAIN, mB_to_gain(src.ParseInt(), GAIN));
-                else if (token == "room hf") efxf(AL_EAXREVERB_GAINHF, mB_to_gain(src.ParseInt(), GAINHF));
-                else if (token == "room lf") efxf(AL_EAXREVERB_GAINLF, mB_to_gain(src.ParseInt(), GAINLF));
-                else if (token == "decay time") efxf(AL_EAXREVERB_DECAY_TIME, src.ParseFloat());
-                else if (token == "decay hf ratio") efxf(AL_EAXREVERB_DECAY_HFRATIO, src.ParseFloat());
-                else if (token == "decay lf ratio") efxf(AL_EAXREVERB_DECAY_LFRATIO, src.ParseFloat());
-                else if (token == "reflections") efxf(AL_EAXREVERB_REFLECTIONS_GAIN, mB_to_gain(src.ParseInt(), REFLECTIONS_GAIN));
-                else if (token == "reflections delay") efxf(AL_EAXREVERB_REFLECTIONS_DELAY, src.ParseFloat());
-                else if (token == "reflections pan") efxfv(AL_EAXREVERB_REFLECTIONS_PAN, src.ParseFloat(), src.ParseFloat(), src.ParseFloat());
-                else if (token == "reverb") efxf(AL_EAXREVERB_LATE_REVERB_GAIN, mB_to_gain(src.ParseInt(), LATE_REVERB_GAIN));
-                else if (token == "reverb delay") efxf(AL_EAXREVERB_LATE_REVERB_DELAY, src.ParseFloat());
-                else if (token == "reverb pan") efxfv(AL_EAXREVERB_LATE_REVERB_PAN, src.ParseFloat(), src.ParseFloat(), src.ParseFloat());
-                else if (token == "echo time") efxf(AL_EAXREVERB_ECHO_TIME, src.ParseFloat());
-                else if (token == "echo depth") efxf(AL_EAXREVERB_ECHO_DEPTH, src.ParseFloat());
-                else if (token == "modulation time") efxf(AL_EAXREVERB_MODULATION_TIME, src.ParseFloat());
-                else if (token == "modulation depth") efxf(AL_EAXREVERB_MODULATION_DEPTH, src.ParseFloat());
-                else if (token == "air absorption hf") efxf(AL_EAXREVERB_AIR_ABSORPTION_GAINHF, mB_to_gain(src.ParseFloat(), AIR_ABSORPTION_GAINHF));
-                else if (token == "hf reference") efxf(AL_EAXREVERB_HFREFERENCE, src.ParseFloat());
-                else if (token == "lf reference") efxf(AL_EAXREVERB_LFREFERENCE, src.ParseFloat());
-                else if (token == "room rolloff factor") efxf(AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, src.ParseFloat());
-                else if (token == "flags") { src.ReadTokenOnLine(out token); var flags = token.UnsignedIntValue; efxi(AL_EAXREVERB_DECAY_HFLIMIT, (flags & 0x20) != 0 ? AL_TRUE : AL_FALSE); } // the other SCALE flags have no equivalent in efx
+                else if (token == "environment size") { var size = src.ParseFloat(); efxf(nameof(EffectFloat.EaxReverbDensity), EffectFloat.EaxReverbDensity, size < 2f ? size - 1f : 1f); }
+                else if (token == "environment diffusion") efxf(nameof(EffectFloat.EaxReverbDiffusion), EffectFloat.EaxReverbDiffusion, src.ParseFloat());
+                else if (token == "room") efxf(nameof(EffectFloat.EaxReverbGain), EffectFloat.EaxReverbGain, mb2gain(src.ParseInt(), EffectRanges.EaxReverbMinGain, EffectRanges.EaxReverbMaxGain));
+                else if (token == "room hf") efxf(nameof(EffectFloat.EaxReverbGainHF), EffectFloat.EaxReverbGainHF, mb2gain(src.ParseInt(), EffectRanges.EaxReverbMinGainHF, EffectRanges.EaxReverbMaxGainHF));
+                else if (token == "room lf") efxf(nameof(EffectFloat.EaxReverbGainLF), EffectFloat.EaxReverbGainLF, mb2gain(src.ParseInt(), EffectRanges.EaxReverbMinGainLF, EffectRanges.EaxReverbMaxGainLF));
+                else if (token == "decay time") efxf(nameof(EffectFloat.EaxReverbDecayTime), EffectFloat.EaxReverbDecayTime, src.ParseFloat());
+                else if (token == "decay hf ratio") efxf(nameof(EffectFloat.EaxReverbDecayHFRatio), EffectFloat.EaxReverbDecayHFRatio, src.ParseFloat());
+                else if (token == "decay lf ratio") efxf(nameof(EffectFloat.EaxReverbDecayLFRatio), EffectFloat.EaxReverbDecayLFRatio, src.ParseFloat());
+                else if (token == "reflections") efxf(nameof(EffectFloat.EaxReverbReflectionsGain), EffectFloat.EaxReverbReflectionsGain, mb2gain(src.ParseInt(), EffectRanges.EaxReverbMinReflectionsGain, EffectRanges.EaxReverbMaxReflectionsGain));
+                else if (token == "reflections delay") efxf(nameof(EffectFloat.EaxReverbReflectionsDelay), EffectFloat.EaxReverbReflectionsDelay, src.ParseFloat());
+                else if (token == "reflections pan") efxfv(nameof(EffectVector3.EaxReverbReflectionsPan), EffectVector3.EaxReverbReflectionsPan, src.ParseFloat(), src.ParseFloat(), src.ParseFloat());
+                else if (token == "reverb") efxf(nameof(EffectFloat.EaxReverbLateReverbGain), EffectFloat.EaxReverbLateReverbGain, mb2gain(src.ParseInt(), EffectRanges.EaxReverbMinLateReverbGain, EffectRanges.EaxReverbMaxLateReverbGain));
+                else if (token == "reverb delay") efxf(nameof(EffectFloat.EaxReverbLateReverbDelay), EffectFloat.EaxReverbLateReverbDelay, src.ParseFloat());
+                else if (token == "reverb pan") efxfv(nameof(EffectVector3.EaxReverbLateReverbPan), EffectVector3.EaxReverbLateReverbPan, src.ParseFloat(), src.ParseFloat(), src.ParseFloat());
+                else if (token == "echo time") efxf(nameof(EffectFloat.EaxReverbEchoTime), EffectFloat.EaxReverbEchoTime, src.ParseFloat());
+                else if (token == "echo depth") efxf(nameof(EffectFloat.EaxReverbEchoDepth), EffectFloat.EaxReverbEchoDepth, src.ParseFloat());
+                else if (token == "modulation time") efxf(nameof(EffectFloat.EaxReverbModulationTime), EffectFloat.EaxReverbModulationTime, src.ParseFloat());
+                else if (token == "modulation depth") efxf(nameof(EffectFloat.EaxReverbModulationDepth), EffectFloat.EaxReverbModulationDepth, src.ParseFloat());
+                else if (token == "air absorption hf") efxf(nameof(EffectFloat.EaxReverbAirAbsorptionGainHF), EffectFloat.EaxReverbAirAbsorptionGainHF, mb2gain(src.ParseFloat(), EffectRanges.EaxReverbMinAirAbsorptionGainHF, EffectRanges.EaxReverbMaxAirAbsorptionGainHF));
+                else if (token == "hf reference") efxf(nameof(EffectFloat.EaxReverbHFReference), EffectFloat.EaxReverbHFReference, src.ParseFloat());
+                else if (token == "lf reference") efxf(nameof(EffectFloat.EaxReverbLFReference), EffectFloat.EaxReverbLFReference, src.ParseFloat());
+                else if (token == "room rolloff factor") efxf(nameof(EffectFloat.EaxReverbRoomRolloffFactor), EffectFloat.EaxReverbRoomRolloffFactor, src.ParseFloat());
+                else if (token == "flags") { src.ReadTokenOnLine(out token); var flags = token.UnsignedIntValue; efxi(nameof(EffectInteger.EaxReverbDecayHFLimit), EffectInteger.EaxReverbDecayHFLimit, (flags & 0x20) != 0 ? 1 : 0); } // the other SCALE flags have no equivalent in efx
                 else { src.ReadTokenOnLine(out _); src.Error("EFXFile::ReadEffect: Invalid parameter in reverb definition"); }
             } while (true);
 

@@ -1,31 +1,19 @@
-﻿//
-// ApiBase.cs
-//
-// Copyright (C) 2020 OpenTK
-//
-// This software may be modified and distributed under the terms
-// of the MIT license. See the LICENSE file for details.
-//
-
-using System;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace OpenTK.Audio.OpenAL
+namespace System.NumericsX.OpenAL
 {
     /// <summary>
     /// Provides a base for ApiContext so that it can register dll intercepts.
     /// </summary>
     internal static class ALLoader
     {
-        private static readonly OpenALLibraryNameContainer ALLibraryNameContainer = new OpenALLibraryNameContainer();
+        static readonly OpenALLibraryNameContainer ALLibraryNameContainer = new();
 
-        private static bool RegisteredResolver = false;
+        static bool RegisteredResolver = false;
 
         static ALLoader()
-        {
-            RegisterDllResolver();
-        }
+            => RegisterDllResolver();
 
         internal static void RegisterDllResolver()
         {
@@ -36,23 +24,18 @@ namespace OpenTK.Audio.OpenAL
             }
         }
 
-        private static IntPtr ImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        static IntPtr ImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
         {
             if (libraryName == AL.Lib || libraryName == ALC.Lib)
             {
-                string libName = ALLibraryNameContainer.GetLibraryName();
+                var libName = ALLibraryNameContainer.GetLibraryName();
 
-                if (NativeLibrary.TryLoad(libName, assembly, searchPath, out IntPtr libHandle) == false)
-                {
+                if (!NativeLibrary.TryLoad(libName, assembly, searchPath, out IntPtr libHandle))
                     throw new DllNotFoundException($"Could not load the dll '{libName}' (this load is intercepted, specified in DllImport as '{libraryName}').");
-                }
 
                 return libHandle;
             }
-            else
-            {
-                return NativeLibrary.Load(libraryName, assembly, searchPath);
-            }
+            else return NativeLibrary.Load(libraryName, assembly, searchPath);
         }
     }
 }

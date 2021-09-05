@@ -1,16 +1,6 @@
-//
-// OpenALLibrarynameContainer.cs
-//
-// Copyright (C) 2020 OpenTK
-//
-// This software may be modified and distributed under the terms
-// of the MIT license. See the LICENSE file for details.
-//
-
-using System;
 using System.Runtime.InteropServices;
 
-namespace OpenTK.Audio.OpenAL
+namespace System.NumericsX.OpenAL
 {
     /// <summary>
     /// Contains the library name of OpenAL.
@@ -44,36 +34,10 @@ namespace OpenTK.Audio.OpenAL
 
         public string GetLibraryName()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("ANDROID")))
-                {
-                    return Android;
-                }
-                else
-                {
-                    return Linux;
-                }
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return Windows;
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("IOS")))
-                {
-                    return IOS;
-                }
-                else
-                {
-                    return MacOS;
-                }
-            }
-            else
-            {
-                throw new NotSupportedException($"The library name couldn't be resolved for the given platform ('{RuntimeInformation.OSDescription}').");
-            }
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return RuntimeInformation.IsOSPlatform(OSPlatform.Create("ANDROID")) ? Android : Linux;
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return Windows;
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) return RuntimeInformation.IsOSPlatform(OSPlatform.Create("IOS")) ? IOS : MacOS;
+            else throw new NotSupportedException($"The library name couldn't be resolved for the given platform ('{RuntimeInformation.OSDescription}').");
         }
     }
 }

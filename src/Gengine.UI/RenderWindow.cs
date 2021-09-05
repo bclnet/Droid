@@ -1,10 +1,10 @@
-using Gengine.Library.Core;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
+using System.NumericsX.OpenStack;
 using static Gengine.Lib;
-using static Gengine.Library.Lib;
+using static System.NumericsX.OpenStack.OpenStack;
 using Qhandle = System.Int32;
 
 namespace Gengine.UI

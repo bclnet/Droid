@@ -1,6 +1,6 @@
 namespace System.NumericsX
 {
-    public class TextParser
+    public class TextVisiter
     {
         string text;
         int pos;
@@ -10,9 +10,9 @@ namespace System.NumericsX
         public int Remaining => text.Length - pos;
         public static char NullChar = (char)0;
 
-        public TextParser()
+        public TextVisiter()
             => Reset(null);
-        public TextParser(string text)
+        public TextVisiter(string text)
             => Reset(text);
 
         /// <summary>

@@ -1,13 +1,4 @@
-﻿//
-// ALCEnums.cs
-//
-// Copyright (C) 2020 OpenTK
-//
-// This software may be modified and distributed under the terms
-// of the MIT license. See the LICENSE file for details.
-//
-
-namespace OpenTK.Audio.OpenAL
+﻿namespace System.NumericsX.OpenAL
 {
 #pragma warning disable SA1402 // File may only contain a single type
     /// <summary>

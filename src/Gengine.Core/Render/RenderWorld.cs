@@ -2,8 +2,8 @@ using Gengine.Framework;
 using Gengine.Sound;
 using Gengine.UI;
 using System;
-using Gengine.Library.Core;
 using System.NumericsX;
+using System.NumericsX.OpenStack;
 using Qhandle = System.Int32;
 
 namespace Gengine.Render

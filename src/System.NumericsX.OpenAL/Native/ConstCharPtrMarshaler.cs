@@ -1,49 +1,27 @@
-﻿//
-// ConstCharPtrMarshaler.cs
-//
-// Copyright (C) 2020 OpenTK
-//
-// This software may be modified and distributed under the terms
-// of the MIT license. See the LICENSE file for details.
-//
+﻿using System.Runtime.InteropServices;
 
-using System;
-using System.Runtime.InteropServices;
-
-namespace OpenTK.Audio.OpenAL.Native
+namespace System.NumericsX.OpenAL.Native
 {
     internal class ConstCharPtrMarshaler : ICustomMarshaler
     {
-        private static readonly ConstCharPtrMarshaler Instance = new ConstCharPtrMarshaler();
+        static readonly ConstCharPtrMarshaler Instance = new ConstCharPtrMarshaler();
 
-        public void CleanUpManagedData(object ManagedObj)
-        {
-        }
+        public void CleanUpManagedData(object ManagedObj) { }
 
-        public void CleanUpNativeData(IntPtr pNativeData)
-        {
-        }
+        public void CleanUpNativeData(IntPtr pNativeData) { }
 
         public int GetNativeDataSize()
-        {
-            return IntPtr.Size;
-        }
+            => IntPtr.Size;
 
         public IntPtr MarshalManagedToNative(object ManagedObj)
-        {
-            switch (ManagedObj)
+            => ManagedObj switch
             {
-                case string str:
-                    return Marshal.StringToHGlobalAnsi(str);
-                default:
-                    throw new ArgumentException($"{nameof(ConstCharPtrMarshaler)} only supports marshaling of strings. Got '{ManagedObj.GetType()}'");
-            }
-        }
+                string str => Marshal.StringToHGlobalAnsi(str),
+                _ => throw new ArgumentException($"{nameof(ConstCharPtrMarshaler)} only supports marshaling of strings. Got '{ManagedObj.GetType()}'"),
+            };
 
         public object MarshalNativeToManaged(IntPtr pNativeData)
-        {
-            return Marshal.PtrToStringAnsi(pNativeData);
-        }
+            => Marshal.PtrToStringAnsi(pNativeData);
 
         // See https://docs.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.custommarshalers.typetotypeinfomarshaler.getinstance
 #pragma warning disable IDE0060 // Remove unused parameter

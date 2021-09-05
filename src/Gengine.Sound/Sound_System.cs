@@ -1,17 +1,17 @@
 using Gengine.Framework;
-using Gengine.Library;
-using Gengine.Library.Core;
-using Gengine.Library.Sys;
 using Gengine.Render;
-using OpenTK.Audio.OpenAL;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.NumericsX;
+using System.NumericsX.OpenAL;
+using System.NumericsX.OpenAL.Extensions.Creative.EFX;
+using System.NumericsX.OpenAL.Extensions.SOFT.HRTF;
+using System.NumericsX.OpenStack;
 using System.Runtime.CompilerServices;
 using static Gengine.Lib;
-using static Gengine.Library.Lib;
 using static Gengine.Sound.Lib;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Sound
 {
@@ -60,8 +60,8 @@ namespace Gengine.Sound
 
     public class SoundSystemLocal : ISoundSystem
     {
-        //#define mmioFOURCC( ch0, ch1, ch2, ch3 )				 ((dword)(byte) (ch0) | ((dword)(byte) (ch1) << 8 ) | ((dword)(byte) (ch2) << 16 ) | ((dword)(byte) (ch3) << 24 ) )
-        //#define fourcc_riff     mmioFOURCC('R', 'I', 'F', 'F')
+        public static int mmioFOURCC(char ch0, char ch1, char ch2, char ch3) => ch0 | ch1 << 8 | ch2 << 16 | ch3 << 24;
+        public const int fourcc_riff = 'R' | 'I' << 8 | 'F' << 16 | 'F' << 24;
 
         public const int SOUND_MAX_CHANNELS = 8;
         public const int SOUND_DECODER_FREE_DELAY = 1000 * SIMD.MIXBUFFER_SAMPLES / Usercmd.USERCMD_MSEC;       // four seconds
@@ -72,8 +72,7 @@ namespace Gengine.Sound
         public SoundSystemLocal()
             => isInitialized = false;
 
-        // all non-hardware initialization
-        // initialize the sound system
+        // all non-hardware initialization. initialize the sound system
         public virtual void Init()
         {
             common.Printf("----- Initializing OpenAL -----\n");
@@ -171,7 +170,7 @@ namespace Gengine.Sound
                 if (hasAlcExtDisconnect && hasAlcSoftHrtf)
                 {
                     common.Printf("OpenAL: found extensions for resetting disconnected devices\n");
-                    alcResetDeviceSOFT = (LPALCRESETDEVICESOFT)ALC.GetProcAddress(openalDevice, "alcResetDeviceSOFT");
+                    alcResetDeviceSOFT = ALBase.LoadDelegate<HRTF.ResetDeviceSoftArrayDelegate>(openalDevice, "alcResetDeviceSOFT");
                 }
 
                 // try to obtain EFX extensions
@@ -180,21 +179,21 @@ namespace Gengine.Sound
                     common.Printf("OpenAL: found EFX extension\n");
                     EFXAvailable = 1;
 
-                    alGenEffects = (LPALGENEFFECTS)AL.GetProcAddress("alGenEffects");
-                    alDeleteEffects = (LPALDELETEEFFECTS)AL.GetProcAddress("alDeleteEffects");
-                    alIsEffect = (LPALISEFFECT)AL.GetProcAddress("alIsEffect");
-                    alEffecti = (LPALEFFECTI)AL.GetProcAddress("alEffecti");
-                    alEffectf = (LPALEFFECTF)AL.GetProcAddress("alEffectf");
-                    alEffectfv = (LPALEFFECTFV)AL.GetProcAddress("alEffectfv");
-                    alGenFilters = (LPALGENFILTERS)AL.GetProcAddress("alGenFilters");
-                    alDeleteFilters = (LPALDELETEFILTERS)AL.GetProcAddress("alDeleteFilters");
-                    alIsFilter = (LPALISFILTER)AL.GetProcAddress("alIsFilter");
-                    alFilteri = (LPALFILTERI)AL.GetProcAddress("alFilteri");
-                    alFilterf = (LPALFILTERF)AL.GetProcAddress("alFilterf");
-                    alGenAuxiliaryEffectSlots = (LPALGENAUXILIARYEFFECTSLOTS)AL.GetProcAddress("alGenAuxiliaryEffectSlots");
-                    alDeleteAuxiliaryEffectSlots = (LPALDELETEAUXILIARYEFFECTSLOTS)AL.GetProcAddress("alDeleteAuxiliaryEffectSlots");
-                    alIsAuxiliaryEffectSlot = (LPALISAUXILIARYEFFECTSLOT)AL.GetProcAddress("alIsAuxiliaryEffectSlot"); ;
-                    alAuxiliaryEffectSloti = (LPALAUXILIARYEFFECTSLOTI)AL.GetProcAddress("alAuxiliaryEffectSloti");
+                    alGenEffects = ALBase.LoadDelegate<EFX.GenEffectsRefDelegate>("alGenEffects");
+                    alDeleteEffects = ALBase.LoadDelegate<EFX.DeleteEffectsRefDelegate>("alDeleteEffects");
+                    alIsEffect = ALBase.LoadDelegate<EFX.IsEffectDelegate>("alIsEffect");
+                    alEffecti = ALBase.LoadDelegate<EFX.EffectiDelegate>("alEffecti");
+                    alEffectf = ALBase.LoadDelegate<EFX.EffectfDelegate>("alEffectf");
+                    alEffectfv = ALBase.LoadDelegate<EFX.EffectfvRefDelegate>("alEffectfv");
+                    alGenFilters = ALBase.LoadDelegate<EFX.GenFiltersRefDelegate>("alGenFilters");
+                    alDeleteFilters = ALBase.LoadDelegate<EFX.DeleteFiltersRefDelegate>("alDeleteFilters");
+                    alIsFilter = ALBase.LoadDelegate<EFX.IsFilterDelegate>("alIsFilter");
+                    alFilteri = ALBase.LoadDelegate<EFX.FilteriDelegate>("alFilteri");
+                    alFilterf = ALBase.LoadDelegate<EFX.FilterfDelegate>("alFilterf");
+                    alGenAuxiliaryEffectSlots = ALBase.LoadDelegate<EFX.GenAuxiliaryEffectSlotsRefDelegate>("alGenAuxiliaryEffectSlots");
+                    alDeleteAuxiliaryEffectSlots = ALBase.LoadDelegate<EFX.DeleteAuxiliaryEffectSlotsRefDelegate>("alDeleteAuxiliaryEffectSlots");
+                    alIsAuxiliaryEffectSlot = ALBase.LoadDelegate<EFX.IsAuxiliaryEffectSlotDelegate>("alIsAuxiliaryEffectSlot"); ;
+                    alAuxiliaryEffectSloti = ALBase.LoadDelegate<EFX.AuxiliaryEffectSlotiDelegate>("alAuxiliaryEffectSloti");
                 }
                 else
                 {
@@ -885,22 +884,21 @@ namespace Gengine.Sound
         public int openalSourceCount;
         public OpenalSource[] openalSources = new OpenalSource[256];
 
-        public LPALGENEFFECTS alGenEffects;
-        public LPALDELETEEFFECTS alDeleteEffects;
-        public LPALISEFFECT alIsEffect;
-        public LPALEFFECTI alEffecti;
-        public LPALEFFECTF alEffectf;
-        public LPALEFFECTFV alEffectfv;
-        public LPALGENFILTERS alGenFilters;
-        public LPALDELETEFILTERS alDeleteFilters;
-        public LPALISFILTER alIsFilter;
-        public LPALFILTERI alFilteri;
-        public LPALFILTERF alFilterf;
-        public LPALGENAUXILIARYEFFECTSLOTS alGenAuxiliaryEffectSlots;
-        public LPALDELETEAUXILIARYEFFECTSLOTS alDeleteAuxiliaryEffectSlots;
-        public LPALISAUXILIARYEFFECTSLOT alIsAuxiliaryEffectSlot;
-        public LPALAUXILIARYEFFECTSLOTI alAuxiliaryEffectSloti;
-
+        public EFX.GenEffectsRefDelegate alGenEffects;
+        public EFX.DeleteEffectsRefDelegate alDeleteEffects;
+        public EFX.IsEffectDelegate alIsEffect;
+        public EFX.EffectiDelegate alEffecti;
+        public EFX.EffectfDelegate alEffectf;
+        public EFX.EffectfvArrayDelegate alEffectfv;
+        public EFX.GenFiltersRefDelegate alGenFilters;
+        public EFX.DeleteFiltersRefDelegate alDeleteFilters;
+        public EFX.IsFilterDelegate alIsFilter;
+        public EFX.FilteriDelegate alFilteri;
+        public EFX.FilterfDelegate alFilterf;
+        public EFX.GenAuxiliaryEffectSlotsRefDelegate alGenAuxiliaryEffectSlots;
+        public EFX.DeleteAuxiliaryEffectSlotsRefDelegate alDeleteAuxiliaryEffectSlots;
+        public EFX.IsAuxiliaryEffectSlotDelegate alIsAuxiliaryEffectSlot;
+        public EFX.AuxiliaryEffectSlotiDelegate alAuxiliaryEffectSloti;
         public EFXFile EFXDatabase;
         public bool efxloaded;
 
@@ -910,10 +908,7 @@ namespace Gengine.Sound
         public static int EFXAvailable = -1;
 
         // DG: for CheckDeviceAndRecoverIfNeeded()
-#if __ANDROID__
-        public ALCboolean(ALC_APIENTRY LPALCRESETDEVICESOFT)(ALCdevice device, ALCint[] attribs);
-#endif
-        public LPALCRESETDEVICESOFT alcResetDeviceSOFT; // needs ALC_SOFT_HRTF extension
+        public HRTF.ResetDeviceSoftArrayDelegate alcResetDeviceSOFT; // needs ALC_SOFT_HRTF extension
         public int resetRetryCount;
         public uint lastCheckTime;
 
@@ -966,90 +961,6 @@ namespace Gengine.Sound
 
         //public static readonly CVar s_enviroSuitSkipLowpass;
         //public static readonly CVar s_enviroSuitSkipReverb;
-    }
-
-    public unsafe class SoundFX_Lowpass : SoundFX
-    {
-        public override void ProcessSample(float* i, float* o)
-        {
-            float c, a1, a2, a3, b1, b2;
-            var resonance = SoundSystemLocal.s_enviroSuitCutoffQ.Float;
-            var cutoffFrequency = SoundSystemLocal.s_enviroSuitCutoffFreq.Float;
-
-            Initialize();
-
-            c = 1f / MathX.Tan16(MathX.PI * cutoffFrequency / 44100);
-
-            // compute coefs
-            a1 = 1f / (1f + resonance * c + c * c);
-            a2 = 2 * a1;
-            a3 = a1;
-            b1 = 2f * (1f - c * c) * a1;
-            b2 = (1f - resonance * c + c * c) * a1;
-
-            // compute output value
-            o[0] = a1 * i[0] + a2 * i[-1] + a3 * i[-2] - b1 * o[-1] - b2 * o[-2];
-        }
-    }
-
-    public unsafe class SoundFX_LowpassFast : SoundFX
-    {
-        float freq, res, a1, a2, a3, b1, b2;
-
-        public override void ProcessSample(float* i, float* o)
-            => o[0] = a1 * i[0] + a2 * i[-1] + a3 * i[-2] - b1 * o[-1] - b2 * o[-2];
-
-        public void SetParms(float p1 = 0, float p2 = 0, float p3 = 0)
-        {
-            float c;
-
-            // set the vars
-            freq = p1;
-            res = p2;
-
-            // precompute the coefs
-            c = 1f / MathX.Tan(MathX.PI * freq / 44100);
-
-            // compute coefs
-            a1 = 1f / (1f + res * c + c * c);
-            a2 = 2 * a1;
-            a3 = a1;
-
-            b1 = 2f * (1f - c * c) * a1;
-            b2 = (1f - res * c + c * c) * a1;
-        }
-    }
-
-    public unsafe class SoundFX_Comb : SoundFX
-    {
-        int currentTime;
-
-        public override void Initialize()
-        {
-            if (initialized)
-                return;
-
-            initialized = true;
-            maxlen = 50000;
-            buffer = new float[maxlen];
-            currentTime = 0;
-        }
-
-        public override void ProcessSample(float* i, float* o)
-        {
-            var gain = SoundSystemLocal.s_reverbFeedback.Float;
-            var len = (int)(SoundSystemLocal.s_reverbTime.Float + param);
-
-            Initialize();
-
-            // sum up and output
-            o[0] = buffer[currentTime];
-            buffer[currentTime] = buffer[currentTime] * gain + i[0];
-
-            // increment current time
-            currentTime++;
-            if (currentTime >= len) currentTime -= len;
-        }
 
         #region Commands
 
@@ -1182,5 +1093,89 @@ namespace Gengine.Sound
            => soundSystemLocal.isInitialized ? soundSystemLocal.CheckDeviceAndRecoverIfNeeded() : true;
 
         #endregion
+    }
+
+    public unsafe class SoundFX_Lowpass : SoundFX
+    {
+        public override void ProcessSample(float* i, float* o)
+        {
+            float c, a1, a2, a3, b1, b2;
+            var resonance = SoundSystemLocal.s_enviroSuitCutoffQ.Float;
+            var cutoffFrequency = SoundSystemLocal.s_enviroSuitCutoffFreq.Float;
+
+            Initialize();
+
+            c = 1f / MathX.Tan16(MathX.PI * cutoffFrequency / 44100);
+
+            // compute coefs
+            a1 = 1f / (1f + resonance * c + c * c);
+            a2 = 2 * a1;
+            a3 = a1;
+            b1 = 2f * (1f - c * c) * a1;
+            b2 = (1f - resonance * c + c * c) * a1;
+
+            // compute output value
+            o[0] = a1 * i[0] + a2 * i[-1] + a3 * i[-2] - b1 * o[-1] - b2 * o[-2];
+        }
+    }
+
+    public unsafe class SoundFX_LowpassFast : SoundFX
+    {
+        float freq, res, a1, a2, a3, b1, b2;
+
+        public override void ProcessSample(float* i, float* o)
+            => o[0] = a1 * i[0] + a2 * i[-1] + a3 * i[-2] - b1 * o[-1] - b2 * o[-2];
+
+        public void SetParms(float p1 = 0, float p2 = 0, float p3 = 0)
+        {
+            float c;
+
+            // set the vars
+            freq = p1;
+            res = p2;
+
+            // precompute the coefs
+            c = 1f / MathX.Tan(MathX.PI * freq / 44100);
+
+            // compute coefs
+            a1 = 1f / (1f + res * c + c * c);
+            a2 = 2 * a1;
+            a3 = a1;
+
+            b1 = 2f * (1f - c * c) * a1;
+            b2 = (1f - res * c + c * c) * a1;
+        }
+    }
+
+    public unsafe class SoundFX_Comb : SoundFX
+    {
+        int currentTime;
+
+        public override void Initialize()
+        {
+            if (initialized)
+                return;
+
+            initialized = true;
+            maxlen = 50000;
+            buffer = new float[maxlen];
+            currentTime = 0;
+        }
+
+        public override void ProcessSample(float* i, float* o)
+        {
+            var gain = SoundSystemLocal.s_reverbFeedback.Float;
+            var len = (int)(SoundSystemLocal.s_reverbTime.Float + param);
+
+            Initialize();
+
+            // sum up and output
+            o[0] = buffer[currentTime];
+            buffer[currentTime] = buffer[currentTime] * gain + i[0];
+
+            // increment current time
+            currentTime++;
+            if (currentTime >= len) currentTime -= len;
+        }
     }
 }

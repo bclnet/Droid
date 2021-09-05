@@ -13,6 +13,11 @@ namespace System.NumericsX
         [DllImport("msvcrt.dll", EntryPoint = "memset", SetLastError = false)] public static unsafe extern void InitBlock(void* destination, int c, uint byteCount);
         [DllImport("msvcrt.dll", EntryPoint = "memcmp", SetLastError = false)] public static unsafe extern int CompareBlock(void* b1, void* b2, int byteCount);
 
+        public static unsafe void InitBlock(float* destination, int c, int byteCount)
+        {
+            throw new NotImplementedException();
+        }
+
         public static void Swap<T>(ref T a, ref T b)
         {
             var c = a;

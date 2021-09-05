@@ -1,9 +1,8 @@
 using Gengine.Framework;
 using System;
-using Gengine.Library;
-using Gengine.Library.Core;
-using GlIndex = System.Int32;
 using System.NumericsX;
+using System.NumericsX.OpenStack;
+using GlIndex = System.Int32;
 
 namespace Gengine.Render
 {

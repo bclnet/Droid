@@ -1,6 +1,3 @@
-#define __DOOM_DLL__
-using System;
-using System.Runtime.CompilerServices;
 using Gengine.CM;
 using Gengine.Core;
 using Gengine.Framework;
@@ -8,6 +5,8 @@ using Gengine.Game;
 using Gengine.Render;
 using Gengine.Sound;
 using Gengine.UI;
+using System;
+using System.Runtime.CompilerServices;
 //using GL_INDEX_TYPE = System.UInt32; // GL_UNSIGNED_INT
 //using GlIndex = System.Int32;
 [assembly: InternalsVisibleTo("Gengine.Sound")]

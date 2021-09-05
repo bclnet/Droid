@@ -1,13 +1,4 @@
-﻿//
-// ALEnums.cs
-//
-// Copyright (C) 2020 OpenTK
-//
-// This software may be modified and distributed under the terms
-// of the MIT license. See the LICENSE file for details.
-//
-
-namespace OpenTK.Audio.OpenAL
+﻿namespace System.NumericsX.OpenAL
 {
 #pragma warning disable SA1402 // File may only contain a single type
     /// <summary>A list of valid Enable/Disable/IsEnabled parameters.</summary>
@@ -152,6 +143,9 @@ namespace OpenTK.Audio.OpenAL
 
         /// <summary>Specify the current direction vector.</summary>
         Direction = 0x1005,
+
+        /// <summary>(EFX Extension) AL_AUXILIARY_SEND_FILTER</summary>
+        EfxAuxiliarySendFilter = 0x20006,
     }
 
     /// <summary>A list of valid Int32 GetSource parameters.</summary>

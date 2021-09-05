@@ -1,9 +1,8 @@
-using Gengine.Library.Core;
-using Gengine.Library.Sys;
 using System;
 using System.NumericsX;
-using static Gengine.Library.Core.Key;
-using static Gengine.Library.Lib;
+using System.NumericsX.OpenStack;
+using static System.NumericsX.OpenStack.Key;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.UI
 {
@@ -12,7 +11,7 @@ namespace Gengine.UI
         WinStr bindName;
         bool waitingOnKey;
 
-        new void CommonInit()
+        void CommonInit()
         {
             bindName = "";
             waitingOnKey = false;

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
-using Gengine.Library;
-using Gengine.Library.Core;
-using static Gengine.Library.Lib;
+using System.NumericsX;
+using System.NumericsX.OpenStack;
+using static System.NumericsX.OpenStack.OpenStack;
 using GlIndex = System.Int32;
 
 namespace Gengine.Render
@@ -106,7 +106,7 @@ namespace Gengine.Render
                 SIMDProcessor.OverlayPointCull(cullBits, texCoords, localTextureAxis, stri.verts, stri.numVerts);
 
                 var vertexRemap = stackalloc GlIndex[stri.numVerts];
-                SIMDProcessor.Memset(vertexRemap, -1, sizeof(vertexRemap[0]) * stri.numVerts);
+                SIMDProcessor.Memset(vertexRemap, -1, sizeof(GlIndex) * stri.numVerts);
 
                 // find triangles that need the overlay
                 var numVerts = 0;
@@ -154,8 +154,8 @@ namespace Gengine.Render
                     indexes = new GlIndex[numIndexes],
                     numIndexes = numIndexes
                 };
-                memcpy(s.verts, overlayVerts, numVerts * sizeof(s.verts[0]));
-                memcpy(s.indexes, overlayIndexes, numIndexes * sizeof(s.indexes[0]));
+                memcpy(s.verts, overlayVerts, numVerts * sizeof(OverlayVertex));
+                memcpy(s.indexes, overlayIndexes, numIndexes * sizeof(GlIndex));
 
                 for (i = 0; i < materials.Count; i++)
                     if (materials[i].material == mtr)

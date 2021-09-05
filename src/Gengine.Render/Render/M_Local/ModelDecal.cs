@@ -1,4 +1,7 @@
+using System.NumericsX;
+using System.NumericsX.OpenStack;
 using System.Runtime.InteropServices;
+using GlIndex = System.Int32;
 
 namespace Gengine.Render
 {

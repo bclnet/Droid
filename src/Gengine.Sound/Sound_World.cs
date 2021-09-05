@@ -1,15 +1,15 @@
 using Gengine.Framework;
-using Gengine.Library.Core;
-using Gengine.Library.Sys;
 using Gengine.Render;
-using OpenTK.Audio.OpenAL;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.NumericsX;
+using System.NumericsX.OpenAL;
+using System.NumericsX.OpenAL.Extensions.Creative.EFX;
+using System.NumericsX.OpenStack;
 using static Gengine.Lib;
-using static Gengine.Library.Lib;
 using static Gengine.Sound.Lib;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Sound
 {
@@ -248,8 +248,11 @@ namespace Gengine.Sound
                     if (index < 1 || index > emitters.Count)
                         common.Error("SoundWorldLocal::ProcessDemoCommand: bad emitter number");
                     if (index == emitters.Count)
+                    {
                         // append a brand new one
-                        emitters.Add(def = new SoundEmitterLocal());
+                        def = new SoundEmitterLocal();
+                        emitters.Add(def);
+                    }
                     def = emitters[index];
                     def.Clear();
                     def.index = index;
@@ -404,7 +407,7 @@ namespace Gengine.Sound
             soundSystemLocal.SetMute(true);
         }
 
-        public virtual void AVIClose()
+        public unsafe virtual void AVIClose()
         {
             int i;
 
@@ -446,31 +449,31 @@ namespace Gengine.Sound
                 Mminfo info;
                 Pcmwaveformat format;
 
-                info.ckid = fourcc_riff;
-                info.fccType = mmioFOURCC('W', 'A', 'V', 'E');
-                info.cksize = (rL.Length * 2) - 8 + 4 + 16 + 8 + 8;
+                info.ckid = SoundSystemLocal.fourcc_riff;
+                info.fccType = SoundSystemLocal.mmioFOURCC('W', 'A', 'V', 'E');
+                info.cksize = (uint)((rL.Length * 2) - 8 + 4 + 16 + 8 + 8);
                 info.dwDataOffset = 12;
 
-                wO.Write(info, 12);
+                wO.Write((byte*)&info, 12);
 
-                info.ckid = mmioFOURCC('f', 'm', 't', ' ');
+                info.ckid = SoundSystemLocal.mmioFOURCC('f', 'm', 't', ' ');
                 info.cksize = 16;
 
-                wO.Write(info, 8);
+                wO.Write((byte*)&info, 8);
 
                 format.wBitsPerSample = 16;
                 format.wf.nAvgBytesPerSec = 44100 * 4;      // sample rate * block align
                 format.wf.nChannels = 2;
                 format.wf.nSamplesPerSec = 44100;
-                format.wf.wFormatTag = (short)WAVE_FORMAT_TAG.PCM;
+                format.wf.wFormatTag = WAVE_FORMAT_TAG.PCM;
                 format.wf.nBlockAlign = 4;                  // channels * bits/sample / 8
 
-                wO.Write(format, 16);
+                wO.Write((byte*)&format, 16);
 
-                info.ckid = mmioFOURCC('d', 'a', 't', 'a');
-                info.cksize = rL.Length * 2;
+                info.ckid = SoundSystemLocal.mmioFOURCC('d', 'a', 't', 'a');
+                info.cksize = (uint)(rL.Length * 2);
 
-                wO.Write(info, 8);
+                wO.Write((byte*)&info, 8);
 
                 for (i = 0; i < numSamples; i++)
                 {
@@ -535,7 +538,7 @@ namespace Gengine.Sound
                 savefile.WriteFloat(def.maxDistance);
                 savefile.WriteBool(def.playing);
                 savefile.WriteFloat(def.realDistance);
-                savefile.WriteInt(def.removeStatus);
+                savefile.WriteInt((int)def.removeStatus);
                 savefile.WriteVec3(def.spatializedOrigin);
 
                 // write the channel data
@@ -627,7 +630,7 @@ namespace Gengine.Sound
                 savefile.ReadFloat(out def.maxDistance);
                 savefile.ReadBool(out def.playing);
                 savefile.ReadFloat(out def.realDistance);
-                savefile.ReadInt(out def.removeStatus);
+                savefile.ReadInt(out int removeStatus); def.removeStatus = (REMOVE_STATUS)removeStatus;
                 savefile.ReadVec3(out def.spatializedOrigin);
 
                 // read the individual channels
@@ -656,7 +659,7 @@ namespace Gengine.Sound
 
                     // make sure we start up the hardware voice if needed
                     chan.triggered = chan.triggerState;
-                    chan.openalStreamingOffset = (uint)(currentSoundTime - chan.trigger44kHzTime);
+                    chan.openalStreamingOffset = currentSoundTime - chan.trigger44kHzTime;
 
                     // adjust the hardware fade time
                     if (chan.channelFade.fadeStart44kHz != 0)
@@ -686,21 +689,19 @@ namespace Gengine.Sound
 
         public virtual void ReadFromSaveGameSoundChannel(VFile saveGame, SoundChannel ch)
         {
-            char tmp; int i;
-
             saveGame.ReadBool(out ch.triggerState);
-            saveGame.ReadChar(out tmp);
-            saveGame.ReadChar(out tmp);
-            saveGame.ReadChar(out tmp);
+            saveGame.ReadChar(out _);
+            saveGame.ReadChar(out _);
+            saveGame.ReadChar(out _);
             saveGame.ReadInt(out ch.trigger44kHzTime);
             saveGame.ReadInt(out ch.triggerGame44kHzTime);
             ReadFromSaveGameSoundShaderParams(saveGame, ch.parms);
-            saveGame.ReadInt(out i);
+            saveGame.ReadInt(out _);
             ch.leadinSample = null;
             saveGame.ReadInt(out ch.triggerChannel);
-            saveGame.ReadInt(out i);
+            saveGame.ReadInt(out _);
             ch.soundShader = null;
-            saveGame.ReadInt(out i);
+            saveGame.ReadInt(out _);
             ch.decoder = null;
             saveGame.ReadFloat(out ch.diversity);
             saveGame.ReadFloat(out ch.lastVolume);
@@ -818,15 +819,15 @@ namespace Gengine.Sound
             {
                 if (soundSystemLocal.alIsAuxiliaryEffectSlot(listenerSlot))
                 {
-                    soundSystemLocal.alAuxiliaryEffectSloti(listenerSlot, AL_EFFECTSLOT_EFFECT, AL_EFFECTSLOT_NULL);
-                    soundSystemLocal.alDeleteAuxiliaryEffectSlots(1, &listenerSlot);
-                    listenerSlot = AL_EFFECTSLOT_NULL;
+                    soundSystemLocal.alAuxiliaryEffectSloti(listenerSlot, EffectSlotInteger.Effect, 0);
+                    soundSystemLocal.alDeleteAuxiliaryEffectSlots(1, ref listenerSlot);
+                    listenerSlot = 0;
                 }
 
                 if (soundSystemLocal.alIsFilter(listenerFilter))
                 {
-                    soundSystemLocal.alDeleteFilters(1, &listenerFilter);
-                    listenerFilter = AL_FILTER_NULL;
+                    soundSystemLocal.alDeleteFilters(1, ref listenerFilter);
+                    listenerFilter = 0;
                 }
             }
 
@@ -838,7 +839,7 @@ namespace Gengine.Sound
 
         public void Init(IRenderWorld rw)
         {
-            rw = renderWorld;
+            this.rw = rw;
             writeDemo = null;
 
             listenerAxis.Identity();
@@ -854,12 +855,12 @@ namespace Gengine.Sound
                 {
                     AL.GetError();
 
-                    soundSystemLocal.alGenAuxiliaryEffectSlots(1, &listenerSlot);
+                    soundSystemLocal.alGenAuxiliaryEffectSlots(1, ref listenerSlot);
                     var e = AL.GetError();
                     if (e != ALError.NoError)
                     {
                         common.Warning($"SoundWorldLocal::Init: alGenAuxiliaryEffectSlots failed: 0x{e}");
-                        listenerSlot = AL_EFFECTSLOT_NULL;
+                        listenerSlot = 0;
                     }
                 }
 
@@ -867,23 +868,23 @@ namespace Gengine.Sound
                 {
                     AL.GetError();
 
-                    soundSystemLocal.alGenFilters(1, listenerFilter);
-                    ALuint e = alGetError();
-                    if (e != AL_NO_ERROR)
+                    soundSystemLocal.alGenFilters(1, ref listenerFilter);
+                    var e = AL.GetError();
+                    if (e != ALError.NoError)
                     {
                         common.Warning($"SoundWorldLocal::Init: alGenFilters failed: 0x{e}");
-                        listenerFilter = AL_FILTER_NULL;
+                        listenerFilter = 0;
                     }
                     else
                     {
-                        soundSystemLocal.alFilteri(listenerFilter, AL_FILTER_TYPE, AL_FILTER_LOWPASS);
+                        soundSystemLocal.alFilteri(listenerFilter, FilterInteger.FilterType, (int)FilterType.Lowpass);
                         // original EAX occusion value was -1150
                         // default OCCLUSIONLFRATIO is 0.25
 
                         // pow(10.0, (-1150*0.25)/2000.0)
-                        soundSystemLocal.alFilterf(listenerFilter, AL_LOWPASS_GAIN, 0.718208f);
+                        soundSystemLocal.alFilterf(listenerFilter, FilterFloat.LowpassGain, 0.718208f);
                         // pow(10.0, -1150/2000.0)
-                        soundSystemLocal.alFilterf(listenerFilter, AL_LOWPASS_GAINHF, 0.266073f);
+                        soundSystemLocal.alFilterf(listenerFilter, FilterFloat.LowpassGainHF, 0.266073f);
                     }
                 }
             }
@@ -1081,7 +1082,7 @@ namespace Gengine.Sound
 		};
         public void CalcEars(int numSpeakers, Vector3 realOrigin, Vector3 listenerPos, Matrix3x3 listenerAxis, float[] ears, float spatialize)
         {
-            Vector3 svec = spatializedOrigin - listenerPos;
+            Vector3 svec = realOrigin - listenerPos;
             Vector3 ovec;
 
             ovec.x = svec * listenerAxis[0];
@@ -1123,7 +1124,7 @@ namespace Gengine.Sound
 
         // Adds the contribution of a single sound channel to finalMixBuffer this is called from the async thread
         // Mixes MIXBUFFER_SAMPLES samples starting at current44kHz sample time into finalMixBuffer
-        public void AddChannelContribution(SoundEmitterLocal sound, SoundChannel chan, int current44kHz, int numSpeakers, float[] finalMixBuffer)
+        public unsafe void AddChannelContribution(SoundEmitterLocal sound, SoundChannel chan, int current44kHz, int numSpeakers, float[] finalMixBuffer)
         {
             int j; float volume;
 
@@ -1243,190 +1244,193 @@ namespace Gengine.Sound
 
             // fetch the sound from the cache as 44kHz, 16 bit samples
             var offset = current44kHz - chan.trigger44kHzTime;
-            float[] inputSamples = new float[SIMD.MIXBUFFER_SAMPLES * 2 + 16];
-            float* alignedInputSamples = (float*)((((intptr_t)inputSamples) + 15) & ~15);
-
-            // allocate and initialize hardware source
-            if (sound.removeStatus < REMOVE_STATUS.SAMPLEFINISHED)
+            var inputSamples = new float[SIMD.MIXBUFFER_SAMPLES * 2 + 16];
+            fixed (float* inputSamplesF = inputSamples)
             {
-                if (!AL.IsSource(chan.openalSource))
-                    chan.openalSource = soundSystemLocal.AllocOpenALSource(chan, !chan.leadinSample.hardwareBuffer || !chan.soundShader.entries[0].hardwareBuffer || looping, chan.leadinSample.objectInfo.nChannels == 2);
-
-                if (AL.IsSource(chan.openalSource))
+                var alignedInputSamples = (float*)((int)(((byte*)inputSamplesF) + 15) & ~15);
+                // allocate and initialize hardware source
+                if (sound.removeStatus < REMOVE_STATUS.SAMPLEFINISHED)
                 {
-                    // stop source if needed..
-                    if (chan.triggered)
-                        AL.SourceStop(chan.openalSource);
+                    if (!AL.IsSource(chan.openalSource))
+                        chan.openalSource = soundSystemLocal.AllocOpenALSource(chan, !chan.leadinSample.hardwareBuffer || !chan.soundShader.entries[0].hardwareBuffer || looping, chan.leadinSample.objectInfo.nChannels == 2);
 
-                    // update source parameters
-                    if (global || omni)
+                    if (AL.IsSource(chan.openalSource))
                     {
-                        AL.Source(chan.openalSource, ALSourceb.SourceRelative, true);
-                        AL.Source(chan.openalSource, ALSource3f.Position, 0f, 0f, 0f);
-                        AL.Source(chan.openalSource, ALSourcef.Gain, volume < 1f ? volume : 1f);
-                    }
-                    else
-                    {
-                        AL.Source(chan.openalSource, ALSourceb.SourceRelative, false);
-                        AL.Source(chan.openalSource, ALSource3f.Position, -spatializedOriginInMeters.y, spatializedOriginInMeters.z, -spatializedOriginInMeters.x);
-                        AL.Source(chan.openalSource, ALSourcef.Gain, volume < 1f ? volume : 1f);
-                    }
-                    // DG: looping sounds with a leadin can't just use a HW buffer and openal's AL_LOOPING because we need to switch from leadin to the looped sound.. see https://github.com/dhewm/dhewm3/issues/291
-                    var haveLeadin = chan.soundShader.numLeadins > 0;
-                    AL.Source(chan.openalSource, ALSourceb.Looping, looping && chan.soundShader.entries[0].hardwareBuffer && !haveLeadin);
-#if true
-                    AL.Source(chan.openalSource, ALSourcef.ReferenceDistance, mind);
-                    AL.Source(chan.openalSource, ALSourcef.MaxDistance, maxd);
-#endif
-                    AL.Source(chan.openalSource, ALSourcef.Pitch, slowmoActive && !chan.disallowSlow ? slowmoSpeed : 1f);
-
-                    if (SoundSystemLocal.useEFXReverb)
-                        if (enviroSuitActive)
-                        {
-                            AL.Source(chan.openalSource, ALSourcei.EfxDirectFilter, listenerFilter);
-                            AL.Source(chan.openalSource, ALSource3i.EfxAUXILIARYSENDFILTER, listenerSlot, 0, listenerFilter);
-                        }
-                        else AL.Source(chan.openalSource, ALSource3i.EfxAUXILIARYSENDFILTER, listenerSlot, 0, AL_FILTER_NULL);
-
-                    if ((!looping && chan.leadinSample.hardwareBuffer) || (looping && !haveLeadin && chan.soundShader.entries[0].hardwareBuffer))
-                    {
-                        // handle uncompressed (non streaming) single shot and looping sounds
-                        // DG: ... that have no leadin (with leadin we still need to switch to another sound, just use streaming code for that) - see https://github.com/dhewm/dhewm3/issues/291
+                        // stop source if needed..
                         if (chan.triggered)
-                            AL.Source(chan.openalSource, ALSourcei.Buffer, looping ? chan.soundShader.entries[0].openalBuffer : chan.leadinSample.openalBuffer);
-                    }
-                    else
-                    {
-                        int finishedbuffers;
-                        var buffers = new int[3];
+                            AL.SourceStop(chan.openalSource);
 
-                        // handle streaming sounds (decode on the fly) both single shot AND looping
-                        if (chan.triggered)
+                        // update source parameters
+                        if (global || omni)
                         {
-                            AL.Source(chan.openalSource, ALSourcei.Buffer, 0);
-                            AL.DeleteBuffers(3, ref chan.lastopenalStreamingBuffer[0]);
-                            chan.lastopenalStreamingBuffer[0] = chan.openalStreamingBuffer[0];
-                            chan.lastopenalStreamingBuffer[1] = chan.openalStreamingBuffer[1];
-                            chan.lastopenalStreamingBuffer[2] = chan.openalStreamingBuffer[2];
-                            AL.GenBuffers(3, ref chan.openalStreamingBuffer[0]);
-                            buffers[0] = chan.openalStreamingBuffer[0];
-                            buffers[1] = chan.openalStreamingBuffer[1];
-                            buffers[2] = chan.openalStreamingBuffer[2];
-                            finishedbuffers = 3;
+                            AL.Source(chan.openalSource, ALSourceb.SourceRelative, true);
+                            AL.Source(chan.openalSource, ALSource3f.Position, 0f, 0f, 0f);
+                            AL.Source(chan.openalSource, ALSourcef.Gain, volume < 1f ? volume : 1f);
                         }
                         else
                         {
-                            AL.GetSource(chan.openalSource, ALGetSourcei.BuffersProcessed, out finishedbuffers);
-                            AL.SourceUnqueueBuffers(chan.openalSource, finishedbuffers, ref buffers[0]);
-                            if (finishedbuffers == 3)
-                                chan.triggered = true;
+                            AL.Source(chan.openalSource, ALSourceb.SourceRelative, false);
+                            AL.Source(chan.openalSource, ALSource3f.Position, -spatializedOriginInMeters.y, spatializedOriginInMeters.z, -spatializedOriginInMeters.x);
+                            AL.Source(chan.openalSource, ALSourcef.Gain, volume < 1f ? volume : 1f);
                         }
-
-                        for (j = 0; j < finishedbuffers; j++)
-                        {
-                            chan.GatherChannelSamples(chan.openalStreamingOffset * sample.objectInfo.nChannels, SIMD.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels, alignedInputSamples);
-                            for (var i = 0; i < (SIMD.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels); i++)
-                            {
-                                if (alignedInputSamples[i] < -32768f) ((short*)alignedInputSamples)[i] = -32768;
-                                else if (alignedInputSamples[i] > 32767f) ((short*)alignedInputSamples)[i] = 32767;
-                                else ((short*)alignedInputSamples)[i] = MathX.FtoiFast(alignedInputSamples[i]);
-                            }
-                            AL.BufferData(buffers[j], chan.leadinSample.objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels * sizeof(short), 44100);
-                            chan.openalStreamingOffset += SIMD.MIXBUFFER_SAMPLES;
-                        }
-
-                        if (finishedbuffers != 0)
-                            AL.SourceQueueBuffers(chan.openalSource, finishedbuffers, ref buffers[0]);
-                    }
-
-                    // (re)start if needed..
-                    if (chan.triggered)
-                    {
-                        AL.SourcePlay(chan.openalSource);
-                        chan.triggered = false;
-                    }
-                }
-            }
+                        // DG: looping sounds with a leadin can't just use a HW buffer and openal's AL_LOOPING because we need to switch from leadin to the looped sound.. see https://github.com/dhewm/dhewm3/issues/291
+                        var haveLeadin = chan.soundShader.numLeadins > 0;
+                        AL.Source(chan.openalSource, ALSourceb.Looping, looping && chan.soundShader.entries[0].hardwareBuffer && !haveLeadin);
 #if true
-            // DG: I /think/ this was only relevant for the old sound backends?
-            // FIXME: completely remove else branch, but for testing leave it in under com_asyncSound 2
-            //        (which also does the old 92-100ms updates)
-            else if (C.com_asyncSound.Integer == 2)
-            {
-                if (slowmoActive && !chan.disallowSlow)
+                        AL.Source(chan.openalSource, ALSourcef.ReferenceDistance, mind);
+                        AL.Source(chan.openalSource, ALSourcef.MaxDistance, maxd);
+#endif
+                        AL.Source(chan.openalSource, ALSourcef.Pitch, slowmoActive && !chan.disallowSlow ? slowmoSpeed : 1f);
+
+                        if (SoundSystemLocal.useEFXReverb)
+                            if (enviroSuitActive)
+                            {
+                                AL.Source(chan.openalSource, ALSourcei.EfxDirectFilter, listenerFilter);
+                                AL.Source(chan.openalSource, ALSource3i.EfxAuxiliarySendFilter, listenerSlot, 0, listenerFilter);
+                            }
+                            else AL.Source(chan.openalSource, ALSource3i.EfxAuxiliarySendFilter, listenerSlot, 0, 0);
+
+                        if ((!looping && chan.leadinSample.hardwareBuffer) || (looping && !haveLeadin && chan.soundShader.entries[0].hardwareBuffer))
+                        {
+                            // handle uncompressed (non streaming) single shot and looping sounds
+                            // DG: ... that have no leadin (with leadin we still need to switch to another sound, just use streaming code for that) - see https://github.com/dhewm/dhewm3/issues/291
+                            if (chan.triggered)
+                                AL.Source(chan.openalSource, ALSourcei.Buffer, looping ? chan.soundShader.entries[0].openalBuffer : chan.leadinSample.openalBuffer);
+                        }
+                        else
+                        {
+                            int finishedbuffers;
+                            var buffers = new int[3];
+
+                            // handle streaming sounds (decode on the fly) both single shot AND looping
+                            if (chan.triggered)
+                            {
+                                AL.Source(chan.openalSource, ALSourcei.Buffer, 0);
+                                AL.DeleteBuffers(3, ref chan.lastopenalStreamingBuffer[0]);
+                                chan.lastopenalStreamingBuffer[0] = chan.openalStreamingBuffer[0];
+                                chan.lastopenalStreamingBuffer[1] = chan.openalStreamingBuffer[1];
+                                chan.lastopenalStreamingBuffer[2] = chan.openalStreamingBuffer[2];
+                                AL.GenBuffers(3, ref chan.openalStreamingBuffer[0]);
+                                buffers[0] = chan.openalStreamingBuffer[0];
+                                buffers[1] = chan.openalStreamingBuffer[1];
+                                buffers[2] = chan.openalStreamingBuffer[2];
+                                finishedbuffers = 3;
+                            }
+                            else
+                            {
+                                AL.GetSource(chan.openalSource, ALGetSourcei.BuffersProcessed, out finishedbuffers);
+                                AL.SourceUnqueueBuffers(chan.openalSource, finishedbuffers, ref buffers[0]);
+                                if (finishedbuffers == 3)
+                                    chan.triggered = true;
+                            }
+
+                            for (j = 0; j < finishedbuffers; j++)
+                            {
+                                chan.GatherChannelSamples(chan.openalStreamingOffset * sample.objectInfo.nChannels, SIMD.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels, alignedInputSamples);
+                                var alignedInputSamplesS = (short*)alignedInputSamples;
+                                for (var i = 0; i < (SIMD.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels); i++)
+                                {
+                                    if (alignedInputSamples[i] < -32768f) alignedInputSamplesS[i] = -32768;
+                                    else if (alignedInputSamples[i] > 32767f) alignedInputSamplesS[i] = 32767;
+                                    else alignedInputSamplesS[i] = (short)MathX.FtoiFast(alignedInputSamples[i]);
+                                }
+                                AL.BufferData(buffers[j], chan.leadinSample.objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels * sizeof(short), 44100);
+                                chan.openalStreamingOffset += SIMD.MIXBUFFER_SAMPLES;
+                            }
+
+                            if (finishedbuffers != 0)
+                                AL.SourceQueueBuffers(chan.openalSource, finishedbuffers, ref buffers[0]);
+                        }
+
+                        // (re)start if needed..
+                        if (chan.triggered)
+                        {
+                            AL.SourcePlay(chan.openalSource);
+                            chan.triggered = false;
+                        }
+                    }
+                }
+#if true
+                // DG: I /think/ this was only relevant for the old sound backends?
+                // FIXME: completely remove else branch, but for testing leave it in under com_asyncSound 2
+                //        (which also does the old 92-100ms updates)
+                else if (C.com_asyncSound.Integer == 2)
                 {
-                    var slow = sound.GetSlowChannel(chan);
+                    if (slowmoActive && !chan.disallowSlow)
+                    {
+                        var slow = sound.GetSlowChannel(chan);
 
-                    slow.AttachSoundChannel(chan);
+                        slow.AttachSoundChannel(chan);
 
-                    if (sample.objectInfo.nChannels == 2)
-                        // need to add a stereo path, but very few samples go through this
-                        memset(alignedInputSamples, 0, sizeof(alignedInputSamples[0]) * SIMD.MIXBUFFER_SAMPLES * 2);
+                        if (sample.objectInfo.nChannels == 2)
+                            // need to add a stereo path, but very few samples go through this
+                            memset(alignedInputSamples, 0, sizeof(float) * SIMD.MIXBUFFER_SAMPLES * 2);
+                        else
+                            slow.GatherChannelSamples(offset, SIMD.MIXBUFFER_SAMPLES, alignedInputSamples);
+
+                        sound.SetSlowChannel(chan, slow);
+                    }
                     else
-                        slow.GatherChannelSamples(offset, SIMD.MIXBUFFER_SAMPLES, alignedInputSamples);
+                    {
+                        sound.ResetSlowChannel(chan);
 
-                    sound.SetSlowChannel(chan, slow);
-                }
-                else
-                {
-                    sound.ResetSlowChannel(chan);
+                        // if we are getting a stereo sample adjust accordingly
+                        if (sample.objectInfo.nChannels == 2) chan.GatherChannelSamples(offset * 2, SIMD.MIXBUFFER_SAMPLES * 2, alignedInputSamples); // we should probably check to make sure any looping is also to a stereo sample...
+                        else chan.GatherChannelSamples(offset, SIMD.MIXBUFFER_SAMPLES, alignedInputSamples);
+                    }
 
-                    // if we are getting a stereo sample adjust accordingly
-                    if (sample.objectInfo.nChannels == 2) chan.GatherChannelSamples(offset * 2, SIMD.MIXBUFFER_SAMPLES * 2, alignedInputSamples); // we should probably check to make sure any looping is also to a stereo sample...
-                    else chan.GatherChannelSamples(offset, SIMD.MIXBUFFER_SAMPLES, alignedInputSamples);
-                }
+                    // work out the left / right ear values
+                    var ears = new float[6];
+                    if (global || omni)
+                    {
+                        // same for all speakers
+                        for (var i = 0; i < 6; i++)
+                            ears[i] = SoundSystemLocal.s_globalFraction.Float * volume;
+                        ears[3] = SoundSystemLocal.s_subFraction.Float * volume;       // subwoofer
 
-                // work out the left / right ear values
-                var ears = new float[6];
-                if (global || omni)
-                {
-                    // same for all speakers
+                    }
+                    else
+                    {
+                        CalcEars(numSpeakers, spatializedOriginInMeters, listenerPos, listenerAxis, ears, spatialize);
+                        for (var i = 0; i < 6; i++)
+                            ears[i] *= volume;
+                    }
+
+                    // if the mask is 0, it really means do every channel
+                    if (mask == 0) mask = 255;
+                    // cleared mask bits set the mix volume to zero
                     for (var i = 0; i < 6; i++)
-                        ears[i] = SoundSystemLocal.s_globalFraction.Float * volume;
-                    ears[3] = SoundSystemLocal.s_subFraction.Float * volume;       // subwoofer
+                        if ((mask & (1 << i)) == 0)
+                            ears[i] = 0;
 
-                }
-                else
-                {
-                    CalcEars(numSpeakers, spatializedOriginInMeters, listenerPos, listenerAxis, ears, spatialize);
-                    for (var i = 0; i < 6; i++)
-                        ears[i] *= volume;
-                }
+                    // if sounds are generally normalized, using a mixing volume over 1.0 will almost always cause clipping noise.  If samples aren't normalized, there
+                    // is a good call to allow overvolumes
+                    if (SoundSystemLocal.s_clipVolumes.Bool && (parms.soundShaderFlags & ISoundSystem.SSF_UNCLAMPED) == 0)
+                        for (var i = 0; i < 6; i++)
+                            if (ears[i] > 1f)
+                                ears[i] = 1f;
 
-                // if the mask is 0, it really means do every channel
-                if (mask == 0) mask = 255;
-                // cleared mask bits set the mix volume to zero
-                for (var i = 0; i < 6; i++)
-                    if ((mask & (1 << i)) == 0)
-                        ears[i] = 0;
+                    // if this is the very first mixing block, set the lastV to the current volume
+                    if (current44kHz == chan.trigger44kHzTime)
+                        for (j = 0; j < 6; j++)
+                            chan.lastV[j] = ears[j];
 
-                // if sounds are generally normalized, using a mixing volume over 1.0 will almost always cause clipping noise.  If samples aren't normalized, there
-                // is a good call to allow overvolumes
-                if (SoundSystemLocal.s_clipVolumes.Bool && (parms.soundShaderFlags & ISoundSystem.SSF_UNCLAMPED) == 0)
-                    for (var i = 0; i < 6; i++)
-                        if (ears[i] > 1f)
-                            ears[i] = 1f;
+                    if (numSpeakers == 6)
+                    {
+                        if (sample.objectInfo.nChannels == 1) SIMDProcessor.MixSoundSixSpeakerMono(finalMixBuffer, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES, chan.lastV, ears);
+                        else SIMDProcessor.MixSoundSixSpeakerStereo(finalMixBuffer, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES, chan.lastV, ears);
+                    }
+                    else
+                    {
+                        if (sample.objectInfo.nChannels == 1) SIMDProcessor.MixSoundTwoSpeakerMono(finalMixBuffer, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES, chan.lastV, ears);
+                        else SIMDProcessor.MixSoundTwoSpeakerStereo(finalMixBuffer, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES, chan.lastV, ears);
+                    }
 
-                // if this is the very first mixing block, set the lastV to the current volume
-                if (current44kHz == chan.trigger44kHzTime)
                     for (j = 0; j < 6; j++)
                         chan.lastV[j] = ears[j];
-
-                if (numSpeakers == 6)
-                {
-                    if (sample.objectInfo.nChannels == 1) SIMDProcessor.MixSoundSixSpeakerMono(finalMixBuffer, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES, chan.lastV, ears);
-                    else SIMDProcessor.MixSoundSixSpeakerStereo(finalMixBuffer, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES, chan.lastV, ears);
                 }
-                else
-                {
-                    if (sample.objectInfo.nChannels == 1) SIMDProcessor.MixSoundTwoSpeakerMono(finalMixBuffer, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES, chan.lastV, ears);
-                    else SIMDProcessor.MixSoundTwoSpeakerStereo(finalMixBuffer, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES, chan.lastV, ears);
-                }
-
-                for (j = 0; j < 6; j++)
-                    chan.lastV[j] = ears[j];
-            }
 #endif
+            }
 
             soundSystemLocal.soundStats.activeSounds++;
         }
@@ -1485,7 +1489,7 @@ namespace Gengine.Sound
                 {
                     EFXFile.EFXprintf($"Switching to EFX '{s}' (#{effect:u})\n");
                     listenerEffect = effect;
-                    soundSystemLocal.alAuxiliaryEffectSloti(listenerSlot, AL_EFFECTSLOT_EFFECT, effect);
+                    soundSystemLocal.alAuxiliaryEffectSloti(listenerSlot, EffectSlotInteger.Effect, effect);
                 }
             }
 
@@ -1543,7 +1547,7 @@ namespace Gengine.Sound
 
         // this is called by the main thread writes one block of sound samples if enough time has passed
         // This can be used to write wave files even if no sound hardware exists
-        public void AVIUpdate()
+        public unsafe void AVIUpdate()
         {
             if (game44kHz - lastAVI44kHz < SIMD.MIXBUFFER_SAMPLES)
                 return;
@@ -1551,7 +1555,7 @@ namespace Gengine.Sound
             var numSpeakers = SoundSystemLocal.s_numberOfSpeakers.Integer;
 
             var mix = new float[SIMD.MIXBUFFER_SAMPLES * 6 + 16];
-            float* mix_p = (float*)(((intptr_t)mix + 15) & ~15);    // SIMD align
+            var mix_p = (float*)(((intptr_t)mix + 15) & ~15);    // SIMD align
 
             SIMDProcessor.Memset(mix_p, 0, SIMD.MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
 
@@ -1732,13 +1736,13 @@ namespace Gengine.Sound
         // the screen-shake on a player. This doesn't do the portal-occlusion currently, because it would have to reset all the defs which would be problematic in multiplayer
         public unsafe float FindAmplitude(SoundEmitterLocal sound, int localTime, Vector3? listenerPosition, int channel, bool shakesOnly)
         {
+            const int AMPLITUDE_SAMPLES = SIMD.MIXBUFFER_SAMPLES / 8;
             int i, j;
             SoundShaderParms parms;
             float volume;
             int activeChannelCount;
-            const int AMPLITUDE_SAMPLES = SIMD.MIXBUFFER_SAMPLES / 8;
-            float[] sourceBuffer = new float[AMPLITUDE_SAMPLES];
-            float[] sumBuffer = new float[AMPLITUDE_SAMPLES];
+            var sourceBuffer = stackalloc float[AMPLITUDE_SAMPLES];
+            var sumBuffer = stackalloc float[AMPLITUDE_SAMPLES];
             // work out the distance from the listener to the emitter
             float dlen;
 

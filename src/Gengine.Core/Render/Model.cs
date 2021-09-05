@@ -1,8 +1,7 @@
 using System;
 using System.NumericsX;
-using Gengine.Library;
-using Gengine.Library.Core;
-using GL_INDEX_TYPE = System.UInt32; // GL_UNSIGNED_INT
+using System.NumericsX.OpenStack;
+//using GL_INDEX_TYPE = System.UInt32; // GL_UNSIGNED_INT
 using GlIndex = System.Int32;
 
 namespace Gengine.Render

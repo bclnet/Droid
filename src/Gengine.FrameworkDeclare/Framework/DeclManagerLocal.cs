@@ -1,18 +1,17 @@
 //#define USE_COMPRESSED_DECLS
 #define GET_HUFFMAN_FREQUENCIES
-using Gengine.Library;
-using Gengine.Library.Core;
 using Gengine.Render;
 using Gengine.Sound;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.NumericsX;
+using System.NumericsX.OpenStack;
 using System.Runtime.CompilerServices;
 using System.Text;
 using static Gengine.Lib;
 using static Gengine.Lib2;
-using static Gengine.Library.Lib;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Framework
 {

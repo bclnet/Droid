@@ -1,13 +1,11 @@
-using Gengine.Library;
-using Gengine.Library.Core;
-using Gengine.Library.Sys;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
+using System.NumericsX.OpenStack;
 using static Gengine.Lib;
-using static Gengine.Library.Core.Key;
-using static Gengine.Library.Lib;
+using static System.NumericsX.OpenStack.Key;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.UI
 {
@@ -239,7 +237,7 @@ namespace Gengine.UI
             if (key != K_MOUSE1)
             {
                 // Send a fake mouse click event so onAction gets run in our parents
-                var ev2 = sys.GenerateMouseButtonEvent(1, true);
+                var ev2 = system.GenerateMouseButtonEvent(1, true);
                 base.HandleEvent(ev2, updateVisuals);
             }
 

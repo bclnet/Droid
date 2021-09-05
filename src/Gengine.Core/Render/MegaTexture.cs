@@ -1,7 +1,6 @@
 using System;
 using System.NumericsX;
-using Gengine.Library;
-using Gengine.Library.Core;
+using System.NumericsX.OpenStack;
 
 namespace Gengine.Render
 {
