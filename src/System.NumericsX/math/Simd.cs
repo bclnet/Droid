@@ -148,25 +148,25 @@ namespace System.NumericsX
         void MatX_LDLTFactor(MatrixX mat, VectorX invDiag, int n);
 
         // rendering
-        //void BlendJoints(JointQuat* joints, JointQuat* blendJoints, float lerp, int* index, int numJoints);
+        void BlendJoints(JointQuat* joints, JointQuat* blendJoints, float lerp, int* index, int numJoints);
         //void ConvertJointQuatsToJointMats(JointMat* jointMats, JointQuat* jointQuats, int numJoints);
         //void ConvertJointMatsToJointQuats(JointQuat* jointQuats, JointMat* jointMats, int numJoints);
         //void TransformJoints(JointMat* jointMats, int* parents, int firstJoint, int lastJoint);
         //void UntransformJoints(JointMat* jointMats, int* parents, int firstJoint, int lastJoint);
         //void TransformVerts(DrawVert* verts, int numVerts, JointMat* joints, Vector4* weights, int* index, int numWeights);
-        //void TracePointCull(byte* cullBits, byte &totalOr, float radius, Plane* planes, DrawVert* verts, int numVerts);
+        //void TracePointCull(byte* cullBits, byte totalOr, float radius, Plane* planes, DrawVert* verts, int numVerts);
         //void DecalPointCull(byte* cullBits, Plane* planes, DrawVert* verts, int numVerts);
         //void OverlayPointCull(byte* cullBits, Vector2* texCoords, Plane* planes, DrawVert* verts, int numVerts);
-        //void DeriveTriPlanes(Plane* planes, DrawVert* verts, int numVerts, int* indexes, int numIndexes);
-        //void DeriveTriPlanes(Plane* planes, DrawVert* verts, int numVerts, short* indexes, int numIndexes);
-        //void DeriveTangents(Plane* planes, DrawVert* verts, int numVerts, int* indexes, int numIndexes);
-        //void DeriveTangents(Plane* planes, DrawVert* verts, int numVerts, short* indexes, int numIndexes);
-        //void DeriveUnsmoothedTangents(DrawVert* verts, dominantTri_s* dominantTris, int numVerts);
-        //void NormalizeTangents(DrawVert* verts, int numVerts);
-        //void CreateTextureSpaceLightVectors(Vector3* lightVectors, Vector3 lightOrigin, DrawVert* verts, int numVerts, int* indexes, int numIndexes);
-        //void CreateSpecularTextureCoords(Vector4* texCoords, Vector3 lightOrigin, Vector3 viewOrigin, DrawVert* verts, int numVerts, int* indexes, int numIndexes);
-        //int CreateShadowCache(Vector4* vertexCache, int* vertRemap, Vector3 lightOrigin, DrawVert* verts, int numVerts);
-        //int CreateVertexProgramShadowCache(Vector4* vertexCache, DrawVert* verts, int numVerts);
+        void DeriveTriPlanes(Plane* planes, DrawVert verts, int numVerts, int* indexes, int numIndexes);
+        void DeriveTriPlanes(Plane* planes, DrawVert verts, int numVerts, short* indexes, int numIndexes);
+        void DeriveTangents(Plane* planes, DrawVert verts, int numVerts, int* indexes, int numIndexes);
+        void DeriveTangents(Plane* planes, DrawVert verts, int numVerts, short* indexes, int numIndexes);
+        //void DeriveUnsmoothedTangents(DrawVert verts, DominantTri* dominantTris, int numVerts);
+        void NormalizeTangents(DrawVert verts, int numVerts);
+        void CreateTextureSpaceLightVectors(Vector3* lightVectors, Vector3 lightOrigin, DrawVert verts, int numVerts, int* indexes, int numIndexes);
+        void CreateSpecularTextureCoords(Vector4* texCoords, Vector3 lightOrigin, Vector3 viewOrigin, DrawVert verts, int numVerts, int* indexes, int numIndexes);
+        int CreateShadowCache(Vector4* vertexCache, int* vertRemap, Vector3 lightOrigin, DrawVert verts, int numVerts);
+        int CreateVertexProgramShadowCache(Vector4* vertexCache, DrawVert verts, int numVerts);
 
         // sound mixing
         void UpSamplePCMTo44kHz(float* dest, short* pcm, int numSamples, int kHz, int numChannels);

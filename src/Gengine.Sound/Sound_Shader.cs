@@ -117,9 +117,9 @@ namespace Gengine.Sound
             int i; var ret = false;
 
             for (i = 0; i < numLeadins; i++)
-                if (leadins[i].objectInfo.wFormatTag == (short)WAVE_FORMAT_TAG.OGG) { common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{leadins[i].name}'"); ret = true; }
+                if (leadins[i].objectInfo.wFormatTag == WAVE_FORMAT_TAG.OGG) { common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{leadins[i].name}'"); ret = true; }
             for (i = 0; i < numEntries; i++)
-                if (entries[i].objectInfo.wFormatTag == (short)WAVE_FORMAT_TAG.OGG) { common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{entries[i].name}'"); ret = true; }
+                if (entries[i].objectInfo.wFormatTag == WAVE_FORMAT_TAG.OGG) { common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{entries[i].name}'"); ret = true; }
             return ret;
         }
 

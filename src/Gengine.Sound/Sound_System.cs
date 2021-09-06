@@ -8,6 +8,7 @@ using System.NumericsX.OpenAL;
 using System.NumericsX.OpenAL.Extensions.Creative.EFX;
 using System.NumericsX.OpenAL.Extensions.SOFT.HRTF;
 using System.NumericsX.OpenStack;
+using System.NumericsX.OpenStack.System;
 using System.Runtime.CompilerServices;
 using static Gengine.Lib;
 using static Gengine.Sound.Lib;
@@ -184,7 +185,7 @@ namespace Gengine.Sound
                     alIsEffect = ALBase.LoadDelegate<EFX.IsEffectDelegate>("alIsEffect");
                     alEffecti = ALBase.LoadDelegate<EFX.EffectiDelegate>("alEffecti");
                     alEffectf = ALBase.LoadDelegate<EFX.EffectfDelegate>("alEffectf");
-                    alEffectfv = ALBase.LoadDelegate<EFX.EffectfvRefDelegate>("alEffectfv");
+                    alEffectfv = ALBase.LoadDelegate<EFX.EffectfvArrayDelegate>("alEffectfv");
                     alGenFilters = ALBase.LoadDelegate<EFX.GenFiltersRefDelegate>("alGenFilters");
                     alDeleteFilters = ALBase.LoadDelegate<EFX.DeleteFiltersRefDelegate>("alDeleteFilters");
                     alIsFilter = ALBase.LoadDelegate<EFX.IsFilterDelegate>("alIsFilter");
@@ -460,7 +461,7 @@ namespace Gengine.Sound
                 return ret;
             }
 
-            SysW.EnterCriticalSection();
+            ISystem.EnterCriticalSection();
             if (graph == null)
                 graph = new byte[256 * 128 * 4];
             Array.Clear(graph, 0, 256 * 128 * 4);
@@ -557,7 +558,7 @@ namespace Gengine.Sound
                 ret.imageWidth = 256;
                 ret.image = graph;
             }
-            SysW.LeaveCriticalSection();
+            ISystem.LeaveCriticalSection();
             return ret;
         }
 

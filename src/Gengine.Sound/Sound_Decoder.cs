@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
+using System.NumericsX.OpenStack.System;
 using System.Runtime.InteropServices;
 using static Gengine.Sound.Lib;
 using static OggVorbis.Vorbis;
@@ -40,7 +41,7 @@ namespace Gengine.Sound
     }
 
     // specific waveform format structure for PCM data
-    public struct Pcmwaveformat
+    public struct PcmWaveFormat
     {
         public Waveformat wf;
         public short wBitsPerSample;
@@ -130,13 +131,13 @@ namespace Gengine.Sound
             if (mhmmio == null)
                 return -1;
 
-            SysW.EnterCriticalSection(CRITICAL_SECTION.SECTION_ONE);
+            ISystem.EnterCriticalSection(CRITICAL_SECTION.SECTION_ONE);
 
             var ov = new OggVorbis_File();
 
             if (OggVorbis.ov_openFile(mhmmio, ov) < 0)
             {
-                SysW.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE);
+                ISystem.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE);
                 fileSystem.CloseFile(mhmmio);
                 mhmmio = null;
                 return -1;
@@ -172,12 +173,12 @@ namespace Gengine.Sound
 
             pwfx = mpwfx.Format;
 
-            SysW.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE);
+            ISystem.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE);
             isOgg = true;
             return 0;
         }
 
-        unsafe int ReadOGG(byte* pBuffer, int dwSizeToRead, int* pdwSizeRead)
+        unsafe int ReadOGG(byte* pBuffer, int dwSizeToRead, Action<int> pdwSizeRead)
         {
             var total = dwSizeToRead;
             var bufferPtr = pBuffer;
@@ -194,9 +195,7 @@ namespace Gengine.Sound
 
             dwSizeToRead = (int)(bufferPtr - pBuffer);
 
-            if (pdwSizeRead != null)
-                *pdwSizeRead = dwSizeToRead;
-
+            pdwSizeRead?.Invoke(dwSizeToRead);
             return dwSizeToRead;
         }
 
@@ -205,9 +204,9 @@ namespace Gengine.Sound
             var ov = (OggVorbis_File)ogg;
             if (ov != null)
             {
-                SysW.EnterCriticalSection(CRITICAL_SECTION.SECTION_ONE);
+                ISystem.EnterCriticalSection(CRITICAL_SECTION.SECTION_ONE);
                 ov_clear(ov);
-                SysW.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE);
+                ISystem.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE);
                 fileSystem.CloseFile(mhmmio);
                 mhmmio = null;
                 ogg = null;
@@ -311,14 +310,14 @@ namespace Gengine.Sound
             }
 
             // samples can be decoded both from the sound thread and the main thread for shakes
-            SysW.EnterCriticalSection(CRITICAL_SECTION.SECTION_ONE);
+            ISystem.EnterCriticalSection(CRITICAL_SECTION.SECTION_ONE);
             var readSamples44k = sample.objectInfo.wFormatTag switch
             {
                 WAVE_FORMAT_TAG.PCM => DecodePCM(sample, sampleOffset44k, sampleCount44k, dest),
                 WAVE_FORMAT_TAG.OGG => DecodeOGG(sample, sampleOffset44k, sampleCount44k, dest),
                 _ => 0,
             };
-            SysW.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE);
+            ISystem.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE);
 
             if (readSamples44k < sampleCount44k)
                 UnsafeX.InitBlock(dest + readSamples44k, 0, (sampleCount44k - readSamples44k) * sizeof(float));
@@ -326,14 +325,14 @@ namespace Gengine.Sound
 
         public virtual void ClearDecoder()
         {
-            SysW.EnterCriticalSection(CRITICAL_SECTION.SECTION_ONE);
+            ISystem.EnterCriticalSection(CRITICAL_SECTION.SECTION_ONE);
             switch (lastFormat)
             {
                 case WAVE_FORMAT_TAG.PCM: break;
                 case WAVE_FORMAT_TAG.OGG: ov_clear(ogg); ogg.memset(); break;
             }
             Clear();
-            SysW.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE);
+            ISystem.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE);
         }
 
         public virtual SoundSample Sample => lastSample;

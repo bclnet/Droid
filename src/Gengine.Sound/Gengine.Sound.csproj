@@ -2,9 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <ApplicationIcon />
-    <OutputType>Library</OutputType>
-    <StartupObject />
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -16,10 +13,6 @@
     <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
     <ProjectReference Include="..\OggVorbis\OggVorbis.csproj" />
     <ProjectReference Include="..\System.NumericsX.OpenAL\System.NumericsX.OpenAL.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
 
 </Project>

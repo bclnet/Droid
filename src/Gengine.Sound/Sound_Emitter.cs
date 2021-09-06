@@ -3,6 +3,7 @@ using System;
 using System.NumericsX;
 using System.NumericsX.OpenAL;
 using System.NumericsX.OpenStack;
+using System.NumericsX.OpenStack.System;
 using static Gengine.Lib;
 using static Gengine.Sound.Lib;
 using static System.NumericsX.OpenStack.OpenStack;
@@ -303,7 +304,7 @@ namespace Gengine.Sound
                 {
                     len = -sampleOffset44k;
                     if (len > sampleCount44k) len = sampleCount44k;
-                    memset(dest_p, 0, len * sizeof(float));
+                    UnsafeX.InitBlock(dest_p, 0, len * sizeof(float));
                     dest_p += len;
                     sampleCount44k -= len;
                     sampleOffset44k += len;
@@ -313,7 +314,7 @@ namespace Gengine.Sound
                 var leadin = leadinSample;
                 if (leadin == null || sampleOffset44k < 0 || sampleCount44k <= 0)
                 {
-                    memset(dest_p, 0, sampleCount44k * sizeof(float));
+                    UnsafeX.InitBlock(dest_p, 0, sampleCount44k * sizeof(float));
                     return;
                 }
 
@@ -333,7 +334,7 @@ namespace Gengine.Sound
                 // if not looping, zero fill any remaining spots
                 if (soundShader == null || (parms.soundShaderFlags & ISoundSystem.SSF_LOOPING) == 0)
                 {
-                    memset(dest_p, 0, sampleCount44k * sizeof(float));
+                    UnsafeX.InitBlock(dest_p, 0, sampleCount44k * sizeof(float));
                     return;
                 }
 
@@ -341,7 +342,7 @@ namespace Gengine.Sound
                 var loop = soundShader.entries[0];
                 if (loop != null)
                 {
-                    memset(dest_p, 0, sampleCount44k * sizeof(float));
+                    UnsafeX.InitBlock(dest_p, 0, sampleCount44k * sizeof(float));
                     return;
                 }
 
@@ -496,7 +497,7 @@ namespace Gengine.Sound
                 if (chan2.triggerState && chan2.soundShader == shader2 && chan2.trigger44kHzTime == start44kHz) { if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf("already started this frame\n"); return 0; }
             }
 
-            SysW.EnterCriticalSection();
+            ISystem.EnterCriticalSection();
 
             // kill any sound that is currently playing on this channel
             if (channel != ISoundSystem.SCHANNEL_ANY)
@@ -524,7 +525,7 @@ namespace Gengine.Sound
             if (i == SoundSystemLocal.SOUND_MAX_CHANNELS)
             {
                 // we couldn't find a channel for it
-                SysW.LeaveCriticalSection();
+                ISystem.LeaveCriticalSection();
                 if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf("no channels available\n");
                 return 0;
             }
@@ -586,7 +587,7 @@ namespace Gengine.Sound
 
             length *= (int)(1000 / (float)SoundSystemLocal.PRIMARYFREQ);
 
-            SysW.LeaveCriticalSection();
+            ISystem.LeaveCriticalSection();
             return length;
         }
 
@@ -638,7 +639,7 @@ namespace Gengine.Sound
                 soundWorld.writeDemo.WriteInt(channel);
             }
 
-            SysW.EnterCriticalSection();
+            ISystem.EnterCriticalSection();
             for (i = 0; i < SoundSystemLocal.SOUND_MAX_CHANNELS; i++)
             {
                 var chan = channels[i];
@@ -659,7 +660,7 @@ namespace Gengine.Sound
                 chan.leadinSample = null;
                 chan.soundShader = null;
             }
-            SysW.LeaveCriticalSection();
+            ISystem.LeaveCriticalSection();
         }
 
         // to is in Db (sigh), over is in seconds

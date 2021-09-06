@@ -1,18 +1,23 @@
+using System.Runtime.InteropServices;
+
 namespace System.NumericsX
 {
+    [StructLayout(LayoutKind.Sequential)]
     public struct JointQuat
     {
         public Quat q;
         public Vector3 t;
     }
 
-    public class JointMat
+    [StructLayout(LayoutKind.Sequential)]
+    public struct JointMat
     {
-        readonly float[] mat = new float[3 * 4];
+        float[] mat;
 
         public void SetRotation(Matrix3x3 m)
         {
             // NOTE: Matrix3 is transposed because it is column-major
+            mat = new float[3 * 4];
             mat[0 * 4 + 0] = m[0].x;
             mat[0 * 4 + 1] = m[1].x;
             mat[0 * 4 + 2] = m[2].x;
@@ -26,6 +31,7 @@ namespace System.NumericsX
 
         public void SetTranslation(Vector3 t)
         {
+            mat = new float[3 * 4];
             mat[0 * 4 + 3] = t.x;
             mat[1 * 4 + 3] = t.y;
             mat[2 * 4 + 3] = t.z;

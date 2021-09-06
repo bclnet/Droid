@@ -107,7 +107,7 @@ namespace Gengine.Sound
         unsafe int ReadMMIO()
         {
             Mminfo ckIn;           // chunk info. for general use.
-            Pcmwaveformat pcmWaveFormat;  // Temp PCM structure to load in.
+            PcmWaveFormat pcmWaveFormat;  // Temp PCM structure to load in.
 
             mpwfx.memset();
 
@@ -132,17 +132,17 @@ namespace Gengine.Sound
                 ckIn.ckid = LittleInt(ckIn.ckid);
                 ckIn.cksize = LittleInt(ckIn.cksize);
                 ckIn.dwDataOffset += ckIn.cksize - 8;
-            } while (ckIn.ckid != mmioFOURCC('f', 'm', 't', ' '));
+            } while (ckIn.ckid != SoundSystemLocal.mmioFOURCC('f', 'm', 't', ' '));
 
             // Expect the 'fmt' chunk to be at least as large as <PCMWAVEFORMAT>; if there are extra parameters at the end, we'll ignore them
-            if (ckIn.cksize < sizeof(pcmwaveformat_t))
+            if (ckIn.cksize < sizeof(PcmWaveFormat))
                 return -1;
 
             // Read the 'fmt ' chunk into <pcmWaveFormat>.
-            if (mhmmio.Read(&pcmWaveFormat, sizeof(pcmWaveFormat)) != sizeof(pcmWaveFormat))
+            if (mhmmio.Read((byte*)&pcmWaveFormat, sizeof(PcmWaveFormat)) != sizeof(PcmWaveFormat))
                 return -1;
             Debug.Assert(!isOgg);
-            pcmWaveFormat.wf.wFormatTag = LittleShort(pcmWaveFormat.wf.wFormatTag);
+            pcmWaveFormat.wf.wFormatTag = (WAVE_FORMAT_TAG)LittleShort((short)pcmWaveFormat.wf.wFormatTag);
             pcmWaveFormat.wf.nChannels = LittleShort(pcmWaveFormat.wf.nChannels);
             pcmWaveFormat.wf.nSamplesPerSec = LittleInt(pcmWaveFormat.wf.nSamplesPerSec);
             pcmWaveFormat.wf.nAvgBytesPerSec = LittleInt(pcmWaveFormat.wf.nAvgBytesPerSec);
@@ -215,7 +215,7 @@ namespace Gengine.Sound
         // Reads section of data from a wave file into pBuffer and returns how much read in pdwSizeRead, reading not more than dwSizeToRead.
         // This uses mck to determine where to start reading from.  So subsequent calls will be continue where the last left off unless
         // Reset() is called.
-        public unsafe int Read(byte* pBuffer, int dwSizeToRead, out int pdwSizeRead)
+        public unsafe int Read(byte* pBuffer, int dwSizeToRead, Action<int> pdwSizeRead)
         {
             if (ogg != null)
                 return ReadOGG(pBuffer, dwSizeToRead, pdwSizeRead);
@@ -228,8 +228,7 @@ namespace Gengine.Sound
                 SIMDProcessor.Memcpy(pBuffer, mpbDataCur, dwSizeToRead);
                 mpbDataCur += dwSizeToRead;
 
-                if (pdwSizeRead != null)
-                    *pdwSizeRead = dwSizeToRead;
+                pdwSizeRead?.Invoke(dwSizeToRead);
                 return dwSizeToRead;
 
             }

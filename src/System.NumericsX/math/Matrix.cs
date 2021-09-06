@@ -6,9 +6,13 @@ using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct Matrix2x2
     {
+        public static Matrix2x2 zero = new(new Vector2(0f, 0f), new Vector2(0f, 0f));
+        public static Matrix2x2 identity = new(new Vector2(1f, 0f), new Vector2(0f, 1f));
+        internal Vector2[] mat;
+        
         public Matrix2x2(Matrix2x2 a)
             => mat = (Vector2[])a.mat.Clone();
         public Matrix2x2(Vector2 x, Vector2 y)
@@ -190,17 +194,16 @@ namespace System.NumericsX
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
-
-        [FieldOffset(0)] internal Vector2[] mat;
-
-        public static Matrix2x2 zero = new(new Vector2(0f, 0f), new Vector2(0f, 0f));
-        public static Matrix2x2 identity = new(new Vector2(1f, 0f), new Vector2(0f, 1f));
     }
 
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct Matrix3x3
     {
         public const int SizeOf = 3 * 3 * sizeof(float);
+        public static Matrix3x3 zero = new(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0));
+        public static Matrix3x3 identity = new(new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1));
+        public Vector3[] mat;
+
         public Matrix3x3(Matrix3x3 a)
             => mat = (Vector3[])a.mat.Clone();
         public Matrix3x3(Vector3 x, Vector3 y, Vector3 z)
@@ -697,16 +700,15 @@ namespace System.NumericsX
         }
         public Matrix3x3 SkewSymmetric(Vector3 src)
             => new(0f, -src.z, src.y, src.z, 0f, -src.x, -src.y, src.x, 0f);
-
-        [FieldOffset(0)] public Vector3[] mat;
-
-        public static Matrix3x3 zero = new(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0));
-        public static Matrix3x3 identity = new(new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1));
     }
 
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct Matrix4x4
     {
+        public static Matrix4x4 zero = new(new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0));
+        public static Matrix4x4 identity = new(new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), new Vector4(0, 0, 1, 0), new Vector4(0, 0, 0, 1));
+        internal Vector4[] mat;
+
         public Matrix4x4(Matrix4x4 a)
             => mat = (Vector4[])a.mat.Clone();
         public Matrix4x4(Vector4 x, Vector4 y, Vector4 z, Vector4 w)
@@ -1200,16 +1202,15 @@ namespace System.NumericsX
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
-
-        [FieldOffset(0)] internal Vector4[] mat;
-
-        public static Matrix4x4 zero = new(new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0));
-        public static Matrix4x4 identity = new(new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), new Vector4(0, 0, 1, 0), new Vector4(0, 0, 0, 1));
     }
 
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct Matrix5x5
     {
+        public static Matrix5x5 zero = new(new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0));
+        public static Matrix5x5 identity = new(new Vector5(1, 0, 0, 0, 0), new Vector5(0, 1, 0, 0, 0), new Vector5(0, 0, 1, 0, 0), new Vector5(0, 0, 0, 1, 0), new Vector5(0, 0, 0, 0, 1));
+        internal Vector5[] mat;
+
         public Matrix5x5(Matrix5x5 a)
             => mat = (Vector5[])a.mat.Clone();
         public Matrix5x5(Vector5 v0, Vector5 v1, Vector5 v2, Vector5 v3, Vector5 v4)
@@ -1674,16 +1675,15 @@ namespace System.NumericsX
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
-
-        [FieldOffset(0)] internal Vector5[] mat;
-
-        public static Matrix5x5 zero = new(new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0));
-        public static Matrix5x5 identity = new(new Vector5(1, 0, 0, 0, 0), new Vector5(0, 1, 0, 0, 0), new Vector5(0, 0, 1, 0, 0), new Vector5(0, 0, 0, 1, 0), new Vector5(0, 0, 0, 0, 1));
     }
 
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct Matrix6x6
     {
+        public static Matrix6x6 zero = new(new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0));
+        public static Matrix6x6 identity = new(new Vector6(1, 0, 0, 0, 0, 0), new Vector6(0, 1, 0, 0, 0, 0), new Vector6(0, 0, 1, 0, 0, 0), new Vector6(0, 0, 0, 1, 0, 0), new Vector6(0, 0, 0, 0, 1, 0), new Vector6(0, 0, 0, 0, 0, 1));
+        internal Vector6[] mat;
+
         public Matrix6x6(Matrix6x6 a)
             => mat = (Vector6[])a.mat.Clone();
         public Matrix6x6(Vector6 v0, Vector6 v1, Vector6 v2, Vector6 v3, Vector6 v4, Vector6 v5)
@@ -2399,11 +2399,6 @@ namespace System.NumericsX
             => mat[0].ToFloatPtr(callback);
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
-
-        [FieldOffset(0)] internal Vector6[] mat;
-
-        public static Matrix6x6 zero = new(new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0));
-        public static Matrix6x6 identity = new(new Vector6(1, 0, 0, 0, 0, 0), new Vector6(0, 1, 0, 0, 0, 0), new Vector6(0, 0, 1, 0, 0, 0), new Vector6(0, 0, 0, 1, 0, 0), new Vector6(0, 0, 0, 0, 1, 0), new Vector6(0, 0, 0, 0, 0, 1));
     }
 
     [StructLayout(LayoutKind.Explicit)]

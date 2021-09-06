@@ -50,7 +50,7 @@ namespace Gengine.Sound
         {
             int i;
 
-            SysW.EnterCriticalSection();
+            ISystem.EnterCriticalSection();
 
             AVIClose();
 
@@ -61,7 +61,7 @@ namespace Gengine.Sound
             }
             localSound = null;
 
-            SysW.LeaveCriticalSection();
+            ISystem.LeaveCriticalSection();
         }
 
         // this is called from the main thread
@@ -229,9 +229,9 @@ namespace Gengine.Sound
                     // we need to protect this from the async thread
                     // other instances of calling idSoundWorldLocal::ReadFromSaveGame do this while the sound code is muted
                     // setting muted and going right in may not be good enough here, as we async thread may already be in an async tick (in which case we could still race to it)
-                    SysW.EnterCriticalSection();
+                    ISystem.EnterCriticalSection();
                     ReadFromSaveGame(readDemo);
-                    SysW.LeaveCriticalSection();
+                    ISystem.LeaveCriticalSection();
                     UnPause();
                     break;
                 case SCMD.PLACE_LISTENER:
@@ -447,7 +447,7 @@ namespace Gengine.Sound
 
                 var numSamples = rL.Length / 2;
                 Mminfo info;
-                Pcmwaveformat format;
+                PcmWaveFormat format;
 
                 info.ckid = SoundSystemLocal.fourcc_riff;
                 info.fccType = SoundSystemLocal.mmioFOURCC('W', 'A', 'V', 'E');
@@ -921,7 +921,7 @@ namespace Gengine.Sound
             if (!soundSystemLocal.isInitialized)
                 return;
 
-            SysW.EnterCriticalSection();
+            ISystem.EnterCriticalSection();
 
             // if we are recording an AVI demo, don't use hardware time
             if (fpa[0] != null)
@@ -989,7 +989,7 @@ namespace Gengine.Sound
                 }
             }
 
-            SysW.LeaveCriticalSection();
+            ISystem.LeaveCriticalSection();
 
             // the sound meter
             if (SoundSystemLocal.s_showLevelMeter.Integer != 0)
@@ -1055,9 +1055,9 @@ namespace Gengine.Sound
                 def = new SoundEmitterLocal();
 
                 // we need to protect this from the async thread
-                SysW.EnterCriticalSection();
+                ISystem.EnterCriticalSection();
                 index = emitters.Add_(def);
-                SysW.LeaveCriticalSection();
+                ISystem.LeaveCriticalSection();
 
                 if (SoundSystemLocal.s_showStartSound.Integer != 0)
                     common.Printf($"sound: appended new sound def {index}\n");
@@ -1362,11 +1362,9 @@ namespace Gengine.Sound
 
                         slow.AttachSoundChannel(chan);
 
-                        if (sample.objectInfo.nChannels == 2)
-                            // need to add a stereo path, but very few samples go through this
-                            memset(alignedInputSamples, 0, sizeof(float) * SIMD.MIXBUFFER_SAMPLES * 2);
-                        else
-                            slow.GatherChannelSamples(offset, SIMD.MIXBUFFER_SAMPLES, alignedInputSamples);
+                        // need to add a stereo path, but very few samples go through this
+                        if (sample.objectInfo.nChannels == 2) UnsafeX.InitBlock(alignedInputSamples, 0, sizeof(float) * SIMD.MIXBUFFER_SAMPLES * 2);
+                        else slow.GatherChannelSamples(offset, SIMD.MIXBUFFER_SAMPLES, alignedInputSamples);
 
                         sound.SetSlowChannel(chan, slow);
                     }
