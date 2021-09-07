@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.NumericsX;
 using System.NumericsX.OpenStack;
 using static System.NumericsX.OpenStack.OpenStack;
 using static System.NumericsX.Platform;
@@ -217,53 +218,40 @@ namespace Gengine.Sound
         // Reset() is called.
         public unsafe int Read(byte* pBuffer, int dwSizeToRead, Action<int> pdwSizeRead)
         {
-            if (ogg != null)
-                return ReadOGG(pBuffer, dwSizeToRead, pdwSizeRead);
+            if (ogg != null) return ReadOGG(pBuffer, dwSizeToRead, pdwSizeRead);
             else if (mbIsReadingFromMemory)
             {
-                if (mpbDataCur == null)
-                    return -1;
+                if (mpbDataCur == null) return -1;
                 if ((byte*)(mpbDataCur + dwSizeToRead) > (byte*)(mpbData + mulDataSize))
                     dwSizeToRead = mulDataSize - (int)(mpbDataCur - mpbData);
-                SIMDProcessor.Memcpy(pBuffer, mpbDataCur, dwSizeToRead);
+                ISimd.Memcpy(pBuffer, mpbDataCur, dwSizeToRead);
                 mpbDataCur += dwSizeToRead;
 
                 pdwSizeRead?.Invoke(dwSizeToRead);
                 return dwSizeToRead;
-
             }
             else
             {
-                if (mhmmio == null)
-                    return -1;
-                if (pBuffer == null)
-                    return -1;
+                if (mhmmio == null) return -1;
+                if (pBuffer == null) return -1;
 
                 dwSizeToRead = mhmmio.Read(pBuffer, dwSizeToRead);
                 // this is hit by ogg code, which does it's own byte swapping internally
-                if (!isOgg)
-                    LittleRevBytes(pBuffer, 2, dwSizeToRead / 2);
+                if (!isOgg) LittleRevBytes(pBuffer, 2, dwSizeToRead / 2);
 
-                if (pdwSizeRead != null)
-                    *pdwSizeRead = dwSizeToRead;
-
+                pdwSizeRead?.Invoke(dwSizeToRead);
                 return dwSizeToRead;
             }
         }
 
         public int Seek(int offset)
         {
-            if (ogg != null)
-                common.FatalError("WaveFile::Seek: cannot seek on an OGG file\n");
-            else if (mbIsReadingFromMemory)
-                mpbDataCur = mpbData + offset;
+            if (ogg != null) common.FatalError("WaveFile::Seek: cannot seek on an OGG file\n");
+            else if (mbIsReadingFromMemory) mpbDataCur = mpbData + offset;
             else
             {
-                if (mhmmio == null)
-                    return -1;
-
-                if ((offset + mseekBase) == mhmmio.Tell)
-                    return 0;
+                if (mhmmio == null) return -1;
+                if ((offset + mseekBase) == mhmmio.Tell) return 0;
                 mhmmio.Seek(offset + mseekBase, FS_SEEK.SET);
                 return 0;
             }
@@ -273,13 +261,8 @@ namespace Gengine.Sound
         // Closes the wave file
         public int Close()
         {
-            if (ogg != null)
-                return CloseOGG();
-            if (mhmmio != null)
-            {
-                fileSystem.CloseFile(mhmmio);
-                mhmmio = null;
-            }
+            if (ogg != null) return CloseOGG();
+            if (mhmmio != null) { fileSystem.CloseFile(mhmmio); mhmmio = null; }
             return 0;
         }
 

@@ -2,12 +2,12 @@ namespace System.NumericsX
 {
     public struct RandomX
     {
-        public const int MAX_RAND = 0x7fff;
+        public const long MAX_RAND = 0x7fff;
 
-        public RandomX(int seed = 0)
+        public RandomX(long seed = 0L)
             => Seed = seed;
         
-        public int Seed;
+        public long Seed;
 
         /// <summary>
         /// random integer in the range [0, MAX_RAND]
@@ -16,7 +16,7 @@ namespace System.NumericsX
         public int RandomInt()
         {
             Seed = 69069 * Seed + 1;
-            return Seed & MAX_RAND;
+            return (int)(Seed & MAX_RAND);
         }
         /// <summary>
         /// random integer in the range [0, max]

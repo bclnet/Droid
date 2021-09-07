@@ -5,7 +5,7 @@ namespace System.NumericsX
 {
     public class DrawVert
     {
-        public static readonly int SizeOf = Marshal.SizeOf<DrawVert>();
+        public unsafe static readonly int SizeOf = Marshal.SizeOf<DrawVert>();
         public Vector3 xyz;
         public Vector2 st;
         public Vector3 normal;

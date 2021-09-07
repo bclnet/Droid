@@ -2,8 +2,7 @@
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-
-[assembly: InternalsVisibleTo("Gengine.Library")]
+[assembly: InternalsVisibleTo("System.NumericsX.Tests")]
 
 namespace System.NumericsX
 {
@@ -20,6 +19,7 @@ namespace System.NumericsX
         public const int MIN_WORLD_COORD = -128 * 1024;
         public const int MAX_WORLD_SIZE = MAX_WORLD_COORD - MIN_WORLD_COORD;
 
+        public static Action<bool> SetRefreshOnPrint = x => { };
         public static Action<string> Warning = x => Console.Write(x);
         public static Action<string> Error = x => Console.Write(x);
         public static Action<string> FatalError = x => Console.Write(x);
@@ -90,7 +90,7 @@ namespace System.NumericsX
             //MatrixX.Test();
 
             // test idPolynomial
-            Polynomial.Test();
+            //Polynomial.Test();
         }
 
         static void ShutDown()

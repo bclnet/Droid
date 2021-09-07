@@ -184,8 +184,8 @@ namespace Gengine.Sound
                 return;
 
             var start44kHz = fpa[0] != null
-                ? lastAVI44kHz + SIMD.MIXBUFFER_SAMPLES // if we are recording an AVI demo, don't use hardware time
-                : soundSystemLocal.Current44kHzTime + SIMD.MIXBUFFER_SAMPLES;
+                ? lastAVI44kHz + ISimd.MIXBUFFER_SAMPLES // if we are recording an AVI demo, don't use hardware time
+                : soundSystemLocal.Current44kHzTime + ISimd.MIXBUFFER_SAMPLES;
 
             // fade it
             fade.fadeStartVolume = fade.FadeDbAt44kHz(start44kHz);
@@ -387,7 +387,7 @@ namespace Gengine.Sound
             aviDemoPath = path;
             aviDemoName = name;
 
-            lastAVI44kHz = game44kHz - game44kHz % SIMD.MIXBUFFER_SAMPLES;
+            lastAVI44kHz = game44kHz - game44kHz % ISimd.MIXBUFFER_SAMPLES;
 
             if (SoundSystemLocal.s_numberOfSpeakers.Integer == 6)
             {
@@ -415,9 +415,9 @@ namespace Gengine.Sound
                 return;
 
             // make sure the final block is written
-            game44kHz += SIMD.MIXBUFFER_SAMPLES;
+            game44kHz += ISimd.MIXBUFFER_SAMPLES;
             AVIUpdate();
-            game44kHz -= SIMD.MIXBUFFER_SAMPLES;
+            game44kHz -= ISimd.MIXBUFFER_SAMPLES;
 
             for (i = 0; i < 6; i++)
                 if (fpa[i] != null)
@@ -1244,7 +1244,7 @@ namespace Gengine.Sound
 
             // fetch the sound from the cache as 44kHz, 16 bit samples
             var offset = current44kHz - chan.trigger44kHzTime;
-            var inputSamples = new float[SIMD.MIXBUFFER_SAMPLES * 2 + 16];
+            var inputSamples = new float[ISimd.MIXBUFFER_SAMPLES * 2 + 16];
             fixed (float* inputSamplesF = inputSamples)
             {
                 var alignedInputSamples = (float*)((int)(((byte*)inputSamplesF) + 15) & ~15);
@@ -1326,16 +1326,16 @@ namespace Gengine.Sound
 
                             for (j = 0; j < finishedbuffers; j++)
                             {
-                                chan.GatherChannelSamples(chan.openalStreamingOffset * sample.objectInfo.nChannels, SIMD.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels, alignedInputSamples);
+                                chan.GatherChannelSamples(chan.openalStreamingOffset * sample.objectInfo.nChannels, ISimd.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels, alignedInputSamples);
                                 var alignedInputSamplesS = (short*)alignedInputSamples;
-                                for (var i = 0; i < (SIMD.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels); i++)
+                                for (var i = 0; i < (ISimd.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels); i++)
                                 {
                                     if (alignedInputSamples[i] < -32768f) alignedInputSamplesS[i] = -32768;
                                     else if (alignedInputSamples[i] > 32767f) alignedInputSamplesS[i] = 32767;
                                     else alignedInputSamplesS[i] = (short)MathX.FtoiFast(alignedInputSamples[i]);
                                 }
-                                AL.BufferData(buffers[j], chan.leadinSample.objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels * sizeof(short), 44100);
-                                chan.openalStreamingOffset += SIMD.MIXBUFFER_SAMPLES;
+                                AL.BufferData(buffers[j], chan.leadinSample.objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, alignedInputSamples, ISimd.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels * sizeof(short), 44100);
+                                chan.openalStreamingOffset += ISimd.MIXBUFFER_SAMPLES;
                             }
 
                             if (finishedbuffers != 0)
@@ -1363,8 +1363,8 @@ namespace Gengine.Sound
                         slow.AttachSoundChannel(chan);
 
                         // need to add a stereo path, but very few samples go through this
-                        if (sample.objectInfo.nChannels == 2) UnsafeX.InitBlock(alignedInputSamples, 0, sizeof(float) * SIMD.MIXBUFFER_SAMPLES * 2);
-                        else slow.GatherChannelSamples(offset, SIMD.MIXBUFFER_SAMPLES, alignedInputSamples);
+                        if (sample.objectInfo.nChannels == 2) UnsafeX.InitBlock(alignedInputSamples, 0, sizeof(float) * ISimd.MIXBUFFER_SAMPLES * 2);
+                        else slow.GatherChannelSamples(offset, ISimd.MIXBUFFER_SAMPLES, alignedInputSamples);
 
                         sound.SetSlowChannel(chan, slow);
                     }
@@ -1373,8 +1373,8 @@ namespace Gengine.Sound
                         sound.ResetSlowChannel(chan);
 
                         // if we are getting a stereo sample adjust accordingly
-                        if (sample.objectInfo.nChannels == 2) chan.GatherChannelSamples(offset * 2, SIMD.MIXBUFFER_SAMPLES * 2, alignedInputSamples); // we should probably check to make sure any looping is also to a stereo sample...
-                        else chan.GatherChannelSamples(offset, SIMD.MIXBUFFER_SAMPLES, alignedInputSamples);
+                        if (sample.objectInfo.nChannels == 2) chan.GatherChannelSamples(offset * 2, ISimd.MIXBUFFER_SAMPLES * 2, alignedInputSamples); // we should probably check to make sure any looping is also to a stereo sample...
+                        else chan.GatherChannelSamples(offset, ISimd.MIXBUFFER_SAMPLES, alignedInputSamples);
                     }
 
                     // work out the left / right ear values
@@ -1415,13 +1415,13 @@ namespace Gengine.Sound
 
                     if (numSpeakers == 6)
                     {
-                        if (sample.objectInfo.nChannels == 1) SIMDProcessor.MixSoundSixSpeakerMono(finalMixBuffer, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES, chan.lastV, ears);
-                        else SIMDProcessor.MixSoundSixSpeakerStereo(finalMixBuffer, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES, chan.lastV, ears);
+                        if (sample.objectInfo.nChannels == 1) ISimd.Processor.MixSoundSixSpeakerMono(finalMixBuffer, alignedInputSamples, ISimd.MIXBUFFER_SAMPLES, chan.lastV, ears);
+                        else ISimd.Processor.MixSoundSixSpeakerStereo(finalMixBuffer, alignedInputSamples, ISimd.MIXBUFFER_SAMPLES, chan.lastV, ears);
                     }
                     else
                     {
-                        if (sample.objectInfo.nChannels == 1) SIMDProcessor.MixSoundTwoSpeakerMono(finalMixBuffer, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES, chan.lastV, ears);
-                        else SIMDProcessor.MixSoundTwoSpeakerStereo(finalMixBuffer, alignedInputSamples, SIMD.MIXBUFFER_SAMPLES, chan.lastV, ears);
+                        if (sample.objectInfo.nChannels == 1) ISimd.Processor.MixSoundTwoSpeakerMono(finalMixBuffer, alignedInputSamples, ISimd.MIXBUFFER_SAMPLES, chan.lastV, ears);
+                        else ISimd.Processor.MixSoundTwoSpeakerStereo(finalMixBuffer, alignedInputSamples, ISimd.MIXBUFFER_SAMPLES, chan.lastV, ears);
                     }
 
                     for (j = 0; j < 6; j++)
@@ -1540,29 +1540,29 @@ namespace Gengine.Sound
 
             // TODO port to OpenAL
             if (false && enviroSuitActive)
-                soundSystemLocal.DoEnviroSuit(finalMixBuffer, SIMD.MIXBUFFER_SAMPLES, numSpeakers);
+                soundSystemLocal.DoEnviroSuit(finalMixBuffer, ISimd.MIXBUFFER_SAMPLES, numSpeakers);
         }
 
         // this is called by the main thread writes one block of sound samples if enough time has passed
         // This can be used to write wave files even if no sound hardware exists
         public unsafe void AVIUpdate()
         {
-            if (game44kHz - lastAVI44kHz < SIMD.MIXBUFFER_SAMPLES)
+            if (game44kHz - lastAVI44kHz < ISimd.MIXBUFFER_SAMPLES)
                 return;
 
             var numSpeakers = SoundSystemLocal.s_numberOfSpeakers.Integer;
 
-            var mix = new float[SIMD.MIXBUFFER_SAMPLES * 6 + 16];
-            var mix_p = (float*)(((intptr_t)mix + 15) & ~15);    // SIMD align
+            var mix = new float[ISimd.MIXBUFFER_SAMPLES * 6 + 16];
+            var mix_p = (float*)(((byte*)mix + 15) & ~15);    // SIMD align
 
-            SIMDProcessor.Memset(mix_p, 0, SIMD.MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
+            ISimd.Processor.Memset(mix_p, 0, ISimd.MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
 
             MixLoop(lastAVI44kHz, numSpeakers, mix_p);
 
             for (var i = 0; i < numSpeakers; i++)
             {
-                var outD = new short[SIMD.MIXBUFFER_SAMPLES];
-                for (var j = 0; j < SIMD.MIXBUFFER_SAMPLES; j++)
+                var outD = new short[ISimd.MIXBUFFER_SAMPLES];
+                for (var j = 0; j < ISimd.MIXBUFFER_SAMPLES; j++)
                 {
                     var s = mix_p[j * numSpeakers + i];
                     outD[j] = s < -32768f ? (short)-32768
@@ -1570,10 +1570,10 @@ namespace Gengine.Sound
                         : (short)MathX.FtoiFast(s);
                 }
                 // write to file
-                fpa[i].Write(outD, SIMD.MIXBUFFER_SAMPLES * sizeof(short));
+                fpa[i].Write(outD, ISimd.MIXBUFFER_SAMPLES * sizeof(short));
             }
 
-            lastAVI44kHz += SIMD.MIXBUFFER_SAMPLES;
+            lastAVI44kHz += ISimd.MIXBUFFER_SAMPLES;
 
             return;
         }
@@ -1734,7 +1734,7 @@ namespace Gengine.Sound
         // the screen-shake on a player. This doesn't do the portal-occlusion currently, because it would have to reset all the defs which would be problematic in multiplayer
         public unsafe float FindAmplitude(SoundEmitterLocal sound, int localTime, Vector3? listenerPosition, int channel, bool shakesOnly)
         {
-            const int AMPLITUDE_SAMPLES = SIMD.MIXBUFFER_SAMPLES / 8;
+            const int AMPLITUDE_SAMPLES = ISimd.MIXBUFFER_SAMPLES / 8;
             int i, j;
             SoundShaderParms parms;
             float volume;

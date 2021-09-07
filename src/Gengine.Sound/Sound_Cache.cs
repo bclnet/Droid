@@ -190,7 +190,7 @@ namespace Gengine.Sound
     // This class holds the actual wavefile bitmap, size, and info
     public class SoundSample
     {
-        public const int SCACHE_SIZE = SIMD.MIXBUFFER_SAMPLES * 20; // 1/2 of a second (aroundabout)
+        public const int SCACHE_SIZE = ISimd.MIXBUFFER_SAMPLES * 20; // 1/2 of a second (aroundabout)
 
         public string name;                     // name of the sample file
         public DateTime timestamp;              // the most recent of all images used in creation, for reloadImages command
@@ -257,7 +257,7 @@ namespace Gengine.Sound
             objectInfo.wBitsPerSample = 16;
             objectInfo.nSamplesPerSec = 44100;
 
-            objectSize = SIMD.MIXBUFFER_SAMPLES * 2;
+            objectSize = ISimd.MIXBUFFER_SAMPLES * 2;
             objectMemSize = objectSize * sizeof(short);
 
             nonCacheData = SoundCache.soundCacheAllocator.Alloc(objectMemSize);
@@ -265,7 +265,7 @@ namespace Gengine.Sound
             fixed (byte* valueB = nonCacheData.Value)
             {
                 var ncd = (short*)valueB;
-                for (var i = 0; i < SIMD.MIXBUFFER_SAMPLES; i++)
+                for (var i = 0; i < ISimd.MIXBUFFER_SAMPLES; i++)
                 {
                     var v = (float)Math.Sin(MathX.PI * 2 * i / 64);
                     var sample = (short)(v * 0x4000);

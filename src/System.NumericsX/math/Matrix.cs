@@ -2415,7 +2415,7 @@ namespace System.NumericsX
                              // static float[] tempPtr = temp; //(float*)(((intptr_t)idMatX::temp + 15) & ~15);              // pointer to 16 byte aligned temporary memory
         static int tempIndex = 0;                   // index into memory pool, wraps around
 
-        [FieldOffset(0)] float[] mat;               // memory the matrix is stored
+        [FieldOffset(0)] internal float[] mat;               // memory the matrix is stored
         [FieldOffset(8)] int numRows;               // number of rows
         [FieldOffset(12)] int numColumns;           // number of columns
         [FieldOffset(16)] int alloced;              // floats allocated, if -1 then mat points to data set with SetData
@@ -2719,7 +2719,7 @@ namespace System.NumericsX
                 mat[i * numColumns + i] = v[i];
         }
 
-        public void Random(int seed, float l = 0f, float u = 1f)              // fill matrix with random values
+        public void Random(long seed, float l = 0f, float u = 1f)              // fill matrix with random values
         {
             var rnd = new RandomX(seed);
             var c = u - l;
@@ -2727,7 +2727,7 @@ namespace System.NumericsX
             for (var i = 0; i < s; i++)
                 mat[i] = l + rnd.RandomFloat() * c;
         }
-        public void Random(int rows, int columns, int seed, float l = 0f, float u = 1f)
+        public void Random(int rows, int columns, long seed, float l = 0f, float u = 1f)
         {
             var rnd = new RandomX(seed);
             SetSize(rows, columns);

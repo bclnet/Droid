@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace System.NumericsX
 {
-    partial class Polynomial
+    public class PolynomialText
     {
         public static void Test()
         {

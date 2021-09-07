@@ -100,9 +100,10 @@ namespace System.NumericsX
         {
             for (var i = 0; i < verts.Count; i++)
             {
-                verts[i].xyz *= rotation;
-                verts[i].normal *= rotation;
-                verts[i].tangents0 *= rotation; verts[i].tangents1 *= rotation;
+                var vert = verts[i];
+                vert.xyz *= rotation;
+                vert.normal *= rotation;
+                vert.tangents0 *= rotation; vert.tangents1 *= rotation;
             }
         }
 

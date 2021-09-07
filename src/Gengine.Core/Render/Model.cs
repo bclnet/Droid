@@ -25,12 +25,12 @@ namespace Gengine.Render
         public GlIndex v1, v2;                  // verts defining the edge
     }
 
-    // this is used for calculating unsmoothed normals and tangents for deformed models
-    public unsafe struct DominantTri
-    {
-        public GlIndex v2, v3;
-        public fixed float normalizationScale[3];
-    }
+    //// this is used for calculating unsmoothed normals and tangents for deformed models
+    //public unsafe struct DominantTri
+    //{
+    //    public GlIndex v2, v3;
+    //    public fixed float normalizationScale[3];
+    //}
 
     public struct LightingCache
     {

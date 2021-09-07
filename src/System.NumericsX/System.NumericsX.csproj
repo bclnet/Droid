@@ -10,27 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="math\Simd-Test.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="math\Plane.cpp" />
-    <None Remove="Framework\Console.cpp" />
-    <None Remove="Framework\Console.h" />
-    <None Remove="Framework\EventLoop.cpp" />
-    <None Remove="Framework\EventLoop.h" />
-    <None Remove="Framework\KeyInput.cpp" />
-    <None Remove="Framework\KeyInput.h" />
-    <None Remove="Framework\Session.cpp" />
-    <None Remove="Framework\Session.h" />
-    <None Remove="Framework\Session_local.h" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Update="math\Curve.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -61,11 +40,6 @@
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>Extrapolate.cs</LastGenOutput>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="math\Simd-Test.cs" />
-    <None Include="math\Simd.cs" />
   </ItemGroup>
 
 </Project>

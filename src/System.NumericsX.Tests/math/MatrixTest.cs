@@ -4,7 +4,7 @@ using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
-    partial struct MatrixX
+    public class MatrixTest
     {
         public static void Test()
         {

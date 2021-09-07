@@ -201,10 +201,8 @@ namespace System.NumericsX
             else
             {
                 i = 0;
-                if (mat[1 * 4 + 1] > mat[0 * 4 + 0])
-                    i = 1;
-                if (mat[2 * 4 + 2] > mat[i * 4 + i])
-                    i = 2;
+                if (mat[1 * 4 + 1] > mat[0 * 4 + 0]) i = 1;
+                if (mat[2 * 4 + 2] > mat[i * 4 + i]) i = 2;
                 j = ToJointQuat_next[i];
                 k = ToJointQuat_next[j];
 
