@@ -155,17 +155,17 @@ namespace System.NumericsX
             float wx = w * x2, wy = w * y2, wz = w * z2;
 
             var mat = new Matrix3x3();
-            mat.mat[0].x = 1f - (yy + zz);
-            mat.mat[0].y = xy - wz;
-            mat.mat[0].z = xz + wy;
+            mat.mat0.x = 1f - (yy + zz);
+            mat.mat0.y = xy - wz;
+            mat.mat0.z = xz + wy;
 
-            mat.mat[1].x = xy + wz;
-            mat.mat[1].y = 1f - (xx + zz);
-            mat.mat[1].z = yz - wx;
+            mat.mat1.x = xy + wz;
+            mat.mat1.y = 1f - (xx + zz);
+            mat.mat1.z = yz - wx;
 
-            mat.mat[2].x = xz - wy;
-            mat.mat[2].y = yz + wx;
-            mat.mat[2].z = 1f - (xx + yy);
+            mat.mat2.x = xz - wy;
+            mat.mat2.y = yz + wx;
+            mat.mat2.z = 1f - (xx + yy);
 
             return mat;
         }

@@ -306,15 +306,15 @@ namespace System.NumericsX
 
             var rotatedExtents = new Vector3
             {
-                x = MathX.Fabs(extents.x * axis[0].x) +
-                    MathX.Fabs(extents.y * axis[1].x) +
-                    MathX.Fabs(extents.z * axis[2].x),
-                y = MathX.Fabs(extents.x * axis[0].y) +
-                    MathX.Fabs(extents.y * axis[1].y) +
-                    MathX.Fabs(extents.z * axis[2].y),
-                z = MathX.Fabs(extents.x * axis[0].z) +
-                    MathX.Fabs(extents.y * axis[1].z) +
-                    MathX.Fabs(extents.z * axis[2].z),
+                x = MathX.Fabs(extents.x * axis.mat0.x) +
+                    MathX.Fabs(extents.y * axis.mat1.x) +
+                    MathX.Fabs(extents.z * axis.mat2.x),
+                y = MathX.Fabs(extents.x * axis.mat0.y) +
+                    MathX.Fabs(extents.y * axis.mat1.y) +
+                    MathX.Fabs(extents.z * axis.mat2.y),
+                z = MathX.Fabs(extents.x * axis.mat0.z) +
+                    MathX.Fabs(extents.y * axis.mat1.z) +
+                    MathX.Fabs(extents.z * axis.mat2.z),
             }; //: unroll
 
             center = origin + center * axis;
@@ -483,9 +483,9 @@ namespace System.NumericsX
 
             var d1 = dir * center;
             var d2 =
-                MathX.Fabs(extents.x * (dir * axis[0])) +
-                MathX.Fabs(extents.y * (dir * axis[1])) +
-                MathX.Fabs(extents.z * (dir * axis[2]));
+                MathX.Fabs(extents.x * (dir * axis.mat0)) +
+                MathX.Fabs(extents.y * (dir * axis.mat1)) +
+                MathX.Fabs(extents.z * (dir * axis.mat2));
 
             min = d1 - d2;
             max = d1 + d2;

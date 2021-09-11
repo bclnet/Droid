@@ -24,7 +24,7 @@ namespace System.NumericsX
 
         static void GetBest(DateTime start, DateTime end, ref TimeSpan best)
         {
-            if (best == default || end - start < best)
+            if (best == default || (end - start) < best)
                 best = end - start;
         }
 
@@ -45,7 +45,7 @@ namespace System.NumericsX
 
         static void GetBaseClocks()
         {
-            DateTime start, end; TimeSpan bestClocks = TimeSpan.MinValue;
+            DateTime start, end; TimeSpan bestClocks = default;
             for (var i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -74,7 +74,7 @@ namespace System.NumericsX
 
             Printf("====================================\n");
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -84,7 +84,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Add(float + float[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -99,7 +99,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.Add(float + float[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -109,7 +109,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Add(float[] + float[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -144,7 +144,7 @@ namespace System.NumericsX
 
             Printf("====================================\n");
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -154,7 +154,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Sub(float + float[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -169,7 +169,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.Sub(float + float[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -179,7 +179,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Sub(float[] + float[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -214,7 +214,7 @@ namespace System.NumericsX
 
             Printf("====================================\n");
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -224,7 +224,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Mul(float * float[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -239,7 +239,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.Mul(float * float[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -249,7 +249,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Mul(float[] * float[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -285,7 +285,7 @@ namespace System.NumericsX
 
             Printf("====================================\n");
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -295,7 +295,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Div(float * float[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -310,7 +310,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.Div(float * float[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -320,7 +320,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Div(float[] * float[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -353,7 +353,7 @@ namespace System.NumericsX
 
             for (j = 0; j < 50 && j < COUNT; j++)
             {
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (i = 0; i < NUMTESTS; i++)
                 {
                     for (var k = 0; k < COUNT; k++)
@@ -365,7 +365,7 @@ namespace System.NumericsX
                 }
                 PrintClocks($"generic.MulAdd(float * float[{j,2}])", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (i = 0; i < NUMTESTS; i++)
                 {
                     for (var k = 0; k < COUNT; k++)
@@ -401,7 +401,7 @@ namespace System.NumericsX
 
             for (j = 0; j < 50 && j < COUNT; j++)
             {
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (i = 0; i < NUMTESTS; i++)
                 {
                     for (var k = 0; k < COUNT; k++)
@@ -413,7 +413,7 @@ namespace System.NumericsX
                 }
                 PrintClocks($"generic.MulSub(float * float[{j,2}])", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (i = 0; i < NUMTESTS; i++)
                 {
                     for (var k = 0; k < COUNT; k++)
@@ -466,7 +466,7 @@ namespace System.NumericsX
 
             Printf("====================================\n");
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -476,7 +476,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Dot(Vector3 * Vector3[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -491,7 +491,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.Dot(Vector3 * Vector3[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -501,7 +501,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Dot(Vector3 * Plane[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -517,7 +517,7 @@ namespace System.NumericsX
             PrintClocks($"   simd.Dot(Vector3 * Plane[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -527,7 +527,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Dot(Vector3 * DrawVert[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -542,7 +542,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.Dot(Vector3 * DrawVert[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -552,7 +552,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Dot(Plane * Vector3[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -567,7 +567,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.Dot(Plane * Vector3[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -577,7 +577,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Dot(Plane * Plane[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -592,7 +592,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.Dot(Plane * Plane[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -602,7 +602,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Dot(Plane * DrawVert[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -617,7 +617,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.Dot(Plane * DrawVert[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -627,7 +627,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Dot(Vector3[] * Vector3[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -647,7 +647,7 @@ namespace System.NumericsX
             float dot1 = 0f, dot2 = 0f;
             for (j = 0; j < 50 && j < COUNT; j++)
             {
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (i = 0; i < NUMTESTS; i++)
                 {
                     StartRecordTime(out start);
@@ -657,7 +657,7 @@ namespace System.NumericsX
                 }
                 PrintClocks($"generic.Dot(float[{j,2}] * float[{j,2}])", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (i = 0; i < NUMTESTS; i++)
                 {
                     StartRecordTime(out start);
@@ -685,7 +685,7 @@ namespace System.NumericsX
 
             Printf("====================================\n");
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -695,7 +695,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.CmpGT(float[] >= float)", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -710,7 +710,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.CmpGT(float[] >= float) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 Unsafe.InitBlock(bytedst, 0, (uint)COUNT);
@@ -721,7 +721,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.CmpGT(2, float[] >= float)", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 Unsafe.InitBlock(bytedst2, 0, (uint)COUNT);
@@ -739,7 +739,7 @@ namespace System.NumericsX
 
             // ======================
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -749,7 +749,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.CmpGE(float[] >= float)", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -764,7 +764,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.CmpGE(float[] >= float) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 Unsafe.InitBlock(bytedst, 0, (uint)COUNT);
@@ -775,7 +775,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.CmpGE( 2, float[] >= float )", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 Unsafe.InitBlock(bytedst2, 0, (uint)COUNT);
@@ -793,7 +793,7 @@ namespace System.NumericsX
 
             // ======================
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -803,7 +803,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.CmpLT(float[] >= float)", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -818,7 +818,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.CmpLT(float[] >= float) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 Unsafe.InitBlock(bytedst, 0, (uint)COUNT);
@@ -829,7 +829,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.CmpLT(2, float[] >= float)", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 Unsafe.InitBlock(bytedst2, 0, (uint)COUNT);
@@ -847,7 +847,7 @@ namespace System.NumericsX
 
             // ======================
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -857,7 +857,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.CmpLE(float[] >= float)", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -872,7 +872,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.CmpLE(float[] >= float) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 Unsafe.InitBlock(bytedst, 0, COUNT);
@@ -883,7 +883,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.CmpLE(2, float[] >= float)", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 Unsafe.InitBlock(bytedst2, 0, COUNT);
@@ -929,7 +929,7 @@ namespace System.NumericsX
 
             Printf("====================================\n");
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 min = MathX.INFINITY; max = -MathX.INFINITY;
@@ -940,7 +940,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.MinMax(float[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -952,7 +952,7 @@ namespace System.NumericsX
             result = min == min2 && max == max2 ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.MinMax(float[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -962,7 +962,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.MinMax(Vector2[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -974,7 +974,7 @@ namespace System.NumericsX
             result = v2min == v2min2 && v2max == v2max2 ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.MinMax(Vector2[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -984,7 +984,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.MinMax(Vector3[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -996,7 +996,7 @@ namespace System.NumericsX
             result = vmin == vmin2 && vmax == vmax2 ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.MinMax(Vector3[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -1006,7 +1006,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.MinMax(DrawVert[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -1018,7 +1018,7 @@ namespace System.NumericsX
             result = vmin == vmin2 && vmax == vmax2 ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.MinMax(DrawVert[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -1028,7 +1028,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.MinMax(DrawVert[], indexes[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -1056,7 +1056,7 @@ namespace System.NumericsX
 
             Printf("====================================\n");
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -1066,7 +1066,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Clamp(float[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -1081,7 +1081,7 @@ namespace System.NumericsX
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.Clamp(float[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -1091,7 +1091,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.ClampMin(float[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -1107,7 +1107,7 @@ namespace System.NumericsX
             PrintClocks($"   simd.ClampMin(float[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -1117,7 +1117,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.ClampMax(float[])", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -1204,7 +1204,7 @@ namespace System.NumericsX
             {
                 mat.Random(i, i, RANDOM_SEED, -10f, 10f);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1217,7 +1217,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_MultiplyVecX {i}x{i}*{i}x1", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1237,7 +1237,7 @@ namespace System.NumericsX
             {
                 mat.Random(i, 6, RANDOM_SEED, -10f, 10f);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1250,7 +1250,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_MultiplyVecX {i}x6*6x1", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1270,7 +1270,7 @@ namespace System.NumericsX
             {
                 mat.Random(6, i, RANDOM_SEED, -10f, 10f);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1283,7 +1283,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_MultiplyVecX 6x{i}*{i}x1", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1320,7 +1320,7 @@ namespace System.NumericsX
             {
                 mat.Random(i, i, RANDOM_SEED, -10f, 10f);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1333,7 +1333,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_MultiplyAddVecX {i}x{i}*{i}1", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1353,7 +1353,7 @@ namespace System.NumericsX
             {
                 mat.Random(i, 6, RANDOM_SEED, -10f, 10f);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1366,7 +1366,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_MultiplyAddVecX {i}x6*6x1", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1386,7 +1386,7 @@ namespace System.NumericsX
             {
                 mat.Random(6, i, RANDOM_SEED, -10f, 10f);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1399,7 +1399,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_MultiplyAddVecX 6x{i}*{i}x1", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1437,7 +1437,7 @@ namespace System.NumericsX
             {
                 mat.Random(i, 6, RANDOM_SEED, -10f, 10f);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1450,7 +1450,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_TransposeMulVecX {i}x6*{i}x1", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1470,7 +1470,7 @@ namespace System.NumericsX
             {
                 mat.Random(6, i, RANDOM_SEED, -10f, 10f);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1483,7 +1483,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_TransposeMulVecX 6x{i}*6x1", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1521,7 +1521,7 @@ namespace System.NumericsX
             {
                 mat.Random(i, 6, RANDOM_SEED, -10f, 10f);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1534,7 +1534,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_TransposeMulAddVecX {i}x6*{i}x1", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1554,7 +1554,7 @@ namespace System.NumericsX
             {
                 mat.Random(6, i, RANDOM_SEED, -10f, 10f);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1567,7 +1567,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_TransposeMulAddVecX 6x{i}*6x1", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     dst.Zero();
@@ -1600,7 +1600,7 @@ namespace System.NumericsX
                 m2.Random(i, 6, RANDOM_SEED, -TEST_VALUE_RANGE, TEST_VALUE_RANGE);
                 dst.SetSize(i, 6);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1612,7 +1612,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_MultiplyMatX {i}x{i}*{i}x6", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1634,7 +1634,7 @@ namespace System.NumericsX
                 m2.Random(i, 6, RANDOM_SEED, -TEST_VALUE_RANGE, TEST_VALUE_RANGE);
                 dst.SetSize(6, 6);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1646,7 +1646,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_MultiplyMatX 6x{i}*{i}x6", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1668,7 +1668,7 @@ namespace System.NumericsX
                 m2.Random(6, i, RANDOM_SEED, -TEST_VALUE_RANGE, TEST_VALUE_RANGE);
                 dst.SetSize(i, i);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1680,7 +1680,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_MultiplyMatX {i}x6*6x{i}", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1702,7 +1702,7 @@ namespace System.NumericsX
                 m2.Random(6, i, RANDOM_SEED, -TEST_VALUE_RANGE, TEST_VALUE_RANGE);
                 dst.SetSize(6, i);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1714,7 +1714,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_MultiplyMatX 6x6*6x{i}", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1744,7 +1744,7 @@ namespace System.NumericsX
                 m2.Random(i, i, RANDOM_SEED, -TEST_VALUE_RANGE, TEST_VALUE_RANGE);
                 dst.SetSize(6, i);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1756,7 +1756,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_TransMultiplyMatX {i}x6*{i}x{i}", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1778,7 +1778,7 @@ namespace System.NumericsX
                 m2.Random(6, 6, RANDOM_SEED, -TEST_VALUE_RANGE, TEST_VALUE_RANGE);
                 dst.SetSize(i, 6);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1790,7 +1790,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_TransMultiplyMatX 6x{i}*6x6", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1824,7 +1824,7 @@ namespace System.NumericsX
             {
                 x.Zero(i);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1838,7 +1838,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_LowerTriangularSolve {i}x{i}", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1871,7 +1871,7 @@ namespace System.NumericsX
             {
                 x.Zero(i);
 
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1885,7 +1885,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_LowerTriangularSolveT {i}x{i}", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
@@ -1918,7 +1918,7 @@ namespace System.NumericsX
 
             for (i = 1; i < MATX_LDLT_FACTOR_SOLVE_SIZE; i++)
             {
-                bestClocksGeneric = TimeSpan.MinValue;
+                bestClocksGeneric = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     mat1 = original;
@@ -1931,7 +1931,7 @@ namespace System.NumericsX
 
                 PrintClocks($"generic.MatX_LDLTFactor {i}x{i}", 1, bestClocksGeneric);
 
-                bestClocksSIMD = TimeSpan.MinValue;
+                bestClocksSIMD = default;
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     mat2 = original;
@@ -1980,7 +1980,7 @@ namespace System.NumericsX
                 index[i] = i;
             }
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < COUNT; j++)
@@ -1992,7 +1992,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.BlendJoints()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < COUNT; j++)
@@ -2036,7 +2036,7 @@ namespace System.NumericsX
                 baseJoints[i].t[2] = srnd.CRandomFloat() * 10f;
             }
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2046,7 +2046,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.ConvertJointQuatsToJointMats()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2086,7 +2086,7 @@ namespace System.NumericsX
                 baseJoints[i].SetTranslation(v);
             }
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2096,7 +2096,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.ConvertJointMatsToJointQuats()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2148,7 +2148,7 @@ namespace System.NumericsX
                 parents[i] = i - 1;
             }
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j <= COUNT; j++)
@@ -2160,7 +2160,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.TransformJoints()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j <= COUNT; j++)
@@ -2204,7 +2204,7 @@ namespace System.NumericsX
                 parents[i] = i - 1;
             }
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j <= COUNT; j++)
@@ -2216,7 +2216,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.UntransformJoints()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j <= COUNT; j++)
@@ -2272,7 +2272,7 @@ namespace System.NumericsX
                 weightIndex[i * 2 + 1] = i & 1;
             }
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2282,7 +2282,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.TransformVerts()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2323,7 +2323,7 @@ namespace System.NumericsX
                 for (j = 0; j < 3; j++)
                     drawVerts[i].xyz[j] = srnd.CRandomFloat() * 10f;
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2333,7 +2333,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.TracePointCull()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2377,7 +2377,7 @@ namespace System.NumericsX
                 for (j = 0; j < 3; j++)
                     drawVerts[i].xyz[j] = srnd.CRandomFloat() * 10f;
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2387,7 +2387,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.DecalPointCull()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2425,7 +2425,7 @@ namespace System.NumericsX
                 for (j = 0; j < 3; j++)
                     drawVerts[i].xyz[j] = srnd.CRandomFloat() * 10f;
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2435,7 +2435,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.OverlayPointCull()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2484,7 +2484,7 @@ namespace System.NumericsX
                 indexes[i * 3 + 2] = (i + 2) % COUNT;
             }
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2494,7 +2494,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.DeriveTriPlanes()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2538,7 +2538,7 @@ namespace System.NumericsX
                 indexes[i * 3 + 2] = (i + 2) % COUNT;
             }
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2548,7 +2548,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.DeriveTangents()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2620,7 +2620,7 @@ namespace System.NumericsX
                 dominantTris[i].normalizationScale[2] = srnd.CRandomFloat();
             }
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2630,7 +2630,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.DeriveUnsmoothedTangents()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2685,7 +2685,7 @@ namespace System.NumericsX
                 drawVerts2[i] = drawVerts1[i];
             }
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2695,7 +2695,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.NormalizeTangents()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2748,7 +2748,7 @@ namespace System.NumericsX
             lightOrigin.y = srnd.CRandomFloat() * 100f;
             lightOrigin.z = srnd.CRandomFloat() * 100f;
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2758,7 +2758,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.CreateTextureSpaceLightVectors()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2809,7 +2809,7 @@ namespace System.NumericsX
             viewOrigin.y = srnd.CRandomFloat() * 100f;
             viewOrigin.z = srnd.CRandomFloat() * 100f;
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2819,7 +2819,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.CreateSpecularTextureCoords()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2861,7 +2861,7 @@ namespace System.NumericsX
             lightOrigin.y = srnd.CRandomFloat() * 100f;
             lightOrigin.z = srnd.CRandomFloat() * 100f;
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < COUNT; j++)
@@ -2873,7 +2873,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.CreateShadowCache()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < COUNT; j++)
@@ -2900,7 +2900,7 @@ namespace System.NumericsX
             result = i >= COUNT && numVerts1 == numVerts2 ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.CreateShadowCache() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2910,7 +2910,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.CreateVertexProgramShadowCache()", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
@@ -2960,7 +2960,7 @@ namespace System.NumericsX
             {
                 for (kHz = 11025; kHz <= 44100; kHz *= 2)
                 {
-                    bestClocksGeneric = TimeSpan.MinValue;
+                    bestClocksGeneric = default;
                     for (i = 0; i < NUMTESTS; i++)
                     {
                         StartRecordTime(out start);
@@ -2970,7 +2970,7 @@ namespace System.NumericsX
                     }
                     PrintClocks($"generic.UpSamplePCMTo44kHz({kHz}, {numSpeakers})", ISimd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksGeneric);
 
-                    bestClocksSIMD = TimeSpan.MinValue;
+                    bestClocksSIMD = default;
                     for (i = 0; i < NUMTESTS; i++)
                     {
                         StartRecordTime(out start);
@@ -2991,7 +2991,7 @@ namespace System.NumericsX
             {
                 for (kHz = 11025; kHz <= 44100; kHz *= 2)
                 {
-                    bestClocksGeneric = TimeSpan.MinValue;
+                    bestClocksGeneric = default;
                     for (i = 0; i < NUMTESTS; i++)
                     {
                         StartRecordTime(out start);
@@ -3001,7 +3001,7 @@ namespace System.NumericsX
                     }
                     PrintClocks($"generic.UpSampleOGGTo44kHz({kHz}, {numSpeakers})", ISimd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksGeneric);
 
-                    bestClocksSIMD = TimeSpan.MinValue;
+                    bestClocksSIMD = default;
                     for (i = 0; i < NUMTESTS; i++)
                     {
                         StartRecordTime(out start);
@@ -3047,7 +3047,7 @@ namespace System.NumericsX
                 samples[i] = srnd.RandomInt((1 << 16)) - (1 << 15);
             }
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
@@ -3059,7 +3059,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.MixSoundTwoSpeakerMono()", ISimd.MIXBUFFER_SAMPLES, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
@@ -3076,7 +3076,7 @@ namespace System.NumericsX
             result = i >= ISimd.MIXBUFFER_SAMPLES * 6 ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.MixSoundTwoSpeakerMono() {result}", ISimd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
@@ -3089,7 +3089,7 @@ namespace System.NumericsX
             PrintClocks("generic.MixSoundTwoSpeakerStereo()", ISimd.MIXBUFFER_SAMPLES, bestClocksGeneric);
 
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
@@ -3106,7 +3106,7 @@ namespace System.NumericsX
             result = i >= ISimd.MIXBUFFER_SAMPLES * 6 ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.MixSoundTwoSpeakerStereo() {result}", ISimd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
@@ -3118,7 +3118,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.MixSoundSixSpeakerMono()", ISimd.MIXBUFFER_SAMPLES, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
@@ -3135,7 +3135,7 @@ namespace System.NumericsX
             result = i >= ISimd.MIXBUFFER_SAMPLES * 6 ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.MixSoundSixSpeakerMono() {result}", ISimd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
@@ -3147,7 +3147,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.MixSoundSixSpeakerStereo()", ISimd.MIXBUFFER_SAMPLES, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
@@ -3167,7 +3167,7 @@ namespace System.NumericsX
             for (i = 0; i < ISimd.MIXBUFFER_SAMPLES * 6; i++)
                 origMixBuffer[i] = srnd.RandomInt((1 << 17)) - (1 << 16);
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
@@ -3179,7 +3179,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.MixedSoundToSamples()", ISimd.MIXBUFFER_SAMPLES, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
@@ -3584,7 +3584,7 @@ namespace System.NumericsX
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocks);
             }
-            PrintClocks("       Quat.ToMat3()", 1, bestClocks);
+            PrintClocks("      Quat.ToMat3()", 1, bestClocks);
 
             bestClocks = default;
             for (i = 0; i < NUMTESTS; i++)
@@ -3594,7 +3594,7 @@ namespace System.NumericsX
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocks);
             }
-            PrintClocks("        Quat.Slerp()", 1, bestClocks);
+            PrintClocks("       Quat.Slerp()", 1, bestClocks);
 
             bestClocks = default;
             for (i = 0; i < NUMTESTS; i++)
@@ -3604,7 +3604,7 @@ namespace System.NumericsX
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocks);
             }
-            PrintClocks("      CQuat.ToQuat()", 1, bestClocks);
+            PrintClocks("     CQuat.ToQuat()", 1, bestClocks);
 
             bestClocks = default;
             for (i = 0; i < NUMTESTS; i++)
@@ -3614,7 +3614,7 @@ namespace System.NumericsX
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocks);
             }
-            PrintClocks("     Angles.ToQuat()", 1, bestClocks);
+            PrintClocks("    Angles.ToQuat()", 1, bestClocks);
 
             bestClocks = default;
             for (i = 0; i < NUMTESTS; i++)
@@ -3624,7 +3624,7 @@ namespace System.NumericsX
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocks);
             }
-            PrintClocks("     Angles.ToMat3()", 1, bestClocks);
+            PrintClocks("    Angles.ToMat3()", 1, bestClocks);
         }
 
         static void TestNegate()
@@ -3645,7 +3645,7 @@ namespace System.NumericsX
 
             Printf("====================================\n");
 
-            bestClocksGeneric = TimeSpan.MinValue;
+            bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 Unsafe.CopyBlock(&fsrc1[0], &fsrc0[0], COUNT * sizeof(float));
@@ -3656,7 +3656,7 @@ namespace System.NumericsX
             }
             PrintClocks("generic.Negate16( float[] )", COUNT, bestClocksGeneric);
 
-            bestClocksSIMD = TimeSpan.MinValue;
+            bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
                 Unsafe.CopyBlock(&fsrc2[0], &fsrc0[0], COUNT * sizeof(float));

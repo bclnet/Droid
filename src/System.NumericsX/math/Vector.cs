@@ -12,17 +12,21 @@ namespace System.NumericsX
         public float x;
         public float y;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector2(float x, float y)
         {
             this.x = x;
             this.y = y;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(float x, float y)
         {
             this.x = x;
             this.y = y;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()
             => x = y = 0f;
 
@@ -39,19 +43,25 @@ namespace System.NumericsX
                     p[index] = value;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 operator -(Vector2 _)
             => new(-_.x, -_.y);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float operator *(Vector2 _, Vector2 a)
             => _.x * a.x + _.y * a.y;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 operator *(Vector2 _, float a)
             => new(_.x * a, _.y * a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 operator /(Vector2 _, float a)
         { var inva = 1f / a; return new(_.x * inva, _.y * inva); }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 operator +(Vector2 _, Vector2 a)
             => new(_.x + a.x, _.y + a.y);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 operator -(Vector2 _, Vector2 a)
             => new(_.x - a.x, _.y - a.y);
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 operator *(float a, Vector2 b)
             => new(b.x * a, b.y * a);
 
@@ -60,20 +70,19 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="a">a.</param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Compare(Vector2 a)
-            => (x == a.x) && (y == a.y);
+            => x == a.x && y == a.y;
         /// <summary>
         /// compare with epsilon
         /// </summary>
         /// <param name="a">a.</param>
         /// <param name="epsilon">The epsilon.</param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Compare(Vector2 a, float epsilon)
-        {
-            if (MathX.Fabs(x - a.x) > epsilon) return false;
-            if (MathX.Fabs(y - a.y) > epsilon) return false;
-            return true;
-        }
+            => MathX.Fabs(x - a.x) <= epsilon &&
+               MathX.Fabs(y - a.y) <= epsilon;
         /// <summary>
         /// exact compare, no epsilon
         /// </summary>
@@ -82,6 +91,7 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Vector2 _, Vector2 a)
             => _.Compare(a);
         /// <summary>
@@ -92,6 +102,7 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Vector2 _, Vector2 a)
             => !_.Compare(a);
         public override bool Equals(object obj)

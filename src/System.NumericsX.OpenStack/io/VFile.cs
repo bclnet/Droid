@@ -212,8 +212,8 @@ namespace System.NumericsX.OpenStack
         }
         public int ReadMat3(out Matrix3x3 mat)
         {
-            Matrix3x3 r = new();
-            fixed (void* buf = r.mat)
+            Matrix3x3 r = default;
+            void* buf = &r.mat0;
             {
                 var result = Read((byte*)buf, Matrix3x3.SizeOf);
                 LittleRevBytes(buf, sizeof(float), Matrix3x3.SizeOf / sizeof(float));
@@ -290,7 +290,7 @@ namespace System.NumericsX.OpenStack
         public int WriteMat3(Matrix3x3 mat)
         {
             Matrix3x3 v = mat;
-            fixed (void* mat_ = mat.mat)
+            void* mat_ = &mat.mat0;
             {
                 LittleRevBytes(&mat_, sizeof(float), Matrix3x3.SizeOf / sizeof(float));
                 return Write((byte*)&mat_, Matrix3x3.SizeOf);

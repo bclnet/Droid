@@ -233,8 +233,8 @@ namespace System.NumericsX
             if (!m.InverseSelf())
                 return false;
 
-            a = -sumXZ * m[0][0] - sumYZ * m[0][1];
-            b = -sumXZ * m[1][0] - sumYZ * m[1][1];
+            a = -sumXZ * m.mat0.x - sumYZ * m.mat0.y;
+            b = -sumXZ * m.mat1.x - sumYZ * m.mat1.y;
             c = 1f;
             Normalize();
             d = -(a * average.x + b * average.y + c * average.z);
