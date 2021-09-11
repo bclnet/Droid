@@ -44,7 +44,7 @@ namespace System.NumericsX
             }
             for (var i = 0; i < n; i++)
             {
-                p[i].ToVec3().Set(verts[i]);
+                p[i].ToVec3() = verts[i];
                 p[i].s = p[i].t = 0f;
             }
             numPoints = n;
@@ -132,13 +132,13 @@ namespace System.NumericsX
 
             EnsureAlloced(4);
             numPoints = 4;
-            p[0].ToVec3().Set(org - vright + vup);
+            p[0].ToVec3() = org - vright + vup;
             p[0].s = p[0].t = 0f;
-            p[1].ToVec3().Set(org + vright + vup);
+            p[1].ToVec3() = org + vright + vup;
             p[1].s = p[1].t = 0f;
-            p[2].ToVec3().Set(org + vright - vup);
+            p[2].ToVec3() = org + vright - vup;
             p[2].s = p[2].t = 0f;
-            p[3].ToVec3().Set(org - vright - vup);
+            p[3].ToVec3() = org - vright - vup;
             p[3].s = p[3].t = 0f;
         }
 
@@ -517,7 +517,7 @@ namespace System.NumericsX
             for (i = 0; i < numPoints; i++)
             {
                 // create plane through edge orthogonal to winding plane
-                edgeNormal = (p[i].ToVec3() - p[(i + numPoints - 1) % numPoints].ToVec3()).Cross(normal);
+                edgeNormal = (p[i].ToVec3() - p[(i + numPoints - 1) % numPoints].ToVec3()).Cross(ref normal);
                 edgeNormal.Normalize();
                 dist = edgeNormal * p[i].ToVec3();
 
@@ -569,14 +569,14 @@ namespace System.NumericsX
             for (i = 0; i < numPoints; i++)
             {
                 // create plane through edge orthogonal to winding plane
-                normal = (p[(i + 1) % numPoints].ToVec3() - p[i].ToVec3()).Cross(plane.Normal);
+                normal = (p[(i + 1) % numPoints].ToVec3() - p[i].ToVec3()).Cross(ref plane.Normal);
                 normal.Normalize();
                 dist = normal * p[i].ToVec3();
 
                 if (MathX.Fabs(normal * point - dist) > epsilon)
                     continue;
 
-                normal = plane.Normal.Cross(normal);
+                normal = plane.Normal.Cross(ref normal);
                 dot = normal * point;
 
                 dist = dot - normal * p[i].ToVec3();
@@ -633,7 +633,7 @@ namespace System.NumericsX
                 {
                     dir = p[(j + 1) % numPoints].ToVec3() - p[j].ToVec3();
                     dir.Normalize();
-                    hullDirs[j] = normal.Cross(dir);
+                    hullDirs[j] = normal.Cross(ref dir);
                 }
 
                 // calculate side for each hull edge
@@ -697,31 +697,31 @@ namespace System.NumericsX
                 case 1:
                     {
                         // don't add the same point second
-                        if (p[0].ToVec3().Compare(point, epsilon))
+                        if (p[0].ToVec3().Compare(ref point, epsilon))
                             return;
-                        p[1].ToVec3().Set(point);
+                        p[1].ToVec3() = point;
                         numPoints++;
                         return;
                     }
                 case 2:
                     {
                         // don't add a point if it already exists
-                        if (p[0].ToVec3().Compare(point, epsilon) || p[1].ToVec3().Compare(point, epsilon))
+                        if (p[0].ToVec3().Compare(ref point, epsilon) || p[1].ToVec3().Compare(ref point, epsilon))
                             return;
                         // if only two points make sure we have the right ordering according to the normal
                         dir = point - p[0].ToVec3();
-                        dir = dir.Cross(p[1].ToVec3() - p[0].ToVec3());
+                        dir = dir.Cross_(p[1].ToVec3() - p[0].ToVec3());
                         if (dir[0] == 0f && dir[1] == 0f && dir[2] == 0f)
                         {
                             // points don't make a plane
                             return;
                         }
                         if (dir * normal > 0f)
-                            p[2].ToVec3().Set(point);
+                            p[2].ToVec3() = point;
                         else
                         {
                             p[2] = p[1];
-                            p[1].ToVec3().Set(point);
+                            p[1].ToVec3() = point;
                         }
                         numPoints++;
                         return;
@@ -735,7 +735,7 @@ namespace System.NumericsX
             for (j = 0; j < numPoints; j++)
             {
                 dir = p[(j + 1) % numPoints].ToVec3() - p[j].ToVec3();
-                hullDirs[j] = normal.Cross(dir);
+                hullDirs[j] = normal.Cross(ref dir);
             }
 
             // calculate side for each hull edge
@@ -826,7 +826,7 @@ namespace System.NumericsX
             //
             back = f1.p[(i + f1.numPoints - 1) % f1.numPoints].ToVec3();
             delta = p1 - back;
-            normal2 = normal.Cross(delta);
+            normal2 = normal.Cross(ref delta);
             normal2.Normalize();
 
             back = f2.p[(j + 2) % f2.numPoints].ToVec3();
@@ -839,7 +839,7 @@ namespace System.NumericsX
 
             back = f1.p[(i + 2) % f1.numPoints].ToVec3();
             delta = back - p2;
-            normal2 = normal.Cross(delta);
+            normal2 = normal.Cross(ref delta);
             normal2.Normalize();
 
             back = f2.p[(j + f2.numPoints - 1) % f2.numPoints].ToVec3();
@@ -936,7 +936,7 @@ namespace System.NumericsX
                 }
 
                 // check if the winding is convex
-                edgenormal = plane.Normal.Cross(dir);
+                edgenormal = plane.Normal.Cross(ref dir);
                 edgenormal.Normalize();
                 edgedist = p1 * edgenormal;
                 edgedist += ON_EPSILON;
@@ -967,7 +967,7 @@ namespace System.NumericsX
                 {
                     var d1 = p[i - 1].ToVec3() - p[0].ToVec3();
                     var d2 = p[i].ToVec3() - p[0].ToVec3();
-                    var cross = d1.Cross(d2);
+                    var cross = d1.Cross(ref d2);
                     total += cross.Length;
                 }
                 return total * 0.5f;
@@ -1013,7 +1013,7 @@ namespace System.NumericsX
             var center = Center;
             var v1 = p[0].ToVec3() - center;
             var v2 = p[1].ToVec3() - center;
-            normal = v2.Cross(v1);
+            normal = v2.Cross(ref v1);
             normal.Normalize();
             dist = p[0].ToVec3() * normal;
         }
@@ -1030,7 +1030,7 @@ namespace System.NumericsX
             var center = Center;
             var v1 = p[0].ToVec3() - center;
             var v2 = p[1].ToVec3() - center;
-            plane.SetNormal(v2.Cross(v1));
+            plane.SetNormal(v2.Cross(ref v1));
             plane.Normalize();
             plane.FitThroughPoint(p[0].ToVec3());
         }
@@ -1167,7 +1167,7 @@ namespace System.NumericsX
                 var dir = p[(i + 1) % numPoints].ToVec3() - p[i].ToVec3();
                 var pointvec = point - p[i].ToVec3();
 
-                var n = dir.Cross(normal);
+                var n = dir.Cross(ref normal);
 
                 if (pointvec * n < -epsilon)
                     return false;
@@ -1234,7 +1234,7 @@ namespace System.NumericsX
         {
             var v1 = b - a;
             var v2 = c - a;
-            var cross = v1.Cross(v2);
+            var cross = v1.Cross(ref v2);
             return 0.5f * cross.Length;
         }
 
@@ -1299,7 +1299,7 @@ namespace System.NumericsX
             }
             for (var i = 0; i < n; i++)
             {
-                p[i].ToVec3().Set(verts[i]);
+                p[i].ToVec3() = verts[i];
                 p[i].s = p[i].t = 0;
             }
             numPoints = n;

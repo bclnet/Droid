@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace System.NumericsX
 {
-    partial struct MatrixX
+    public partial struct MatrixX
     {
         #region General
 
@@ -951,8 +951,8 @@ namespace System.NumericsX
             y.SetData(numRows, VectorX.VECX_ALLOCA(numRows));
             z.SetData(numRows, VectorX.VECX_ALLOCA(numRows));
 
-            Multiply(y, v);
-            TransposeMultiply(z, w);
+            Multiply(ref y, ref v);
+            TransposeMultiply(ref z, ref w);
             beta = 1f + (w * y);
 
             if (beta == 0f)
@@ -1068,7 +1068,7 @@ namespace System.NumericsX
         /// <param name="b">The b.</param>
         /// <returns></returns>
         public void Inverse_Solve(VectorX x, VectorX b)
-            => Multiply(x, b);
+            => Multiply(ref x, ref b);
 
         #endregion
 
@@ -1730,7 +1730,7 @@ namespace System.NumericsX
             Debug.Assert(w.Size >= numRows);
 
             u.SetData(v.Size, VectorX.VECX_ALLOCA(v.Size));
-            TransposeMultiply(u, v);
+            TransposeMultiply(ref u, ref v);
             u *= alpha;
 
             for (k = v.Size - 1; k > 0; k--)
@@ -1908,7 +1908,7 @@ namespace System.NumericsX
             Debug.Assert(numRows == numColumns);
 
             // multiply b with transpose of Q
-            TransposeMultiply(x, b);
+            TransposeMultiply(ref x, ref b);
 
             // backsubstitution with R
             for (i = numRows - 1; i >= 0; i--)
@@ -3395,7 +3395,7 @@ namespace System.NumericsX
             realEigenValues.SetSize(numRows);
             imaginaryEigenValues.SetSize(numRows);
 
-            H = new MatrixX(this);
+            H = new MatrixX(ref this);
 
             // reduce to Hessenberg form
             HessenbergReduction(H);

@@ -214,7 +214,7 @@ namespace Gengine.UI
 
                 // ignore any non printable chars (except enter when wrap is enabled)
                 if (wrap && (key == K_ENTER || key == K_KP_ENTER)) { }
-                else if (!StringX.CharIsPrintable((char)key)) return "";
+                else if (!System.NumericsX.OpenStack.stringX.CharIsPrintable((char)key)) return "";
 
                 if (numeric)
                     if ((key < (Key)'0' || key > (Key)'9') && key != (Key)'.')
@@ -442,7 +442,7 @@ namespace Gengine.UI
                 {
                     var i = 0;
                     while (i < text.Length && i < cursorPos)
-                        if (StringX.IsColor((string)text, i)) i += 2;
+                        if (System.NumericsX.OpenStack.stringX.IsColor((string)text, i)) i += 2;
                         else { cursorX += dc.CharWidth(((string)text)[i], textScale); i++; }
                 }
                 var maxWidth = MaxCharWidth;

@@ -175,7 +175,7 @@ namespace Gengine.UI
             {
                 if (guiDict != null && !string.IsNullOrEmpty(name))
                     data = guiDict.GetString(Name);
-                return data.LengthWithoutColors();
+                return stringX.LengthWithoutColors(data);
             }
         }
         public int Length
@@ -192,7 +192,7 @@ namespace Gengine.UI
         {
             if (guiDict != null && !string.IsNullOrEmpty(name))
                 data = guiDict.GetString(Name);
-            data.RemoveColors();
+            stringX.RemoveColors(data);
         }
 
         public override void Set(string val)
@@ -390,7 +390,7 @@ namespace Gengine.UI
 
         public override void Set(string val)
         {
-            stringX.sscanf(val, val.Contains(',') ? "%f,%f,%f,%f": "%f %f %f %f", out data.x, out data.y, out data.w, out data.h);
+            TextScanFormatted.Scan(val, val.Contains(',') ? "%f,%f,%f,%f": "%f %f %f %f", out data.x, out data.y, out data.w, out data.h);
             guiDict?.SetVec4(Name, data.ToVec4());
         }
 
@@ -452,7 +452,7 @@ namespace Gengine.UI
 
         public override void Set(string val)
         {
-            stringX.sscanf(val, val.Contains(',') ? "%f,%f" : "%f %f", out data.x, out data.y);
+            TextScanFormatted.Scan(val, val.Contains(',') ? "%f,%f" : "%f %f", out data.x, out data.y);
             guiDict?.SetVec2(Name, data);
         }
 
@@ -511,7 +511,7 @@ namespace Gengine.UI
 
         public override void Set(string val)
         {
-            stringX.sscanf(val, "%f %f %f", out data.x, out data.y, out data.z);
+            TextScanFormatted.Scan(val, "%f %f %f", out data.x, out data.y, out data.z);
             guiDict?.SetVector(Name, data);
         }
 
@@ -576,7 +576,7 @@ namespace Gengine.UI
 
         public override void Set(string val)
         {
-            stringX.sscanf(val, val.Contains(',') ? "%f,%f,%f,%f" : "%f %f %f %f", out data.x, out data.y, out data.z, out data.w);
+            TextScanFormatted.Scan(val, val.Contains(',') ? "%f,%f,%f,%f" : "%f %f %f %f", out data.x, out data.y, out data.z, out data.w);
             guiDict?.SetVec4(Name, data);
         }
 

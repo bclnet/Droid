@@ -95,7 +95,7 @@ namespace System.NumericsX
         public bool Compare(Plane p, float normalEps, float distEps)  // compare with epsilon
         {
             if (MathX.Fabs(d - p.d) > distEps) return false;
-            if (!Normal.Compare(p.Normal, normalEps)) return false;
+            if (!Normal.Compare(ref p.Normal, normalEps)) return false;
             return true;
         }
         public static bool operator ==(Plane _, Plane p)                   // exact compare, no epsilon
@@ -117,10 +117,10 @@ namespace System.NumericsX
             c = normal.z;
         }
 
-        public Vector3 Normal
+        public ref Vector3 Normal
         {   // reference to normal
-            get => reinterpret.cast_vec3(this);
-            set { }
+            get => ref reinterpret.cast_vec3(this);
+            //set { }
         }
 
         public float Normalize(bool fixDegenerate = true)  // only normalizes the plane normal, does not adjust d
@@ -172,7 +172,7 @@ namespace System.NumericsX
 
         public bool FromPoints(Vector3 p1, Vector3 p2, Vector3 p3, bool fixDegenerate = true)
         {
-            Normal = (p1 - p2).Cross(p3 - p2);
+            Normal = (p1 - p2).Cross_(p3 - p2);
             if (Normalize(fixDegenerate) == 0f)
                 return false;
             d = -(Normal * p2);
@@ -180,7 +180,7 @@ namespace System.NumericsX
         }
         public bool FromVecs(Vector3 dir1, Vector3 dir2, Vector3 p, bool fixDegenerate = true)
         {
-            Normal = dir1.Cross(dir2);
+            Normal = dir1.Cross(ref dir2);
             if (Normalize(fixDegenerate) == 0f)
                 return false;
             d = -(Normal * p);
@@ -208,7 +208,7 @@ namespace System.NumericsX
             if (numPoints == 2)
             {
                 dir = points[1] - points[0];
-                Normal = dir.Cross(new Vector3(0, 0, 1)).Cross(dir);
+                Normal = dir.Cross_(new Vector3(0, 0, 1)).Cross(ref dir);
                 Normalize();
                 d = -(Normal * points[0]);
                 return true;
@@ -320,7 +320,7 @@ namespace System.NumericsX
             f0 = (n01 * plane.d - n11 * d) * invDet;
             f1 = (n01 * d - n00 * plane.d) * invDet;
 
-            dir = Normal.Cross(plane.Normal);
+            dir = Normal.Cross(ref plane.Normal);
             start = (float)f0 * Normal + (float)f1 * plane.Normal;
             return true;
         }

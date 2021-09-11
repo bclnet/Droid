@@ -157,7 +157,7 @@ namespace System.NumericsX
             // if coplanar, put on the front side if the normals match
             if (counts[SIDE_FRONT] == 0 && counts[SIDE_BACK] == 0)
             {
-                f = (verts[indexes[1]].xyz - verts[indexes[0]].xyz).Cross(verts[indexes[0]].xyz - verts[indexes[2]].xyz) * plane.Normal;
+                f = (verts[indexes[1]].xyz - verts[indexes[0]].xyz).Cross_(verts[indexes[0]].xyz - verts[indexes[2]].xyz) * plane.Normal;
                 if (MathX.FLOATSIGNBITSET(f))
                 {
                     back = new Surface(this);
@@ -265,7 +265,7 @@ namespace System.NumericsX
                             if ((sides[v0] & sides[v1] & sides[v2] & SIDE_ON) != 0)
                             {
                                 // coplanar
-                                f = (verts[v1].xyz - verts[v0].xyz).Cross(verts[v0].xyz - verts[v2].xyz) * plane.Normal;
+                                f = (verts[v1].xyz - verts[v0].xyz).Cross_(verts[v0].xyz - verts[v2].xyz) * plane.Normal;
                                 s = MathX.FLOATSIGNBITSET_(f);
                             }
                             else s = (sides[v0] | sides[v1] | sides[v2]) & SIDE_BACK;
@@ -477,7 +477,7 @@ namespace System.NumericsX
             // if coplanar, put on the front side if the normals match
             if (counts[SIDE_FRONT] == 0 && counts[SIDE_BACK] == 0)
             {
-                f = (verts[indexes[1]].xyz - verts[indexes[0]].xyz).Cross(verts[indexes[0]].xyz - verts[indexes[2]].xyz) * plane.Normal;
+                f = (verts[indexes[1]].xyz - verts[indexes[0]].xyz).Cross_(verts[indexes[0]].xyz - verts[indexes[2]].xyz) * plane.Normal;
                 if (MathX.FLOATSIGNBITSET(f))
                 {
                     Clear();
@@ -561,7 +561,7 @@ namespace System.NumericsX
                                 // coplanar
                                 if (!keepOn)
                                     break;
-                                f = (verts[v1].xyz - verts[v0].xyz).Cross(verts[v0].xyz - verts[v2].xyz) * plane.Normal;
+                                f = (verts[v1].xyz - verts[v0].xyz).Cross_(verts[v0].xyz - verts[v2].xyz) * plane.Normal;
                                 if (MathX.FLOATSIGNBITSET(f))
                                     break;
                             }

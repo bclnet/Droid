@@ -2,6 +2,7 @@ using System.NumericsX.OpenStack;
 using static System.NumericsX.Platform;
 using static System.NumericsX.OpenStack.OpenStack;
 using System.Runtime.CompilerServices;
+using System.Linq;
 
 namespace System.NumericsX
 {
@@ -28,19 +29,19 @@ namespace System.NumericsX
                 best = end - start;
         }
 
-        static void PrintClocks(string s, int dataCount, TimeSpan clocks, TimeSpan otherClocks = default)
+        static void PrintClocks(string s, int count, TimeSpan clocks, TimeSpan otherClocks = default)
         {
             Printf(s);
-            for (var i = s.LengthWithoutColors(); i < 48; i++)
+            for (var i = stringX.LengthWithoutColors(s); i < 48; i++)
                 Printf(" ");
             clocks -= baseClocks;
             if (otherClocks != default && clocks != default)
             {
                 otherClocks -= baseClocks;
-                var p = (int)((otherClocks - clocks) * 100f / otherClocks);
-                Printf($"c = {dataCount,4}, clcks = {clocks.Ticks,5}, {p}%\n");
+                var p = (int)((otherClocks.Ticks - clocks.Ticks) * 100f / otherClocks.Ticks);
+                Printf($"c = {count,4}, clcks = {clocks.Ticks,5}, {p}%\n");
             }
-            else Printf($"c = {dataCount,4}, clcks = {clocks.Ticks,5}\n");
+            else Printf($"c = {count,4}, clcks = {clocks.Ticks,5}\n");
         }
 
         static void GetBaseClocks()
@@ -445,7 +446,7 @@ namespace System.NumericsX
             var v3constant = new Vector3(1f, 2f, 3f);
             var v4src0 = stackalloc Plane[COUNT];
             var v4constant = new Plane(1f, 2f, 3f, 4f);
-            var drawVerts = new DrawVert[COUNT];
+            var drawVerts = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
             string result;
 
             var srnd = new RandomX(RANDOM_SEED);
@@ -907,7 +908,7 @@ namespace System.NumericsX
             var fsrc0 = stackalloc float[COUNT];
             var v2src0 = stackalloc Vector2[COUNT];
             var v3src0 = stackalloc Vector3[COUNT];
-            var drawVerts = new DrawVert[COUNT];
+            var drawVerts = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
             var indexes = stackalloc int[COUNT];
             float min = 0f, max = 0f, min2 = 0f, max2 = 0f;
             Vector2 v2min = default, v2max = default, v2min2 = default, v2max2 = default;
@@ -1227,7 +1228,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_MultiplyVecX {i}x{i}*{i}x1 {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
 
@@ -1260,7 +1261,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_MultiplyVecX {i}x6*6x1 {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
 
@@ -1292,7 +1293,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_MultiplyVecX 6x{i}*{i}x1 {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
         }
@@ -1343,7 +1344,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_MultiplyAddVecX {i}x{i}*{i}1 {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
 
@@ -1376,7 +1377,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_MultiplyAddVecX {i}x6*6x1 {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
 
@@ -1409,7 +1410,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_MultiplyAddVecX 6x{i}*{i}x1 {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
         }
@@ -1460,7 +1461,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_TransposeMulVecX {i}x6*{i}x1 {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
 
@@ -1493,7 +1494,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_TransposeMulVecX 6x{i}*6x1 {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
         }
@@ -1544,7 +1545,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_TransposeMulAddVecX {i}x6*{i}x1 {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
 
@@ -1577,7 +1578,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_TransposeMulAddVecX 6x{i}*6x1 {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
         }
@@ -1621,7 +1622,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_MultiplyMatX {i}x{i}*{i}x6 {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
 
@@ -1655,7 +1656,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_MultiplyMatX 6x{i}*{i}x6 {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
 
@@ -1689,7 +1690,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_MultiplyMatX {i}x6*6x{i} {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
 
@@ -1723,7 +1724,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_MultiplyMatX 6x6*6x{i} {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
         }
@@ -1765,7 +1766,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_TransMultiplyMatX {i}x6*{i}x{i} {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
 
@@ -1799,7 +1800,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = dst.Compare(tst, MATX_MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = dst.Compare(ref tst, MATX_MATX_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_TransMultiplyMatX 6x{i}*6x6 {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
         }
@@ -1848,7 +1849,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = x.Compare(tst, MATX_LTS_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = x.Compare(ref tst, MATX_LTS_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_LowerTriangularSolve {i}x{i} {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
         }
@@ -1895,7 +1896,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = x.Compare(tst, MATX_LTS_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = x.Compare(ref tst, MATX_LTS_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_LowerTriangularSolveT {i}x{i} {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
         }
@@ -1914,7 +1915,7 @@ namespace System.NumericsX
 
             original.SetSize(MATX_LDLT_FACTOR_SOLVE_SIZE, MATX_LDLT_FACTOR_SOLVE_SIZE);
             src.Random(MATX_LDLT_FACTOR_SOLVE_SIZE, MATX_LDLT_FACTOR_SOLVE_SIZE, 0, -1f, 1f);
-            src.TransposeMultiply(original, src);
+            src.TransposeMultiply(ref original, ref src);
 
             for (i = 1; i < MATX_LDLT_FACTOR_SOLVE_SIZE; i++)
             {
@@ -1942,7 +1943,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
 
-                result = mat1.Compare(mat2, MATX_LDLT_SIMD_EPSILON) && invDiag1.Compare(invDiag2, MATX_LDLT_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
+                result = mat1.Compare(ref mat2, MATX_LDLT_SIMD_EPSILON) && invDiag1.Compare(ref invDiag2, MATX_LDLT_SIMD_EPSILON) ? "ok" : $"{S_COLOR_RED}X";
                 PrintClocks($"   simd.MatX_LDLTFactor {i}x{i} {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
         }
@@ -2005,7 +2006,7 @@ namespace System.NumericsX
 
             for (i = 0; i < COUNT; i++)
             {
-                if (!joints1[i].t.Compare(joints2[i].t, 1e-3f))
+                if (!joints1[i].t.Compare(ref joints2[i].t, 1e-3f))
                     break;
                 if (!joints1[i].q.Compare(joints2[i].q, 1e-2f))
                     break;
@@ -2112,7 +2113,7 @@ namespace System.NumericsX
                     Printf($"ConvertJointMatsToJointQuats: broken q {i}\n");
                     break;
                 }
-                if (!joints1[i].t.Compare(joints2[i].t, 1e-4f))
+                if (!joints1[i].t.Compare(ref joints2[i].t, 1e-4f))
                 {
                     Printf($"ConvertJointMatsToJointQuats: broken t {i}\n");
                     break;
@@ -2240,8 +2241,8 @@ namespace System.NumericsX
         {
             int i;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
-            var drawVerts1 = new DrawVert[NUMVERTS];
-            var drawVerts2 = new DrawVert[NUMVERTS];
+            var drawVerts1 = Enumerable.Repeat(new DrawVert(), NUMVERTS).ToArray();
+            var drawVerts2 = Enumerable.Repeat(new DrawVert(), NUMVERTS).ToArray();
             var joints = stackalloc JointMat[NUMJOINTS];
             var weights = stackalloc Vector4[COUNT];
             var weightIndex = stackalloc int[COUNT * 2];
@@ -2264,10 +2265,10 @@ namespace System.NumericsX
 
             for (i = 0; i < COUNT; i++)
             {
-                weights[i][0] = srnd.CRandomFloat() * 2f;
-                weights[i][1] = srnd.CRandomFloat() * 2f;
-                weights[i][2] = srnd.CRandomFloat() * 2f;
-                weights[i][3] = srnd.CRandomFloat();
+                weights[i].x = srnd.CRandomFloat() * 2f;
+                weights[i].y = srnd.CRandomFloat() * 2f;
+                weights[i].z = srnd.CRandomFloat() * 2f;
+                weights[i].w = srnd.CRandomFloat();
                 weightIndex[i * 2 + 0] = (i * NUMJOINTS / COUNT) * sizeof(JointMat);
                 weightIndex[i * 2 + 1] = i & 1;
             }
@@ -2292,7 +2293,7 @@ namespace System.NumericsX
             }
 
             for (i = 0; i < NUMVERTS; i++)
-                if (!drawVerts1[i].xyz.Compare(drawVerts2[i].xyz, 0.5f))
+                if (!drawVerts1[i].xyz.Compare(ref drawVerts2[i].xyz, 0.5f))
                     break;
             result = (i >= NUMVERTS) ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.TransformVerts() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
@@ -2303,7 +2304,7 @@ namespace System.NumericsX
             int i, j;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
             var planes = stackalloc Plane[4];
-            var drawVerts = new DrawVert[COUNT];
+            var drawVerts = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
             var cullBits1 = stackalloc byte[COUNT];
             var cullBits2 = stackalloc byte[COUNT];
             byte totalOr1 = 0, totalOr2 = 0;
@@ -2354,7 +2355,7 @@ namespace System.NumericsX
             int i, j;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
             var planes = stackalloc Plane[6];
-            var drawVerts = new DrawVert[COUNT];
+            var drawVerts = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
             var cullBits1 = stackalloc byte[COUNT];
             var cullBits2 = stackalloc byte[COUNT];
             string result;
@@ -2408,7 +2409,7 @@ namespace System.NumericsX
             int i, j;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
             var planes = stackalloc Plane[2];
-            var drawVerts = new DrawVert[COUNT];
+            var drawVerts = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
             var cullBits1 = stackalloc byte[COUNT];
             var cullBits2 = stackalloc byte[COUNT];
             var texCoords1 = stackalloc Vector2[COUNT];
@@ -2448,7 +2449,7 @@ namespace System.NumericsX
             {
                 if (cullBits1[i] != cullBits2[i])
                     break;
-                if (!texCoords1[i].Compare(texCoords2[i], 1e-4f))
+                if (!texCoords1[i].Compare(ref texCoords2[i], 1e-4f))
                     break;
             }
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
@@ -2459,8 +2460,8 @@ namespace System.NumericsX
         {
             int i, j;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
-            var drawVerts1 = new DrawVert[COUNT];
-            var drawVerts2 = new DrawVert[COUNT];
+            var drawVerts1 = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
+            var drawVerts2 = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
             var planes1 = stackalloc Plane[COUNT];
             var planes2 = stackalloc Plane[COUNT];
             var indexes = stackalloc int[COUNT * 3];
@@ -2514,8 +2515,8 @@ namespace System.NumericsX
         {
             int i, j;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
-            var drawVerts1 = new DrawVert[COUNT];
-            var drawVerts2 = new DrawVert[COUNT];
+            var drawVerts1 = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
+            var drawVerts2 = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
             var planes1 = stackalloc Plane[COUNT];
             var planes2 = stackalloc Plane[COUNT];
             var indexes = stackalloc int[COUNT * 3];
@@ -2565,7 +2566,7 @@ namespace System.NumericsX
                 v1.Normalize();
                 v2 = drawVerts2[i].normal;
                 v2.Normalize();
-                if (!v1.Compare(v2, 1e-1f))
+                if (!v1.Compare(ref v2, 1e-1f))
                 {
                     Printf($"DeriveTangents: broken at normal {i}\n -- expecting {v1} got {v2}");
                     break;
@@ -2574,7 +2575,7 @@ namespace System.NumericsX
                 v1.Normalize();
                 v2 = drawVerts2[i].tangents0;
                 v2.Normalize();
-                if (!v1.Compare(v2, 1e-1f))
+                if (!v1.Compare(ref v2, 1e-1f))
                 {
                     Printf($"DeriveTangents: broken at tangent0 {i} -- expecting {v1} got {v2}\n");
                     break;
@@ -2583,7 +2584,7 @@ namespace System.NumericsX
                 v1.Normalize();
                 v2 = drawVerts2[i].tangents1;
                 v2.Normalize();
-                if (!v1.Compare(v2, 1e-1f))
+                if (!v1.Compare(ref v2, 1e-1f))
                 {
                     Printf($"DeriveTangents: broken at tangent1 {i} -- expecting {v1} got {v2}\n");
                     break;
@@ -2599,8 +2600,8 @@ namespace System.NumericsX
         {
             int i, j;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
-            var drawVerts1 = new DrawVert[COUNT];
-            var drawVerts2 = new DrawVert[COUNT];
+            var drawVerts1 = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
+            var drawVerts2 = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
             var dominantTris = stackalloc DominantTri[COUNT];
             string result;
 
@@ -2646,19 +2647,19 @@ namespace System.NumericsX
                 v1.Normalize();
                 v2 = drawVerts2[i].normal;
                 v2.Normalize();
-                if (!v1.Compare(v2, 1e-1f))
+                if (!v1.Compare(ref v2, 1e-1f))
                     break;
                 v1 = drawVerts1[i].tangents0;
                 v1.Normalize();
                 v2 = drawVerts2[i].tangents0;
                 v2.Normalize();
-                if (!v1.Compare(v2, 1e-1f))
+                if (!v1.Compare(ref v2, 1e-1f))
                     break;
                 v1 = drawVerts1[i].tangents1;
                 v1.Normalize();
                 v2 = drawVerts2[i].tangents1;
                 v2.Normalize();
-                if (!v1.Compare(v2, 1e-1f))
+                if (!v1.Compare(ref v2, 1e-1f))
                     break;
             }
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
@@ -2669,8 +2670,8 @@ namespace System.NumericsX
         {
             int i, j;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
-            var drawVerts1 = new DrawVert[COUNT];
-            var drawVerts2 = new DrawVert[COUNT];
+            var drawVerts1 = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
+            var drawVerts2 = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
             string result;
 
             var srnd = new RandomX(RANDOM_SEED);
@@ -2706,11 +2707,11 @@ namespace System.NumericsX
 
             for (i = 0; i < COUNT; i++)
             {
-                if (!drawVerts1[i].normal.Compare(drawVerts2[i].normal, 1e-2f)) break;
-                if (!drawVerts1[i].tangents0.Compare(drawVerts2[i].tangents0, 1e-2f)) break;
-                if (!drawVerts1[i].tangents1.Compare(drawVerts2[i].tangents1, 1e-2f)) break;
+                if (!drawVerts1[i].normal.Compare(ref drawVerts2[i].normal, 1e-2f)) break;
+                if (!drawVerts1[i].tangents0.Compare(ref drawVerts2[i].tangents0, 1e-2f)) break;
+                if (!drawVerts1[i].tangents1.Compare(ref drawVerts2[i].tangents1, 1e-2f)) break;
                 // since we're doing a lot of unaligned work, added this check to make sure xyz wasn't getting overwritten
-                if (!drawVerts1[i].xyz.Compare(drawVerts2[i].xyz, 1e-2f)) break;
+                if (!drawVerts1[i].xyz.Compare(ref drawVerts2[i].xyz, 1e-2f)) break;
             }
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.NormalizeTangents() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
@@ -2720,7 +2721,7 @@ namespace System.NumericsX
         {
             int i, j;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
-            var drawVerts = new DrawVert[COUNT];
+            var drawVerts = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
             var indexes = stackalloc int[COUNT * 3];
             var lightVectors1 = stackalloc Vector3[COUNT];
             var lightVectors2 = stackalloc Vector3[COUNT];
@@ -2768,7 +2769,7 @@ namespace System.NumericsX
             }
 
             for (i = 0; i < COUNT; i++)
-                if (!lightVectors1[i].Compare(lightVectors2[i], 1e-4f))
+                if (!lightVectors1[i].Compare(ref lightVectors2[i], 1e-4f))
                     break;
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.CreateTextureSpaceLightVectors() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
@@ -2778,7 +2779,7 @@ namespace System.NumericsX
         {
             int i, j;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
-            var drawVerts = new DrawVert[COUNT];
+            var drawVerts = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
             var texCoords1 = stackalloc Vector4[COUNT];
             var texCoords2 = stackalloc Vector4[COUNT];
             var indexes = stackalloc int[COUNT * 3];
@@ -2829,7 +2830,7 @@ namespace System.NumericsX
             }
 
             for (i = 0; i < COUNT; i++)
-                if (!texCoords1[i].Compare(texCoords2[i], 1e-2f))
+                if (!texCoords1[i].Compare(ref texCoords2[i], 1e-2f))
                     break;
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
             PrintClocks($"   simd.CreateSpecularTextureCoords() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
@@ -2839,7 +2840,7 @@ namespace System.NumericsX
         {
             int i, j;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
-            var drawVerts = new DrawVert[COUNT];
+            var drawVerts = Enumerable.Repeat(new DrawVert(), COUNT).ToArray();
             var vertexCache1 = stackalloc Vector4[COUNT * 2];
             var vertexCache2 = stackalloc Vector4[COUNT * 2];
             var originalVertRemap = stackalloc int[COUNT];
@@ -2888,9 +2889,9 @@ namespace System.NumericsX
             {
                 if (i < (numVerts1 / 2))
                 {
-                    if (!vertexCache1[i * 2 + 0].Compare(vertexCache2[i * 2 + 0], 1e-2f))
+                    if (!vertexCache1[i * 2 + 0].Compare(ref vertexCache2[i * 2 + 0], 1e-2f))
                         break;
-                    if (!vertexCache1[i * 2 + 1].Compare(vertexCache2[i * 2 + 1], 1e-2f))
+                    if (!vertexCache1[i * 2 + 1].Compare(ref vertexCache2[i * 2 + 1], 1e-2f))
                         break;
                 }
                 if (vertRemap1[i] != vertRemap2[i])
@@ -2921,9 +2922,9 @@ namespace System.NumericsX
 
             for (i = 0; i < COUNT; i++)
             {
-                if (!vertexCache1[i * 2 + 0].Compare(vertexCache2[i * 2 + 0], 1e-2f))
+                if (!vertexCache1[i * 2 + 0].Compare(ref vertexCache2[i * 2 + 0], 1e-2f))
                     break;
-                if (!vertexCache1[i * 2 + 1].Compare(vertexCache2[i * 2 + 1], 1e-2f))
+                if (!vertexCache1[i * 2 + 1].Compare(ref vertexCache2[i * 2 + 1], 1e-2f))
                     break;
             }
             result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
@@ -3753,7 +3754,7 @@ namespace System.NumericsX
             SetRefreshOnPrint(true);
 
             Printf($"using {p_simd.Name} for SIMD processing\n");
-            //GetBaseClocks();
+            GetBaseClocks();
 
             TestMath();
             TestAdd();

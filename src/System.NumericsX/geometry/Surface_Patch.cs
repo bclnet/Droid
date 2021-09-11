@@ -385,12 +385,12 @@ namespace System.NumericsX
             extent[1] = verts[(height - 1) * width + width - 1].xyz - verts[0].xyz;
             extent[2] = verts[(height - 1) * width].xyz - verts[0].xyz;
 
-            norm = extent[0].Cross(extent[1]);
+            norm = extent[0].Cross(ref extent[1]);
             if (norm.LengthSqr == 0f)
             {
-                norm = extent[0].Cross(extent[2]);
+                norm = extent[0].Cross(ref extent[2]);
                 if (norm.LengthSqr == 0f)
-                    norm = extent[1].Cross(extent[2]);
+                    norm = extent[1].Cross(ref extent[2]);
             }
 
             // wrapped patched may not get a valid normal here
@@ -482,7 +482,7 @@ namespace System.NumericsX
                     {
                         if (!good[k] || !good[(k + 1) & 7])
                             continue;   // didn't get two points
-                        norm = around[(k + 1) & 7].Cross(around[k]);
+                        norm = around[(k + 1) & 7].Cross(ref around[k]);
                         if (norm.Normalize() == 0f)
                             continue;
                         sum += norm;

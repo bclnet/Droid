@@ -208,7 +208,7 @@ namespace Gengine.UI
                 var shadowText = (string)text;
                 var shadowRect = new Rectangle(textRect);
 
-                shadowText = shadowText.RemoveColors();
+                shadowText = stringX.RemoveColors(shadowText);
                 shadowRect.x += textShadow;
                 shadowRect.y += textShadow;
 

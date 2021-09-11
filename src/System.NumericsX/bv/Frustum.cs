@@ -578,7 +578,7 @@ namespace System.NumericsX
                 axis[0] = dir;
                 axis[1] = box.Axis[bestAxis] - (box.Axis[bestAxis] * axis[0]) * axis[0];
                 axis[1].Normalize();
-                axis[2].Cross(axis[0], axis[1]);
+                axis[2].Cross(ref axis[0], ref axis[1]);
 
                 BoxToPoints((box.Center - projectionOrigin) * axis.Transpose(), box.Extents, box.Axis * axis.Transpose(), out points);
 
@@ -693,7 +693,7 @@ namespace System.NumericsX
             }
 
             origin = projectionOrigin;
-            axis = dir.ToMatrix3x3();
+            axis = dir.ToMat3();
 
             var s = MathX.Sqrt(d * d - r * r);
             var x = r / d * s;
@@ -785,7 +785,7 @@ namespace System.NumericsX
 
             for (var i = 0; i < 4; i++)
             {
-                planes[i + 2].Normal = points[i].Cross(points[(i + 1) & 3] - points[i]);
+                planes[i + 2].Normal = points[i].Cross_(points[(i + 1) & 3] - points[i]);
                 planes[i + 2].Normalize();
                 planes[i + 2].FitThroughPoint(points[i]);
             }

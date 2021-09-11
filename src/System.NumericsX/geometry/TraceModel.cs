@@ -292,7 +292,7 @@ namespace System.NumericsX
                 v1 = edges[Math.Abs(e0)].v[MathX.INTSIGNBITNOTSET_(e0)];
                 v2 = edges[Math.Abs(e1)].v[MathX.INTSIGNBITNOTSET_(e1)];
                 // polygon plane
-                polys[i].normal = (verts[v1] - verts[v0]).Cross(verts[v2] - verts[v0]);
+                polys[i].normal = (verts[v1] - verts[v0]).Cross_(verts[v2] - verts[v0]);
                 polys[i].normal.Normalize();
                 polys[i].dist = polys[i].normal * verts[v0];
                 // polygon bounds
@@ -513,7 +513,7 @@ namespace System.NumericsX
                 v3 = edges[Math.Abs(e2)].v[MathX.INTSIGNBITNOTSET_(e2)];
                 v4 = edges[Math.Abs(e3)].v[MathX.INTSIGNBITNOTSET_(e3)];
                 // polygon plane
-                polys[i].normal = (verts[v1] - verts[v0]).Cross(verts[v2] - verts[v0]);
+                polys[i].normal = (verts[v1] - verts[v0]).Cross_(verts[v2] - verts[v0]);
                 polys[i].normal.Normalize();
                 polys[i].dist = polys[i].normal * verts[v0];
                 // polygon bounds
@@ -609,7 +609,7 @@ namespace System.NumericsX
             for (i = 0; i < n; i++)
             {
                 // vertical polygon plane
-                polys[i].normal = (verts[(i + 1) % n] - verts[i]).Cross(verts[n + i] - verts[i]);
+                polys[i].normal = (verts[(i + 1) % n] - verts[i]).Cross_(verts[n + i] - verts[i]);
                 polys[i].normal.Normalize();
                 polys[i].dist = polys[i].normal * verts[i];
                 // vertical polygon bounds
@@ -710,7 +710,7 @@ namespace System.NumericsX
             for (i = 0; i < n; i++)
             {
                 // polygon plane
-                polys[i].normal = (verts[(i + 1) % n] - verts[i]).Cross(verts[n] - verts[i]);
+                polys[i].normal = (verts[(i + 1) % n] - verts[i]).Cross_(verts[n] - verts[i]);
                 polys[i].normal.Normalize();
                 polys[i].dist = polys[i].normal * verts[i];
                 // polygon bounds
@@ -822,12 +822,12 @@ namespace System.NumericsX
             bounds[0].Set(width * -0.5f, width * -0.5f, -halfLength);
             bounds[1].Set(width * 0.5f, width * 0.25f, halfLength);
             // poly plane normals
-            polys[0].normal = (verts[2] - verts[0]).Cross(verts[1] - verts[0]);
+            polys[0].normal = (verts[2] - verts[0]).Cross_(verts[1] - verts[0]);
             polys[0].normal.Normalize();
             polys[2].normal.Set(-polys[0].normal[0], polys[0].normal[1], polys[0].normal[2]);
             polys[3].normal.Set(polys[0].normal[0], polys[0].normal[1], -polys[0].normal[2]);
             polys[5].normal.Set(-polys[0].normal[0], polys[0].normal[1], -polys[0].normal[2]);
-            polys[1].normal = (verts[3] - verts[0]).Cross(verts[2] - verts[0]);
+            polys[1].normal = (verts[3] - verts[0]).Cross_(verts[2] - verts[0]);
             polys[1].normal.Normalize();
             polys[4].normal.Set(polys[1].normal[0], polys[1].normal[1], -polys[1].normal[2]);
             // poly plane distances
@@ -866,7 +866,7 @@ namespace System.NumericsX
             numPolys = 2;
             // set polygon planes
             polys[0].numEdges = numEdges;
-            polys[0].normal = (v[1] - v[0]).Cross(v[2] - v[0]);
+            polys[0].normal = (v[1] - v[0]).Cross_(v[2] - v[0]);
             polys[0].normal.Normalize();
             polys[0].dist = polys[0].normal * v[0];
             polys[1].numEdges = numEdges;
@@ -882,7 +882,7 @@ namespace System.NumericsX
                 verts[i] = v[i];
                 edges[i + 1].v[0] = i;
                 edges[i + 1].v[1] = j;
-                edges[i + 1].normal = polys[0].normal.Cross(v[i] - v[j]);
+                edges[i + 1].normal = polys[0].normal.Cross_(v[i] - v[j]);
                 edges[i + 1].normal.Normalize();
                 polys[0].edges[i] = i + 1;
                 polys[1].edges[i] = -(numVerts - i);
@@ -930,7 +930,7 @@ namespace System.NumericsX
                 trm.polys[2 + i].edges[1] = numEdges * 2 + i + 1;
                 trm.polys[2 + i].edges[2] = numEdges + i + 1;
                 trm.polys[2 + i].edges[3] = -(numEdges * 2 + (i + 1) % numEdges + 1);
-                trm.polys[2 + i].normal = (verts[(i + 1) % numVerts] - verts[i]).Cross(polys[0].normal);
+                trm.polys[2 + i].normal = (verts[(i + 1) % numVerts] - verts[i]).Cross(ref polys[0].normal);
                 trm.polys[2 + i].normal.Normalize();
                 trm.polys[2 + i].dist = trm.polys[2 + i].normal * verts[i];
             }
@@ -969,7 +969,7 @@ namespace System.NumericsX
                             {
                                 // max length normal pointing outside both polygons
                                 dir = verts[edge->v[edgeNum > 0 ? 1 : 0]] - verts[edge->v[edgeNum < 0 ? 1 : 0]];
-                                edge->normal = edge->normal.Cross(dir) + poly.normal.Cross(-dir);
+                                edge->normal = edge->normal.Cross(ref dir) + poly.normal.Cross_(-dir);
                                 edge->normal *= 0.5f / (0.5f + 0.5f * SHARP_EDGE_DOT) / edge->normal.Length;
                                 numSharpEdges++;
                             }
@@ -1114,7 +1114,7 @@ namespace System.NumericsX
             {
                 v1 = verts[edges[Math.Abs(poly.edges[i])].v[MathX.INTSIGNBITSET_(poly.edges[i])]] - base_;
                 v2 = verts[edges[Math.Abs(poly.edges[i])].v[MathX.INTSIGNBITNOTSET_(poly.edges[i])]] - base_;
-                cross = v1.Cross(v2);
+                cross = v1.Cross(ref v2);
                 total += cross.Length;
             }
             return total * 0.5f;

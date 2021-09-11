@@ -1083,7 +1083,7 @@ namespace Gengine.Framework
             {
                 if (!src.ReadTokenOnLine(out var token)) return;
                 if (count == maxParms) { src.Error("too many parms on line"); return; }
-                parms[count] = float.Parse(StringX.StripQuotes(token));
+                parms[count] = float.Parse(stringX.StripQuotes(token));
                 count++;
             }
         }

@@ -140,7 +140,7 @@ namespace System.NumericsX
                 return false; // pluecker coordinate does not represent a line
             }
 
-            start = dir2.Cross(dir1) * (1f / d);
+            start = dir2.Cross(ref dir1) * (1f / d);
             end = start + dir2;
             return true;
         }
@@ -164,7 +164,7 @@ namespace System.NumericsX
                 return false; // pluecker coordinate does not represent a line
             }
 
-            start = dir.Cross(dir1) * (1f / d);
+            start = dir.Cross(ref dir1) * (1f / d);
             return true;
         }
 

@@ -196,7 +196,7 @@ namespace Gengine.UI
             }
             else if (ev.evType == SE.CHAR)
             {
-                if (!StringX.CharIsPrintable((char)key))
+                if (!System.NumericsX.OpenStack.stringX.CharIsPrintable((char)key))
                     return ret;
 
                 if (gui.Time > typedTime + 1000)

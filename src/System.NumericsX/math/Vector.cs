@@ -9,6 +9,8 @@ namespace System.NumericsX
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector2
     {
+        public static Vector2 origin = new(0f, 0f);
+
         public float x;
         public float y;
 
@@ -32,11 +34,13 @@ namespace System.NumericsX
 
         public unsafe float this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (float* p = &x)
                     return p[index];
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 fixed (float* p = &x)
@@ -71,7 +75,7 @@ namespace System.NumericsX
         /// <param name="a">a.</param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Compare(Vector2 a)
+        public bool Compare(ref Vector2 a)
             => x == a.x && y == a.y;
         /// <summary>
         /// compare with epsilon
@@ -80,7 +84,7 @@ namespace System.NumericsX
         /// <param name="epsilon">The epsilon.</param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Compare(Vector2 a, float epsilon)
+        public bool Compare(ref Vector2 a, float epsilon)
             => MathX.Fabs(x - a.x) <= epsilon &&
                MathX.Fabs(y - a.y) <= epsilon;
         /// <summary>
@@ -93,7 +97,7 @@ namespace System.NumericsX
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Vector2 _, Vector2 a)
-            => _.Compare(a);
+            => _.Compare(ref a);
         /// <summary>
         /// exact compare, no epsilon
         /// </summary>
@@ -104,16 +108,20 @@ namespace System.NumericsX
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Vector2 _, Vector2 a)
-            => !_.Compare(a);
+            => !_.Compare(ref a);
         public override bool Equals(object obj)
-            => obj is Vector2 q && Compare(q);
+            => obj is Vector2 q && Compare(ref q);
         public override int GetHashCode()
             => x.GetHashCode() ^ y.GetHashCode();
 
         public float Length
-            => (float)MathX.Sqrt(x * x + y * y);
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (float)MathX.Sqrt(x * x + y * y);
+        }
         public float LengthFast
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 var sqrLength = x * x + y * y;
@@ -121,11 +129,16 @@ namespace System.NumericsX
             }
         }
         public float LengthSqr
-            => x * x + y * y;
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => x * x + y * y;
+        }
+
         /// <summary>
         /// returns length
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float Normalize()
         {
             var sqrLength = x * x + y * y;
@@ -138,6 +151,7 @@ namespace System.NumericsX
         /// returns length
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float NormalizeFast()
         {
             var lengthSqr = x * x + y * y;
@@ -146,11 +160,13 @@ namespace System.NumericsX
             y *= invLength;
             return invLength * lengthSqr;
         }
+
         /// <summary>
         /// cap length
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector2 Truncate(float length)
         {
             if (length == 0)
@@ -167,38 +183,45 @@ namespace System.NumericsX
             }
             return this;
         }
-        public void Clamp(Vector2 min, Vector2 max)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Clamp(ref Vector2 min, ref Vector2 max)
         {
             if (x < min.x) x = min.x;
             else if (x > max.x) x = max.x;
             if (y < min.y) y = min.y;
             else if (y > max.y) y = max.y;
         }
+
         /// <summary>
         /// snap to closest integer value
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Snap()
         {
             x = (float)Math.Floor(x + 0.5f);
             y = (float)Math.Floor(y + 0.5f);
         }
+
         /// <summary>
         /// snap towards integer (floor)
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SnapInt()
         {
             x = (int)x;
             y = (int)y;
         }
 
-        public static int Dimension
-            => 2;
+        public const int Dimension = 2;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
             fixed (float* _ = &x)
                 return callback(_);
         }
+
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
 
@@ -209,25 +232,30 @@ namespace System.NumericsX
         /// <param name="v2">The v2.</param>
         /// <param name="l">The l.</param>
         /// <returns></returns>
-        public void Lerp(Vector2 v1, Vector2 v2, float l)
+        public void Lerp(ref Vector2 v1, ref Vector2 v2, float l)
         {
             if (l <= 0f) this = v1;
             else if (l >= 1f) this = v2;
             else this = v1 + l * (v2 - v1);
         }
-
-        public static Vector2 origin = new(0f, 0f);
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector3
     {
+        public static Vector3 origin = new(0f, 0f, 0f);
+
         public float x;
         public float y;
         public float z;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3(ref Vector3 a)
+            => this = a;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3(float xyz)
             => x = y = z = xyz;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3(float x, float y, float z)
         {
             this.x = x;
@@ -235,6 +263,7 @@ namespace System.NumericsX
             this.z = z;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(float x, float y, float z)
         {
             this.x = x;
@@ -242,19 +271,19 @@ namespace System.NumericsX
             this.z = z;
         }
 
-        public void Set(Vector3 a)
-            => this = a;
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()
             => x = y = z = 0f;
 
         public unsafe float this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (float* p = &x)
                     return p[index];
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 fixed (float* p = &x)
@@ -262,22 +291,29 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 operator -(Vector3 _)
             => new(-_.x, -_.y, -_.z);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float operator *(Vector3 _, Vector3 a)
             => _.x * a.x + _.y * a.y + _.z * a.z;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 operator *(Vector3 _, float a)
             => new(_.x * a, _.y * a, _.z * a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 operator /(Vector3 _, float a)
         {
             var inva = 1f / a;
             return new Vector3(_.x * inva, _.y * inva, _.z * inva);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 operator +(Vector3 _, Vector3 a)
             => new(_.x + a.x, _.y + a.y, _.z + a.z);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 operator -(Vector3 _, Vector3 a)
             => new(_.x - a.x, _.y - a.y, _.z - a.z);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 operator *(float a, Vector3 b)
             => new(b.x * a, b.y * a, b.z * a);
 
@@ -286,21 +322,20 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="a">a.</param>
         /// <returns></returns>
-        public bool Compare(Vector3 a)
-            => (x == a.x) && (y == a.y) && (z == a.z);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref Vector3 a)
+            => x == a.x && y == a.y && z == a.z;
         /// <summary>
         /// compare with epsilon
         /// </summary>
         /// <param name="a">a.</param>
         /// <param name="epsilon">The epsilon.</param>
         /// <returns></returns>
-        public bool Compare(Vector3 a, float epsilon)
-        {
-            if (MathX.Fabs(x - a.x) > epsilon) return false;
-            else if (MathX.Fabs(y - a.y) > epsilon) return false;
-            else if (MathX.Fabs(z - a.z) > epsilon) return false;
-            return true;
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref Vector3 a, float epsilon)
+            => MathX.Fabs(x - a.x) <= epsilon &&
+               MathX.Fabs(y - a.y) <= epsilon &&
+               MathX.Fabs(z - a.z) <= epsilon;
         /// <summary>
         /// exact compare, no epsilon
         /// </summary>
@@ -309,8 +344,9 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Vector3 _, Vector3 a)
-            => _.Compare(a);
+            => _.Compare(ref a);
         /// <summary>
         /// exact compare, no epsilon
         /// </summary>
@@ -319,10 +355,11 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Vector3 _, Vector3 a)
-            => !_.Compare(a);
+            => !_.Compare(ref a);
         public override bool Equals(object obj)
-            => obj is Vector3 q && Compare(q);
+            => obj is Vector3 q && Compare(ref q);
         public override int GetHashCode()
             => x.GetHashCode() ^ y.GetHashCode() ^ z.GetHashCode();
 
@@ -330,6 +367,7 @@ namespace System.NumericsX
         /// fix degenerate axial cases
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool FixDegenerateNormal()
         {
             if (x == 0f)
@@ -373,10 +411,12 @@ namespace System.NumericsX
             }
             return false;
         }
+
         /// <summary>
         /// change tiny numbers to zero
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool FixDenormals()
         {
             var denormal = false;
@@ -386,21 +426,34 @@ namespace System.NumericsX
             return denormal;
         }
 
-        public Vector3 Cross(Vector3 a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3 Cross_(Vector3 a)
             => new(y * a.z - z * a.y, z * a.x - x * a.z, x * a.y - y * a.x);
-        public Vector3 Cross(Vector3 a, Vector3 b)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3 Cross(ref Vector3 a)
+            => new(y * a.z - z * a.y, z * a.x - x * a.z, x * a.y - y * a.x);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3 Cross(ref Vector3 a, ref Vector3 b)
         {
             x = a.y * b.z - a.z * b.y;
             y = a.z * b.x - a.x * b.z;
             z = a.x * b.y - a.y * b.x;
             return this;
         }
+
         public float Length
-            => (float)MathX.Sqrt(x * x + y * y + z * z);
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (float)MathX.Sqrt(x * x + y * y + z * z);
+        }
         public float LengthSqr
-            => x * x + y * y + z * z;
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => x * x + y * y + z * z;
+        }
         public float LengthFast
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 var sqrLength = x * x + y * y + z * z;
@@ -412,6 +465,7 @@ namespace System.NumericsX
         /// Normalizes this instance.
         /// </summary>
         /// <returns>length</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float Normalize()
         {
             var sqrLength = x * x + y * y + z * z;
@@ -425,6 +479,7 @@ namespace System.NumericsX
         /// Normalizes the fast.
         /// </summary>
         /// <returns>length</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float NormalizeFast()
         {
             var sqrLength = x * x + y * y + z * z;
@@ -434,15 +489,16 @@ namespace System.NumericsX
             z *= invLength;
             return invLength * sqrLength;
         }
+
         /// <summary>
         /// cap length
         /// </summary>
         /// <param name="length">The length.</param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 Truncate(float length)
         {
-            if (length == 0)
-                Zero();
+            if (length == 0) Zero();
             else
             {
                 var length2 = LengthSqr;
@@ -456,7 +512,9 @@ namespace System.NumericsX
             }
             return this;
         }
-        public void Clamp(Vector3 min, Vector3 max)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Clamp(ref Vector3 min, ref Vector3 max)
         {
             if (x < min.x) x = min.x;
             else if (x > max.x) x = max.x;
@@ -465,9 +523,11 @@ namespace System.NumericsX
             if (z < min.z) z = min.z;
             else if (z > max.z) z = max.z;
         }
+
         /// <summary>
         /// snap to closest integer value
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Snap()
         {
             x = (float)Math.Floor(x + 0.5f);
@@ -477,6 +537,7 @@ namespace System.NumericsX
         /// <summary>
         /// snap towards integer (floor)
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SnapInt()
         {
             x = (int)x;
@@ -484,33 +545,29 @@ namespace System.NumericsX
             z = (int)z;
         }
 
-        public static int Dimension
-            => 3;
+        public const int Dimension = 3;
 
         public float ToYaw()
         {
             float yaw;
-            if ((y == 0f) && (x == 0f))
-                yaw = 0f;
+            if (y == 0f && x == 0f) yaw = 0f;
             else
             {
                 yaw = (float)MathX.RAD2DEG(Math.Atan2(y, x));
-                if (yaw < 0f)
-                    yaw += 360f;
+                if (yaw < 0f) yaw += 360f;
             }
             return yaw;
         }
+
         public float ToPitch()
         {
             float forward, pitch;
-            if ((x == 0f) && (y == 0f))
-                pitch = z > 0f ? 90f : 270f;
+            if (x == 0f && y == 0f) pitch = z > 0f ? 90f : 270f;
             else
             {
                 forward = (float)MathX.Sqrt(x * x + y * y);
                 pitch = (float)MathX.RAD2DEG(Math.Atan2(z, forward));
-                if (pitch < 0f)
-                    pitch += 360f;
+                if (pitch < 0f) pitch += 360f;
             }
             return pitch;
         }
@@ -518,7 +575,7 @@ namespace System.NumericsX
         public Angles ToAngles()
         {
             float forward, yaw, pitch;
-            if ((x == 0f) && (y == 0f))
+            if (x == 0f && y == 0f)
             {
                 yaw = 0f;
                 pitch = z > 0f ? 90f : 270f;
@@ -526,22 +583,19 @@ namespace System.NumericsX
             else
             {
                 yaw = (float)MathX.RAD2DEG(Math.Atan2(y, x));
-                if (yaw < 0f)
-                    yaw += 360f;
+                if (yaw < 0f) yaw += 360f;
 
                 forward = (float)MathX.Sqrt(x * x + y * y);
                 pitch = (float)MathX.RAD2DEG(Math.Atan2(z, forward));
-                if (pitch < 0f)
-                    pitch += 360f;
+                if (pitch < 0f) pitch += 360f;
             }
-
             return new Angles(-pitch, yaw, 0f);
         }
 
         public Polar3 ToPolar()
         {
             float forward, yaw, pitch;
-            if ((x == 0f) && (y == 0f))
+            if (x == 0f && y == 0f)
             {
                 yaw = 0f;
                 pitch = z > 0f ? 90f : 270f;
@@ -549,23 +603,22 @@ namespace System.NumericsX
             else
             {
                 yaw = (float)MathX.RAD2DEG(Math.Atan2(y, x));
-                if (yaw < 0f)
-                    yaw += 360f;
+                if (yaw < 0f) yaw += 360f;
 
                 forward = (float)MathX.Sqrt(x * x + y * y);
                 pitch = (float)MathX.RAD2DEG(Math.Atan2(z, forward));
-                if (pitch < 0f)
-                    pitch += 360f;
+                if (pitch < 0f) pitch += 360f;
             }
             return new Polar3(MathX.Sqrt(x * x + y * y + z * z), yaw, -pitch);
         }
+
         /// <summary>
         /// vector should be normalized
         /// </summary>
         /// <returns></returns>
-        public Matrix3x3 ToMatrix3x3()
+        public Matrix3x3 ToMat3()
         {
-            var mat = new Matrix3x3();
+            Matrix3x3 mat = default;
             mat[0] = this;
             var d = x * x + y * y;
             if (d == 0)
@@ -581,17 +634,21 @@ namespace System.NumericsX
                 mat[1].y = x * d;
                 mat[1].z = 0f;
             }
-            mat[2] = Cross(mat[1]);
+            mat[2] = Cross(ref mat[1]);
             return mat;
         }
 
-        public Vector2 ToVec2()
-            => reinterpret.cast_vec2(this);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref Vector2 ToVec2()
+            => ref reinterpret.cast_vec2(this);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
             fixed (float* _ = &x)
                 return callback(_);
         }
+
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
 
@@ -600,6 +657,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="left">The left.</param>
         /// <param name="down">Down.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void NormalVectors(out Vector3 left, out Vector3 down)
         {
             var d = x * x + y * y;
@@ -616,8 +674,10 @@ namespace System.NumericsX
                 left.y = x * d;
                 left.z = 0;
             }
-            down = left.Cross(this);
+            down = left.Cross(ref this);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OrthogonalBasis(out Vector3 left, out Vector3 up)
         {
             float l, s;
@@ -629,8 +689,8 @@ namespace System.NumericsX
                 up.y = z * s;
                 up.z = -y * s;
                 left.x = l * s;
-                left.y = -x * up[2];
-                left.z = x * up[1];
+                left.y = -x * up.z;
+                left.z = x * up.y;
             }
             else
             {
@@ -639,13 +699,14 @@ namespace System.NumericsX
                 left.x = -y * s;
                 left.y = x * s;
                 left.z = 0;
-                up.x = -z * left[1];
-                up.y = z * left[0];
+                up.x = -z * left.y;
+                up.y = z * left.x;
                 up.z = l * s;
             }
         }
 
-        public void ProjectOntoPlane(Vector3 normal, float overBounce = 1f)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ProjectOntoPlane(ref Vector3 normal, float overBounce = 1f)
         {
             var backoff = this * normal;
             if (overBounce != 1.0)
@@ -655,9 +716,11 @@ namespace System.NumericsX
             }
             this -= backoff * normal;
         }
-        public bool ProjectAlongPlane(Vector3 normal, float epsilon, float overBounce = 1f)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool ProjectAlongPlane(ref Vector3 normal, float epsilon, float overBounce = 1f)
         {
-            var cross = Cross(normal).Cross(this);
+            var cross = Cross(ref normal).Cross(ref this);
             // normalize so a fixed epsilon can be used
             cross.Normalize();
             var len = normal * cross;
@@ -667,6 +730,7 @@ namespace System.NumericsX
             this -= cross;
             return true;
         }
+
         /// <summary>
         /// Projects the z component onto a sphere.
         /// </summary>
@@ -688,12 +752,13 @@ namespace System.NumericsX
         /// <param name="v2">The v2.</param>
         /// <param name="l">The l.</param>
         /// <returns></returns>
-        public void Lerp(Vector3 v1, Vector3 v2, float l)
+        public void Lerp(ref Vector3 v1, ref Vector3 v2, float l)
         {
             if (l <= 0f) this = v1;
             else if (l >= 1f) this = v2;
             else this = v1 + l * (v2 - v1);
         }
+
         const float LERP_DELTA = 1e-6f;
         /// <summary>
         /// Spherical linear interpolation from v1 to v2.
@@ -703,7 +768,7 @@ namespace System.NumericsX
         /// <param name="v2">The v2.</param>
         /// <param name="l">The l.</param>
         /// <returns></returns>
-        public void SLerp(Vector3 v1, Vector3 v2, float l)
+        public void SLerp(ref Vector3 v1, ref Vector3 v2, float l)
         {
             float omega, cosom, sinom, scale0, scale1;
             if (l <= 0f) { this = v1; return; }
@@ -725,18 +790,19 @@ namespace System.NumericsX
 
             this = v1 * scale0 + v2 * scale1;
         }
-
-        public static Vector3 origin = new(0f, 0f, 0f);
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector4
     {
+        public static Vector4 origin = new(0f, 0f, 0f, 0f);
+
         public float x;
         public float y;
         public float z;
         public float w;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector4(float x, float y, float z, float w)
         {
             this.x = x;
@@ -745,6 +811,7 @@ namespace System.NumericsX
             this.w = w;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(float x, float y, float z, float w)
         {
             this.x = x;
@@ -752,16 +819,20 @@ namespace System.NumericsX
             this.z = z;
             this.w = w;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()
             => x = y = z = w = 0f;
 
         public unsafe float this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (float* p = &x)
                     return p[index];
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 fixed (float* p = &x)
@@ -769,35 +840,40 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector4 operator -(Vector4 _)
             => new(-_.x, -_.y, -_.z, -_.w);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float operator *(Vector4 _, Vector4 a)
             => _.x * a.x + _.y * a.y + _.z * a.z + _.w * a.w;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector4 operator *(Vector4 _, float a)
             => new(_.x * a, _.y * a, _.z * a, _.w * a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector4 operator /(Vector4 _, float a)
         {
             var inva = 1f / a;
             return new(_.x * inva, _.y * inva, _.z * inva, _.w * inva);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector4 operator +(Vector4 _, Vector4 a)
             => new(_.x + a.x, _.y + a.y, _.z + a.z, _.w + a.w);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector4 operator -(Vector4 _, Vector4 a)
             => new(_.x - a.x, _.y - a.y, _.z - a.z, _.w - a.w);
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector4 operator *(float a, Vector4 b)
             => new(b.x * a, b.y * a, b.z * a, b.w * a);
 
-        public bool Compare(Vector4 a)                          // exact compare, no epsilon
-            => (x == a.x) && (y == a.y) && (z == a.z) && (w == a.w);
-        public bool Compare(Vector4 a, float epsilon)     // compare with epsilon
-        {
-            if (MathX.Fabs(x - a.x) > epsilon) return false;
-            else if (MathX.Fabs(y - a.y) > epsilon) return false;
-            else if (MathX.Fabs(z - a.z) > epsilon) return false;
-            else if (MathX.Fabs(w - a.w) > epsilon) return false;
-            return true;
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref Vector4 a)                          // exact compare, no epsilon
+            => x == a.x && y == a.y && z == a.z && w == a.w;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref Vector4 a, float epsilon)     // compare with epsilon
+            => MathX.Fabs(x - a.x) <= epsilon &&
+               MathX.Fabs(y - a.y) <= epsilon &&
+               MathX.Fabs(z - a.z) <= epsilon &&
+               MathX.Fabs(w - a.w) <= epsilon;
         /// <summary>
         /// exact compare, no epsilon
         /// </summary>
@@ -806,8 +882,9 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Vector4 _, Vector4 a)
-            => _.Compare(a);
+            => _.Compare(ref a);
         /// <summary>
         /// exact compare, no epsilon
         /// </summary>
@@ -816,22 +893,30 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Vector4 _, Vector4 a)
-            => !_.Compare(a);
+            => !_.Compare(ref a);
         public override bool Equals(object obj)
-            => obj is Vector4 q && Compare(q);
+            => obj is Vector4 q && Compare(ref q);
         public override int GetHashCode()
             => x.GetHashCode() ^ y.GetHashCode() ^ z.GetHashCode() ^ w.GetHashCode();
 
         public float Length
-            => (float)MathX.Sqrt(x * x + y * y + z * z + w * w);
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (float)MathX.Sqrt(x * x + y * y + z * z + w * w);
+        }
         public float LengthSqr
-            => x * x + y * y + z * z + w * w;
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => x * x + y * y + z * z + w * w;
+        }
 
         /// <summary>
         /// Normalizes this instance.
         /// </summary>
         /// <returns>length</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float Normalize()
         {
             var sqrLength = x * x + y * y + z * z + w * w;
@@ -846,6 +931,7 @@ namespace System.NumericsX
         /// Normalizes the fast.
         /// </summary>
         /// <returns>length</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float NormalizeFast()
         {
             var sqrLength = x * x + y * y + z * z + w * w;
@@ -857,18 +943,23 @@ namespace System.NumericsX
             return invLength * sqrLength;
         }
 
-        public static int Dimension
-            => 4;
+        public const int Dimension = 4;
 
-        public Vector2 ToVec2()
-            => reinterpret.cast_vec2(this);
-        public Vector3 ToVec3()
-            => reinterpret.cast_vec3(this);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref Vector2 ToVec2()
+            => ref reinterpret.cast_vec2(this);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref Vector3 ToVec3()
+            => ref reinterpret.cast_vec3(this);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
             fixed (float* _ = &x)
                 return callback(_);
         }
+
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
 
@@ -879,26 +970,36 @@ namespace System.NumericsX
         /// <param name="v2">The v2.</param>
         /// <param name="l">The l.</param>
         /// <returns></returns>
-        public void Lerp(Vector4 v1, Vector4 v2, float l)
+        public void Lerp(ref Vector4 v1, ref Vector4 v2, float l)
         {
             if (l <= 0f) this = v1;
             else if (l >= 1f) this = v2;
             else this = v1 + l * (v2 - v1);
         }
-
-        public static Vector4 origin = new(0f, 0f, 0f, 0f);
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector5
     {
+        public static Vector5 origin = new(0f, 0f, 0f, 0f, 0f);
+
         public float x;
         public float y;
         public float z;
         public float s;
         public float t;
 
-        public Vector5(Vector3 xyz, Vector2 st)
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //public Vector5(Vector3 xyz, Vector2 st)
+        //{
+        //    x = xyz.x;
+        //    y = xyz.y;
+        //    z = xyz.z;
+        //    s = st.x;
+        //    t = st.y;
+        //}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector5(ref Vector3 xyz, ref Vector2 st)
         {
             x = xyz.x;
             y = xyz.y;
@@ -906,6 +1007,7 @@ namespace System.NumericsX
             s = st.x;
             t = st.y;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector5(float x, float y, float z, float s, float t)
         {
             this.x = x;
@@ -917,11 +1019,13 @@ namespace System.NumericsX
 
         public unsafe float this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (float* p = &x)
                     return p[index];
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 fixed (float* p = &x)
@@ -929,21 +1033,23 @@ namespace System.NumericsX
             }
         }
 
-        public static int Dimension
-            => 5;
+        public const int Dimension = 5;
 
-        public Vector3 ToVec3()
-            => reinterpret.cast_vec3(this);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref Vector3 ToVec3()
+            => ref reinterpret.cast_vec3(this);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
             fixed (float* _ = &x)
                 return callback(_);
         }
+
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
 
-        public void Lerp(Vector5 v1, Vector5 v2, float l)
+        public void Lerp(ref Vector5 v1, ref Vector5 v2, float l)
         {
             if (l <= 0f) this = v1;
             else if (l >= 1f) this = v2;
@@ -956,17 +1062,23 @@ namespace System.NumericsX
                 t = v1.t + l * (v2.t - v1.t);
             }
         }
-        public static Vector5 origin = new(0f, 0f, 0f, 0f, 0f);
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct Vector6
     {
+        public static Vector6 origin = new(0f, 0f, 0f, 0f, 0f, 0f);
+        public static Vector6 infinity = new(MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY);
+
+        internal fixed float p[6];
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe Vector6(float[] a)
         {
             fixed (float* p = this.p, a_ = a)
                 Unsafe.CopyBlock(p, a_, 6U * sizeof(float));
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector6(float a1, float a2, float a3, float a4, float a5, float a6)
         {
             p[0] = a1;
@@ -977,6 +1089,7 @@ namespace System.NumericsX
             p[5] = a6;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(float a1, float a2, float a3, float a4, float a5, float a6)
         {
             p[0] = a1;
@@ -986,33 +1099,42 @@ namespace System.NumericsX
             p[4] = a5;
             p[5] = a6;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()
             => p[0] = p[1] = p[2] = p[3] = p[4] = p[5] = 0f;
 
         public float this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => p[index];
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => p[index] = value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector6 operator -(Vector6 _)
             => new(-_.p[0], -_.p[1], -_.p[2], -_.p[3], -_.p[4], -_.p[5]);
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector6 operator *(Vector6 _, float a)
             => new(_.p[0] * a, _.p[1] * a, _.p[2] * a, _.p[3] * a, _.p[4] * a, _.p[5] * a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector6 operator /(Vector6 _, float a)
         {
             Debug.Assert(a != 0f);
             var inva = 1f / a;
             return new Vector6(_.p[0] * inva, _.p[1] * inva, _.p[2] * inva, _.p[3] * inva, _.p[4] * inva, _.p[5] * inva);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float operator *(Vector6 _, Vector6 a)
             => _.p[0] * a[0] + _.p[1] * a[1] + _.p[2] * a[2] + _.p[3] * a[3] + _.p[4] * a[4] + _.p[5] * a[5];
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector6 operator -(Vector6 _, Vector6 a)
             => new(_.p[0] - a[0], _.p[1] - a[1], _.p[2] - a[2], _.p[3] - a[3], _.p[4] - a[4], _.p[5] - a[5]);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector6 operator +(Vector6 _, Vector6 a)
             => new(_.p[0] + a[0], _.p[1] + a[1], _.p[2] + a[2], _.p[3] + a[3], _.p[4] + a[4], _.p[5] + a[5]);
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector6 operator *(float a, Vector6 b)
             => b * a;
 
@@ -1021,24 +1143,23 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="a">a.</param>
         /// <returns></returns>
-        public bool Compare(Vector6 a)
-            => (p[0] == a[0]) && (p[1] == a[1]) && (p[2] == a[2]) && (p[3] == a[3]) && (p[4] == a[4]) && (p[5] == a[5]);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref Vector6 a)
+            => p[0] == a[0] && p[1] == a[1] && p[2] == a[2] && p[3] == a[3] && p[4] == a[4] && p[5] == a[5];
         /// <summary>
         /// compare with epsilon
         /// </summary>
         /// <param name="a">a.</param>
         /// <param name="epsilon">The epsilon.</param>
         /// <returns></returns>
-        public bool Compare(Vector6 a, float epsilon)
-        {
-            if (MathX.Fabs(p[0] - a[0]) > epsilon) return false;
-            if (MathX.Fabs(p[1] - a[1]) > epsilon) return false;
-            if (MathX.Fabs(p[2] - a[2]) > epsilon) return false;
-            if (MathX.Fabs(p[3] - a[3]) > epsilon) return false;
-            if (MathX.Fabs(p[4] - a[4]) > epsilon) return false;
-            if (MathX.Fabs(p[5] - a[5]) > epsilon) return false;
-            return true;
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref Vector6 a, float epsilon)
+            => MathX.Fabs(p[0] - a[0]) <= epsilon &&
+               MathX.Fabs(p[1] - a[1]) <= epsilon &&
+               MathX.Fabs(p[2] - a[2]) <= epsilon &&
+               MathX.Fabs(p[3] - a[3]) <= epsilon &&
+               MathX.Fabs(p[4] - a[4]) <= epsilon &&
+               MathX.Fabs(p[5] - a[5]) <= epsilon;
         /// <summary>
         /// exact compare, no epsilon
         /// </summary>
@@ -1047,8 +1168,9 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Vector6 _, Vector6 a)
-            => _.Compare(a);
+            => _.Compare(ref a);
         /// <summary>
         /// exact compare, no epsilon
         /// </summary>
@@ -1057,21 +1179,29 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Vector6 _, Vector6 a)
-            => !_.Compare(a);
+            => !_.Compare(ref a);
         public override bool Equals(object obj)
-            => obj is Vector6 q && Compare(q);
+            => obj is Vector6 q && Compare(ref q);
         public override int GetHashCode()
             => p[0].GetHashCode();
 
         public float Length
-            => (float)MathX.Sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2] + p[3] * p[3] + p[4] * p[4] + p[5] * p[5]);
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (float)MathX.Sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2] + p[3] * p[3] + p[4] * p[4] + p[5] * p[5]);
+        }
         public float LengthSqr
-            => p[0] * p[0] + p[1] * p[1] + p[2] * p[2] + p[3] * p[3] + p[4] * p[4] + p[5] * p[5];
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => p[0] * p[0] + p[1] * p[1] + p[2] * p[2] + p[3] * p[3] + p[4] * p[4] + p[5] * p[5];
+        }
         /// <summary>
         /// Normalizes this instance.
         /// </summary>
         /// <returns>length</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float Normalize()
         {
             var sqrLength = p[0] * p[0] + p[1] * p[1] + p[2] * p[2] + p[3] * p[3] + p[4] * p[4] + p[5] * p[5];
@@ -1088,6 +1218,7 @@ namespace System.NumericsX
         /// Normalizes the fast.
         /// </summary>
         /// <returns>length</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float NormalizeFast()
         {
             var sqrLength = p[0] * p[0] + p[1] * p[1] + p[2] * p[2] + p[3] * p[3] + p[4] * p[4] + p[5] * p[5];
@@ -1101,33 +1232,30 @@ namespace System.NumericsX
             return invLength * sqrLength;
         }
 
-        public static int Dimension
-            => 6;
+        public const int Dimension = 6;
 
-        public Vector3 SubVec3(int index)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref Vector3 SubVec3(int index)
         {
             fixed (float* p = this.p)
-                return reinterpret.cast_vec3(p, index * 3);
+                return ref reinterpret.cast_vec3(p, index * 3);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
             fixed (float* _ = p)
                 return callback(_);
         }
+
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
-
-        internal fixed float p[6];
-
-        public static Vector6 origin = new(0f, 0f, 0f, 0f, 0f, 0f);
-        public static Vector6 infinity = new(MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY);
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct VectorX
     {
         public const float EPSILON = 0.001f;
-
         static float[] temp = new float[VECX_MAX_TEMP + 4];   // used to store intermediate results
         static int tempPtr = 0; // (float *) ( ( (intptr_t)temp + 15 ) & ~15 );              // pointer to 16 byte aligned temporary memory
         static int tempIndex = 0;               // index into memory pool, wraps around
@@ -1136,27 +1264,13 @@ namespace System.NumericsX
         void VECX_CLEAREND() { var s = size; while (s < ((s + 3) & ~3)) p[pi + s++] = 0f; }
         internal static float[] VECX_ALLOCA(int n) => new float[VECX_QUAD(n)];
 
-        int size;                   // size of the vector
-        int alloced;                // if -1 p points to data set with SetData
         internal float[] p;                       // memory the vector is stored
         internal int pi;
+        int size;                   // size of the vector
+        int alloced;                // if -1 p points to data set with SetData
 
-        internal unsafe void SetTempSize(int size)
-        {
-            this.size = size;
-            alloced = (size + 3) & ~3;
-            Debug.Assert(alloced < VECX_MAX_TEMP);
-            if (tempIndex + alloced > VECX_MAX_TEMP)
-                tempIndex = 0;
-            p = temp;
-            //fixed (float* p = &temp[0])
-            //    tempPtr = (int)((ulong)p + 15) & ~15;
-            pi = tempIndex;
-            tempIndex += alloced;
-            VECX_CLEAREND();
-        }
-
-        public unsafe VectorX(VectorX a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe VectorX(ref VectorX a)
         {
             size = alloced = 0;
             p = null; pi = 0;
@@ -1169,17 +1283,14 @@ namespace System.NumericsX
 #endif
             tempIndex = 0;
         }
-        //public VectorX()
-        //{
-        //    size = alloced = 0;
-        //    p = null;
-        //}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public VectorX(int length)
         {
             size = alloced = 0;
             p = null; pi = 0;
             SetSize(length);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public VectorX(int length, float[] data)
         {
             size = alloced = 0;
@@ -1187,20 +1298,22 @@ namespace System.NumericsX
             SetData(length, data);
         }
 
-
         public float this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 Debug.Assert(index >= 0 && index < size);
                 return p[pi + index];
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 Debug.Assert(index >= 0 && index < size);
                 p[pi + index] = value;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static VectorX operator -(VectorX _)
         {
             var m = new VectorX();
@@ -1209,6 +1322,7 @@ namespace System.NumericsX
                 m.p[m.pi + i] = -_.p[_.pi + i];
             return m;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static VectorX operator *(VectorX _, float a)
         {
             var m = new VectorX();
@@ -1221,12 +1335,13 @@ namespace System.NumericsX
 #endif
             return m;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static VectorX operator /(VectorX _, float a)
         {
             Debug.Assert(a != 0f);
             return _ * (1f / a);
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float operator *(VectorX _, VectorX a)
         {
             Debug.Assert(_.size == a.size);
@@ -1235,6 +1350,7 @@ namespace System.NumericsX
                 sum += _.p[_.pi + i] * a.p[a.pi + i];
             return sum;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static VectorX operator -(VectorX _, VectorX a)
         {
             Debug.Assert(_.size == a.size);
@@ -1248,6 +1364,7 @@ namespace System.NumericsX
 #endif
             return m;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static VectorX operator +(VectorX _, VectorX a)
         {
             Debug.Assert(_.size == a.size);
@@ -1261,7 +1378,7 @@ namespace System.NumericsX
 #endif
             return m;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static VectorX operator *(float a, VectorX b)
             => b * a;
 
@@ -1270,7 +1387,8 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="a">a.</param>
         /// <returns></returns>
-        public bool Compare(VectorX a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref VectorX a)
         {
             Debug.Assert(size == a.size);
             for (var i = 0; i < size; i++)
@@ -1284,7 +1402,8 @@ namespace System.NumericsX
         /// <param name="a">a.</param>
         /// <param name="epsilon">The epsilon.</param>
         /// <returns></returns>
-        public bool Compare(VectorX a, float epsilon)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref VectorX a, float epsilon)
         {
             Debug.Assert(size == a.size);
             for (var i = 0; i < size; i++)
@@ -1300,8 +1419,9 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(VectorX _, VectorX a)
-            => _.Compare(a);
+            => _.Compare(ref a);
         /// <summary>
         /// exact compare, no epsilon
         /// </summary>
@@ -1310,13 +1430,15 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(VectorX _, VectorX a)
-            => !_.Compare(a);
+            => !_.Compare(ref a);
         public override bool Equals(object obj)
-            => obj is VectorX q && Compare(q);
+            => obj is VectorX q && Compare(ref q);
         public override int GetHashCode()
             => p.GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetSize(int size)
         {
             var alloc = (size + 3) & ~3;
@@ -1329,6 +1451,8 @@ namespace System.NumericsX
             this.size = size;
             VECX_CLEAREND();
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ChangeSize(int size, bool makeZero = false)
         {
             var alloc = (size + 3) & ~3;
@@ -1349,8 +1473,27 @@ namespace System.NumericsX
             this.size = size;
             VECX_CLEAREND();
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal unsafe void SetTempSize(int size)
+        {
+            this.size = size;
+            alloced = (size + 3) & ~3;
+            Debug.Assert(alloced < VECX_MAX_TEMP);
+            if (tempIndex + alloced > VECX_MAX_TEMP)
+                tempIndex = 0;
+            p = temp;
+            //fixed (float* p = &temp[0])
+            //    tempPtr = (int)((ulong)p + 15) & ~15;
+            pi = tempIndex;
+            tempIndex += alloced;
+            VECX_CLEAREND();
+        }
+
         public int Size
             => size;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetData(int length, float[] data, int index = 0)
         {
             //Debug.Assert((((uintptr_t)data) & 15) == 0); // data must be 16 byte aligned
@@ -1361,6 +1504,7 @@ namespace System.NumericsX
             VECX_CLEAREND();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void Zero()
         {
 #if VECX_SIMD
@@ -1370,6 +1514,7 @@ namespace System.NumericsX
                 Unsafe.InitBlock(p + pi, 0, (uint)size * sizeof(float));
 #endif
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void Zero(int length)
         {
             SetSize(length);
@@ -1380,6 +1525,8 @@ namespace System.NumericsX
                 Unsafe.InitBlock(p + pi, 0, (uint)size * sizeof(float));
 #endif
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Random(int seed, float l = 0f, float u = 1f)
         {
             var rnd = new RandomX(seed);
@@ -1387,6 +1534,8 @@ namespace System.NumericsX
             for (var i = 0; i < size; i++)
                 p[pi + i] = l + rnd.RandomFloat() * c;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Random(int length, int seed, float l = 0f, float u = 1f)
         {
             var rnd = new RandomX(seed);
@@ -1395,6 +1544,8 @@ namespace System.NumericsX
             for (var i = 0; i < size; i++)
                 p[pi + i] = l + rnd.RandomFloat() * c;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Negate()
         {
 #if VECX_SIMD
@@ -1404,6 +1555,8 @@ namespace System.NumericsX
                 p[pi + i] = -p[pi + i];
 #endif
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clamp(float min, float max)
         {
             for (var i = 0; i < size; i++)
@@ -1412,6 +1565,8 @@ namespace System.NumericsX
                 else if (p[pi + i] > max) p[pi + i] = max;
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public VectorX SwapElements(int e1, int e2)
         {
             var tmp = p[pi + e1];
@@ -1422,6 +1577,7 @@ namespace System.NumericsX
 
         public float Length
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 var sum = 0f;
@@ -1432,6 +1588,7 @@ namespace System.NumericsX
         }
         public float LengthSqr
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 var sum = 0f;
@@ -1440,6 +1597,8 @@ namespace System.NumericsX
                 return sum;
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public VectorX Normalize()
         {
             int i;
@@ -1453,6 +1612,7 @@ namespace System.NumericsX
                 m.p[pi + i] = p[pi + i] * invSqrt;
             return m;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float NormalizeSelf()
         {
             int i;
@@ -1466,30 +1626,39 @@ namespace System.NumericsX
         }
 
         public int Dimension
-            => size;
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => size;
+        }
 
-        public unsafe Vector3 SubVec3(int index)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe ref Vector3 SubVec3(int index)
         {
             Debug.Assert(index >= 0 && index * 3 + 3 <= size);
             fixed (float* p = this.p)
-                return reinterpret.cast_vec3(p, pi + index * 3);
+                return ref reinterpret.cast_vec3(p, pi + index * 3);
         }
-        public unsafe Vector6 SubVec6(int index)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe ref Vector6 SubVec6(int index)
         {
             Debug.Assert(index >= 0 && index * 6 + 6 <= size);
             fixed (float* p = this.p)
-                return reinterpret.cast_vec6(p, pi + index * 6);
+                return ref reinterpret.cast_vec6(p, pi + index * 6);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
             fixed (float* _ = p)
                 return callback(_ + pi);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ToFloatPtr(FloatPtr callback)
         {
             fixed (float* _ = p)
                 callback(_ + pi);
         }
+
         public unsafe string ToString(int precision = 2)
         {
             var dimension = Dimension;
@@ -1497,10 +1666,12 @@ namespace System.NumericsX
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct Polar3
     {
         public float radius, theta, phi;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Polar3(float radius, float theta, float phi)
         {
             Debug.Assert(radius > 0);
@@ -1509,6 +1680,7 @@ namespace System.NumericsX
             this.phi = phi;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(float radius, float theta, float phi)
         {
             Debug.Assert(radius > 0);
@@ -1519,6 +1691,7 @@ namespace System.NumericsX
 
         public unsafe float this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (float* p = &radius)
@@ -1528,6 +1701,7 @@ namespace System.NumericsX
 
         public static Polar3 operator -(Polar3 _) => new(_.radius, -_.theta, -_.phi);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 ToVec3()
         {
             MathX.SinCos(phi, out var sp, out var cp);

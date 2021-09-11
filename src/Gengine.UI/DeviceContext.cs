@@ -261,7 +261,7 @@ namespace Gengine.UI
                             p++;
                     }
 
-                    var nextCharWidth = StringX.CharIsPrintable(*p) ? CharWidth(*p, textScale) : (int)cursorSkip;
+                    var nextCharWidth = System.NumericsX.OpenStack.stringX.CharIsPrintable(*p) ? CharWidth(*p, textScale) : (int)cursorSkip;
                     // FIXME: this is a temp hack until the guis can be fixed not not overflow the bounding rectangles the side-effect is that list boxes and edit boxes will draw over their scroll bars
                     // The following line and the !linebreak in the if statement below should be removed
                     nextCharWidth = 0;
@@ -496,11 +496,11 @@ namespace Gengine.UI
             int i, width = 0;
             if (limit > 0)
                 for (i = 0; i < text.Length && i < limit; i++)
-                    if (StringX.IsColor(text, i)) i++;
+                    if (System.NumericsX.OpenStack.stringX.IsColor(text, i)) i++;
                     else width += glyphs[text[i]].xSkip;
             else
                 for (i = 0; i < text.Length; i++)
-                    if (StringX.IsColor(text, i)) i++;
+                    if (System.NumericsX.OpenStack.stringX.IsColor(text, i)) i++;
                     else width += glyphs[text[i]].xSkip;
             return MathX.FtoiFast(scale * useFont.glyphScale * width);
         }
@@ -519,7 +519,7 @@ namespace Gengine.UI
                 var s = 0;
                 var count = 0;
                 while (s < text.Length && count < len)
-                    if (StringX.IsColor(text, s)) { s += 2; continue; }
+                    if (System.NumericsX.OpenStack.stringX.IsColor(text, s)) { s += 2; continue; }
                     else
                     {
                         var glyph = font.glyphs[text[s]];
@@ -818,10 +818,10 @@ namespace Gengine.UI
 
                     // int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
                     // float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
-                    if (StringX.IsColor(text, s))
+                    if (System.NumericsX.OpenStack.stringX.IsColor(text, s))
                     {
                         if (text[s + 1] == C_COLOR_DEFAULT) newColor = color;
-                        else { newColor = StringX.ColorForIndex(text[s + 1]); newColor.z = color.z; }
+                        else { newColor = System.NumericsX.OpenStack.stringX.ColorForIndex(text[s + 1]); newColor.z = color.z; }
                         if (cursor == count || cursor == count + 1)
                         {
                             var partialSkip = ((glyph.xSkip * useScale) + adjust) / 5f;

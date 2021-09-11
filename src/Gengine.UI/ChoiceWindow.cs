@@ -193,7 +193,7 @@ namespace Gengine.UI
                 var shadowText = choices[currentChoice];
                 var shadowRect = new Rectangle(textRect);
 
-                shadowText = shadowText.RemoveColors();
+                shadowText = stringX.RemoveColors(shadowText);
                 shadowRect.x += textShadow;
                 shadowRect.y += textShadow;
 

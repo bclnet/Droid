@@ -20,10 +20,10 @@ namespace System.NumericsX
         public const int MAX_WORLD_SIZE = MAX_WORLD_COORD - MIN_WORLD_COORD;
 
         public static Action<bool> SetRefreshOnPrint = x => { };
-        public static Action<string> Warning = x => Console.Write(x);
-        public static Action<string> Error = x => Console.Write(x);
-        public static Action<string> FatalError = x => Console.Write(x);
-        public static Action<string> Printf = x => Console.Write(x);
+        public static Action<string> Warning = x => Console.WriteLine(x);
+        public static Action<string> Error = x => { Console.WriteLine(x); Debug.Assert(false); };
+        public static Action<string> FatalError = x => { Console.WriteLine(x); throw new Exception(x); };
+        public static Action<string> Printf = x => Console.WriteLine(x);
         public static Func<string, string> LanguageDictGetString = x => x;
 
         internal static void RotateVector(ref Vector3 v, Vector3 origin, float a, float c, float s)

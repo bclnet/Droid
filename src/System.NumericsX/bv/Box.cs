@@ -53,9 +53,9 @@ namespace System.NumericsX
             => new(_.center, _.extents - a.extents, _.axis);
 
         public bool Compare(Box a)                     // exact compare, no epsilon
-            => center.Compare(a.center) && extents.Compare(a.extents) && axis.Compare(a.axis);
+            => center.Compare(ref a.center) && extents.Compare(ref a.extents) && axis.Compare(ref a.axis);
         public bool Compare(Box a, float epsilon)  // compare with epsilon
-            => center.Compare(a.center, epsilon) && extents.Compare(a.extents, epsilon) && axis.Compare(a.axis, epsilon);
+            => center.Compare(ref a.center, epsilon) && extents.Compare(ref a.extents, epsilon) && axis.Compare(ref a.axis, epsilon);
         public static bool operator ==(Box _, Box a)                     // exact compare, no epsilon
             => _.Compare(a);
         public static bool operator !=(Box _, Box a)                     // exact compare, no epsilon
@@ -119,7 +119,7 @@ namespace System.NumericsX
             axis2[1] = axis[MathX.Min3Index(axis2[0] * axis[0], axis2[0] * axis[1], axis2[0] * axis[2])];
             axis2[1] = axis2[1] - axis2[1] * axis2[0] * axis2[0];
             axis2[1].Normalize();
-            axis2[2].Cross(axis2[0], axis2[1]);
+            axis2[2].Cross(ref axis2[0], ref axis2[1]);
 
             AxisProjection(axis2, out var bounds2);
             bounds2.AddPoint(new Vector3(v * axis2[0], v * axis2[1], v * axis2[2]));
@@ -193,7 +193,7 @@ namespace System.NumericsX
                 ax[i][1] = ax[i - 2][MathX.Min3Index(dir * ax[i - 2][0], dir * ax[i - 2][1], dir * ax[i - 2][2])];
                 ax[i][1] = ax[i][1] - (ax[i][1] * dir) * dir;
                 ax[i][1].Normalize();
-                ax[i][2].Cross(dir, ax[i][1]);
+                ax[i][2].Cross(ref dir, ref ax[i][1]);
 
                 AxisProjection(ax[i], out bounds[i]);
                 a.AxisProjection(ax[i], out b);
@@ -436,7 +436,7 @@ namespace System.NumericsX
             var ld_y = MathX.Fabs(lineDir * axis[1]); if (MathX.Fabs(dir * axis[1]) > extents.y + ld_y) return false;
             var ld_z = MathX.Fabs(lineDir * axis[2]); if (MathX.Fabs(dir * axis[2]) > extents.z + ld_z) return false;
 
-            var cross = lineDir.Cross(dir);
+            var cross = lineDir.Cross(ref dir);
             if (MathX.Fabs(cross * axis[0]) > extents.y * ld_z + extents.z * ld_y) return false;
             if (MathX.Fabs(cross * axis[1]) > extents.x * ld_z + extents.z * ld_x) return false;
             if (MathX.Fabs(cross * axis[2]) > extents.x * ld_y + extents.y * ld_x) return false;

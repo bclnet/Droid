@@ -56,16 +56,16 @@ namespace System.NumericsX
                 new Vector3(_.b[1].x + a.b[0].x, _.b[1].y + a.b[0].y, _.b[1].z + a.b[0].z));
         }
 
-        public bool Compare(Bounds a)                          // exact compare, no epsilon
-            => b[0].Compare(a.b[0]) && b[1].Compare(a.b[1]);
-        public bool Compare(Bounds a, float epsilon)   // compare with epsilon
-            => b[0].Compare(a.b[0], epsilon) && b[1].Compare(a.b[1], epsilon);
+        public bool Compare(ref Bounds a)                          // exact compare, no epsilon
+            => b[0].Compare(ref a.b[0]) && b[1].Compare(ref a.b[1]);
+        public bool Compare(ref Bounds a, float epsilon)   // compare with epsilon
+            => b[0].Compare(ref a.b[0], epsilon) && b[1].Compare(ref a.b[1], epsilon);
         public static bool operator ==(Bounds _, Bounds a)                      // exact compare, no epsilon
-            => _.Compare(a);
+            => _.Compare(ref a);
         public static bool operator !=(Bounds _, Bounds a)                      // exact compare, no epsilon
-            => !_.Compare(a);
+            => !_.Compare(ref a);
         public override bool Equals(object obj)
-            => obj is Bounds q && Compare(q);
+            => obj is Bounds q && Compare(ref q);
         public override int GetHashCode()
             => b.GetHashCode();
 
@@ -247,7 +247,7 @@ namespace System.NumericsX
             var ld_y = MathX.Fabs(lineDir.y); if (MathX.Fabs(dir.y) > extents.y + ld_y) return false;
             var ld_z = MathX.Fabs(lineDir.z); if (MathX.Fabs(dir.z) > extents.z + ld_z) return false;
 
-            var cross = lineDir.Cross(dir);
+            var cross = lineDir.Cross(ref dir);
             if (MathX.Fabs(cross.x) > extents.y * ld_z + extents.z * ld_y) return false;
             if (MathX.Fabs(cross.y) > extents.x * ld_z + extents.z * ld_x) return false;
             if (MathX.Fabs(cross.z) > extents.x * ld_y + extents.y * ld_x) return false;
@@ -365,8 +365,8 @@ namespace System.NumericsX
             var axis = rotation.Vec;
             var origin = rotation.Origin + axis * (axis * (start - rotation.Origin));
             var radiusSqr = (start - origin).LengthSqr;
-            var v1 = (start - origin).Cross(axis);
-            var v2 = (end - origin).Cross(axis);
+            var v1 = (start - origin).Cross(ref axis);
+            var v2 = (end - origin).Cross(ref axis);
 
             Bounds bounds = new();
             for (var i = 0; i < 3; i++)

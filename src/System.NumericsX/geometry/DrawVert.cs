@@ -61,9 +61,9 @@ namespace System.NumericsX
         public void Normalize()
         {
             normal.Normalize();
-            tangents1.Cross(normal, tangents0);
+            tangents1.Cross(ref normal, ref tangents0);
             tangents1.Normalize();
-            tangents0.Cross(tangents1, normal);
+            tangents0.Cross(ref tangents1, ref normal);
             tangents0.Normalize();
         }
 

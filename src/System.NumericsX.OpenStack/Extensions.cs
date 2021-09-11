@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using static System.NumericsX.Platform;
 
@@ -32,13 +33,13 @@ namespace System.NumericsX.OpenStack
 
     #endregion
 
-    #region StringX
+    #region stringX
 
-    public static class StringX
+    public static class stringX
     {
         #region Color
 
-        static readonly Vector4[] g_color_table =
+        static readonly Vector4[] ColorTable =
         {
             new(0f, 0f, 0f, 1f),
             new(1f, 0f, 0f, 1f), // S_COLOR_RED
@@ -65,7 +66,45 @@ namespace System.NumericsX.OpenStack
 
         public static int ColorIndex(int c) => c & 15;
 
-        public static Vector4 ColorForIndex(int i) => g_color_table[i & 15];
+        public static Vector4 ColorForIndex(int i) => ColorTable[i & 15];
+
+        public static string RemoveColors(string s)
+        {
+            //char* d;
+            //char* s2;
+            //int c;
+
+            //s2 = s;
+            //d = s;
+            //while ((c = *s2) != 0)
+            //{
+            //    if (IsColor(s, s2))
+            //    {
+            //        s2++;
+            //    }
+            //    else
+            //    {
+            //        *d++ = c;
+            //    }
+            //    s2++;
+            //}
+            //*d = '\0';
+
+            return s;
+        }
+
+        public static int LengthWithoutColors(string s)
+        {
+            if (s == null)
+                return 0;
+            int sourceLength = s.Length, len = 0, p = 0;
+            while (p < sourceLength)
+            {
+                if (IsColor(s, p)) { p += 2; continue; }
+                p++; len++;
+            }
+            return len;
+        }
 
         #endregion
 
@@ -91,6 +130,43 @@ namespace System.NumericsX.OpenStack
         public static bool CharIsPrintable(char key)
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Determines whether the specified s is numeric.
+        /// </summary>
+        /// <param name="s">The s.</param>
+        /// <returns>
+        ///   <c>true</c> if the specified s is numeric; otherwise, <c>false</c>.
+        /// </returns>
+        public static bool IsNumeric(string s)
+        {
+            var i = 0;
+            if (s[i] == '-') i++;
+            var dot = false;
+            for (; i < s.Length; i++)
+            {
+                var c = s[i];
+                if (!char.IsDigit(c))
+                {
+                    if (c == '.' && !dot) { dot = true; continue; }
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public static int MD5Checksum(string s)
+        {
+            using var md5 = MD5.Create();
+            var digest = md5.ComputeHash(Encoding.ASCII.GetBytes(s));
+            return digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
+        }
+        public static int MD5Checksum(byte[] buffer)
+        {
+            using var md5 = MD5.Create();
+            var digest = md5.ComputeHash(buffer);
+            return digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
         }
     }
 
@@ -129,15 +205,15 @@ namespace System.NumericsX.OpenStack
         public static bool TryGetFloat(this Dictionary<string, string> source, string key, string defaultValue, out float o) { var r = source.TryGetValue(key, out var z); o = floatX.Parse(r ? z : defaultValue); return r; }
         public static bool TryGetInt(this Dictionary<string, string> source, string key, string defaultValue, out int o) { var r = source.TryGetValue(key, out var z); o = intX.Parse(r ? z : defaultValue); return r; }
         public static bool TryGetBool(this Dictionary<string, string> source, string key, string defaultValue, out bool o) { var r = source.TryGetValue(key, out var z); o = intX.Parse(r ? z : defaultValue) != 0; return r; }
-        public static bool TryGetVec2(this Dictionary<string, string> source, string key, string defaultValue, out Vector2 o) { var r = source.TryGetValue(key, out var z); o = new(); stringX.sscanf(r ? z : defaultValue ?? "0 0", "%f %f", out o.x, out o.y); return r; }
-        public static bool TryGetVector(this Dictionary<string, string> source, string key, string defaultValue, out Vector3 o) { var r = source.TryGetValue(key, out var z); o = new(); stringX.sscanf(r ? z : defaultValue ?? "0 0 0", "%f %f %f", out o.x, out o.y, out o.z); return r; }
-        public static bool TryGetVec4(this Dictionary<string, string> source, string key, string defaultValue, out Vector4 o) { var r = source.TryGetValue(key, out var z); o = new(); stringX.sscanf(r ? z : defaultValue ?? "0 0 0 0", "%f %f %f %f", out o.x, out o.y, out o.z, out o.w); return r; }
-        public static bool TryGetAngles(this Dictionary<string, string> source, string key, string defaultValue, out Angles o) { var r = source.TryGetValue(key, out var z); o = new(); stringX.sscanf(r ? z : defaultValue ?? "0 0 0", "%f %f %f", out o.pitch, out o.yaw, out o.roll); return r; }
+        public static bool TryGetVec2(this Dictionary<string, string> source, string key, string defaultValue, out Vector2 o) { var r = source.TryGetValue(key, out var z); o = new(); TextScanFormatted.Scan(r ? z : defaultValue ?? "0 0", "%f %f", out o.x, out o.y); return r; }
+        public static bool TryGetVector(this Dictionary<string, string> source, string key, string defaultValue, out Vector3 o) { var r = source.TryGetValue(key, out var z); o = new(); TextScanFormatted.Scan(r ? z : defaultValue ?? "0 0 0", "%f %f %f", out o.x, out o.y, out o.z); return r; }
+        public static bool TryGetVec4(this Dictionary<string, string> source, string key, string defaultValue, out Vector4 o) { var r = source.TryGetValue(key, out var z); o = new(); TextScanFormatted.Scan(r ? z : defaultValue ?? "0 0 0 0", "%f %f %f %f", out o.x, out o.y, out o.z, out o.w); return r; }
+        public static bool TryGetAngles(this Dictionary<string, string> source, string key, string defaultValue, out Angles o) { var r = source.TryGetValue(key, out var z); o = new(); TextScanFormatted.Scan(r ? z : defaultValue ?? "0 0 0", "%f %f %f", out o.pitch, out o.yaw, out o.roll); return r; }
         public static bool TryGetMatrix(this Dictionary<string, string> source, string key, string defaultValue, out Matrix3x3 o)
         {
             var r = source.TryGetValue(key, out var z);
             o = Matrix3x3.identity;
-            stringX.sscanf(r ? z : defaultValue ?? "1 0 0 0 1 0 0 0 1", "%f %f %f %f %f %f %f %f %f",
+            TextScanFormatted.Scan(r ? z : defaultValue ?? "1 0 0 0 1 0 0 0 1", "%f %f %f %f %f %f %f %f %f",
                 out o[0].x, out o[0].y, out o[0].z,
                 out o[1].x, out o[1].y, out o[1].z,
                 out o[2].x, out o[2].y, out o[2].z);
@@ -196,16 +272,6 @@ namespace System.NumericsX.OpenStack
         public static string StripTrailingWhitespace(this string source)
         {
             return source;
-        }
-
-        public static string RemoveColors(this string source)
-        {
-            return source;
-        }
-
-        public static int LengthWithoutColors(this string source)
-        {
-            return 0;
         }
 
         public static string TrimStart(this string source, string s)

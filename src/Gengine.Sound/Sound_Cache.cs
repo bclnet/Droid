@@ -309,7 +309,7 @@ namespace Gengine.Sound
             objectMemSize = fh.MemorySize;
 
             nonCacheData = SoundCache.soundCacheAllocator.Alloc(objectMemSize);
-            fh.Read(nonCacheData.Value, objectMemSize, out var _);
+            fh.Read(ref nonCacheData.Value[0], objectMemSize, out var _);
 
             // optionally convert it to 22kHz to save memory
             CheckForDownSample();

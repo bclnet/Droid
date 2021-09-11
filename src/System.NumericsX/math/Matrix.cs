@@ -11,21 +11,39 @@ namespace System.NumericsX
     {
         public static Matrix2x2 zero = new(new Vector2(0f, 0f), new Vector2(0f, 0f));
         public static Matrix2x2 identity = new(new Vector2(1f, 0f), new Vector2(0f, 1f));
+
         internal Vector2 mat0;
         internal Vector2 mat1;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix2x2(Matrix2x2 a)
             => this = a;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix2x2(Vector2 x, Vector2 y)
         {
             mat0.x = x.x; mat0.y = x.y;
             mat1.x = y.x; mat1.y = y.y;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Matrix2x2(ref Vector2 x, ref Vector2 y)
+        {
+            mat0.x = x.x; mat0.y = x.y;
+            mat1.x = y.x; mat1.y = y.y;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix2x2(float xx, float xy, float yx, float yy)
         {
             mat0.x = xx; mat0.y = xy;
             mat1.x = yx; mat1.y = yy;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe Matrix2x2(float[] src)
+        {
+            this = default;
+            fixed (void* mat_ = &mat0, src_ = src)
+                Unsafe.CopyBlock(mat_, src_, 2 * 2 * sizeof(float));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe Matrix2x2(float[,] src)
         {
             this = default;
@@ -37,6 +55,7 @@ namespace System.NumericsX
 
         public unsafe ref Vector2 this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (Vector2* mat_ = &mat0)
@@ -44,82 +63,105 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix2x2 operator -(Matrix2x2 _)
             => new(
             -_.mat0.x, -_.mat0.y,
             -_.mat1.x, -_.mat1.y);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix2x2 operator *(Matrix2x2 _, float a)
             => new(
             _.mat0.x * a, _.mat0.y * a,
             _.mat1.x * a, _.mat1.y * a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 operator *(Matrix2x2 _, Vector2 vec)
             => new(
             _.mat0.x * vec.x + _.mat0.y * vec.y,
             _.mat1.x * vec.x + _.mat1.y * vec.y);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix2x2 operator *(Matrix2x2 _, Matrix2x2 a)
             => new(
             _.mat0.x * a.mat0.x + _.mat0.y * a.mat1.x,
             _.mat0.x * a.mat0.y + _.mat0.y * a.mat1.y,
             _.mat1.x * a.mat0.x + _.mat1.y * a.mat1.x,
             _.mat1.x * a.mat0.y + _.mat1.y * a.mat1.y);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix2x2 operator +(Matrix2x2 _, Matrix2x2 a)
             => new(
             _.mat0.x + a.mat0.x, _.mat0.y + a.mat0.y,
             _.mat1.x + a.mat1.x, _.mat1.y + a.mat1.y);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix2x2 operator -(Matrix2x2 _, Matrix2x2 a)
             => new(
             _.mat0.x - a.mat0.x, _.mat0.y - a.mat0.y,
             _.mat1.x - a.mat1.x, _.mat1.y - a.mat1.y);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix2x2 operator *(float a, Matrix2x2 mat)
             => mat * a;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 operator *(Vector2 vec, Matrix2x2 mat)
             => mat * vec;
 
-        public bool Compare(Matrix2x2 a)                        // exact compare, no epsilon
-            => mat0.Compare(a.mat0) &&
-               mat1.Compare(a.mat1);
-        public bool Compare(Matrix2x2 a, float epsilon)   // compare with epsilon
-            => mat0.Compare(a.mat0, epsilon) &&
-               mat1.Compare(a.mat1, epsilon);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref Matrix2x2 a)                        // exact compare, no epsilon
+            => mat0.Compare(ref a.mat0) &&
+               mat1.Compare(ref a.mat1);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref Matrix2x2 a, float epsilon)   // compare with epsilon
+            => mat0.Compare(ref a.mat0, epsilon) &&
+               mat1.Compare(ref a.mat1, epsilon);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Matrix2x2 _, Matrix2x2 a)                 // exact compare, no epsilon
-            => _.Compare(a);
+            => _.Compare(ref a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Matrix2x2 _, Matrix2x2 a)                 // exact compare, no epsilon
-            => !_.Compare(a);
+            => !_.Compare(ref a);
         public override bool Equals(object obj)
-            => obj is Matrix2x2 q && Compare(q);
+            => obj is Matrix2x2 q && Compare(ref q);
         public override int GetHashCode()
             => mat0.GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()
         {
             mat0.Zero();
             mat1.Zero();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Identity()
             => this = new(identity);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsIdentity(float epsilon = MatrixX.EPSILON)
-            => Compare(identity, epsilon);
+            => Compare(ref identity, epsilon);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
             => MathX.Fabs(mat0.y - mat1.x) < epsilon;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
             => MathX.Fabs(mat0.y) <= epsilon &&
                MathX.Fabs(mat1.x) <= epsilon;
 
-        public float Trace()
-            => mat0.x + mat1.y;
+        public float Trace
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => mat0.x + mat1.y;
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float Determinant()
             => mat0.x * mat1.y - mat0.y * mat1.x;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix2x2 Transpose()   // returns transpose
             => new(
             mat0.x, mat1.x,
             mat0.y, mat1.y);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix2x2 TransposeSelf()
         {
             var tmp = mat0.y;
@@ -128,6 +170,7 @@ namespace System.NumericsX
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix2x2 Inverse()      // returns the inverse ( m * m.Inverse() = identity )
         {
             Matrix2x2 invMat = new(this);
@@ -154,6 +197,7 @@ namespace System.NumericsX
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix2x2 InverseFast()  // returns the inverse ( m * m.Inverse() = identity )
         {
             Matrix2x2 invMat = new(this);
@@ -180,11 +224,12 @@ namespace System.NumericsX
             return true;
         }
 
-        public static int Dimension
-            => 4;
+        public const int Dimension = 4;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat0.ToFloatPtr(callback);
+
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
     }
@@ -195,24 +240,43 @@ namespace System.NumericsX
         public const int SizeOf = 3 * 3 * sizeof(float);
         public static Matrix3x3 zero = new(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0));
         public static Matrix3x3 identity = new(new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1));
+
         public Vector3 mat0;
         internal Vector3 mat1;
         internal Vector3 mat2;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3(Matrix3x3 a)
             => this = a;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3(Vector3 x, Vector3 y, Vector3 z)
         {
             mat0.x = x.x; mat0.y = x.y; mat0.z = x.z;
             mat1.x = y.x; mat1.y = y.y; mat1.z = y.z;
             mat2.x = z.x; mat2.y = z.y; mat2.z = z.z;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Matrix3x3(ref Vector3 x, ref Vector3 y, ref Vector3 z)
+        {
+            mat0.x = x.x; mat0.y = x.y; mat0.z = x.z;
+            mat1.x = y.x; mat1.y = y.y; mat1.z = y.z;
+            mat2.x = z.x; mat2.y = z.y; mat2.z = z.z;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3(float xx, float xy, float xz, float yx, float yy, float yz, float zx, float zy, float zz)
         {
             mat0.x = xx; mat0.y = xy; mat0.z = xz;
             mat1.x = yx; mat1.y = yy; mat1.z = yz;
             mat2.x = zx; mat2.y = zy; mat2.z = zz;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe Matrix3x3(float[] src)
+        {
+            this = default;
+            fixed (void* mat_ = &mat0, src_ = src)
+                Unsafe.CopyBlock(mat_, src_, 2U * 2U * sizeof(float));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe Matrix3x3(float[,] src)
         {
             this = default;
@@ -225,6 +289,7 @@ namespace System.NumericsX
 
         public unsafe ref Vector3 this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (Vector3* mat_ = &mat0)
@@ -232,22 +297,25 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3x3 operator -(Matrix3x3 _)
             => new(
             -_.mat0.x, -_.mat0.y, -_.mat0.z,
             -_.mat1.x, -_.mat1.y, -_.mat1.z,
             -_.mat2.x, -_.mat2.y, -_.mat2.z);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3x3 operator *(Matrix3x3 _, float a)
             => new(
             _.mat0.x * a, _.mat0.y * a, _.mat0.z * a,
             _.mat1.x * a, _.mat1.y * a, _.mat1.z * a,
             _.mat2.x * a, _.mat2.y * a, _.mat2.z * a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 operator *(Matrix3x3 _, Vector3 vec)
             => new(
             _.mat0.x * vec.x + _.mat1.x * vec.y + _.mat2.x * vec.z,
             _.mat0.y * vec.x + _.mat1.y * vec.y + _.mat2.y * vec.z,
             _.mat0.z * vec.x + _.mat1.z * vec.y + _.mat2.z * vec.z);
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe Matrix3x3 operator *(Matrix3x3 _, Matrix3x3 a)
         {
             Matrix3x3 dst = default;
@@ -270,56 +338,68 @@ namespace System.NumericsX
                 return dst;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3x3 operator +(Matrix3x3 _, Matrix3x3 a)
             => new(
             _.mat0.x + a.mat0.x, _.mat0.y + a.mat0.y, _.mat0.z + a.mat0.z,
             _.mat1.x + a.mat1.x, _.mat1.y + a.mat1.y, _.mat1.z + a.mat1.z,
             _.mat2.x + a.mat2.x, _.mat2.y + a.mat2.y, _.mat2.z + a.mat2.z);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3x3 operator -(Matrix3x3 _, Matrix3x3 a)
             => new(
             _.mat0.x - a.mat0.x, _.mat0.y - a.mat0.y, _.mat0.z - a.mat0.z,
             _.mat1.x - a.mat1.x, _.mat1.y - a.mat1.y, _.mat1.z - a.mat1.z,
             _.mat2.x - a.mat2.x, _.mat2.y - a.mat2.y, _.mat2.z - a.mat2.z);
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix3x3 operator *(float a, Matrix3x3 mat)
             => mat * a;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 operator *(Vector3 vec, Matrix3x3 mat)
             => mat * vec;
 
-        public bool Compare(Matrix3x3 a)                       // exact compare, no epsilon
-            => mat0.Compare(a.mat0) &&
-               mat1.Compare(a.mat1) &&
-               mat2.Compare(a.mat2);
-        public bool Compare(Matrix3x3 a, float epsilon)  // compare with epsilon
-            => mat0.Compare(a.mat0, epsilon) &&
-               mat1.Compare(a.mat1, epsilon) &&
-               mat2.Compare(a.mat2, epsilon);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref Matrix3x3 a)                       // exact compare, no epsilon
+            => mat0.Compare(ref a.mat0) &&
+               mat1.Compare(ref a.mat1) &&
+               mat2.Compare(ref a.mat2);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref Matrix3x3 a, float epsilon)  // compare with epsilon
+            => mat0.Compare(ref a.mat0, epsilon) &&
+               mat1.Compare(ref a.mat1, epsilon) &&
+               mat2.Compare(ref a.mat2, epsilon);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Matrix3x3 _, Matrix3x3 a)                   // exact compare, no epsilon
-            => _.Compare(a);
+            => _.Compare(ref a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Matrix3x3 _, Matrix3x3 a)                   // exact compare, no epsilon
-            => !_.Compare(a);
+            => !_.Compare(ref a);
         public override bool Equals(object obj)
-            => obj is Matrix3x3 q && Compare(q);
+            => obj is Matrix3x3 q && Compare(ref q);
         public override int GetHashCode()
             => mat0.GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void Zero()
         {
             fixed (void* mat_ = &mat0)
                 Unsafe.InitBlock(mat_, 0, 3U * (uint)sizeof(Vector3));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Identity()
             => this = new(identity);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsIdentity(float epsilon = MatrixX.EPSILON)
-            => Compare(identity, epsilon);
+            => Compare(ref identity, epsilon);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
             => MathX.Fabs(mat0.y - mat1.x) <= epsilon &&
                MathX.Fabs(mat0.z - mat2.x) <= epsilon &&
                MathX.Fabs(mat1.z - mat2.y) <= epsilon;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
             => MathX.Fabs(mat0.y) <= epsilon &&
                MathX.Fabs(mat0.z) <= epsilon &&
@@ -328,9 +408,11 @@ namespace System.NumericsX
                MathX.Fabs(mat2.x) <= epsilon &&
                MathX.Fabs(mat2.y) <= epsilon;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsRotated()
-            => !Compare(identity);
+            => !Compare(ref identity);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ProjectVector(Vector3 src, out Vector3 dst)
         {
             dst.x = src * mat0;
@@ -338,9 +420,11 @@ namespace System.NumericsX
             dst.z = src * mat2;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UnprojectVector(Vector3 src, out Vector3 dst)
             => dst = mat0 * src.x + mat1 * src.y + mat2 * src.z;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool FixDegeneracies()    // fix degenerate axial cases
         {
             var r = mat0.FixDegenerateNormal();
@@ -349,6 +433,7 @@ namespace System.NumericsX
             return r;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool FixDenormals()       // change tiny numbers to zero
         {
             var r = mat0.FixDenormals();
@@ -357,8 +442,11 @@ namespace System.NumericsX
             return r;
         }
 
-        public float Trace()
-            => mat0.x + mat1.y + mat2.z;
+        public float Trace
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => mat0.x + mat1.y + mat2.z;
+        }
 
         public float Determinant()
         {
@@ -368,27 +456,31 @@ namespace System.NumericsX
             return mat0.x * det2_12_12 - mat0.y * det2_12_02 + mat0.z * det2_12_01;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3 OrthoNormalize()
         {
             Matrix3x3 ortho = new(this);
             ortho.mat0.Normalize();
-            ortho.mat2.Cross(mat0, mat1); ortho.mat2.Normalize();
-            ortho.mat1.Cross(mat2, mat0); ortho.mat1.Normalize();
+            ortho.mat2.Cross(ref mat0, ref mat1); ortho.mat2.Normalize();
+            ortho.mat1.Cross(ref mat2, ref mat0); ortho.mat1.Normalize();
             return ortho;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3 OrthoNormalizeSelf()
         {
             mat0.Normalize();
-            mat2.Cross(mat0, mat1); mat2.Normalize();
-            mat1.Cross(mat2, mat0); mat1.Normalize();
+            mat2.Cross(ref mat0, ref mat1); mat2.Normalize();
+            mat1.Cross(ref mat2, ref mat0); mat1.Normalize();
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3 Transpose()   // returns transpose
             => new(
             mat0.x, mat1.x, mat2.x,
             mat0.y, mat1.y, mat2.y,
             mat0.z, mat1.z, mat2.z);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3 TransposeSelf()
         {
             var tmp0 = mat0.y; mat0.y = mat1.x; mat1.x = tmp0;
@@ -397,6 +489,7 @@ namespace System.NumericsX
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3 Inverse()     // returns the inverse ( m * m.Inverse() = identity )
         {
             Matrix3x3 invMat = new(this);
@@ -432,7 +525,7 @@ namespace System.NumericsX
 
             return true;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3 InverseFast() // returns the inverse ( m * m.Inverse() = identity )
         {
             Matrix3x3 invMat = new(this);
@@ -469,6 +562,7 @@ namespace System.NumericsX
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3 TransposeMultiply(Matrix3x3 b)
             => new(
             mat0.x * b.mat0.x + mat1.x * b.mat1.x + mat2.x * b.mat2.x,
@@ -526,8 +620,7 @@ namespace System.NumericsX
             return this;
         }
 
-        public static int Dimension
-            => 9;
+        public const int Dimension = 9;
 
         public Angles ToAngles()
         {
@@ -650,6 +743,7 @@ namespace System.NumericsX
             return r;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix4x4 ToMat4()
             // NOTE: Matrix3x3 is transposed because it is column-major
             => new(
@@ -664,11 +758,14 @@ namespace System.NumericsX
             return rotation.Vec * MathX.DEG2RAD(rotation.Angle);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat0.ToFloatPtr(callback);
+
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void TransposeMultiply(Matrix3x3 inv, Matrix3x3 b, out Matrix3x3 dst)
         {
             dst = new();
@@ -682,6 +779,8 @@ namespace System.NumericsX
             dst.mat2.y = inv.mat0.z * b.mat0.y + inv.mat1.z * b.mat1.y + inv.mat2.z * b.mat2.y;
             dst.mat2.z = inv.mat0.z * b.mat0.z + inv.mat1.z * b.mat1.z + inv.mat2.z * b.mat2.z;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3 SkewSymmetric(Vector3 src)
             => new(0f, -src.z, src.y, src.z, 0f, -src.x, -src.y, src.x, 0f);
     }
@@ -691,13 +790,16 @@ namespace System.NumericsX
     {
         public static Matrix4x4 zero = new(new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0));
         public static Matrix4x4 identity = new(new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), new Vector4(0, 0, 1, 0), new Vector4(0, 0, 0, 1));
+
         internal Vector4 mat0;
         Vector4 mat1;
         Vector4 mat2;
         Vector4 mat3;
 
-        public Matrix4x4(Matrix4x4 a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Matrix4x4(ref Matrix4x4 a)
             => this = a;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix4x4(Vector4 x, Vector4 y, Vector4 z, Vector4 w)
         {
             mat0 = x;
@@ -705,6 +807,15 @@ namespace System.NumericsX
             mat2 = z;
             mat3 = w;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Matrix4x4(ref Vector4 x, ref Vector4 y, ref Vector4 z, ref Vector4 w)
+        {
+            mat0 = x;
+            mat1 = y;
+            mat2 = z;
+            mat3 = w;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix4x4(float xx, float xy, float xz, float xw,
             float yx, float yy, float yz, float yw,
             float zx, float zy, float zz, float zw,
@@ -715,7 +826,8 @@ namespace System.NumericsX
             mat2.x = zx; mat2.y = zy; mat2.z = zz; mat2.w = zw;
             mat3.x = wx; mat3.y = wy; mat3.z = wz; mat3.w = ww;
         }
-        public Matrix4x4(Matrix3x3 rotation, Vector3 translation)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Matrix4x4(ref Matrix3x3 rotation, ref Vector3 translation)
         {
             // NOTE: Matrix3x3 is transposed because it is column-major
             mat0.x = rotation.mat0.x;
@@ -735,6 +847,14 @@ namespace System.NumericsX
             mat3.z = 0f;
             mat3.w = 1f;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe Matrix4x4(float[] src)
+        {
+            this = default;
+            fixed (void* mat_ = &mat0, src_ = src)
+                Unsafe.CopyBlock(mat_, src_, 4U * 4U * sizeof(float));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe Matrix4x4(float[,] src)
         {
             this = default;
@@ -748,6 +868,7 @@ namespace System.NumericsX
 
         public unsafe ref Vector4 this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (Vector4* mat_ = &mat0)
@@ -755,18 +876,21 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4 operator *(Matrix4x4 _, float a)
             => new(
             _.mat0.x * a, _.mat0.y * a, _.mat0.z * a, _.mat0.w * a,
             _.mat1.x * a, _.mat1.y * a, _.mat1.z * a, _.mat1.w * a,
             _.mat2.x * a, _.mat2.y * a, _.mat2.z * a, _.mat2.w * a,
             _.mat3.x * a, _.mat3.y * a, _.mat3.z * a, _.mat3.w * a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector4 operator *(Matrix4x4 _, Vector4 vec)
             => new(
             _.mat0.x * vec.x + _.mat0.y * vec.y + _.mat0.z * vec.z + _.mat0.w * vec.w,
             _.mat1.x * vec.x + _.mat1.y * vec.y + _.mat1.z * vec.z + _.mat1.w * vec.w,
             _.mat2.x * vec.x + _.mat2.y * vec.y + _.mat2.z * vec.z + _.mat2.w * vec.w,
             _.mat3.x * vec.x + _.mat3.y * vec.y + _.mat3.z * vec.z + _.mat3.w * vec.w);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 operator *(Matrix4x4 _, Vector3 vec)
         {
             var s = _.mat3.x * vec.x + _.mat3.y * vec.y + _.mat3.z * vec.z + _.mat3.w;
@@ -786,6 +910,7 @@ namespace System.NumericsX
                 (_.mat2.x * vec.x + _.mat2.y * vec.y + _.mat2.z * vec.z + _.mat2.w) * invS);
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe Matrix4x4 operator *(Matrix4x4 _, Matrix4x4 a)
         {
             Matrix4x4 dst = default;
@@ -809,31 +934,34 @@ namespace System.NumericsX
                 return dst;
             }
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4 operator +(Matrix4x4 _, Matrix4x4 a)
             => new(
             _.mat0.x + a.mat0.x, _.mat0.y + a.mat0.y, _.mat0.z + a.mat0.z, _.mat0.w + a.mat0.w,
             _.mat1.x + a.mat1.x, _.mat1.y + a.mat1.y, _.mat1.z + a.mat1.z, _.mat1.w + a.mat1.w,
             _.mat2.x + a.mat2.x, _.mat2.y + a.mat2.y, _.mat2.z + a.mat2.z, _.mat2.w + a.mat2.w,
             _.mat3.x + a.mat3.x, _.mat3.y + a.mat3.y, _.mat3.z + a.mat3.z, _.mat3.w + a.mat3.w);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4 operator -(Matrix4x4 _, Matrix4x4 a)
             => new(
             _.mat0.x - a.mat0.x, _.mat0.y - a.mat0.y, _.mat0.z - a.mat0.z, _.mat0.w - a.mat0.w,
             _.mat1.x - a.mat1.x, _.mat1.y - a.mat1.y, _.mat1.z - a.mat1.z, _.mat1.w - a.mat1.w,
             _.mat2.x - a.mat2.x, _.mat2.y - a.mat2.y, _.mat2.z - a.mat2.z, _.mat2.w - a.mat2.w,
             _.mat3.x - a.mat3.x, _.mat3.y - a.mat3.y, _.mat3.z - a.mat3.z, _.mat3.w - a.mat3.w);
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4 operator *(float a, Matrix4x4 mat)
             => mat * a;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector4 operator *(Vector4 vec, Matrix4x4 mat)
             => mat * vec;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 operator *(Vector3 vec, Matrix4x4 mat)
             => mat * vec;
 
-        public unsafe bool Compare(Matrix4x4 a)                       // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe bool Compare(ref Matrix4x4 a)                       // exact compare, no epsilon
         {
-            void* a_ = &a.mat0;
-            fixed (void* mat_ = &mat0)
+            fixed (void* mat_ = &mat0, a_ = &a.mat0)
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
@@ -843,10 +971,10 @@ namespace System.NumericsX
                 return true;
             }
         }
-        public unsafe bool Compare(Matrix4x4 a, float epsilon)  // compare with epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe bool Compare(ref Matrix4x4 a, float epsilon)  // compare with epsilon
         {
-            void* a_ = &a.mat0;
-            fixed (void* mat_ = &mat0)
+            fixed (void* mat_ = &mat0, a_ = &a.mat0)
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
@@ -856,27 +984,33 @@ namespace System.NumericsX
                 return true;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Matrix4x4 _, Matrix4x4 a)                   // exact compare, no epsilon
-            => _.Compare(a);
+            => _.Compare(ref a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Matrix4x4 _, Matrix4x4 a)                   // exact compare, no epsilon
-            => !_.Compare(a);
+            => !_.Compare(ref a);
         public override bool Equals(object obj)
-            => obj is Matrix4x4 q && Compare(q);
+            => obj is Matrix4x4 q && Compare(ref q);
         public override int GetHashCode()
             => mat0.GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void Zero()
         {
             fixed (void* mat_ = &mat0)
                 Unsafe.InitBlock(mat_, 0, 4U * (uint)sizeof(Vector4));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Identity()
-            => this = new(identity);
+            => this = new(ref identity);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsIdentity(float epsilon = MatrixX.EPSILON)
-            => Compare(identity, epsilon);
+            => Compare(ref identity, epsilon);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
         {
             for (var i = 1; i < 4; i++)
@@ -886,6 +1020,7 @@ namespace System.NumericsX
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
         {
             for (var i = 0; i < 4; i++)
@@ -895,11 +1030,13 @@ namespace System.NumericsX
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsRotated()
             => mat0.y != 0 || mat0.z != 0 ||
                mat1.x != 0 || mat1.z != 0 ||
                mat2.x != 0 || mat2.y != 0;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ProjectVector(Vector4 src, out Vector4 dst)
         {
             dst.x = src * mat0;
@@ -907,11 +1044,16 @@ namespace System.NumericsX
             dst.z = src * mat2;
             dst.w = src * mat3;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UnprojectVector(Vector4 src, out Vector4 dst)
             => dst = mat0 * src.x + mat1 * src.y + mat2 * src.z + mat3 * src.w;
 
-        public float Trace()
-            => mat0.x + mat1.y + mat2.z + mat3.w;
+        public float Trace
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => mat0.x + mat1.y + mat2.z + mat3.w;
+        }
 
         public float Determinant()
         {
@@ -952,9 +1094,10 @@ namespace System.NumericsX
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix4x4 Inverse()     // returns the inverse ( m * m.Inverse() = identity )
         {
-            Matrix4x4 invMat = new(this);
+            Matrix4x4 invMat = new(ref this);
             var r = invMat.InverseSelf();
             Debug.Assert(r);
             return invMat;
@@ -980,6 +1123,7 @@ namespace System.NumericsX
             var det3_201_123 = mat2.y * det2_01_23 - mat2.z * det2_01_13 + mat2.w * det2_01_12;
 
             det = -det3_201_123 * mat3.x + det3_201_023 * mat3.y - det3_201_013 * mat3.z + det3_201_012 * mat3.w;
+
             if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                 return false;
 
@@ -1023,10 +1167,10 @@ namespace System.NumericsX
 
             return true;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix4x4 InverseFast() // returns the inverse ( m * m.Inverse() = identity )
         {
-            Matrix4x4 invMat = new(this);
+            Matrix4x4 invMat = new(ref this);
             var r = invMat.InverseFastSelf();
             Debug.Assert(r);
             return invMat;
@@ -1098,38 +1242,38 @@ namespace System.NumericsX
             //		2*1 =  2 divisions
             Matrix2x2 r0 = new(), r1 = new(), r2 = new(), r3 = new(); float a, det, invDet;
 
-            fixed (float* mat = &this.mat0.x)
+            fixed (float* mat_ = &mat0.x)
             {
                 // r0 = m0.Inverse();
-                det = mat[0 * 4 + 0] * mat[1 * 4 + 1] - mat[0 * 4 + 1] * mat[1 * 4 + 0];
+                det = mat_[0 * 4 + 0] * mat_[1 * 4 + 1] - mat_[0 * 4 + 1] * mat_[1 * 4 + 0];
 
                 if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                     return false;
 
                 invDet = 1f / det;
 
-                r0.mat0.x = mat[1 * 4 + 1] * invDet;
-                r0.mat0.y = -mat[0 * 4 + 1] * invDet;
-                r0.mat1.x = -mat[1 * 4 + 0] * invDet;
-                r0.mat1.y = mat[0 * 4 + 0] * invDet;
+                r0.mat0.x = mat_[1 * 4 + 1] * invDet;
+                r0.mat0.y = -mat_[0 * 4 + 1] * invDet;
+                r0.mat1.x = -mat_[1 * 4 + 0] * invDet;
+                r0.mat1.y = mat_[0 * 4 + 0] * invDet;
 
                 // r1 = r0 * m1;
-                r1.mat0.x = r0.mat0.x * mat[0 * 4 + 2] + r0.mat0.y * mat[1 * 4 + 2];
-                r1.mat0.y = r0.mat0.x * mat[0 * 4 + 3] + r0.mat0.y * mat[1 * 4 + 3];
-                r1.mat1.x = r0.mat1.x * mat[0 * 4 + 2] + r0.mat1.y * mat[1 * 4 + 2];
-                r1.mat1.y = r0.mat1.x * mat[0 * 4 + 3] + r0.mat1.y * mat[1 * 4 + 3];
+                r1.mat0.x = r0.mat0.x * mat_[0 * 4 + 2] + r0.mat0.y * mat_[1 * 4 + 2];
+                r1.mat0.y = r0.mat0.x * mat_[0 * 4 + 3] + r0.mat0.y * mat_[1 * 4 + 3];
+                r1.mat1.x = r0.mat1.x * mat_[0 * 4 + 2] + r0.mat1.y * mat_[1 * 4 + 2];
+                r1.mat1.y = r0.mat1.x * mat_[0 * 4 + 3] + r0.mat1.y * mat_[1 * 4 + 3];
 
                 // r2 = m2 * r1;
-                r2.mat0.x = mat[2 * 4 + 0] * r1.mat0.x + mat[2 * 4 + 1] * r1.mat1.x;
-                r2.mat0.y = mat[2 * 4 + 0] * r1.mat0.y + mat[2 * 4 + 1] * r1.mat1.y;
-                r2.mat1.x = mat[3 * 4 + 0] * r1.mat0.x + mat[3 * 4 + 1] * r1.mat1.x;
-                r2.mat1.y = mat[3 * 4 + 0] * r1.mat0.y + mat[3 * 4 + 1] * r1.mat1.y;
+                r2.mat0.x = mat_[2 * 4 + 0] * r1.mat0.x + mat_[2 * 4 + 1] * r1.mat1.x;
+                r2.mat0.y = mat_[2 * 4 + 0] * r1.mat0.y + mat_[2 * 4 + 1] * r1.mat1.y;
+                r2.mat1.x = mat_[3 * 4 + 0] * r1.mat0.x + mat_[3 * 4 + 1] * r1.mat1.x;
+                r2.mat1.y = mat_[3 * 4 + 0] * r1.mat0.y + mat_[3 * 4 + 1] * r1.mat1.y;
 
                 // r3 = r2 - m3;
-                r3.mat0.x = r2.mat0.x - mat[2 * 4 + 2];
-                r3.mat0.y = r2.mat0.y - mat[2 * 4 + 3];
-                r3.mat1.x = r2.mat1.x - mat[3 * 4 + 2];
-                r3.mat1.y = r2.mat1.y - mat[3 * 4 + 3];
+                r3.mat0.x = r2.mat0.x - mat_[2 * 4 + 2];
+                r3.mat0.y = r2.mat0.y - mat_[2 * 4 + 3];
+                r3.mat1.x = r2.mat1.x - mat_[3 * 4 + 2];
+                r3.mat1.y = r2.mat1.y - mat_[3 * 4 + 3];
 
                 // r3.InverseSelf();
                 det = r3.mat0.x * r3.mat1.y - r3.mat0.y * r3.mat1.x;
@@ -1146,34 +1290,34 @@ namespace System.NumericsX
                 r3.mat1.y = a * invDet;
 
                 // r2 = m2 * r0;
-                r2.mat0.x = mat[2 * 4 + 0] * r0.mat0.x + mat[2 * 4 + 1] * r0.mat1.x;
-                r2.mat0.y = mat[2 * 4 + 0] * r0.mat0.y + mat[2 * 4 + 1] * r0.mat1.y;
-                r2.mat1.x = mat[3 * 4 + 0] * r0.mat0.x + mat[3 * 4 + 1] * r0.mat1.x;
-                r2.mat1.y = mat[3 * 4 + 0] * r0.mat0.y + mat[3 * 4 + 1] * r0.mat1.y;
+                r2.mat0.x = mat_[2 * 4 + 0] * r0.mat0.x + mat_[2 * 4 + 1] * r0.mat1.x;
+                r2.mat0.y = mat_[2 * 4 + 0] * r0.mat0.y + mat_[2 * 4 + 1] * r0.mat1.y;
+                r2.mat1.x = mat_[3 * 4 + 0] * r0.mat0.x + mat_[3 * 4 + 1] * r0.mat1.x;
+                r2.mat1.y = mat_[3 * 4 + 0] * r0.mat0.y + mat_[3 * 4 + 1] * r0.mat1.y;
 
                 // m2 = r3 * r2;
-                mat[2 * 4 + 0] = r3.mat0.x * r2.mat0.x + r3.mat0.y * r2.mat1.x;
-                mat[2 * 4 + 1] = r3.mat0.x * r2.mat0.y + r3.mat0.y * r2.mat1.y;
-                mat[3 * 4 + 0] = r3.mat1.x * r2.mat0.x + r3.mat1.y * r2.mat1.x;
-                mat[3 * 4 + 1] = r3.mat1.x * r2.mat0.y + r3.mat1.y * r2.mat1.y;
+                mat_[2 * 4 + 0] = r3.mat0.x * r2.mat0.x + r3.mat0.y * r2.mat1.x;
+                mat_[2 * 4 + 1] = r3.mat0.x * r2.mat0.y + r3.mat0.y * r2.mat1.y;
+                mat_[3 * 4 + 0] = r3.mat1.x * r2.mat0.x + r3.mat1.y * r2.mat1.x;
+                mat_[3 * 4 + 1] = r3.mat1.x * r2.mat0.y + r3.mat1.y * r2.mat1.y;
 
                 // m0 = r0 - r1 * m2;
-                mat[0 * 4 + 0] = r0.mat0.x - r1.mat0.x * mat[2 * 4 + 0] - r1.mat0.y * mat[3 * 4 + 0];
-                mat[0 * 4 + 1] = r0.mat0.y - r1.mat0.x * mat[2 * 4 + 1] - r1.mat0.y * mat[3 * 4 + 1];
-                mat[1 * 4 + 0] = r0.mat1.x - r1.mat1.x * mat[2 * 4 + 0] - r1.mat1.y * mat[3 * 4 + 0];
-                mat[1 * 4 + 1] = r0.mat1.y - r1.mat1.x * mat[2 * 4 + 1] - r1.mat1.y * mat[3 * 4 + 1];
+                mat_[0 * 4 + 0] = r0.mat0.x - r1.mat0.x * mat_[2 * 4 + 0] - r1.mat0.y * mat_[3 * 4 + 0];
+                mat_[0 * 4 + 1] = r0.mat0.y - r1.mat0.x * mat_[2 * 4 + 1] - r1.mat0.y * mat_[3 * 4 + 1];
+                mat_[1 * 4 + 0] = r0.mat1.x - r1.mat1.x * mat_[2 * 4 + 0] - r1.mat1.y * mat_[3 * 4 + 0];
+                mat_[1 * 4 + 1] = r0.mat1.y - r1.mat1.x * mat_[2 * 4 + 1] - r1.mat1.y * mat_[3 * 4 + 1];
 
                 // m1 = r1 * r3;
-                mat[0 * 4 + 2] = r1.mat0.x * r3.mat0.x + r1.mat0.y * r3.mat1.x;
-                mat[0 * 4 + 3] = r1.mat0.x * r3.mat0.y + r1.mat0.y * r3.mat1.y;
-                mat[1 * 4 + 2] = r1.mat1.x * r3.mat0.x + r1.mat1.y * r3.mat1.x;
-                mat[1 * 4 + 3] = r1.mat1.x * r3.mat0.y + r1.mat1.y * r3.mat1.y;
+                mat_[0 * 4 + 2] = r1.mat0.x * r3.mat0.x + r1.mat0.y * r3.mat1.x;
+                mat_[0 * 4 + 3] = r1.mat0.x * r3.mat0.y + r1.mat0.y * r3.mat1.y;
+                mat_[1 * 4 + 2] = r1.mat1.x * r3.mat0.x + r1.mat1.y * r3.mat1.x;
+                mat_[1 * 4 + 3] = r1.mat1.x * r3.mat0.y + r1.mat1.y * r3.mat1.y;
 
                 // m3 = -r3;
-                mat[2 * 4 + 2] = -r3.mat0.x;
-                mat[2 * 4 + 3] = -r3.mat0.y;
-                mat[3 * 4 + 2] = -r3.mat1.x;
-                mat[3 * 4 + 3] = -r3.mat1.y;
+                mat_[2 * 4 + 2] = -r3.mat0.x;
+                mat_[2 * 4 + 3] = -r3.mat0.y;
+                mat_[3 * 4 + 2] = -r3.mat1.x;
+                mat_[3 * 4 + 3] = -r3.mat1.y;
 
                 return true;
             }
@@ -1183,11 +1327,12 @@ namespace System.NumericsX
         public Matrix4x4 TransposeMultiply(Matrix4x4 b)
             => throw new NotSupportedException();
 
-        public static int Dimension
-            => 16;
+        public const int Dimension = 16;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat0.ToFloatPtr(callback);
+
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
     }
@@ -1197,14 +1342,17 @@ namespace System.NumericsX
     {
         public static Matrix5x5 zero = new(new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0));
         public static Matrix5x5 identity = new(new Vector5(1, 0, 0, 0, 0), new Vector5(0, 1, 0, 0, 0), new Vector5(0, 0, 1, 0, 0), new Vector5(0, 0, 0, 1, 0), new Vector5(0, 0, 0, 0, 1));
+
         internal Vector5 mat0;
         internal Vector5 mat1;
         internal Vector5 mat2;
         internal Vector5 mat3;
         internal Vector5 mat4;
 
-        public Matrix5x5(Matrix5x5 a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Matrix5x5(ref Matrix5x5 a)
             => this = a;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix5x5(Vector5 v0, Vector5 v1, Vector5 v2, Vector5 v3, Vector5 v4)
         {
             mat0 = v0;
@@ -1213,6 +1361,23 @@ namespace System.NumericsX
             mat3 = v3;
             mat4 = v4;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Matrix5x5(ref Vector5 v0, ref Vector5 v1, ref Vector5 v2, ref Vector5 v3, ref Vector5 v4)
+        {
+            mat0 = v0;
+            mat1 = v1;
+            mat2 = v2;
+            mat3 = v3;
+            mat4 = v4;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe Matrix5x5(float[] src)
+        {
+            this = default;
+            fixed (void* mat_ = &mat0, src_ = src)
+                Unsafe.CopyBlock(mat_, src_, 5U * 5U * sizeof(float));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe Matrix5x5(float[,] src)
         {
             this = default;
@@ -1227,6 +1392,7 @@ namespace System.NumericsX
 
         public unsafe ref Vector5 this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (Vector5* mat_ = &mat0)
@@ -1234,6 +1400,7 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix5x5 operator *(Matrix5x5 _, float a)
             => new(
             new Vector5(_.mat0.x * a, _.mat0.y * a, _.mat0.z * a, _.mat0.s * a, _.mat0.t * a),
@@ -1241,6 +1408,7 @@ namespace System.NumericsX
             new Vector5(_.mat2.x * a, _.mat2.y * a, _.mat2.z * a, _.mat2.s * a, _.mat2.t * a),
             new Vector5(_.mat3.x * a, _.mat3.y * a, _.mat3.z * a, _.mat3.s * a, _.mat3.t * a),
             new Vector5(_.mat4.x * a, _.mat4.y * a, _.mat4.z * a, _.mat4.s * a, _.mat4.t * a));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector5 operator *(Matrix5x5 _, Vector5 vec)
             => new(
             _.mat0.x * vec.x + _.mat0.y * vec.y + _.mat0.z * vec.z + _.mat0.s * vec.s + _.mat0.t * vec.t,
@@ -1248,6 +1416,7 @@ namespace System.NumericsX
             _.mat2.x * vec.x + _.mat2.y * vec.y + _.mat2.z * vec.z + _.mat2.s * vec.s + _.mat2.t * vec.t,
             _.mat3.x * vec.x + _.mat3.y * vec.y + _.mat3.z * vec.z + _.mat3.s * vec.s + _.mat3.t * vec.t,
             _.mat4.x * vec.x + _.mat4.y * vec.y + _.mat4.z * vec.z + _.mat4.s * vec.s + _.mat4.t * vec.t);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe Matrix5x5 operator *(Matrix5x5 _, Matrix5x5 a)
         {
             Matrix5x5 dst = default;
@@ -1272,6 +1441,7 @@ namespace System.NumericsX
                 return dst;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix5x5 operator +(Matrix5x5 _, Matrix5x5 a)
             => new(
             new Vector5(_.mat0.x + a.mat0.x, _.mat0.y + a.mat0.y, _.mat0.z + a.mat0.z, _.mat0.s + a.mat0.s, _.mat0.t + a.mat0.t),
@@ -1279,6 +1449,7 @@ namespace System.NumericsX
             new Vector5(_.mat2.x + a.mat2.x, _.mat2.y + a.mat2.y, _.mat2.z + a.mat2.z, _.mat2.s + a.mat2.s, _.mat2.t + a.mat2.t),
             new Vector5(_.mat3.x + a.mat3.x, _.mat3.y + a.mat3.y, _.mat3.z + a.mat3.z, _.mat3.s + a.mat3.s, _.mat3.t + a.mat3.t),
             new Vector5(_.mat4.x + a.mat4.x, _.mat4.y + a.mat4.y, _.mat4.z + a.mat4.z, _.mat4.s + a.mat4.s, _.mat4.t + a.mat4.t));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix5x5 operator -(Matrix5x5 _, Matrix5x5 a)
             => new(
             new Vector5(_.mat0.x - a.mat0.x, _.mat0.y - a.mat0.y, _.mat0.z - a.mat0.z, _.mat0.s - a.mat0.s, _.mat0.t - a.mat0.t),
@@ -1286,16 +1457,17 @@ namespace System.NumericsX
             new Vector5(_.mat2.x - a.mat2.x, _.mat2.y - a.mat2.y, _.mat2.z - a.mat2.z, _.mat2.s - a.mat2.s, _.mat2.t - a.mat2.t),
             new Vector5(_.mat3.x - a.mat3.x, _.mat3.y - a.mat3.y, _.mat3.z - a.mat3.z, _.mat3.s - a.mat3.s, _.mat3.t - a.mat3.t),
             new Vector5(_.mat4.x - a.mat4.x, _.mat4.y - a.mat4.y, _.mat4.z - a.mat4.z, _.mat4.s - a.mat4.s, _.mat4.t - a.mat4.t));
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix5x5 operator *(float a, Matrix5x5 mat)
             => mat * a;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector5 operator *(Vector5 vec, Matrix5x5 mat)
             => mat * vec;
 
-        public unsafe bool Compare(Matrix5x5 a)                       // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe bool Compare(ref Matrix5x5 a)                       // exact compare, no epsilon
         {
-            void* a_ = &a.mat0;
-            fixed (void* mat_ = &mat0)
+            fixed (void* mat_ = &mat0, a_ = &a.mat0)
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
@@ -1305,10 +1477,10 @@ namespace System.NumericsX
                 return true;
             }
         }
-        public unsafe bool Compare(Matrix5x5 a, float epsilon)  // compare with epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe bool Compare(ref Matrix5x5 a, float epsilon)  // compare with epsilon
         {
-            void* a_ = &a.mat0;
-            fixed (void* mat_ = &mat0)
+            fixed (void* mat_ = &mat0, a_ = &a.mat0)
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
@@ -1318,27 +1490,33 @@ namespace System.NumericsX
                 return true;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Matrix5x5 _, Matrix5x5 a)                   // exact compare, no epsilon
-            => _.Compare(a);
+            => _.Compare(ref a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Matrix5x5 _, Matrix5x5 a)                   // exact compare, no epsilon
-            => !_.Compare(a);
+            => !_.Compare(ref a);
         public override bool Equals(object obj)
-            => obj is Matrix5x5 q && Compare(q);
+            => obj is Matrix5x5 q && Compare(ref q);
         public override int GetHashCode()
             => mat0.GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void Zero()
         {
             fixed (void* mat_ = &mat0)
                 Unsafe.InitBlock(mat_, 0, 5U * (uint)sizeof(Vector5));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Identity()
-            => this = new(identity);
+            => this = new(ref identity);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsIdentity(float epsilon = MatrixX.EPSILON)
-            => Compare(identity, epsilon);
+            => Compare(ref identity, epsilon);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
         {
             for (var i = 1; i < 5; i++)
@@ -1348,6 +1526,7 @@ namespace System.NumericsX
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
         {
             for (var i = 0; i < 5; i++)
@@ -1357,8 +1536,11 @@ namespace System.NumericsX
             return true;
         }
 
-        public float Trace()
-            => mat0.x + mat1.y + mat2.z + mat3.s + mat4.t;
+        public float Trace
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => mat0.x + mat1.y + mat2.z + mat3.s + mat4.t;
+        }
 
         public float Determinant()
         {
@@ -1417,9 +1599,10 @@ namespace System.NumericsX
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix5x5 Inverse()     // returns the inverse ( m * m.Inverse() = identity )
         {
-            Matrix5x5 invMat = new(this);
+            Matrix5x5 invMat = new(ref this);
             var r = invMat.InverseSelf();
             Debug.Assert(r);
             return invMat;
@@ -1553,9 +1736,10 @@ namespace System.NumericsX
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix5x5 InverseFast() // returns the inverse ( m * m.Inverse() = identity )
         {
-            Matrix5x5 invMat = new(this);
+            Matrix5x5 invMat = new(ref this);
             var r = invMat.InverseFastSelf();
             Debug.Assert(r);
             return invMat;
@@ -1566,48 +1750,48 @@ namespace System.NumericsX
             //	  2*1  =   2 divisions
             Matrix3x3 r0 = new(), r1 = new(), r2 = new(), r3 = new(); float c0, c1, c2, det, invDet;
 
-            fixed (float* mat = &this.mat0.x)
+            fixed (float* mat_ = &mat0.x)
             {
                 //r0 = m0.Inverse();	// 3x3
-                c0 = mat[1 * 5 + 1] * mat[2 * 5 + 2] - mat[1 * 5 + 2] * mat[2 * 5 + 1];
-                c1 = mat[1 * 5 + 2] * mat[2 * 5 + 0] - mat[1 * 5 + 0] * mat[2 * 5 + 2];
-                c2 = mat[1 * 5 + 0] * mat[2 * 5 + 1] - mat[1 * 5 + 1] * mat[2 * 5 + 0];
+                c0 = mat_[1 * 5 + 1] * mat_[2 * 5 + 2] - mat_[1 * 5 + 2] * mat_[2 * 5 + 1];
+                c1 = mat_[1 * 5 + 2] * mat_[2 * 5 + 0] - mat_[1 * 5 + 0] * mat_[2 * 5 + 2];
+                c2 = mat_[1 * 5 + 0] * mat_[2 * 5 + 1] - mat_[1 * 5 + 1] * mat_[2 * 5 + 0];
 
-                det = mat[0 * 5 + 0] * c0 + mat[0 * 5 + 1] * c1 + mat[0 * 5 + 2] * c2;
+                det = mat_[0 * 5 + 0] * c0 + mat_[0 * 5 + 1] * c1 + mat_[0 * 5 + 2] * c2;
                 if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                     return false;
 
                 invDet = 1f / det;
 
                 r0.mat0.x = c0 * invDet;
-                r0.mat0.y = (mat[0 * 5 + 2] * mat[2 * 5 + 1] - mat[0 * 5 + 1] * mat[2 * 5 + 2]) * invDet;
-                r0.mat0.z = (mat[0 * 5 + 1] * mat[1 * 5 + 2] - mat[0 * 5 + 2] * mat[1 * 5 + 1]) * invDet;
+                r0.mat0.y = (mat_[0 * 5 + 2] * mat_[2 * 5 + 1] - mat_[0 * 5 + 1] * mat_[2 * 5 + 2]) * invDet;
+                r0.mat0.z = (mat_[0 * 5 + 1] * mat_[1 * 5 + 2] - mat_[0 * 5 + 2] * mat_[1 * 5 + 1]) * invDet;
                 r0.mat1.x = c1 * invDet;
-                r0.mat1.y = (mat[0 * 5 + 0] * mat[2 * 5 + 2] - mat[0 * 5 + 2] * mat[2 * 5 + 0]) * invDet;
-                r0.mat1.z = (mat[0 * 5 + 2] * mat[1 * 5 + 0] - mat[0 * 5 + 0] * mat[1 * 5 + 2]) * invDet;
+                r0.mat1.y = (mat_[0 * 5 + 0] * mat_[2 * 5 + 2] - mat_[0 * 5 + 2] * mat_[2 * 5 + 0]) * invDet;
+                r0.mat1.z = (mat_[0 * 5 + 2] * mat_[1 * 5 + 0] - mat_[0 * 5 + 0] * mat_[1 * 5 + 2]) * invDet;
                 r0.mat2.x = c2 * invDet;
-                r0.mat2.y = (mat[0 * 5 + 1] * mat[2 * 5 + 0] - mat[0 * 5 + 0] * mat[2 * 5 + 1]) * invDet;
-                r0.mat2.z = (mat[0 * 5 + 0] * mat[1 * 5 + 1] - mat[0 * 5 + 1] * mat[1 * 5 + 0]) * invDet;
+                r0.mat2.y = (mat_[0 * 5 + 1] * mat_[2 * 5 + 0] - mat_[0 * 5 + 0] * mat_[2 * 5 + 1]) * invDet;
+                r0.mat2.z = (mat_[0 * 5 + 0] * mat_[1 * 5 + 1] - mat_[0 * 5 + 1] * mat_[1 * 5 + 0]) * invDet;
 
                 // r1 = r0 * m1;		// 3x2 = 3x3 * 3x2
-                r1.mat0.x = r0.mat0.x * mat[0 * 5 + 3] + r0.mat0.y * mat[1 * 5 + 3] + r0.mat0.z * mat[2 * 5 + 3];
-                r1.mat0.y = r0.mat0.x * mat[0 * 5 + 4] + r0.mat0.y * mat[1 * 5 + 4] + r0.mat0.z * mat[2 * 5 + 4];
-                r1.mat1.x = r0.mat1.x * mat[0 * 5 + 3] + r0.mat1.y * mat[1 * 5 + 3] + r0.mat1.z * mat[2 * 5 + 3];
-                r1.mat1.y = r0.mat1.x * mat[0 * 5 + 4] + r0.mat1.y * mat[1 * 5 + 4] + r0.mat1.z * mat[2 * 5 + 4];
-                r1.mat2.x = r0.mat2.x * mat[0 * 5 + 3] + r0.mat2.y * mat[1 * 5 + 3] + r0.mat2.z * mat[2 * 5 + 3];
-                r1.mat2.y = r0.mat2.x * mat[0 * 5 + 4] + r0.mat2.y * mat[1 * 5 + 4] + r0.mat2.z * mat[2 * 5 + 4];
+                r1.mat0.x = r0.mat0.x * mat_[0 * 5 + 3] + r0.mat0.y * mat_[1 * 5 + 3] + r0.mat0.z * mat_[2 * 5 + 3];
+                r1.mat0.y = r0.mat0.x * mat_[0 * 5 + 4] + r0.mat0.y * mat_[1 * 5 + 4] + r0.mat0.z * mat_[2 * 5 + 4];
+                r1.mat1.x = r0.mat1.x * mat_[0 * 5 + 3] + r0.mat1.y * mat_[1 * 5 + 3] + r0.mat1.z * mat_[2 * 5 + 3];
+                r1.mat1.y = r0.mat1.x * mat_[0 * 5 + 4] + r0.mat1.y * mat_[1 * 5 + 4] + r0.mat1.z * mat_[2 * 5 + 4];
+                r1.mat2.x = r0.mat2.x * mat_[0 * 5 + 3] + r0.mat2.y * mat_[1 * 5 + 3] + r0.mat2.z * mat_[2 * 5 + 3];
+                r1.mat2.y = r0.mat2.x * mat_[0 * 5 + 4] + r0.mat2.y * mat_[1 * 5 + 4] + r0.mat2.z * mat_[2 * 5 + 4];
 
                 // r2 = m2 * r1;		// 2x2 = 2x3 * 3x2
-                r2.mat0.x = mat[3 * 5 + 0] * r1.mat0.x + mat[3 * 5 + 1] * r1.mat1.x + mat[3 * 5 + 2] * r1.mat2.x;
-                r2.mat0.y = mat[3 * 5 + 0] * r1.mat0.y + mat[3 * 5 + 1] * r1.mat1.y + mat[3 * 5 + 2] * r1.mat2.y;
-                r2.mat1.x = mat[4 * 5 + 0] * r1.mat0.x + mat[4 * 5 + 1] * r1.mat1.x + mat[4 * 5 + 2] * r1.mat2.x;
-                r2.mat1.y = mat[4 * 5 + 0] * r1.mat0.y + mat[4 * 5 + 1] * r1.mat1.y + mat[4 * 5 + 2] * r1.mat2.y;
+                r2.mat0.x = mat_[3 * 5 + 0] * r1.mat0.x + mat_[3 * 5 + 1] * r1.mat1.x + mat_[3 * 5 + 2] * r1.mat2.x;
+                r2.mat0.y = mat_[3 * 5 + 0] * r1.mat0.y + mat_[3 * 5 + 1] * r1.mat1.y + mat_[3 * 5 + 2] * r1.mat2.y;
+                r2.mat1.x = mat_[4 * 5 + 0] * r1.mat0.x + mat_[4 * 5 + 1] * r1.mat1.x + mat_[4 * 5 + 2] * r1.mat2.x;
+                r2.mat1.y = mat_[4 * 5 + 0] * r1.mat0.y + mat_[4 * 5 + 1] * r1.mat1.y + mat_[4 * 5 + 2] * r1.mat2.y;
 
                 // r3 = r2 - m3;		// 2x2 = 2x2 - 2x2
-                r3.mat0.x = r2.mat0.x - mat[3 * 5 + 3];
-                r3.mat0.y = r2.mat0.y - mat[3 * 5 + 4];
-                r3.mat1.x = r2.mat1.x - mat[4 * 5 + 3];
-                r3.mat1.y = r2.mat1.y - mat[4 * 5 + 4];
+                r3.mat0.x = r2.mat0.x - mat_[3 * 5 + 3];
+                r3.mat0.y = r2.mat0.y - mat_[3 * 5 + 4];
+                r3.mat1.x = r2.mat1.x - mat_[4 * 5 + 3];
+                r3.mat1.y = r2.mat1.y - mat_[4 * 5 + 4];
 
                 // r3.InverseSelf();	// 2x2
                 det = r3.mat0.x * r3.mat1.y - r3.mat0.y * r3.mat1.x;
@@ -1623,55 +1807,56 @@ namespace System.NumericsX
                 r3.mat1[1] = c0 * invDet;
 
                 // r2 = m2 * r0;		// 2x3 = 2x3 * 3x3
-                r2.mat0[0] = mat[3 * 5 + 0] * r0.mat0.x + mat[3 * 5 + 1] * r0.mat1.x + mat[3 * 5 + 2] * r0.mat2.x;
-                r2.mat0[1] = mat[3 * 5 + 0] * r0.mat0.y + mat[3 * 5 + 1] * r0.mat1.y + mat[3 * 5 + 2] * r0.mat2.y;
-                r2.mat0[2] = mat[3 * 5 + 0] * r0.mat0.z + mat[3 * 5 + 1] * r0.mat1.z + mat[3 * 5 + 2] * r0.mat2.z;
-                r2.mat1[0] = mat[4 * 5 + 0] * r0.mat0.x + mat[4 * 5 + 1] * r0.mat1.x + mat[4 * 5 + 2] * r0.mat2.x;
-                r2.mat1[1] = mat[4 * 5 + 0] * r0.mat0.y + mat[4 * 5 + 1] * r0.mat1.y + mat[4 * 5 + 2] * r0.mat2.y;
-                r2.mat1[2] = mat[4 * 5 + 0] * r0.mat0.z + mat[4 * 5 + 1] * r0.mat1.z + mat[4 * 5 + 2] * r0.mat2.z;
+                r2.mat0[0] = mat_[3 * 5 + 0] * r0.mat0.x + mat_[3 * 5 + 1] * r0.mat1.x + mat_[3 * 5 + 2] * r0.mat2.x;
+                r2.mat0[1] = mat_[3 * 5 + 0] * r0.mat0.y + mat_[3 * 5 + 1] * r0.mat1.y + mat_[3 * 5 + 2] * r0.mat2.y;
+                r2.mat0[2] = mat_[3 * 5 + 0] * r0.mat0.z + mat_[3 * 5 + 1] * r0.mat1.z + mat_[3 * 5 + 2] * r0.mat2.z;
+                r2.mat1[0] = mat_[4 * 5 + 0] * r0.mat0.x + mat_[4 * 5 + 1] * r0.mat1.x + mat_[4 * 5 + 2] * r0.mat2.x;
+                r2.mat1[1] = mat_[4 * 5 + 0] * r0.mat0.y + mat_[4 * 5 + 1] * r0.mat1.y + mat_[4 * 5 + 2] * r0.mat2.y;
+                r2.mat1[2] = mat_[4 * 5 + 0] * r0.mat0.z + mat_[4 * 5 + 1] * r0.mat1.z + mat_[4 * 5 + 2] * r0.mat2.z;
 
                 // m2 = r3 * r2;		// 2x3 = 2x2 * 2x3
-                mat[3 * 5 + 0] = r3.mat0.x * r2.mat0.x + r3.mat0.y * r2.mat1.x;
-                mat[3 * 5 + 1] = r3.mat0.x * r2.mat0.y + r3.mat0.y * r2.mat1.y;
-                mat[3 * 5 + 2] = r3.mat0.x * r2.mat0.z + r3.mat0.y * r2.mat1.z;
-                mat[4 * 5 + 0] = r3.mat1.x * r2.mat0.x + r3.mat1.y * r2.mat1.x;
-                mat[4 * 5 + 1] = r3.mat1.x * r2.mat0.y + r3.mat1.y * r2.mat1.y;
-                mat[4 * 5 + 2] = r3.mat1.x * r2.mat0.z + r3.mat1.y * r2.mat1.z;
+                mat_[3 * 5 + 0] = r3.mat0.x * r2.mat0.x + r3.mat0.y * r2.mat1.x;
+                mat_[3 * 5 + 1] = r3.mat0.x * r2.mat0.y + r3.mat0.y * r2.mat1.y;
+                mat_[3 * 5 + 2] = r3.mat0.x * r2.mat0.z + r3.mat0.y * r2.mat1.z;
+                mat_[4 * 5 + 0] = r3.mat1.x * r2.mat0.x + r3.mat1.y * r2.mat1.x;
+                mat_[4 * 5 + 1] = r3.mat1.x * r2.mat0.y + r3.mat1.y * r2.mat1.y;
+                mat_[4 * 5 + 2] = r3.mat1.x * r2.mat0.z + r3.mat1.y * r2.mat1.z;
 
                 // m0 = r0 - r1 * m2;	// 3x3 = 3x3 - 3x2 * 2x3
-                mat[0 * 5 + 0] = r0.mat0.x - r1.mat0[0] * mat[3 * 5 + 0] - r1.mat0.y * mat[4 * 5 + 0];
-                mat[0 * 5 + 1] = r0.mat0.y - r1.mat0[0] * mat[3 * 5 + 1] - r1.mat0.y * mat[4 * 5 + 1];
-                mat[0 * 5 + 2] = r0.mat0.z - r1.mat0[0] * mat[3 * 5 + 2] - r1.mat0.y * mat[4 * 5 + 2];
-                mat[1 * 5 + 0] = r0.mat1.x - r1.mat1[0] * mat[3 * 5 + 0] - r1.mat1.y * mat[4 * 5 + 0];
-                mat[1 * 5 + 1] = r0.mat1.y - r1.mat1[0] * mat[3 * 5 + 1] - r1.mat1.y * mat[4 * 5 + 1];
-                mat[1 * 5 + 2] = r0.mat1.z - r1.mat1[0] * mat[3 * 5 + 2] - r1.mat1.y * mat[4 * 5 + 2];
-                mat[2 * 5 + 0] = r0.mat2.x - r1.mat2[0] * mat[3 * 5 + 0] - r1.mat2.y * mat[4 * 5 + 0];
-                mat[2 * 5 + 1] = r0.mat2.y - r1.mat2[0] * mat[3 * 5 + 1] - r1.mat2.y * mat[4 * 5 + 1];
-                mat[2 * 5 + 2] = r0.mat2.z - r1.mat2[0] * mat[3 * 5 + 2] - r1.mat2.y * mat[4 * 5 + 2];
+                mat_[0 * 5 + 0] = r0.mat0.x - r1.mat0[0] * mat_[3 * 5 + 0] - r1.mat0.y * mat_[4 * 5 + 0];
+                mat_[0 * 5 + 1] = r0.mat0.y - r1.mat0[0] * mat_[3 * 5 + 1] - r1.mat0.y * mat_[4 * 5 + 1];
+                mat_[0 * 5 + 2] = r0.mat0.z - r1.mat0[0] * mat_[3 * 5 + 2] - r1.mat0.y * mat_[4 * 5 + 2];
+                mat_[1 * 5 + 0] = r0.mat1.x - r1.mat1[0] * mat_[3 * 5 + 0] - r1.mat1.y * mat_[4 * 5 + 0];
+                mat_[1 * 5 + 1] = r0.mat1.y - r1.mat1[0] * mat_[3 * 5 + 1] - r1.mat1.y * mat_[4 * 5 + 1];
+                mat_[1 * 5 + 2] = r0.mat1.z - r1.mat1[0] * mat_[3 * 5 + 2] - r1.mat1.y * mat_[4 * 5 + 2];
+                mat_[2 * 5 + 0] = r0.mat2.x - r1.mat2[0] * mat_[3 * 5 + 0] - r1.mat2.y * mat_[4 * 5 + 0];
+                mat_[2 * 5 + 1] = r0.mat2.y - r1.mat2[0] * mat_[3 * 5 + 1] - r1.mat2.y * mat_[4 * 5 + 1];
+                mat_[2 * 5 + 2] = r0.mat2.z - r1.mat2[0] * mat_[3 * 5 + 2] - r1.mat2.y * mat_[4 * 5 + 2];
 
                 // m1 = r1 * r3;		// 3x2 = 3x2 * 2x2
-                mat[0 * 5 + 3] = r1.mat0.x * r3.mat0.x + r1.mat0.y * r3.mat1.x;
-                mat[0 * 5 + 4] = r1.mat0.x * r3.mat0.y + r1.mat0.y * r3.mat1.y;
-                mat[1 * 5 + 3] = r1.mat1.x * r3.mat0.x + r1.mat1.y * r3.mat1.x;
-                mat[1 * 5 + 4] = r1.mat1.x * r3.mat0.y + r1.mat1.y * r3.mat1.y;
-                mat[2 * 5 + 3] = r1.mat2.x * r3.mat0.x + r1.mat2.y * r3.mat1.x;
-                mat[2 * 5 + 4] = r1.mat2.x * r3.mat0.y + r1.mat2.y * r3.mat1.y;
+                mat_[0 * 5 + 3] = r1.mat0.x * r3.mat0.x + r1.mat0.y * r3.mat1.x;
+                mat_[0 * 5 + 4] = r1.mat0.x * r3.mat0.y + r1.mat0.y * r3.mat1.y;
+                mat_[1 * 5 + 3] = r1.mat1.x * r3.mat0.x + r1.mat1.y * r3.mat1.x;
+                mat_[1 * 5 + 4] = r1.mat1.x * r3.mat0.y + r1.mat1.y * r3.mat1.y;
+                mat_[2 * 5 + 3] = r1.mat2.x * r3.mat0.x + r1.mat2.y * r3.mat1.x;
+                mat_[2 * 5 + 4] = r1.mat2.x * r3.mat0.y + r1.mat2.y * r3.mat1.y;
 
                 // m3 = -r3;			// 2x2 = - 2x2
-                mat[3 * 5 + 3] = -r3.mat0.x;
-                mat[3 * 5 + 4] = -r3.mat0.y;
-                mat[4 * 5 + 3] = -r3.mat1.x;
-                mat[4 * 5 + 4] = -r3.mat1.y;
+                mat_[3 * 5 + 3] = -r3.mat0.x;
+                mat_[3 * 5 + 4] = -r3.mat0.y;
+                mat_[4 * 5 + 3] = -r3.mat1.x;
+                mat_[4 * 5 + 4] = -r3.mat1.y;
             }
 
             return true;
         }
 
-        public static int Dimension
-            => 25;
+        public const int Dimension = 25;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat0.ToFloatPtr(callback);
+
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
     }
@@ -1681,6 +1866,7 @@ namespace System.NumericsX
     {
         public static Matrix6x6 zero = new(new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0));
         public static Matrix6x6 identity = new(new Vector6(1, 0, 0, 0, 0, 0), new Vector6(0, 1, 0, 0, 0, 0), new Vector6(0, 0, 1, 0, 0, 0), new Vector6(0, 0, 0, 1, 0, 0), new Vector6(0, 0, 0, 0, 1, 0), new Vector6(0, 0, 0, 0, 0, 1));
+
         internal Vector6 mat0;
         internal Vector6 mat1;
         internal Vector6 mat2;
@@ -1688,8 +1874,10 @@ namespace System.NumericsX
         internal Vector6 mat4;
         internal Vector6 mat5;
 
-        public Matrix6x6(Matrix6x6 a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Matrix6x6(ref Matrix6x6 a)
             => this = a;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix6x6(Vector6 v0, Vector6 v1, Vector6 v2, Vector6 v3, Vector6 v4, Vector6 v5)
         {
             mat0 = v0;
@@ -1699,7 +1887,18 @@ namespace System.NumericsX
             mat4 = v4;
             mat5 = v5;
         }
-        public Matrix6x6(Matrix3x3 m0, Matrix3x3 m1, Matrix3x3 m2, Matrix3x3 m3)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Matrix6x6(ref Vector6 v0, ref Vector6 v1, ref Vector6 v2, ref Vector6 v3, ref Vector6 v4, ref Vector6 v5)
+        {
+            mat0 = v0;
+            mat1 = v1;
+            mat2 = v2;
+            mat3 = v3;
+            mat4 = v4;
+            mat5 = v5;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Matrix6x6(ref Matrix3x3 m0, ref Matrix3x3 m1, ref Matrix3x3 m2, ref Matrix3x3 m3)
         {
             mat0 = new Vector6(m0.mat0.x, m0.mat0.y, m0.mat0.z, m1.mat0.x, m1.mat0.y, m1.mat0.z);
             mat1 = new Vector6(m0.mat1.x, m0.mat1.y, m0.mat1.z, m1.mat1.x, m1.mat1.y, m1.mat1.z);
@@ -1708,6 +1907,14 @@ namespace System.NumericsX
             mat4 = new Vector6(m2.mat1.x, m2.mat1.y, m2.mat1.z, m3.mat1.x, m3.mat1.y, m3.mat1.z);
             mat5 = new Vector6(m2.mat2.x, m2.mat2.y, m2.mat2.z, m3.mat2.x, m3.mat2.y, m3.mat2.z);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe Matrix6x6(float[] src)
+        {
+            this = default;
+            fixed (void* mat_ = &mat0, src_ = src)
+                Unsafe.CopyBlock(mat_, src_, 6U * 6U * sizeof(float));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe Matrix6x6(float[,] src)
         {
             this = default;
@@ -1723,6 +1930,7 @@ namespace System.NumericsX
 
         public unsafe ref Vector6 this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (Vector6* mat_ = &mat0)
@@ -1730,6 +1938,7 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix6x6 operator *(Matrix6x6 _, float a)
             => new(
             new Vector6(_.mat0[0] * a, _.mat0[1] * a, _.mat0[2] * a, _.mat0[3] * a, _.mat0[4] * a, _.mat0[5] * a),
@@ -1738,7 +1947,7 @@ namespace System.NumericsX
             new Vector6(_.mat3[0] * a, _.mat3[1] * a, _.mat3[2] * a, _.mat3[3] * a, _.mat3[4] * a, _.mat3[5] * a),
             new Vector6(_.mat4[0] * a, _.mat4[1] * a, _.mat4[2] * a, _.mat4[3] * a, _.mat4[4] * a, _.mat4[5] * a),
             new Vector6(_.mat5[0] * a, _.mat5[1] * a, _.mat5[2] * a, _.mat5[3] * a, _.mat5[4] * a, _.mat5[5] * a));
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector6 operator *(Matrix6x6 _, Vector6 vec)
             => new(
             _.mat0[0] * vec[0] + _.mat0[1] * vec[1] + _.mat0[2] * vec[2] + _.mat0[3] * vec[3] + _.mat0[4] * vec[4] + _.mat0[5] * vec[5],
@@ -1747,6 +1956,7 @@ namespace System.NumericsX
             _.mat3[0] * vec[0] + _.mat3[1] * vec[1] + _.mat3[2] * vec[2] + _.mat3[3] * vec[3] + _.mat3[4] * vec[4] + _.mat3[5] * vec[5],
             _.mat4[0] * vec[0] + _.mat4[1] * vec[1] + _.mat4[2] * vec[2] + _.mat4[3] * vec[3] + _.mat4[4] * vec[4] + _.mat4[5] * vec[5],
             _.mat5[0] * vec[0] + _.mat5[1] * vec[1] + _.mat5[2] * vec[2] + _.mat5[3] * vec[3] + _.mat5[4] * vec[4] + _.mat5[5] * vec[5]);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe Matrix6x6 operator *(Matrix6x6 _, Matrix6x6 a)
         {
             Matrix6x6 dst = default;
@@ -1772,6 +1982,7 @@ namespace System.NumericsX
                 return dst;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix6x6 operator +(Matrix6x6 _, Matrix6x6 a)
             => new(
             new Vector6(_.mat0[0] + a.mat0[0], _.mat0[1] + a.mat0[1], _.mat0[2] + a.mat0[2], _.mat0[3] + a.mat0[3], _.mat0[4] + a.mat0[4], _.mat0[5] + a.mat0[5]),
@@ -1780,6 +1991,7 @@ namespace System.NumericsX
             new Vector6(_.mat3[0] + a.mat3[0], _.mat3[1] + a.mat3[1], _.mat3[2] + a.mat3[2], _.mat3[3] + a.mat3[3], _.mat3[4] + a.mat3[4], _.mat3[5] + a.mat3[5]),
             new Vector6(_.mat4[0] + a.mat4[0], _.mat4[1] + a.mat4[1], _.mat4[2] + a.mat4[2], _.mat4[3] + a.mat4[3], _.mat4[4] + a.mat4[4], _.mat4[5] + a.mat4[5]),
             new Vector6(_.mat5[0] + a.mat5[0], _.mat5[1] + a.mat5[1], _.mat5[2] + a.mat5[2], _.mat5[3] + a.mat5[3], _.mat5[4] + a.mat5[4], _.mat5[5] + a.mat5[5]));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix6x6 operator -(Matrix6x6 _, Matrix6x6 a)
             => new(
             new Vector6(_.mat0[0] - a.mat0[0], _.mat0[1] - a.mat0[1], _.mat0[2] - a.mat0[2], _.mat0[3] - a.mat0[3], _.mat0[4] - a.mat0[4], _.mat0[5] - a.mat0[5]),
@@ -1788,16 +2000,17 @@ namespace System.NumericsX
             new Vector6(_.mat3[0] - a.mat3[0], _.mat3[1] - a.mat3[1], _.mat3[2] - a.mat3[2], _.mat3[3] - a.mat3[3], _.mat3[4] - a.mat3[4], _.mat3[5] - a.mat3[5]),
             new Vector6(_.mat4[0] - a.mat4[0], _.mat4[1] - a.mat4[1], _.mat4[2] - a.mat4[2], _.mat4[3] - a.mat4[3], _.mat4[4] - a.mat4[4], _.mat4[5] - a.mat4[5]),
             new Vector6(_.mat5[0] - a.mat5[0], _.mat5[1] - a.mat5[1], _.mat5[2] - a.mat5[2], _.mat5[3] - a.mat5[3], _.mat5[4] - a.mat5[4], _.mat5[5] - a.mat5[5]));
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix6x6 operator *(float a, Matrix6x6 mat)
             => mat * a;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector6 operator *(Vector6 vec, Matrix6x6 mat)
             => mat * vec;
 
-        public unsafe bool Compare(Matrix6x6 a)                       // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe bool Compare(ref Matrix6x6 a)                       // exact compare, no epsilon
         {
-            void* a_ = &a.mat0;
-            fixed (void* mat_ = &mat0)
+            fixed (void* mat_ = &mat0, a_ = &a.mat0)
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
@@ -1807,10 +2020,10 @@ namespace System.NumericsX
                 return true;
             }
         }
-        public unsafe bool Compare(Matrix6x6 a, float epsilon)  // compare with epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe bool Compare(ref Matrix6x6 a, float epsilon)  // compare with epsilon
         {
-            void* a_ = &a.mat0;
-            fixed (void* mat_ = &mat0)
+            fixed (void* mat_ = &mat0, a_ = &a.mat0)
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
@@ -1820,27 +2033,33 @@ namespace System.NumericsX
                 return true;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Matrix6x6 _, Matrix6x6 a)                   // exact compare, no epsilon
-                => _.Compare(a);
+            => _.Compare(ref a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Matrix6x6 _, Matrix6x6 a)                   // exact compare, no epsilon
-            => !_.Compare(a);
+            => !_.Compare(ref a);
         public override bool Equals(object obj)
-            => obj is Matrix6x6 q && Compare(q);
+            => obj is Matrix6x6 q && Compare(ref q);
         public override int GetHashCode()
             => mat0.GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void Zero()
         {
             fixed (void* mat_ = &mat0)
                 Unsafe.InitBlock(mat_, 0, 6U * (uint)sizeof(Vector6));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Identity()
-            => this = new(identity);
+            => this = new(ref identity);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsIdentity(float epsilon = MatrixX.EPSILON)
-            => Compare(identity, epsilon);
+            => Compare(ref identity, epsilon);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
         {
             for (var i = 1; i < 6; i++)
@@ -1850,6 +2069,7 @@ namespace System.NumericsX
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
         {
             for (var i = 0; i < 6; i++)
@@ -1859,6 +2079,7 @@ namespace System.NumericsX
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3 SubMat3(int n)
         {
             Debug.Assert(n >= 0 && n < 4);
@@ -1870,8 +2091,11 @@ namespace System.NumericsX
                 this[b0 + 2][b1 + 0], this[b0 + 2][b1 + 1], this[b0 + 2][b1 + 2]);
         }
 
-        public float Trace()
-            => mat0[0] + mat1[1] + mat2[2] + mat3[3] + mat4[4] + mat5[5];
+        public float Trace
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => mat0[0] + mat1[1] + mat2[2] + mat3[3] + mat4[4] + mat5[5];
+        }
 
         public float Determinant()
         {
@@ -1940,8 +2164,12 @@ namespace System.NumericsX
             var det5_12345_12345 = mat1[1] * det4_2345_2345 - mat1[2] * det4_2345_1345 + mat1[3] * det4_2345_1245 - mat1[4] * det4_2345_1235 + mat1[5] * det4_2345_1234;
 
             // determinant of 6x6 matrix
-            return mat0[0] * det5_12345_12345 - mat0[1] * det5_12345_02345 + mat0[2] * det5_12345_01345 -
-                    mat0[3] * det5_12345_01245 + mat0[4] * det5_12345_01235 - mat0[5] * det5_12345_01234;
+            return mat0[0] * det5_12345_12345
+                 - mat0[1] * det5_12345_02345
+                 + mat0[2] * det5_12345_01345
+                 - mat0[3] * det5_12345_01245
+                 + mat0[4] * det5_12345_01235
+                 - mat0[5] * det5_12345_01234;
         }
 
         public Matrix6x6 Transpose()   // returns transpose
@@ -1964,9 +2192,10 @@ namespace System.NumericsX
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix6x6 Inverse()     // returns the inverse ( m * m.Inverse() = identity )
         {
-            Matrix6x6 invMat = new(this);
+            Matrix6x6 invMat = new(ref this);
             var r = invMat.InverseSelf();
             Debug.Assert(r);
             return invMat;
@@ -2042,7 +2271,13 @@ namespace System.NumericsX
             var det5_12345_12345 = mat1[1] * det4_2345_2345 - mat1[2] * det4_2345_1345 + mat1[3] * det4_2345_1245 - mat1[4] * det4_2345_1235 + mat1[5] * det4_2345_1234;
 
             // determinant of 6x6 matrix
-            det = mat0[0] * det5_12345_12345 - mat0[1] * det5_12345_02345 + mat0[2] * det5_12345_01345 - mat0[3] * det5_12345_01245 + mat0[4] * det5_12345_01235 - mat0[5] * det5_12345_01234;
+            det = mat0[0] * det5_12345_12345
+                - mat0[1] * det5_12345_02345
+                + mat0[2] * det5_12345_01345
+                - mat0[3] * det5_12345_01245
+                + mat0[4] * det5_12345_01235
+                - mat0[5] * det5_12345_01234;
+
             if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
                 return false;
 
@@ -2246,9 +2481,10 @@ namespace System.NumericsX
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix6x6 InverseFast() // returns the inverse ( m * m.Inverse() = identity )
         {
-            Matrix6x6 invMat = new(this);
+            Matrix6x6 invMat = new(ref this);
             var r = invMat.InverseFastSelf();
             Debug.Assert(r);
             return invMat;
@@ -2402,49 +2638,38 @@ namespace System.NumericsX
             return true;
         }
 
-        public static int Dimension
-            => 36;
+        public const int Dimension = 36;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
             => mat0.ToFloatPtr(callback);
+
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
     }
 
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Sequential)]
     public partial struct MatrixX
     {
-        public const float INVERSE_EPSILON = 1e-14F;
-        public const float EPSILON = 1e-6F;
-
         const int MATX_MAX_TEMP = 1024;
         static int MATX_QUAD(int x) => ((x) + 3) & ~3;
         void MATX_CLEAREND() { int s = numRows * numColumns; while (s < ((s + 3) & ~3)) { mat[s++] = 0f; } }
         internal static float[] MATX_ALLOCA(int n) => new float[MATX_QUAD(n)];
+
+        public const float INVERSE_EPSILON = 1e-14F;
+        public const float EPSILON = 1e-6F;
+
         static float[] temp; // = new float[MATX_MAX_TEMP + 4];   // used to store intermediate results
                              // static float[] tempPtr = temp; //(float*)(((intptr_t)idMatX::temp + 15) & ~15);              // pointer to 16 byte aligned temporary memory
         static int tempIndex = 0;                   // index into memory pool, wraps around
 
-        [FieldOffset(0)] internal float[] mat;               // memory the matrix is stored
-        [FieldOffset(8)] int numRows;               // number of rows
-        [FieldOffset(12)] int numColumns;           // number of columns
-        [FieldOffset(16)] int alloced;              // floats allocated, if -1 then mat points to data set with SetData
+        internal float[] mat;               // memory the matrix is stored
+        int numRows;               // number of rows
+        int numColumns;           // number of columns
+        int alloced;              // floats allocated, if -1 then mat points to data set with SetData
 
-        void SetTempSize(int rows, int columns)
-        {
-            var newSize = (rows * columns + 3) & ~3;
-            Debug.Assert(newSize < MATX_MAX_TEMP);
-            if (tempIndex + newSize > MATX_MAX_TEMP)
-                tempIndex = 0;
-            mat = new float[newSize]; // tempPtr + tempIndex;
-            tempIndex += newSize;
-            alloced = newSize;
-            numRows = rows;
-            numColumns = columns;
-            MATX_CLEAREND();
-        }
-
-        public unsafe MatrixX(MatrixX a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe MatrixX(ref MatrixX a)
         {
             numRows = numColumns = alloced = 0;
             mat = null;
@@ -2457,17 +2682,14 @@ namespace System.NumericsX
 #endif
             tempIndex = 0;
         }
-        //public MatrixX()
-        //{
-        //    numRows = numColumns = alloced = 0;
-        //    mat = null;
-        //}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public MatrixX(int rows, int columns)
         {
             numRows = numColumns = alloced = 0;
             mat = null;
             SetSize(rows, columns);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public MatrixX(int rows, int columns, float[] src)
         {
             numRows = numColumns = alloced = 0;
@@ -2475,13 +2697,15 @@ namespace System.NumericsX
             SetData(rows, columns, src);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void Set(int rows, int columns, float[] src)
         {
             SetSize(rows, columns);
             fixed (void* mat = this.mat, src_ = src)
                 Unsafe.CopyBlock(mat, src_, (uint)(rows * columns * sizeof(float)));
         }
-        public void Set(Matrix3x3 m1, Matrix3x3 m2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Set(ref Matrix3x3 m1, ref Matrix3x3 m2)
         {
             SetSize(3, 6);
             for (var i = 0; i < 3; i++)
@@ -2491,7 +2715,8 @@ namespace System.NumericsX
                     mat[(i + 0) * numColumns + (j + 3)] = m2[i][j];
                 }
         }
-        public void Set(Matrix3x3 m1, Matrix3x3 m2, Matrix3x3 m3, Matrix3x3 m4)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Set(ref Matrix3x3 m1, ref Matrix3x3 m2, ref Matrix3x3 m3, ref Matrix3x3 m4)
         {
             SetSize(6, 6);
             for (var i = 0; i < 3; i++)
@@ -2506,6 +2731,7 @@ namespace System.NumericsX
 
         public Span<float> this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 Debug.Assert(index >= 0 && index < numRows);
@@ -2513,6 +2739,7 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MatrixX operator *(MatrixX _, float a)
         {
             var m = new MatrixX();
@@ -2526,6 +2753,7 @@ namespace System.NumericsX
 #endif
             return m;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static VectorX operator *(MatrixX _, VectorX vec)
         {
             Debug.Assert(_.numColumns == vec.Size);
@@ -2534,10 +2762,11 @@ namespace System.NumericsX
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplyVecX(dst, *this, vec);
 #else
-            _.Multiply(dst, vec);
+            _.Multiply(ref dst, ref vec);
 #endif
             return dst;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MatrixX operator *(MatrixX _, MatrixX a)
         {
             Debug.Assert(_.numColumns == a.numRows);
@@ -2546,10 +2775,11 @@ namespace System.NumericsX
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplyMatX(dst, *this, a);
 #else
-            _.Multiply(dst, a);
+            _.Multiply(ref dst, ref a);
 #endif
             return dst;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MatrixX operator +(MatrixX _, MatrixX a)
         {
             Debug.Assert(_.numRows == a.numRows && _.numColumns == a.numColumns);
@@ -2564,6 +2794,7 @@ namespace System.NumericsX
 #endif
             return m;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MatrixX operator -(MatrixX _, MatrixX a)
         {
             Debug.Assert(_.numRows == a.numRows && _.numColumns == a.numColumns);
@@ -2578,13 +2809,15 @@ namespace System.NumericsX
 #endif
             return m;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MatrixX operator *(float a, MatrixX m)
-            => m * a;
+        => m * a;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static VectorX operator *(VectorX vec, MatrixX m)
-            => m * vec;
+        => m * vec;
 
-        public bool Compare(MatrixX a)                             // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref MatrixX a)                             // exact compare, no epsilon
         {
             Debug.Assert(numRows == a.numRows && numColumns == a.numColumns);
             var s = numRows * numColumns;
@@ -2593,7 +2826,8 @@ namespace System.NumericsX
                     return false;
             return true;
         }
-        public bool Compare(MatrixX a, float epsilon)            // compare with epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref MatrixX a, float epsilon)            // compare with epsilon
         {
             Debug.Assert(numRows == a.numRows && numColumns == a.numColumns);
             var s = numRows * numColumns;
@@ -2602,15 +2836,18 @@ namespace System.NumericsX
                     return false;
             return true;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(MatrixX _, MatrixX a)                         // exact compare, no epsilon
-            => _.Compare(a);
+        => _.Compare(ref a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(MatrixX _, MatrixX a)                         // exact compare, no epsilon
-            => !_.Compare(a);
+        => !_.Compare(ref a);
         public override bool Equals(object obj)
-            => obj is MatrixX q && Compare(q);
+            => obj is MatrixX q && Compare(ref q);
         public override int GetHashCode()
             => base.GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetSize(int rows, int columns)                                // set the number of rows/columns
         {
             //Debug.Assert(mat < tempPtr || mat > tempPtr + MATX_MAX_TEMP);
@@ -2624,6 +2861,22 @@ namespace System.NumericsX
             numColumns = columns;
             MATX_CLEAREND();
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void SetTempSize(int rows, int columns)
+        {
+            var newSize = (rows * columns + 3) & ~3;
+            Debug.Assert(newSize < MATX_MAX_TEMP);
+            if (tempIndex + newSize > MATX_MAX_TEMP)
+                tempIndex = 0;
+            mat = new float[newSize]; // tempPtr + tempIndex;
+            tempIndex += newSize;
+            alloced = newSize;
+            numRows = rows;
+            numColumns = columns;
+            MATX_CLEAREND();
+        }
+
         public void ChangeSize(int rows, int columns, bool makeZero = false)      // change the size keeping data intact where possible
         {
             var alloc = (rows * columns + 3) & ~3;
@@ -2670,6 +2923,7 @@ namespace System.NumericsX
         public int NumRows => numRows;                    // get the number of rows
         public int NumColumns => numColumns;              // get the number of columns
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetData(int rows, int columns, float[] data)                   // set float array pointer
         {
             //Debug.Assert(mat < tempPtr || mat > tempPtr + MATX_MAX_TEMP);
@@ -2681,6 +2935,7 @@ namespace System.NumericsX
             MATX_CLEAREND();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void Zero()                                                   // clear matrix
         {
 #if MATX_SIMD
@@ -2690,6 +2945,7 @@ namespace System.NumericsX
                 Unsafe.InitBlock(mat, 0, (uint)(numRows * numColumns * sizeof(float)));
 #endif
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void Zero(int rows, int columns)                                   // set size and clear matrix
         {
             SetSize(rows, columns);
@@ -2701,6 +2957,7 @@ namespace System.NumericsX
 #endif
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void Identity()                                               // clear to identity matrix
         {
             Debug.Assert(numRows == numColumns);
@@ -2713,6 +2970,7 @@ namespace System.NumericsX
             for (var i = 0; i < numRows; i++)
                 mat[i * numColumns + i] = 1f;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Identity(int rows, int columns)                               // set size and clear to identity matrix
         {
             Debug.Assert(rows == columns);
@@ -2720,6 +2978,7 @@ namespace System.NumericsX
             Identity();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Diag(VectorX v)                                      // create diagonal matrix from vector
         {
             Zero(v.Size, v.Size);
@@ -2727,6 +2986,7 @@ namespace System.NumericsX
                 mat[i * numColumns + i] = v[i];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Random(long seed, float l = 0f, float u = 1f)              // fill matrix with random values
         {
             var rnd = new RandomX(seed);
@@ -2735,6 +2995,7 @@ namespace System.NumericsX
             for (var i = 0; i < s; i++)
                 mat[i] = l + rnd.RandomFloat() * c;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Random(int rows, int columns, long seed, float l = 0f, float u = 1f)
         {
             var rnd = new RandomX(seed);
@@ -2745,6 +3006,7 @@ namespace System.NumericsX
                 mat[i] = l + rnd.RandomFloat() * c;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Negate()                                                 // this = - this
         {
 #if MATX_SIMD
@@ -2756,6 +3018,7 @@ namespace System.NumericsX
 #endif
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clamp(float min, float max)                                   // clamp all values
         {
             var s = numRows * numColumns;
@@ -2766,6 +3029,7 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe MatrixX SwapRows(int r1, int r2)                                     // swap rows
         {
             var ptr = stackalloc float[numColumns];
@@ -2778,6 +3042,7 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe MatrixX SwapColumns(int r1, int r2)                                  // swap columns
         {
             fixed (float* mat = this.mat)
@@ -2791,6 +3056,7 @@ namespace System.NumericsX
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public MatrixX SwapRowsColumns(int r1, int r2)                              // swap rows and columns
         {
             SwapRows(r1, r2);
@@ -2851,6 +3117,7 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ClearUpperTriangle()                                     // clear the upper triangle
         {
             Debug.Assert(numRows == numColumns);
@@ -2860,6 +3127,7 @@ namespace System.NumericsX
                     Unsafe.InitBlock(mat + i * numColumns + i + 1, 0, (uint)(numColumns - 1 - i) * sizeof(float));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ClearLowerTriangle()                                     // clear the lower triangle
         {
             Debug.Assert(numRows == numColumns);
@@ -2869,6 +3137,7 @@ namespace System.NumericsX
                     Unsafe.InitBlock(mat + i * numColumns, 0, (uint)i * sizeof(float));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void SquareSubMatrix(MatrixX m, int size)                  // get square sub-matrix from 0,0 to size,size
         {
             Debug.Assert(size <= m.numRows && size <= m.numColumns);
@@ -2880,6 +3149,7 @@ namespace System.NumericsX
                     Unsafe.CopyBlock(mat + i * numColumns, m_mat + i * m.numColumns, (uint)size * sizeof(float));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float MaxDifference(MatrixX m)                          // return maximum element difference between this and m
         {
             Debug.Assert(numRows == m.numRows && numColumns == m.numColumns);
@@ -2895,9 +3165,11 @@ namespace System.NumericsX
             return maxDiff;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSquare() => numRows == numColumns;
 
-        public bool IsZero(float epsilon = MatrixX.EPSILON)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsZero(float epsilon = EPSILON)
         {
             // returns true if this == Zero
             for (var i = 0; i < numRows; i++)
@@ -2907,7 +3179,8 @@ namespace System.NumericsX
             return true;
         }
 
-        public bool IsIdentity(float epsilon = MatrixX.EPSILON)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsIdentity(float epsilon = EPSILON)
         {
             // returns true if this == Identity
             Debug.Assert(numRows == numColumns);
@@ -2919,7 +3192,8 @@ namespace System.NumericsX
             return true;
         }
 
-        public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsDiagonal(float epsilon = EPSILON)
         {
             // returns true if all elements are zero except for the elements on the diagonal
             Debug.Assert(numRows == numColumns);
@@ -2931,7 +3205,8 @@ namespace System.NumericsX
             return true;
         }
 
-        public bool IsTriDiagonal(float epsilon = MatrixX.EPSILON)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsTriDiagonal(float epsilon = EPSILON)
         {
             // returns true if all elements are zero except for the elements on the diagonal plus or minus one column
             if (numRows != numColumns)
@@ -2947,7 +3222,8 @@ namespace System.NumericsX
             return true;
         }
 
-        public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsSymmetric(float epsilon = EPSILON)
         {
             // this[i][j] == this[j][i]
             if (numRows != numColumns)
@@ -2966,7 +3242,7 @@ namespace System.NumericsX
         /// <returns>
         ///   <c>true</c> if the specified epsilon is orthogonal; otherwise, <c>false</c>.
         /// </returns>
-        public unsafe bool IsOrthogonal(float epsilon = MatrixX.EPSILON)
+        public unsafe bool IsOrthogonal(float epsilon = EPSILON)
         {
             if (!IsSquare())
                 return false;
@@ -2999,7 +3275,7 @@ namespace System.NumericsX
         /// <returns>
         ///   <c>true</c> if the specified epsilon is orthonormal; otherwise, <c>false</c>.
         /// </returns>
-        public unsafe bool IsOrthonormal(float epsilon = MatrixX.EPSILON)
+        public unsafe bool IsOrthonormal(float epsilon = EPSILON)
         {
             if (!IsSquare())
                 return false;
@@ -3043,7 +3319,7 @@ namespace System.NumericsX
         /// <returns>
         ///   <c>true</c> if [is p matrix] [the specified epsilon]; otherwise, <c>false</c>.
         /// </returns>
-        public bool IsPMatrix(float epsilon = MatrixX.EPSILON)
+        public bool IsPMatrix(float epsilon = EPSILON)
         {
             if (!IsSquare())
                 return false;
@@ -3083,7 +3359,7 @@ namespace System.NumericsX
         /// <returns>
         ///   <c>true</c> if the matrix is a Z-matrix; otherwise, <c>false</c>.
         /// </returns>
-        public bool IsZMatrix(float epsilon = MatrixX.EPSILON)
+        public bool IsZMatrix(float epsilon = EPSILON)
         {
             if (!IsSquare())
                 return false;
@@ -3102,7 +3378,7 @@ namespace System.NumericsX
         /// <returns>
         ///   <c>true</c> if the matrix is Positive Definite (PD); otherwise, <c>false</c>.
         /// </returns>
-        public bool IsPositiveDefinite(float epsilon = MatrixX.EPSILON)
+        public bool IsPositiveDefinite(float epsilon = EPSILON)
         {
             // the matrix must be square
             if (!IsSquare())
@@ -3146,7 +3422,7 @@ namespace System.NumericsX
         /// <returns>
         ///   <c>true</c> if the matrix is Positive Semi Definite (PSD); otherwise, <c>false</c>.
         /// </returns>
-        public bool IsSymmetricPositiveDefinite(float epsilon = MatrixX.EPSILON)
+        public bool IsSymmetricPositiveDefinite(float epsilon = EPSILON)
         {
             // the matrix must be symmetric
             if (!IsSymmetric(epsilon))
@@ -3169,7 +3445,7 @@ namespace System.NumericsX
         /// <returns>
         ///   <c>true</c> if the matrix is Positive Semi Definite (PSD); otherwise, <c>false</c>.
         /// </returns>
-        public bool IsPositiveSemiDefinite(float epsilon = MatrixX.EPSILON)
+        public bool IsPositiveSemiDefinite(float epsilon = EPSILON)
         {
             // the matrix must be square
             if (!IsSquare())
@@ -3223,37 +3499,44 @@ namespace System.NumericsX
         /// <returns>
         ///   <c>true</c> if the matrix is Symmetric Positive Semi Definite (PSD); otherwise, <c>false</c>.
         /// </returns>
-        public bool IsSymmetricPositiveSemiDefinite(float epsilon = MatrixX.EPSILON)
+        public bool IsSymmetricPositiveSemiDefinite(float epsilon = EPSILON)
             // the matrix must be symmetric
             => IsSymmetric(epsilon) && IsPositiveSemiDefinite(epsilon);
 
-        public float Trace()                                           // returns product of diagonal elements
+        public float Trace
         {
-            Debug.Assert(numRows == numColumns);
-            // sum of elements on the diagonal
-            var trace = 0f;
-            for (var i = 0; i < numRows; i++)
-                trace += mat[i * numRows + i];
-            return trace;
+            // returns product of diagonal elements
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                Debug.Assert(numRows == numColumns);
+                // sum of elements on the diagonal
+                var trace = 0f;
+                for (var i = 0; i < numRows; i++)
+                    trace += mat[i * numRows + i];
+                return trace;
+            }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe float Determinant()                                     // returns determinant of matrix
         {
             Debug.Assert(numRows == numColumns);
             if (numRows == 1)
                 return mat[0];
-            fixed (float* mat = &this.mat[0])
+            fixed (float* mat_ = mat)
                 return numRows switch
                 {
-                    2 => new reinterpret.MatrixX2 { x = this }.x2.Determinant(),
-                    3 => new reinterpret.MatrixX2 { x = this }.x3.Determinant(),
-                    4 => new reinterpret.MatrixX2 { x = this }.x4.Determinant(),
-                    5 => new reinterpret.MatrixX2 { x = this }.x5.Determinant(),
-                    6 => new reinterpret.MatrixX2 { x = this }.x6.Determinant(),
+                    2 => reinterpret.cast_mat2(mat_).Determinant(),
+                    3 => reinterpret.cast_mat3(mat_).Determinant(),
+                    4 => reinterpret.cast_mat4(mat_).Determinant(),
+                    5 => reinterpret.cast_mat5(mat_).Determinant(),
+                    6 => reinterpret.cast_mat6(mat_).Determinant(),
                     _ => DeterminantGeneric(),
                 };
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public MatrixX Transpose()                                     // returns transpose
         {
             MatrixX m = new();
@@ -3263,12 +3546,14 @@ namespace System.NumericsX
                     m.mat[j * m.numColumns + i] = mat[i * numColumns + j];
             return m;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public MatrixX TransposeSelf()                                            // transposes the matrix itself
         {
-            this = new(Transpose());
+            this = Transpose();
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe MatrixX Inverse()                                           // returns the inverse ( m * m.Inverse() = identity )
         {
             MatrixX invMat = new();
@@ -3279,6 +3564,7 @@ namespace System.NumericsX
             Debug.Assert(r);
             return invMat;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe bool InverseSelf()                                            // returns false if determinant is zero
         {
             Debug.Assert(numRows == numColumns);
@@ -3289,18 +3575,19 @@ namespace System.NumericsX
                 mat[0] = 1f / mat[0];
                 return true;
             }
-            fixed (float* mat = this.mat)
+            fixed (float* mat_ = mat)
                 return numRows switch
                 {
-                    2 => new reinterpret.MatrixX2 { x = this }.x2.InverseSelf(),
-                    3 => new reinterpret.MatrixX2 { x = this }.x3.InverseSelf(),
-                    4 => new reinterpret.MatrixX2 { x = this }.x4.InverseSelf(),
-                    5 => new reinterpret.MatrixX2 { x = this }.x5.InverseSelf(),
-                    6 => new reinterpret.MatrixX2 { x = this }.x6.InverseSelf(),
+                    2 => reinterpret.cast_mat2(mat_).InverseSelf(),
+                    3 => reinterpret.cast_mat3(mat_).InverseSelf(),
+                    4 => reinterpret.cast_mat4(mat_).InverseSelf(),
+                    5 => reinterpret.cast_mat5(mat_).InverseSelf(),
+                    6 => reinterpret.cast_mat6(mat_).InverseSelf(),
                     _ => InverseSelfGeneric(),
                 };
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe MatrixX InverseFast()                                       // returns the inverse ( m * m.Inverse() = identity )
         {
             MatrixX invMat = new();
@@ -3311,6 +3598,7 @@ namespace System.NumericsX
             Debug.Assert(r);
             return invMat;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe bool InverseFastSelf()                                        // returns false if determinant is zero
         {
             Debug.Assert(numRows == numColumns);
@@ -3321,14 +3609,14 @@ namespace System.NumericsX
                 mat[0] = 1f / mat[0];
                 return true;
             }
-            fixed (float* mat = &this.mat[0])
+            fixed (float* mat_ = mat)
                 return numRows switch
                 {
-                    2 => new reinterpret.MatrixX2 { x = this }.x2.InverseFastSelf(),
-                    3 => new reinterpret.MatrixX2 { x = this }.x3.InverseFastSelf(),
-                    4 => new reinterpret.MatrixX2 { x = this }.x4.InverseFastSelf(),
-                    5 => new reinterpret.MatrixX2 { x = this }.x5.InverseFastSelf(),
-                    6 => new reinterpret.MatrixX2 { x = this }.x6.InverseFastSelf(),
+                    2 => reinterpret.cast_mat2(mat_).InverseFastSelf(),
+                    3 => reinterpret.cast_mat3(mat_).InverseFastSelf(),
+                    4 => reinterpret.cast_mat4(mat_).InverseFastSelf(),
+                    5 => reinterpret.cast_mat5(mat_).InverseFastSelf(),
+                    6 => reinterpret.cast_mat6(mat_).InverseFastSelf(),
                     _ => InverseSelfGeneric(),
                 };
         }
@@ -3383,7 +3671,8 @@ namespace System.NumericsX
             return true;
         }
 
-        public VectorX Multiply(VectorX vec)                           // this * vec
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public VectorX Multiply(ref VectorX vec)                           // this * vec
         {
             Debug.Assert(numColumns == vec.Size);
             var dst = new VectorX();
@@ -3391,11 +3680,12 @@ namespace System.NumericsX
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplyVecX(dst, *this, vec);
 #else
-            Multiply(dst, vec);
+            Multiply(ref dst, ref vec);
 #endif
             return dst;
         }
-        public VectorX TransposeMultiply(VectorX vec)                  // this.Transpose() * vec
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public VectorX TransposeMultiply(ref VectorX vec)                  // this.Transpose() * vec
         {
             Debug.Assert(numRows == vec.Size);
             var dst = new VectorX();
@@ -3403,11 +3693,13 @@ namespace System.NumericsX
 #if MATX_SIMD
     SIMDProcessor.MatX_TransposeMultiplyVecX(dst, *this, vec);
 #else
-            TransposeMultiply(dst, vec);
+            TransposeMultiply(ref dst, ref vec);
 #endif
             return dst;
         }
-        public MatrixX Multiply(MatrixX a)                             // this * a
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public MatrixX Multiply(ref MatrixX a)                             // this * a
         {
             Debug.Assert(numColumns == a.numRows);
             var dst = new MatrixX();
@@ -3415,11 +3707,12 @@ namespace System.NumericsX
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplyMatX(dst, *this, a);
 #else
-            Multiply(dst, a);
+            Multiply(ref dst, ref a);
 #endif
             return dst;
         }
-        public MatrixX TransposeMultiply(MatrixX a)                        // this.Transpose() * a
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public MatrixX TransposeMultiply(ref MatrixX a)                        // this.Transpose() * a
         {
             Debug.Assert(numRows == a.numRows);
             var dst = new MatrixX();
@@ -3427,11 +3720,12 @@ namespace System.NumericsX
 #if MATX_SIMD
             SIMDProcessor.MatX_TransposeMultiplyMatX(dst, *this, a);
 #else
-            TransposeMultiply(dst, a);
+            TransposeMultiply(ref dst, ref a);
 #endif
             return dst;
         }
-        public unsafe void Multiply(VectorX dst, VectorX vec)             // dst = this * vec
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void Multiply(ref VectorX dst, ref VectorX vec)             // dst = this * vec
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplyVecX(dst, *this, vec);
@@ -3452,7 +3746,8 @@ namespace System.NumericsX
             }
 #endif
         }
-        public unsafe void MultiplyAdd(VectorX dst, VectorX vec)          // dst += this * vec
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void MultiplyAdd(ref VectorX dst, ref VectorX vec)          // dst += this * vec
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplyAddVecX(dst, *this, vec);
@@ -3473,7 +3768,8 @@ namespace System.NumericsX
             }
 #endif
         }
-        public unsafe void MultiplySub(VectorX dst, VectorX vec)          // dst -= this * vec
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void MultiplySub(ref VectorX dst, ref VectorX vec)          // dst -= this * vec
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplySubVecX(dst, *this, vec);
@@ -3494,7 +3790,8 @@ namespace System.NumericsX
             }
 #endif
         }
-        public unsafe void TransposeMultiply(VectorX dst, VectorX vec)        // dst = this.Transpose() * vec
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void TransposeMultiply(ref VectorX dst, ref VectorX vec)        // dst = this.Transpose() * vec
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_TransposeMultiplyVecX(dst, *this, vec);
@@ -3517,7 +3814,8 @@ namespace System.NumericsX
             }
 #endif
         }
-        public unsafe void TransposeMultiplyAdd(VectorX dst, VectorX vec) // dst += this.Transpose() * vec
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void TransposeMultiplyAdd(ref VectorX dst, ref VectorX vec) // dst += this.Transpose() * vec
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_TransposeMultiplyAddVecX(dst, *this, vec);
@@ -3540,7 +3838,8 @@ namespace System.NumericsX
             }
 #endif
         }
-        public unsafe void TransposeMultiplySub(VectorX dst, VectorX vec) // dst -= this.Transpose() * vec
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void TransposeMultiplySub(ref VectorX dst, ref VectorX vec) // dst -= this.Transpose() * vec
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_TransposeMultiplySubVecX(dst, *this, vec);
@@ -3563,7 +3862,8 @@ namespace System.NumericsX
             }
 #endif
         }
-        public unsafe void Multiply(MatrixX dst, MatrixX a)                   // dst = this * a
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void Multiply(ref MatrixX dst, ref MatrixX a)                   // dst = this * a
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplyMatX(dst, *this, a);
@@ -3597,8 +3897,8 @@ namespace System.NumericsX
             }
 #endif
         }
-
-        public unsafe void TransposeMultiply(MatrixX dst, MatrixX a)      // dst = this.Transpose() * a
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void TransposeMultiply(ref MatrixX dst, ref MatrixX a)      // dst = this.Transpose() * a
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_TransposeMultiplyMatX(dst, *this, a);
@@ -3633,15 +3933,20 @@ namespace System.NumericsX
 #endif
         }
 
-        public int Dimension                                      // returns total number of values in matrix
-            => numRows * numColumns;
+        public int Dimension
+        {                                      // returns total number of values in matrix
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => numRows * numColumns;
+        }
 
-        public unsafe Vector6 SubVec6(int row)                                       // interpret beginning of row as a Vector6
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe ref Vector6 SubVec6(int row)                                       // interpret beginning of row as a Vector6
         {
             Debug.Assert(numColumns >= 6 && row >= 0 && row < numRows);
             fixed (float* mat = &this.mat[0])
-                return reinterpret.cast_vec6(mat, row * numColumns);
+                return ref reinterpret.cast_vec6(mat, row * numColumns);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public VectorX SubVecX(int row)                                     // interpret complete row as a VectorX
         {
             Debug.Assert(row >= 0 && row < numRows);
@@ -3650,11 +3955,13 @@ namespace System.NumericsX
             return v;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
             fixed (float* _ = mat)
                 return callback(_);
         }
+
         public unsafe string ToString(int precision = 2)
         {
             var dimension = Dimension;

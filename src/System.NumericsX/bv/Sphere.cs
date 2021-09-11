@@ -32,9 +32,9 @@ namespace System.NumericsX
         //}
 
         public bool Compare(Sphere a)                          // exact compare, no epsilon
-            => origin.Compare(a.origin) && radius == a.radius;
+            => origin.Compare(ref a.origin) && radius == a.radius;
         public bool Compare(Sphere a, float epsilon)    // compare with epsilon
-            => origin.Compare(a.origin, epsilon) && MathX.Fabs(radius - a.radius) <= epsilon;
+            => origin.Compare(ref a.origin, epsilon) && MathX.Fabs(radius - a.radius) <= epsilon;
         public static bool operator ==(Sphere _, Sphere a)                      // exact compare, no epsilon
             => _.Compare(a);
         public static bool operator !=(Sphere _, Sphere a)                      // exact compare, no epsilon

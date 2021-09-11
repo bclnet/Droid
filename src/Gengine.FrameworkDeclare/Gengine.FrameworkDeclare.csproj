@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
+    <ProjectReference Include="..\Gengine.Sound\Gengine.Sound.csproj" />
   </ItemGroup>
 
   <ItemGroup>

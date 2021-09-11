@@ -79,7 +79,7 @@ namespace System.NumericsX
                     v.xyz = splinePos.ToVec3() + verts[baseOffset + j].xyz * splineMat;
                     v.st.x = verts[baseOffset + j].st[0]; v.st.y = splinePos.w;
                     v.tangents0 = verts[baseOffset + j].tangents0 * splineMat; v.tangents1 = splineD1.ToVec3();
-                    v.normal = v.tangents1.Cross(v.tangents0); v.normal.Normalize();
+                    v.normal = v.tangents1.Cross(ref v.tangents0); v.normal.Normalize();
                     v.color0 = v.color1 = v.color2 = v.color3 = 0;
                 }
             }
@@ -129,7 +129,7 @@ namespace System.NumericsX
 
             d = dir;
             d.Normalize();
-            v = d.Cross(previousFrame[2]);
+            v = d.Cross(ref previousFrame[2]);
             v.Normalize();
 
             a = MathX.ACos(previousFrame[2] * d) * 0.5f;
@@ -166,8 +166,8 @@ namespace System.NumericsX
             newFrame = previousFrame * axis;
 
             newFrame[2] = dir; newFrame[2].Normalize();
-            newFrame[1].Cross(newFrame[2], newFrame[0]); newFrame[1].Normalize();
-            newFrame[0].Cross(newFrame[1], newFrame[2]); newFrame[0].Normalize();
+            newFrame[1].Cross(ref newFrame[2], ref newFrame[0]); newFrame[1].Normalize();
+            newFrame[0].Cross(ref newFrame[1], ref newFrame[2]); newFrame[0].Normalize();
         }
     }
 }

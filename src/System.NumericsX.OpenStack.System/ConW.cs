@@ -439,7 +439,7 @@ namespace System.NumericsX.OpenStack.System
                 if (msg[i] == '\n' && msg[i + 1] == '\r') { b[0] = '\r'; b[1] = '\n'; b += 2; i++; }
                 else if (msg[i] == '\r') { b[0] = '\r'; b[1] = '\n'; b += 2; }
                 else if (msg[i] == '\n') { b[0] = '\r'; b[1] = '\n'; b += 2; }
-                else if (StringX.IsColor(msg, i)) { i++; }
+                else if (stringX.IsColor(msg, i)) { i++; }
                 else { *b = (char)msg[i]; b++; }
                 i++;
             }

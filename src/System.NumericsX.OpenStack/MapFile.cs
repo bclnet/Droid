@@ -500,7 +500,7 @@ namespace System.NumericsX.OpenStack
                     if (string.Equals(key, "origin", StringComparison.OrdinalIgnoreCase))
                     {
                         // scanf into doubles, then assign, so it is idVec size independent
-                        stringX.sscanf(value, "%lf %lf %lf", out double v1, out double v2, out double v3);
+                        TextScanFormatted.Scan(value, "%lf %lf %lf", out double v1, out double v2, out double v3);
                         origin.x = (float)v1;
                         origin.y = (float)v2;
                         origin.z = (float)v3;

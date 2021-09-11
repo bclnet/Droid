@@ -138,7 +138,7 @@ namespace Gengine.Framework
         public void Clear()
         {
             for (var i = 0; i < CON_TEXTSIZE; i++)
-                text[i] = (short)((StringX.ColorIndex(C_COLOR_CYAN) << 8) | ' ');
+                text[i] = (short)((System.NumericsX.OpenStack.stringX.ColorIndex(C_COLOR_CYAN) << 8) | ' ');
             Bottom(); // go to end
         }
 
@@ -437,7 +437,7 @@ namespace Gengine.Framework
                 display++;
             current++;
             for (var i = 0; i < LINE_WIDTH; i++)
-                text[(current % TOTAL_LINES) * LINE_WIDTH + i] = (short)((StringX.ColorIndex(C_COLOR_CYAN) << 8) | ' ');
+                text[(current % TOTAL_LINES) * LINE_WIDTH + i] = (short)((System.NumericsX.OpenStack.stringX.ColorIndex(C_COLOR_CYAN) << 8) | ' ');
         }
 
         /// <summary>
@@ -455,7 +455,7 @@ namespace Gengine.Framework
                 MaterialEditorPrintConsole(text);
 #endif
 
-            color = StringX.ColorIndex(C_COLOR_CYAN);
+            color = System.NumericsX.OpenStack.stringX.ColorIndex(C_COLOR_CYAN);
             fixed (void* text_ = this.text, textTill = &this.text[this.text.Length])
             {
                 var txt = (byte*)text_;
@@ -463,9 +463,9 @@ namespace Gengine.Framework
                 while (txt < textTill)
                 {
                     c = *txt;
-                    if (StringX.IsColor(txt, textTill))
+                    if (System.NumericsX.OpenStack.stringX.IsColor(txt, textTill))
                     {
-                        color = StringX.ColorIndex(txt[1] == C_COLOR_DEFAULT ? C_COLOR_CYAN : txt[1]);
+                        color = System.NumericsX.OpenStack.stringX.ColorIndex(txt[1] == C_COLOR_DEFAULT ? C_COLOR_CYAN : txt[1]);
                         txt += 2;
                         continue;
                     }
@@ -538,7 +538,7 @@ namespace Gengine.Framework
                 }
             }
 
-            renderSystem.SetColor(StringX.ColorForIndex(C_COLOR_CYAN));
+            renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(C_COLOR_CYAN));
 
             renderSystem.DrawSmallChar(1 * R.SMALLCHAR_WIDTH, y, ']', localConsole.charSetShader);
 
@@ -557,8 +557,8 @@ namespace Gengine.Framework
             if (con_noPrint.Bool)
                 return;
 
-            currentColor = StringX.ColorIndex(C_COLOR_WHITE);
-            renderSystem.SetColor(StringX.ColorForIndex(currentColor));
+            currentColor = System.NumericsX.OpenStack.stringX.ColorIndex(C_COLOR_WHITE);
+            renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(currentColor));
 
             v = 0;
             for (i = current - NUM_CON_TIMES + 1; i <= current; i++)
@@ -577,10 +577,10 @@ namespace Gengine.Framework
                 {
                     if ((text_p[x] & 0xff) == ' ')
                         continue;
-                    if (StringX.ColorIndex(text_p[x] >> 8) != currentColor)
+                    if (System.NumericsX.OpenStack.stringX.ColorIndex(text_p[x] >> 8) != currentColor)
                     {
-                        currentColor = StringX.ColorIndex(text_p[x] >> 8);
-                        renderSystem.SetColor(StringX.ColorForIndex(currentColor));
+                        currentColor = System.NumericsX.OpenStack.stringX.ColorIndex(text_p[x] >> 8);
+                        renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(currentColor));
                     }
                     renderSystem.DrawSmallChar((x + 1) * R.SMALLCHAR_WIDTH, v, text_p[x] & 0xff, localConsole.charSetShader);
                 }
@@ -617,7 +617,7 @@ namespace Gengine.Framework
 
             // draw the version number
 
-            renderSystem.SetColor(StringX.ColorForIndex(C_COLOR_CYAN));
+            renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(C_COLOR_CYAN));
 
             var version = $"{ENGINE_VERSION}.{BUILD_NUMBER}";
             i = version.Length;
@@ -635,7 +635,7 @@ namespace Gengine.Framework
             if (display != current)
             {
                 // draw arrows to show the buffer is backscrolled
-                renderSystem.SetColor(StringX.ColorForIndex(C_COLOR_CYAN));
+                renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(C_COLOR_CYAN));
                 for (x = 0; x < LINE_WIDTH; x += 4)
                     renderSystem.DrawSmallChar((x + 1) * R.SMALLCHAR_WIDTH, MathX.FtoiFast(y), '^', localConsole.charSetShader);
                 y -= R.SMALLCHAR_HEIGHT;
@@ -647,8 +647,8 @@ namespace Gengine.Framework
             if (x == 0)
                 row--;
 
-            currentColor = StringX.ColorIndex(C_COLOR_WHITE);
-            renderSystem.SetColor(StringX.ColorForIndex(currentColor));
+            currentColor = System.NumericsX.OpenStack.stringX.ColorIndex(C_COLOR_WHITE);
+            renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(currentColor));
 
             for (i = 0; i < rows; i++, y -= R.SMALLCHAR_HEIGHT, row--)
             {
@@ -665,10 +665,10 @@ namespace Gengine.Framework
                     if ((text_p[x] & 0xff) == ' ')
                         continue;
 
-                    if (StringX.ColorIndex(text_p[x] >> 8) != currentColor)
+                    if (System.NumericsX.OpenStack.stringX.ColorIndex(text_p[x] >> 8) != currentColor)
                     {
-                        currentColor = StringX.ColorIndex(text_p[x] >> 8);
-                        renderSystem.SetColor(StringX.ColorForIndex(currentColor));
+                        currentColor = System.NumericsX.OpenStack.stringX.ColorIndex(text_p[x] >> 8);
+                        renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(currentColor));
                     }
                     renderSystem.DrawSmallChar((x + 1) * R.SMALLCHAR_WIDTH, MathX.FtoiFast(y), text_p[x] & 0xff, localConsole.charSetShader);
                 }

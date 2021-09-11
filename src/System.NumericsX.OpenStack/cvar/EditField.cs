@@ -407,9 +407,9 @@ namespace System.NumericsX.OpenStack
                 prestep = scroll;
 
                 // Skip color code
-                if (StringX.IsColor(buffer, prestep))
+                if (stringX.IsColor(buffer, prestep))
                     prestep += 2;
-                if (prestep > 0 && StringX.IsColor(buffer, prestep - 1))
+                if (prestep > 0 && stringX.IsColor(buffer, prestep - 1))
                     prestep++;
             }
 
@@ -436,7 +436,7 @@ namespace System.NumericsX.OpenStack
 
             // Move the cursor back to account for color codes
             for (var i = 0; i < cursor; i++)
-                if (StringX.IsColor(str, i)) { i++; prestep += 2; }
+                if (stringX.IsColor(str, i)) { i++; prestep += 2; }
 
             drawSmallChar(x + (cursor - prestep) * size, y, cursorChar);
         }

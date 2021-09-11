@@ -31,7 +31,7 @@ namespace System.NumericsX
                 for (j = 0; j < w.NumPoints; j++)
                 {
                     for (k = 0; k < verts.Count; k++)
-                        if (verts[k].xyz.Compare(w[j].ToVec3(), POLYTOPE_VERTEX_EPSILON))
+                        if (verts[k].xyz.Compare(ref w[j].ToVec3(), POLYTOPE_VERTEX_EPSILON))
                             break;
                     if (k >= verts.Count)
                     {

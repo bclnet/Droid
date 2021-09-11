@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace System.NumericsX
@@ -5,12 +6,16 @@ namespace System.NumericsX
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector3i
     {
+        public static Vector3i origin = new(0, 0, 0);
+
         public int x;
         public int y;
         public int z;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3i(int xyz)
             => x = y = z = xyz;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3i(int x, int y, int z)
         {
             this.x = x;
@@ -18,6 +23,7 @@ namespace System.NumericsX
             this.z = z;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(int x, int y, int z)
         {
             this.x = x;
@@ -25,19 +31,23 @@ namespace System.NumericsX
             this.z = z;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(Vector3i a)
             => this = a;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()
             => x = y = z = 0;
 
         public unsafe int this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (int* p = &x)
                     return p[index];
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 fixed (int* p = &x)
@@ -45,22 +55,28 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3i operator -(Vector3i _)
             => new(-_.x, -_.y, -_.z);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float operator *(Vector3i _, Vector3i a)
             => _.x * a.x + _.y * a.y + _.z * a.z;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3i operator *(Vector3i _, int a)
             => new(_.x * a, _.y * a, _.z * a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3i operator /(Vector3i _, int a)
         {
             var inva = 1 / a;
             return new Vector3i(_.x * inva, _.y * inva, _.z * inva);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3i operator +(Vector3i _, Vector3i a)
             => new(_.x + a.x, _.y + a.y, _.z + a.z);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3i operator -(Vector3i _, Vector3i a)
             => new(_.x - a.x, _.y - a.y, _.z - a.z);
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3i operator *(int a, Vector3i b)
             => new(b.x * a, b.y * a, b.z * a);
 
@@ -69,9 +85,9 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="a">a.</param>
         /// <returns></returns>
-        public bool Compare(Vector3i a)
-            => (x == a.x) && (y == a.y) && (z == a.z);
-        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(ref Vector3i a)
+            => x == a.x && y == a.y && z == a.z;
         /// <summary>
         /// exact compare, no epsilon
         /// </summary>
@@ -80,8 +96,9 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Vector3i _, Vector3i a)
-            => _.Compare(a);
+            => _.Compare(ref a);
         /// <summary>
         /// exact compare, no epsilon
         /// </summary>
@@ -90,28 +107,38 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Vector3i _, Vector3i a)
-            => !_.Compare(a);
+            => !_.Compare(ref a);
         public override bool Equals(object obj)
-            => obj is Vector3i q && Compare(q);
+            => obj is Vector3i q && Compare(ref q);
         public override int GetHashCode()
             => x.GetHashCode() ^ y.GetHashCode() ^ z.GetHashCode();
 
-        public Vector3i Cross(Vector3i a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3i Cross(ref Vector3i a)
             => new(y * a.z - z * a.y, z * a.x - x * a.z, x * a.y - y * a.x);
-        public Vector3i Cross(Vector3i a, Vector3i b)
+        public Vector3i Cross(ref Vector3i a, ref Vector3i b)
         {
             x = a.y * b.z - a.z * b.y;
             y = a.z * b.x - a.x * b.z;
             z = a.x * b.y - a.y * b.x;
             return this;
         }
+
         public float Length
-            => (float)MathX.Sqrt(x * x + y * y + z * z);
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (float)MathX.Sqrt(x * x + y * y + z * z);
+        }
         public float LengthSqr
-            => x * x + y * y + z * z;
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => x * x + y * y + z * z;
+        }
         public float LengthFast
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 var sqrLength = x * x + y * y + z * z;
@@ -119,7 +146,8 @@ namespace System.NumericsX
             }
         }
 
-        public void Clamp(Vector3i min, Vector3i max)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Clamp(ref Vector3i min, ref Vector3i max)
         {
             if (x < min.x) x = min.x;
             else if (x > max.x) x = max.x;
@@ -129,9 +157,6 @@ namespace System.NumericsX
             else if (z > max.z) z = max.z;
         }
 
-        public static int Dimension
-            => 3;
-
-        public static Vector3i origin = new(0, 0, 0);
+        public const int Dimension = 3;
     }
 }
