@@ -12,7 +12,7 @@ namespace System.NumericsX
         public static Matrix2x2 zero = new(new Vector2(0f, 0f), new Vector2(0f, 0f));
         public static Matrix2x2 identity = new(new Vector2(1f, 0f), new Vector2(0f, 1f));
         internal Vector2[] mat;
-        
+
         public Matrix2x2(Matrix2x2 a)
             => mat = (Vector2[])a.mat.Clone();
         public Matrix2x2(Vector2 x, Vector2 y)
@@ -72,19 +72,11 @@ namespace System.NumericsX
             => mat * vec;
 
         public bool Compare(Matrix2x2 a)                        // exact compare, no epsilon
-        {
-            if (mat[0].Compare(a.mat[0]) &&
-                mat[1].Compare(a.mat[1]))
-                return true;
-            return false;
-        }
+            => mat[0].Compare(a.mat[0]) &&
+               mat[1].Compare(a.mat[1]);
         public bool Compare(Matrix2x2 a, float epsilon)   // compare with epsilon
-        {
-            if (mat[0].Compare(a.mat[0], epsilon) &&
-                mat[1].Compare(a.mat[1], epsilon))
-                return true;
-            return false;
-        }
+            => mat[0].Compare(a.mat[0], epsilon) &&
+               mat[1].Compare(a.mat[1], epsilon);
         public static bool operator ==(Matrix2x2 _, Matrix2x2 a)                 // exact compare, no epsilon
             => _.Compare(a);
         public static bool operator !=(Matrix2x2 _, Matrix2x2 a)                 // exact compare, no epsilon
@@ -110,12 +102,8 @@ namespace System.NumericsX
             => MathX.Fabs(mat[0].y - mat[1].x) < epsilon;
 
         public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
-        {
-            if (MathX.Fabs(mat[0].y) > epsilon ||
-                MathX.Fabs(mat[1].x) > epsilon)
-                return false;
-            return true;
-        }
+            => MathX.Fabs(mat[0].y) <= epsilon &&
+               MathX.Fabs(mat[1].x) <= epsilon;
 
         public float Trace()
             => mat[0].x + mat[1].y;
@@ -251,7 +239,7 @@ namespace System.NumericsX
 
         public static unsafe Matrix3x3 operator *(Matrix3x3 _, Matrix3x3 a)
         {
-            Matrix3x3 dst = new();
+            Matrix3x3 dst;
             fixed (void* __ = _.mat, a_ = a.mat, dst_ = dst.mat)
             {
                 var m1Ptr = (float*)__;
@@ -288,21 +276,13 @@ namespace System.NumericsX
             => mat * vec;
 
         public bool Compare(Matrix3x3 a)                       // exact compare, no epsilon
-        {
-            if (mat[0].Compare(a.mat[0]) &&
-                mat[1].Compare(a.mat[1]) &&
-                mat[2].Compare(a.mat[2]))
-                return true;
-            return false;
-        }
+            => mat[0].Compare(a.mat[0]) &&
+               mat[1].Compare(a.mat[1]) &&
+               mat[2].Compare(a.mat[2]);
         public bool Compare(Matrix3x3 a, float epsilon)  // compare with epsilon
-        {
-            if (mat[0].Compare(a.mat[0], epsilon) &&
-                mat[1].Compare(a.mat[1], epsilon) &&
-                mat[2].Compare(a.mat[2], epsilon))
-                return true;
-            return false;
-        }
+            => mat[0].Compare(a.mat[0], epsilon) &&
+               mat[1].Compare(a.mat[1], epsilon) &&
+               mat[2].Compare(a.mat[2], epsilon);
         public static bool operator ==(Matrix3x3 _, Matrix3x3 a)                   // exact compare, no epsilon
             => _.Compare(a);
         public static bool operator !=(Matrix3x3 _, Matrix3x3 a)                   // exact compare, no epsilon
@@ -325,24 +305,17 @@ namespace System.NumericsX
             => Compare(identity, epsilon);
 
         public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
-        {
-            if (MathX.Fabs(mat[0].y - mat[1].x) > epsilon) return false;
-            if (MathX.Fabs(mat[0].z - mat[2].x) > epsilon) return false;
-            if (MathX.Fabs(mat[1].z - mat[2].y) > epsilon) return false;
-            return true;
-        }
+            => MathX.Fabs(mat[0].y - mat[1].x) <= epsilon &&
+               MathX.Fabs(mat[0].z - mat[2].x) <= epsilon &&
+               MathX.Fabs(mat[1].z - mat[2].y) <= epsilon;
 
         public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
-        {
-            if (MathX.Fabs(mat[0].y) > epsilon ||
-                MathX.Fabs(mat[0].z) > epsilon ||
-                MathX.Fabs(mat[1].x) > epsilon ||
-                MathX.Fabs(mat[1].z) > epsilon ||
-                MathX.Fabs(mat[2].x) > epsilon ||
-                MathX.Fabs(mat[2].y) > epsilon)
-                return false;
-            return true;
-        }
+            => MathX.Fabs(mat[0].y) <= epsilon &&
+               MathX.Fabs(mat[0].z) <= epsilon &&
+               MathX.Fabs(mat[1].x) <= epsilon &&
+               MathX.Fabs(mat[1].z) <= epsilon &&
+               MathX.Fabs(mat[2].x) <= epsilon &&
+               MathX.Fabs(mat[2].y) <= epsilon;
 
         public bool IsRotated()
             => !Compare(identity);
@@ -904,13 +877,9 @@ namespace System.NumericsX
         }
 
         public bool IsRotated()
-        {
-            if (mat[0].y == 0 && mat[0].z == 0 &&
-                mat[1].x == 0 && mat[1].z == 0 &&
-                mat[2].x == 0 && mat[2].y == 0)
-                return false;
-            return true;
-        }
+            => mat[0].y != 0 || mat[0].z != 0 ||
+               mat[1].x != 0 || mat[1].z != 0 ||
+               mat[2].x != 0 || mat[2].y != 0;
 
         public void ProjectVector(Vector4 src, out Vector4 dst)
         {
@@ -2641,7 +2610,6 @@ namespace System.NumericsX
                             mat[i * columns + j] = mat[i * numColumns + j];
                 }
                 else if (columns > numColumns)
-                {
                     for (var i = Math.Min(numRows, rows) - 1; i >= 0; i--)
                     {
                         if (makeZero)
@@ -2650,7 +2618,6 @@ namespace System.NumericsX
                         for (var j = numColumns - 1; j >= 0; j--)
                             mat[i * columns + j] = mat[i * numColumns + j];
                     }
-                }
                 if (makeZero && rows > numRows)
                     Array.Clear(mat, numRows * columns, (rows - numRows) * columns);
             }
