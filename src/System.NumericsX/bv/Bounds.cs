@@ -324,7 +324,10 @@ namespace System.NumericsX
 
         // most tight bounds for a point set
         public unsafe void FromPoints(Vector3[] points, int numPoints)
-            => ISimd.Processor.MinMax(out b[0], out b[1], points, numPoints);
+        {
+            fixed (Vector3* pointsF = points)
+                ISimd.Processor.MinMax(out b[0], out b[1], pointsF, numPoints);
+        }
 
         // Most tight bounds for the translational movement of the given point.
         public void FromPointTranslation(Vector3 point, Vector3 translation)

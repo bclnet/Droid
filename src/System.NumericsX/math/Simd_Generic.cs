@@ -365,7 +365,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] |= (byte)((src0[_IX] <= constant ? True : False) << bitNum); }
         }
 
-        public void MinMax(out float min, out float max, Span<float> src, int count)
+        public void MinMax(out float min, out float max, float* src, int count)
         {
             min = MathX.INFINITY; max = -MathX.INFINITY;
             int _IX; for (_IX = 0; _IX < count; _IX++)
@@ -374,7 +374,7 @@ namespace System.NumericsX
                 if (src[_IX] > max) { max = src[_IX]; }
             }
         }
-        public void MinMax(out Vector2 min, out Vector2 max, Span<Vector2> src, int count)
+        public void MinMax(out Vector2 min, out Vector2 max, Vector2* src, int count)
         {
             min.x = min.y = MathX.INFINITY; max.x = max.y = -MathX.INFINITY;
             int _IX; for (_IX = 0; _IX < count; _IX++)
@@ -386,7 +386,7 @@ namespace System.NumericsX
                 if (v.y > max.y) { max.y = v.y; }
             }
         }
-        public void MinMax(out Vector3 min, out Vector3 max, Span<Vector3> src, int count)
+        public void MinMax(out Vector3 min, out Vector3 max, Vector3* src, int count)
         {
             min.x = min.y = min.z = MathX.INFINITY; max.x = max.y = max.z = -MathX.INFINITY;
             int _IX; for (_IX = 0; _IX < count; _IX++)
@@ -2037,7 +2037,7 @@ namespace System.NumericsX
                 joints[j].t.Lerp(joints[j].t, blendJoints[j].t, lerp);
             }
         }
-        public void ConvertJointQuatsToJointMats(Span<JointMat> jointMats, JointQuat* jointQuats, int numJoints)
+        public void ConvertJointQuatsToJointMats(JointMat* jointMats, JointQuat* jointQuats, int numJoints)
         {
             for (var i = 0; i < numJoints; i++)
             {
@@ -2045,14 +2045,14 @@ namespace System.NumericsX
                 jointMats[i].SetTranslation(jointQuats[i].t);
             }
         }
-        public void ConvertJointMatsToJointQuats(JointQuat* jointQuats, Span<JointMat> jointMats, int numJoints)
+        public void ConvertJointMatsToJointQuats(JointQuat* jointQuats, JointMat* jointMats, int numJoints)
         {
             for (var i = 0; i < numJoints; i++)
             {
                 jointQuats[i] = jointMats[i].ToJointQuat();
             }
         }
-        public void TransformJoints(Span<JointMat> jointMats, int* parents, int firstJoint, int lastJoint)
+        public void TransformJoints(JointMat* jointMats, int* parents, int firstJoint, int lastJoint)
         {
             for (var i = firstJoint; i <= lastJoint; i++)
             {
@@ -2060,7 +2060,7 @@ namespace System.NumericsX
                 jointMats[i] *= jointMats[parents[i]];
             }
         }
-        public void UntransformJoints(Span<JointMat> jointMats, int* parents, int firstJoint, int lastJoint)
+        public void UntransformJoints(JointMat* jointMats, int* parents, int firstJoint, int lastJoint)
         {
             for (var i = lastJoint; i >= firstJoint; i--)
             {
@@ -2068,7 +2068,7 @@ namespace System.NumericsX
                 jointMats[i] /= jointMats[parents[i]];
             }
         }
-        public void TransformVerts(Span<DrawVert> verts, int numVerts, Span<JointMat> joints, Vector4* weights, int* index, int numWeights)
+        public void TransformVerts(Span<DrawVert> verts, int numVerts, JointMat* joints, Vector4* weights, int* index, int numWeights)
         {
             for (int j = 0, i = 0; i < numVerts; i++)
             {

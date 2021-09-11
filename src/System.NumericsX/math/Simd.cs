@@ -106,9 +106,9 @@ namespace System.NumericsX
         void CmpLE(byte* dst, float* src0, float constant, int count);
         void CmpLE(byte* dst, byte bitNum, float* src0, float constant, int count);
 
-        void MinMax(out float min, out float max, Span<float> src, int count);
-        void MinMax(out Vector2 min, out Vector2 max, Span<Vector2> src, int count);
-        void MinMax(out Vector3 min, out Vector3 max, Span<Vector3> src, int count);
+        void MinMax(out float min, out float max, float* src, int count);
+        void MinMax(out Vector2 min, out Vector2 max, Vector2* src, int count);
+        void MinMax(out Vector3 min, out Vector3 max, Vector3* src, int count);
         void MinMax(out Vector3 min, out Vector3 max, Span<DrawVert> src, int count);
         void MinMax(out Vector3 min, out Vector3 max, Span<DrawVert> src, int* indexes, int count);
         void MinMax(out Vector3 min, out Vector3 max, Span<DrawVert> src, short* indexes, int count);
@@ -146,11 +146,11 @@ namespace System.NumericsX
 
         // rendering
         void BlendJoints(JointQuat* joints, JointQuat* blendJoints, float lerp, int* index, int numJoints);
-        void ConvertJointQuatsToJointMats(Span<JointMat> jointMats, JointQuat* jointQuats, int numJoints);
-        void ConvertJointMatsToJointQuats(JointQuat* jointQuats, Span<JointMat> jointMats, int numJoints);
-        void TransformJoints(Span<JointMat> jointMats, int* parents, int firstJoint, int lastJoint);
-        void UntransformJoints(Span<JointMat> jointMats, int* parents, int firstJoint, int lastJoint);
-        void TransformVerts(Span<DrawVert> verts, int numVerts, Span<JointMat> joints, Vector4* weights, int* index, int numWeights);
+        void ConvertJointQuatsToJointMats(JointMat* jointMats, JointQuat* jointQuats, int numJoints);
+        void ConvertJointMatsToJointQuats(JointQuat* jointQuats, JointMat* jointMats, int numJoints);
+        void TransformJoints(JointMat* jointMats, int* parents, int firstJoint, int lastJoint);
+        void UntransformJoints(JointMat* jointMats, int* parents, int firstJoint, int lastJoint);
+        void TransformVerts(Span<DrawVert> verts, int numVerts, JointMat* joints, Vector4* weights, int* index, int numWeights);
         void TracePointCull(byte* cullBits, out byte totalOr, float radius, Plane* planes, Span<DrawVert> verts, int numVerts);
         void DecalPointCull(byte* cullBits, Plane* planes, Span<DrawVert> verts, int numVerts);
         void OverlayPointCull(byte* cullBits, Vector2* texCoords, Plane* planes, Span<DrawVert> verts, int numVerts);

@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace System.NumericsX
 {
-    public unsafe class SIMDTest
+    public unsafe class SimdTest
     {
         const int COUNT = 1024;     // data count
         const int NUMTESTS = 2048;      // number of tests
@@ -38,9 +38,9 @@ namespace System.NumericsX
             {
                 otherClocks -= baseClocks;
                 var p = (int)((otherClocks - clocks) * 100f / otherClocks);
-                Printf($"c = {dataCount:4}, clcks = {clocks:5}, {p}%\n");
+                Printf($"c = {dataCount,4}, clcks = {clocks.Ticks,5}, {p}%\n");
             }
-            else Printf($"c = {dataCount:4}, clcks = {clocks:5}\n");
+            else Printf($"c = {dataCount,4}, clcks = {clocks.Ticks,5}\n");
         }
 
         static void GetBaseClocks()
@@ -363,7 +363,7 @@ namespace System.NumericsX
                     StopRecordTime(out end);
                     GetBest(start, end, ref bestClocksGeneric);
                 }
-                PrintClocks($"generic.MulAdd(float * float[{j:2}])", 1, bestClocksGeneric);
+                PrintClocks($"generic.MulAdd(float * float[{j,2}])", 1, bestClocksGeneric);
 
                 bestClocksSIMD = TimeSpan.MinValue;
                 for (i = 0; i < NUMTESTS; i++)
@@ -380,7 +380,7 @@ namespace System.NumericsX
                     if (MathX.Fabs(fdst0[i] - fdst1[i]) > 1e-5f)
                         break;
                 result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
-                PrintClocks($"   simd.MulAdd(float * float[{j:2}]) {result}", 1, bestClocksSIMD, bestClocksGeneric);
+                PrintClocks($"   simd.MulAdd(float * float[{j,2}]) {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
         }
 
@@ -411,7 +411,7 @@ namespace System.NumericsX
                     StopRecordTime(out end);
                     GetBest(start, end, ref bestClocksGeneric);
                 }
-                PrintClocks($"generic.MulSub(float * float[{j:2}])", 1, bestClocksGeneric);
+                PrintClocks($"generic.MulSub(float * float[{j,2}])", 1, bestClocksGeneric);
 
                 bestClocksSIMD = TimeSpan.MinValue;
                 for (i = 0; i < NUMTESTS; i++)
@@ -428,7 +428,7 @@ namespace System.NumericsX
                     if (MathX.Fabs(fdst0[i] - fdst1[i]) > 1e-5f)
                         break;
                 result = i >= COUNT ? "ok" : $"{S_COLOR_RED}X";
-                PrintClocks($"   simd.MulSub(float * float[{j:2}]) {result}", 1, bestClocksSIMD, bestClocksGeneric);
+                PrintClocks($"   simd.MulSub(float * float[{j,2}]) {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
         }
 
@@ -655,7 +655,7 @@ namespace System.NumericsX
                     StopRecordTime(out end);
                     GetBest(start, end, ref bestClocksGeneric);
                 }
-                PrintClocks($"generic.Dot(float[{j:2}] * float[{j:2}])", 1, bestClocksGeneric);
+                PrintClocks($"generic.Dot(float[{j,2}] * float[{j,2}])", 1, bestClocksGeneric);
 
                 bestClocksSIMD = TimeSpan.MinValue;
                 for (i = 0; i < NUMTESTS; i++)
@@ -666,7 +666,7 @@ namespace System.NumericsX
                     GetBest(start, end, ref bestClocksSIMD);
                 }
                 result = MathX.Fabs(dot1 - dot2) < 1e-4f ? "ok" : $"{S_COLOR_RED}X";
-                PrintClocks($"   simd.Dot(float[{j:2}] * float[{j:2}]) {result}", 1, bestClocksSIMD, bestClocksGeneric);
+                PrintClocks($"   simd.Dot(float[{j,2}] * float[{j,2}]) {result}", 1, bestClocksSIMD, bestClocksGeneric);
             }
         }
 
@@ -910,8 +910,8 @@ namespace System.NumericsX
             var drawVerts = new DrawVert[COUNT];
             var indexes = stackalloc int[COUNT];
             float min = 0f, max = 0f, min2 = 0f, max2 = 0f;
-            Vector2 v2min, v2max, v2min2, v2max2;
-            Vector3 vmin, vmax, vmin2, vmax2;
+            Vector2 v2min = default, v2max = default, v2min2 = default, v2max2 = default;
+            Vector3 vmin = default, vmax = default, vmin2 = default, vmax2 = default;
             string result;
 
             var srnd = new RandomX(RANDOM_SEED);
@@ -1041,11 +1041,6 @@ namespace System.NumericsX
             PrintClocks($"   simd.MinMax(DrawVert[], indexes[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestClamp
-        ============
-        */
         static void TestClamp()
         {
             int i;
@@ -1138,11 +1133,6 @@ namespace System.NumericsX
             PrintClocks($"   simd.ClampMax(float[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestMemcpy
-        ============
-        */
         static void TestMemcpy()
         {
             int i, j;
@@ -1168,11 +1158,6 @@ namespace System.NumericsX
             Printf("   simd.Memcpy() ok\n");
         }
 
-        /*
-        ============
-        TestMemset
-        ============
-        */
         static void TestMemset()
         {
             int i, j, k;
@@ -1195,12 +1180,6 @@ namespace System.NumericsX
         }
 
         const float MATX_SIMD_EPSILON = 1e-5f;
-
-        /*
-        ============
-        TestMatXMultiplyVecX
-        ============
-        */
         static void TestMatXMultiplyVecX()
         {
             int i, j;
@@ -1318,11 +1297,6 @@ namespace System.NumericsX
             }
         }
 
-        /*
-        ============
-        TestMatXMultiplyAddVecX
-        ============
-        */
         static void TestMatXMultiplyAddVecX()
         {
             int i, j;
@@ -1440,11 +1414,6 @@ namespace System.NumericsX
             }
         }
 
-        /*
-        ============
-        TestMatXTransposeMultiplyVecX
-        ============
-        */
         static void TestMatXTransposeMultiplyVecX()
         {
             int i, j;
@@ -1529,11 +1498,6 @@ namespace System.NumericsX
             }
         }
 
-        /*
-        ============
-        TestMatXTransposeMultiplyAddVecX
-        ============
-        */
         static void TestMatXTransposeMultiplyAddVecX()
         {
             int i, j;
@@ -1618,14 +1582,8 @@ namespace System.NumericsX
             }
         }
 
-        /*
-        ============
-        TestMatXMultiplyMatX
-        ============
-        */
         const float TEST_VALUE_RANGE = 10f;
         const float MATX_MATX_SIMD_EPSILON = 1e-4f;
-
         static void TestMatXMultiplyMatX()
         {
             int i, j;
@@ -1770,11 +1728,6 @@ namespace System.NumericsX
             }
         }
 
-        /*
-        ============
-        TestMatXTransposeMultiplyMatX
-        ============
-        */
         static void TestMatXTransposeMultiplyMatX()
         {
             int i, j;
@@ -1853,12 +1806,6 @@ namespace System.NumericsX
 
         const float MATX_LTS_SIMD_EPSILON = 1f;
         const int MATX_LTS_SOLVE_SIZE = 100;
-
-        /*
-        ============
-        TestMatXLowerTriangularSolve
-        ============
-        */
         static void TestMatXLowerTriangularSolve()
         {
             int i, j;
@@ -1881,7 +1828,8 @@ namespace System.NumericsX
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
-                    p_generic.MatX_LowerTriangularSolve(L, x.ToFloatPtr(), b.ToFloatPtr(), i);
+                    fixed (float* xF = x.p, bF = b.p)
+                        p_generic.MatX_LowerTriangularSolve(L, xF, bF, i);
                     StopRecordTime(out end);
                     GetBest(start, end, ref bestClocksGeneric);
                 }
@@ -1894,7 +1842,8 @@ namespace System.NumericsX
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
-                    p_simd.MatX_LowerTriangularSolve(L, x.ToFloatPtr(), b.ToFloatPtr(), i);
+                    fixed (float* xF = x.p, bF = b.p)
+                        p_simd.MatX_LowerTriangularSolve(L, xF, bF, i);
                     StopRecordTime(out end);
                     GetBest(start, end, ref bestClocksSIMD);
                 }
@@ -1904,11 +1853,6 @@ namespace System.NumericsX
             }
         }
 
-        /*
-        ============
-        TestMatXLowerTriangularSolveTranspose
-        ============
-        */
         static void TestMatXLowerTriangularSolveTranspose()
         {
             int i, j;
@@ -1931,7 +1875,8 @@ namespace System.NumericsX
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
-                    p_generic.MatX_LowerTriangularSolveTranspose(L, x.ToFloatPtr(), b.ToFloatPtr(), i);
+                    fixed (float* xF = x.p, bF = b.p)
+                        p_generic.MatX_LowerTriangularSolveTranspose(L, xF, bF, i);
                     StopRecordTime(out end);
                     GetBest(start, end, ref bestClocksGeneric);
                 }
@@ -1944,7 +1889,8 @@ namespace System.NumericsX
                 for (j = 0; j < NUMTESTS; j++)
                 {
                     StartRecordTime(out start);
-                    p_simd.MatX_LowerTriangularSolveTranspose(L, x.ToFloatPtr(), b.ToFloatPtr(), i);
+                    fixed (float* xF = x.p, bF = b.p)
+                        p_simd.MatX_LowerTriangularSolveTranspose(L, xF, bF, i);
                     StopRecordTime(out end);
                     GetBest(start, end, ref bestClocksSIMD);
                 }
@@ -1956,12 +1902,6 @@ namespace System.NumericsX
 
         const float MATX_LDLT_SIMD_EPSILON = 0.1f;
         const int MATX_LDLT_FACTOR_SOLVE_SIZE = 64;
-
-        /*
-        ============
-        TestMatXLDLTFactor
-        ============
-        */
         static void TestMatXLDLTFactor()
         {
             int i, j;
@@ -2007,11 +1947,6 @@ namespace System.NumericsX
             }
         }
 
-        /*
-        ============
-        TestBlendJoints
-        ============
-        */
         static void TestBlendJoints()
         {
             int i, j;
@@ -2079,18 +2014,13 @@ namespace System.NumericsX
             PrintClocks($"   simd.BlendJoints() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestConvertJointQuatsToJointMats
-        ============
-        */
         static void TestConvertJointQuatsToJointMats()
         {
             int i;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
             var baseJoints = stackalloc JointQuat[COUNT];
-            var joints1 = new JointMat[COUNT];
-            var joints2 = new JointMat[COUNT];
+            var joints1 = stackalloc JointMat[COUNT];
+            var joints2 = stackalloc JointMat[COUNT];
             string result;
 
             var srnd = new RandomX(RANDOM_SEED);
@@ -2132,16 +2062,11 @@ namespace System.NumericsX
             PrintClocks($"   simd.ConvertJointQuatsToJointMats() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestConvertJointMatsToJointQuats
-        ============
-        */
         static void TestConvertJointMatsToJointQuats()
         {
             int i;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
-            var baseJoints = new JointMat[COUNT];
+            var baseJoints = stackalloc JointMat[COUNT];
             var joints1 = stackalloc JointQuat[COUNT];
             var joints2 = stackalloc JointQuat[COUNT];
             string result;
@@ -2197,18 +2122,13 @@ namespace System.NumericsX
             PrintClocks($"   simd.ConvertJointMatsToJointQuats() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestTransformJoints
-        ============
-        */
         static void TestTransformJoints()
         {
             int i, j;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
-            var joints = new JointMat[COUNT + 1];
-            var joints1 = new JointMat[COUNT + 1];
-            var joints2 = new JointMat[COUNT + 1];
+            var joints = stackalloc JointMat[COUNT + 1];
+            var joints1 = stackalloc JointMat[COUNT + 1];
+            var joints2 = stackalloc JointMat[COUNT + 1];
             var parents = stackalloc int[COUNT + 1];
             string result;
 
@@ -2258,18 +2178,13 @@ namespace System.NumericsX
             PrintClocks($"   simd.TransformJoints() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestUntransformJoints
-        ============
-        */
         static void TestUntransformJoints()
         {
             int i, j;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
-            var joints = new JointMat[COUNT + 1];
-            var joints1 = new JointMat[COUNT + 1];
-            var joints2 = new JointMat[COUNT + 1];
+            var joints = stackalloc JointMat[COUNT + 1];
+            var joints1 = stackalloc JointMat[COUNT + 1];
+            var joints2 = stackalloc JointMat[COUNT + 1];
             var parents = stackalloc int[COUNT + 1];
             string result;
 
@@ -2319,21 +2234,15 @@ namespace System.NumericsX
             PrintClocks($"   simd.UntransformJoints() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestTransformVerts
-        ============
-        */
         const int NUMJOINTS = 64;
         const int NUMVERTS = COUNT / 2;
-
         static void TestTransformVerts()
         {
             int i;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
             var drawVerts1 = new DrawVert[NUMVERTS];
             var drawVerts2 = new DrawVert[NUMVERTS];
-            var joints = new JointMat[NUMJOINTS];
+            var joints = stackalloc JointMat[NUMJOINTS];
             var weights = stackalloc Vector4[COUNT];
             var weightIndex = stackalloc int[COUNT * 2];
             string result;
@@ -2389,11 +2298,6 @@ namespace System.NumericsX
             PrintClocks($"   simd.TransformVerts() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestTracePointCull
-        ============
-        */
         static void TestTracePointCull()
         {
             int i, j;
@@ -2445,11 +2349,6 @@ namespace System.NumericsX
             PrintClocks($"   simd.TracePointCull() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestDecalPointCull
-        ============
-        */
         static void TestDecalPointCull()
         {
             int i, j;
@@ -2504,11 +2403,6 @@ namespace System.NumericsX
             PrintClocks($"   simd.DecalPointCull() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestOverlayPointCull
-        ============
-        */
         static void TestOverlayPointCull()
         {
             int i, j;
@@ -2561,11 +2455,6 @@ namespace System.NumericsX
             PrintClocks($"   simd.OverlayPointCull() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestDeriveTriPlanes
-        ============
-        */
         static void TestDeriveTriPlanes()
         {
             int i, j;
@@ -2621,11 +2510,6 @@ namespace System.NumericsX
             PrintClocks($"   simd.DeriveTriPlanes() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestDeriveTangents
-        ============
-        */
         static void TestDeriveTangents()
         {
             int i, j;
@@ -2711,11 +2595,6 @@ namespace System.NumericsX
             PrintClocks($"   simd.DeriveTangents() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestDeriveUnsmoothedTangents
-        ============
-        */
         static void TestDeriveUnsmoothedTangents()
         {
             int i, j;
@@ -2786,11 +2665,6 @@ namespace System.NumericsX
             PrintClocks($"   simd.DeriveUnsmoothedTangents() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestNormalizeTangents
-        ============
-        */
         static void TestNormalizeTangents()
         {
             int i, j;
@@ -2842,11 +2716,6 @@ namespace System.NumericsX
             PrintClocks($"   simd.NormalizeTangents() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestGetTextureSpaceLightVectors
-        ============
-        */
         static void TestGetTextureSpaceLightVectors()
         {
             int i, j;
@@ -2905,11 +2774,6 @@ namespace System.NumericsX
             PrintClocks($"   simd.CreateTextureSpaceLightVectors() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestGetSpecularTextureCoords
-        ============
-        */
         static void TestGetSpecularTextureCoords()
         {
             int i, j;
@@ -2971,11 +2835,6 @@ namespace System.NumericsX
             PrintClocks($"   simd.CreateSpecularTextureCoords() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestCreateShadowCache
-        ============
-        */
         static void TestCreateShadowCache()
         {
             int i, j;
@@ -3071,13 +2930,7 @@ namespace System.NumericsX
             PrintClocks($"   simd.CreateVertexProgramShadowCache() {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestSoundUpSampling
-        ============
-        */
         const float SOUND_UPSAMPLE_EPSILON = 1f;
-
         static void TestSoundUpSampling()
         {
             int i;
@@ -3166,13 +3019,7 @@ namespace System.NumericsX
             }
         }
 
-        /*
-        ============
-        TestSoundMixing
-        ============
-        */
         const float SOUND_MIX_EPSILON = 2f;
-
         static void TestSoundMixing()
         {
             int i, j;
@@ -3350,11 +3197,6 @@ namespace System.NumericsX
             PrintClocks($"   simd.MixedSoundToSamples() {result}", ISimd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        TestMath
-        ============
-        */
         static void TestMath()
         {
             int i;
@@ -3378,7 +3220,7 @@ namespace System.NumericsX
                 testvar = (testvar + tst) * tst;
                 tst = rnd.CRandomFloat();
             }
-            PrintClocks("            fabs(tst)", 1, bestClocks);
+            PrintClocks("          fabs(tst)", 1, bestClocks);
 
             bestClocks = default;
             tst = rnd.CRandomFloat();
@@ -3406,7 +3248,7 @@ namespace System.NumericsX
                 testvar = (testvar + tst) * tst * 0.01f;
                 tst = 10f + 100f * rnd.RandomFloat();
             }
-            PrintClocks("            sqrt(tst)", 1, bestClocks);
+            PrintClocks("          sqrt(tst)", 1, bestClocks);
 
             bestClocks = default;
             tst = rnd.RandomFloat();
@@ -3510,7 +3352,7 @@ namespace System.NumericsX
                 testvar = (testvar + tst) * tst;
                 tst = rnd.CRandomFloat();
             }
-            PrintClocks("   MathX.Cos16( tst )", 1, bestClocks);
+            PrintClocks("   MathX.Cos16(tst)", 1, bestClocks);
 
             bestClocks = default;
             tst = rnd.CRandomFloat();
@@ -3523,7 +3365,7 @@ namespace System.NumericsX
                 testvar = (testvar + tst) * tst;
                 tst = rnd.CRandomFloat();
             }
-            PrintClocks("  MathX.SinCos( tst )", 1, bestClocks);
+            PrintClocks("  MathX.SinCos(tst)", 1, bestClocks);
 
             bestClocks = default;
             tst = rnd.CRandomFloat();
@@ -3653,7 +3495,7 @@ namespace System.NumericsX
                 testvar = (testvar + tst) * tst * 0.1f;
                 tst = rnd.CRandomFloat();
             }
-            PrintClocks("    MathX.Pow(tst)", 1, bestClocks);
+            PrintClocks("     MathX.Pow(tst)", 1, bestClocks);
 
             bestClocks = default;
             tst = rnd.CRandomFloat();
@@ -3666,7 +3508,7 @@ namespace System.NumericsX
                 testvar = (testvar + tst) * tst * 0.1f;
                 tst = rnd.CRandomFloat();
             }
-            PrintClocks("  MathX.Pow16(tst)", 1, bestClocks);
+            PrintClocks("   MathX.Pow16(tst)", 1, bestClocks);
 
             bestClocks = default;
             tst = rnd.CRandomFloat();
@@ -3679,7 +3521,7 @@ namespace System.NumericsX
                 testvar = (testvar + tst) * tst * 0.1f;
                 tst = rnd.CRandomFloat();
             }
-            PrintClocks("    MathX.Exp(tst)", 1, bestClocks);
+            PrintClocks("     MathX.Exp(tst)", 1, bestClocks);
 
             bestClocks = default;
             tst = rnd.CRandomFloat();
@@ -3692,7 +3534,7 @@ namespace System.NumericsX
                 testvar = (testvar + tst) * tst * 0.1f;
                 tst = rnd.CRandomFloat();
             }
-            PrintClocks("  MathX.Exp16(tst)", 1, bestClocks);
+            PrintClocks("   MathX.Exp16(tst)", 1, bestClocks);
 
             bestClocks = default;
             tst = rnd.CRandomFloat();
@@ -3706,7 +3548,7 @@ namespace System.NumericsX
                 testvar = (testvar + tst) * tst;
                 tst = rnd.CRandomFloat();
             }
-            PrintClocks("    MathX.Log(tst)", 1, bestClocks);
+            PrintClocks("     MathX.Log(tst)", 1, bestClocks);
 
             bestClocks = default;
             tst = rnd.CRandomFloat();
@@ -3720,7 +3562,7 @@ namespace System.NumericsX
                 testvar = (testvar + tst) * tst;
                 tst = rnd.CRandomFloat();
             }
-            PrintClocks("  MathX.Log16(tst)", 1, bestClocks);
+            PrintClocks("   MathX.Log16(tst)", 1, bestClocks);
 
             Printf($"testvar = {testvar}\n");
 
@@ -3785,11 +3627,6 @@ namespace System.NumericsX
             PrintClocks("     Angles.ToMat3()", 1, bestClocks);
         }
 
-        /*
-        ============
-        TestNegate
-        ============
-        */
         static void TestNegate()
         {
             int i;
@@ -3836,12 +3673,7 @@ namespace System.NumericsX
             PrintClocks($"   simd.Negate16(float[]) {result}", COUNT, bestClocksSIMD, bestClocksGeneric);
         }
 
-        /*
-        ============
-        idSIMD::Test_f
-        ============
-        */
-        static void Test_f(CmdArgs args)
+        internal static void Test_f(CmdArgs args)
         {
 #if _WIN32
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
@@ -3849,6 +3681,7 @@ namespace System.NumericsX
             p_simd = ISimd.processor;
             p_generic = ISimd.generic;
 
+            p_simd = ISimd.generic;
 #if false
             if (!string.IsNullOrEmpty(args[1]))
             {
@@ -3920,8 +3753,7 @@ namespace System.NumericsX
             SetRefreshOnPrint(true);
 
             Printf($"using {p_simd.Name} for SIMD processing\n");
-
-            GetBaseClocks();
+            //GetBaseClocks();
 
             TestMath();
             TestAdd();

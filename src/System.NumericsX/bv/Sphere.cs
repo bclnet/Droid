@@ -198,9 +198,11 @@ namespace System.NumericsX
         }
 
         // Tight sphere for a point set.
-        public void FromPoints(Vector3[] points, int numPoints)
+        public unsafe void FromPoints(Vector3[] points, int numPoints)
         {
-            ISimd.Processor.MinMax(out var mins, out var maxs, points, numPoints);
+            Vector3 mins, maxs;
+            fixed (Vector3* pointsF = points)
+                ISimd.Processor.MinMax(out mins, out maxs, pointsF, numPoints);
 
             var origin = (mins + maxs) * 0.5f;
 
