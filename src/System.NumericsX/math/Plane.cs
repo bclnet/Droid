@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using static System.NumericsX.Platform;
 
 namespace System.NumericsX
@@ -29,6 +30,8 @@ namespace System.NumericsX
 
     public struct Plane
     {
+        public static Plane origin = new(0f, 0f, 0f, 0f);
+
         public const float ON_EPSILON = 0.1f;
         public const float DEGENERATE_DIST_EPSILON = 1e-4f;
 
@@ -42,6 +45,7 @@ namespace System.NumericsX
         public const int SIDE_ON = 2;
         public const int SIDE_CROSS = 3;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Plane(float a, float b, float c, float d)
         {
             this.a = a;
@@ -49,14 +53,16 @@ namespace System.NumericsX
             this.c = c;
             this.d = d;
         }
-        public Plane(Vector3 normal, float dist)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Plane(in Vector3 normal, float dist)
         {
             this.a = normal.x;
             this.b = normal.y;
             this.c = normal.z;
             this.d = -dist;
         }
-        public static implicit operator Plane(Vector3 v) // sets normal and sets Plane::d to zero
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator Plane(in Vector3 v) // sets normal and sets Plane::d to zero
             => new()
             {
                 a = v.x,
@@ -67,6 +73,7 @@ namespace System.NumericsX
 
         public unsafe float this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (float* p = &a)
@@ -74,43 +81,52 @@ namespace System.NumericsX
             }
         }
 
-        public static Plane operator -(Plane _)                     // flips plane
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plane operator -(in Plane _)                     // flips plane
             => new(-_.a, -_.b, -_.c, -_.d);
-        public static Plane operator +(Plane _, Plane p)   // add plane equations
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plane operator +(in Plane _, in Plane p)   // add plane equations
             => new(_.a + p.a, _.b + p.b, _.c + p.c, _.d + p.d);
-        public static Plane operator -(Plane _, Plane p)   // subtract plane equations
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plane operator -(in Plane _, in Plane p)   // subtract plane equations
             => new(_.a - p.a, _.b - p.b, _.c - p.c, _.d - p.d);
-        //public static Plane operator *(Plane _, Matrix3x3 &m );			// Normal *= m
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Plane operator *(Plane _, Matrix3x3 m)       // Normal *= m
+        {
+            _.Normal *= m;
+            return _;
+        }
 
-        public bool Compare(Plane p)                      // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in Plane p)                      // exact compare, no epsilon
             => a == p.a && b == p.b && c == p.c && d == p.d;
-        public bool Compare(Plane p, float epsilon) // compare with epsilon
-        {
-            if (MathX.Fabs(a - p.a) > epsilon) return false;
-            if (MathX.Fabs(b - p.b) > epsilon) return false;
-            if (MathX.Fabs(c - p.c) > epsilon) return false;
-            if (MathX.Fabs(d - p.d) > epsilon) return false;
-            return true;
-        }
-        public bool Compare(Plane p, float normalEps, float distEps)  // compare with epsilon
-        {
-            if (MathX.Fabs(d - p.d) > distEps) return false;
-            if (!Normal.Compare(ref p.Normal, normalEps)) return false;
-            return true;
-        }
-        public static bool operator ==(Plane _, Plane p)                   // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in Plane p, float epsilon) // compare with epsilon
+            => MathX.Fabs(a - p.a) <= epsilon &&
+               MathX.Fabs(b - p.b) <= epsilon &&
+               MathX.Fabs(c - p.c) <= epsilon &&
+               MathX.Fabs(d - p.d) <= epsilon;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in Plane p, float normalEps, float distEps)  // compare with epsilon
+            => MathX.Fabs(d - p.d) <= distEps &&
+               Normal.Compare(p.Normal, normalEps);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(in Plane _, in Plane p)                   // exact compare, no epsilon
             => _.Compare(p);
-        public static bool operator !=(Plane _, Plane p)                   // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in Plane _, in Plane p)                   // exact compare, no epsilon
             => !_.Compare(p);
         public override bool Equals(object obj)
             => obj is Plane q && Compare(q);
         public override int GetHashCode()
             => a.GetHashCode() ^ b.GetHashCode() ^ c.GetHashCode() ^ d.GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()                         // zero plane
             => a = b = c = d = 0f;
 
-        public void SetNormal(Vector3 normal)      // sets the normal
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetNormal(in Vector3 normal)      // sets the normal
         {
             a = normal.x;
             b = normal.y;
@@ -118,11 +134,12 @@ namespace System.NumericsX
         }
 
         public ref Vector3 Normal
-        {   // reference to normal
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => ref reinterpret.cast_vec3(this);
-            //set { }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float Normalize(bool fixDegenerate = true)  // only normalizes the plane normal, does not adjust d
         {
             var length = reinterpret.cast_vec3(this).Normalize();
@@ -131,9 +148,11 @@ namespace System.NumericsX
             return length;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool FixDegenerateNormal()          // fix degenerate normal
             => Normal.FixDegenerateNormal();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool FixDegeneracies(float distEpsilon) // fix degenerate normal and dist
         {
             var fixedNormal = FixDegenerateNormal();
@@ -146,7 +165,9 @@ namespace System.NumericsX
 
         public float Dist
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => -d; // returns: -d
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => d = -value; // sets: d = -dist
         }
 
@@ -170,24 +191,28 @@ namespace System.NumericsX
             }
         }
 
-        public bool FromPoints(Vector3 p1, Vector3 p2, Vector3 p3, bool fixDegenerate = true)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool FromPoints(in Vector3 p1, in Vector3 p2, in Vector3 p3, bool fixDegenerate = true)
         {
-            Normal = (p1 - p2).Cross_(p3 - p2);
+            Normal = (p1 - p2).Cross(p3 - p2);
             if (Normalize(fixDegenerate) == 0f)
                 return false;
             d = -(Normal * p2);
             return true;
         }
-        public bool FromVecs(Vector3 dir1, Vector3 dir2, Vector3 p, bool fixDegenerate = true)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool FromVecs(in Vector3 dir1, in Vector3 dir2, in Vector3 p, bool fixDegenerate = true)
         {
-            Normal = dir1.Cross(ref dir2);
+            Normal = dir1.Cross(dir2);
             if (Normalize(fixDegenerate) == 0f)
                 return false;
             d = -(Normal * p);
             return true;
         }
 
-        public void FitThroughPoint(Vector3 p) // assumes normal is valid
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void FitThroughPoint(in Vector3 p) // assumes normal is valid
              => d = -(Normal * p);
 
         public bool HeightFit(Vector3[] points, int numPoints)
@@ -208,7 +233,7 @@ namespace System.NumericsX
             if (numPoints == 2)
             {
                 dir = points[1] - points[0];
-                Normal = dir.Cross_(new Vector3(0, 0, 1)).Cross(ref dir);
+                Normal = dir.Cross(new Vector3(0, 0, 1)).Cross(dir);
                 Normalize();
                 d = -(Normal * points[0]);
                 return true;
@@ -241,22 +266,26 @@ namespace System.NumericsX
             return true;
         }
 
-        public Plane Translate(Vector3 translation)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Plane Translate(in Vector3 translation)
             => new(a, b, c, d - translation * Normal);
-        public Plane TranslateSelf(Vector3 translation)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Plane TranslateSelf(in Vector3 translation)
         {
             d -= translation * Normal;
             return this;
         }
 
-        public Plane Rotate(Vector3 origin, Matrix3x3 axis)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Plane Rotate(in Vector3 origin, in Matrix3x3 axis)
         {
             Plane p = new();
             p.Normal = Normal * axis;
             p.d = d + origin * Normal - origin * p.Normal;
             return p;
         }
-        public Plane RotateSelf(Vector3 origin, Matrix3x3 axis)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Plane RotateSelf(in Vector3 origin, in Matrix3x3 axis)
         {
             d += origin * Normal;
             Normal *= axis;
@@ -264,10 +293,12 @@ namespace System.NumericsX
             return this;
         }
 
-        public float Distance(Vector3 v)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float Distance(in Vector3 v)
             => a * v.x + b * v.y + c * v.z + d;
 
-        public PLANESIDE Side(Vector3 v, float epsilon = 0f)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public PLANESIDE Side(in Vector3 v, float epsilon = 0f)
         {
             var dist = Distance(v);
             if (dist > epsilon) return PLANESIDE.FRONT;
@@ -275,7 +306,8 @@ namespace System.NumericsX
             else return PLANESIDE.ON;
         }
 
-        public bool LineIntersection(Vector3 start, Vector3 end)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool LineIntersection(in Vector3 start, in Vector3 end)
         {
             float d1, d2, fraction;
 
@@ -289,7 +321,8 @@ namespace System.NumericsX
         }
 
         // intersection point is start + dir * scale
-        public bool RayIntersection(Vector3 start, Vector3 dir, out float scale)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool RayIntersection(in Vector3 start, in Vector3 dir, out float scale)
         {
             float d1, d2;
 
@@ -304,7 +337,7 @@ namespace System.NumericsX
             return true;
         }
 
-        public bool PlaneIntersection(Plane plane, Vector3 start, Vector3 dir)
+        public bool PlaneIntersection(in Plane plane, out Vector3 start, out Vector3 dir)
         {
             double n00, n01, n11, det, invDet, f0, f1;
 
@@ -314,34 +347,38 @@ namespace System.NumericsX
             det = n00 * n11 - n01 * n01;
 
             if (MathX.Fabs(det) < 1e-6f)
+            {
+                start = dir = default;
                 return false;
+            }
 
             invDet = 1f / det;
             f0 = (n01 * plane.d - n11 * d) * invDet;
             f1 = (n01 * d - n00 * plane.d) * invDet;
 
-            dir = Normal.Cross(ref plane.Normal);
+            dir = Normal.Cross(plane.Normal);
             start = (float)f0 * Normal + (float)f1 * plane.Normal;
             return true;
         }
 
-        public static int Dimension
-            => 4;
+        public const int Dimension = 4;
 
-        public Vector4 ToVec4()
-            => reinterpret.cast_vec4(this);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref Vector4 ToVec4()
+            => ref reinterpret.cast_vec4(this);
 
-        public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
-        {
-            fixed (float* _ = &a)
-                return callback(_);
-        }
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //{
+        //    fixed (float* _ = &a)
+        //        return callback(_);
+        //}
+
         public unsafe string ToString(int precision = 2)
         {
             var dimension = Dimension;
-            return ToFloatPtr(_ => FloatArrayToString(_, dimension, precision));
+            fixed (float* _ = &a)
+                return FloatArrayToString(_, dimension, precision);
         }
-
-        public static Plane origin = new(0f, 0f, 0f, 0f);
     }
 }

@@ -18,7 +18,7 @@ namespace System.NumericsX
         /// <param name="diag">The diag.</param>
         /// <param name="subd">The subd.</param>
         /// <returns></returns>
-        void HouseholderReduction(VectorX diag, VectorX subd)
+        void HouseholderReduction(ref VectorX diag, ref VectorX subd)
         {
             int i0, i1, i2, i3; float h, f, g, invH, halfFdivH, scale, invScale, sum;
             Debug.Assert(numRows == numColumns);
@@ -120,7 +120,7 @@ namespace System.NumericsX
         /// <param name="diag">The diag.</param>
         /// <param name="subd">The subd.</param>
         /// <returns></returns>
-        bool QL(VectorX diag, VectorX subd)
+        bool QL(ref VectorX diag, ref VectorX subd)
         {
             const int maxIter = 32;
             int i0, i1, i2, i3; float a, b, f, g, r, p, s, c;
@@ -194,7 +194,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="H">The h.</param>
         /// <returns></returns>
-        void HessenbergReduction(MatrixX H)
+        void HessenbergReduction(ref MatrixX H)
         {
             int i, j, m, low = 0, high = numRows - 1; float scale, f, g, h; VectorX v = new();
 
@@ -302,7 +302,7 @@ namespace System.NumericsX
         /// <param name="realEigenValues">The real eigen values.</param>
         /// <param name="imaginaryEigenValues">The imaginary eigen values.</param>
         /// <returns></returns>
-        bool HessenbergToRealSchur(MatrixX H, VectorX realEigenValues, VectorX imaginaryEigenValues)
+        bool HessenbergToRealSchur(ref MatrixX H, ref VectorX realEigenValues, ref VectorX imaginaryEigenValues)
         {
             int i, j, k, n = numRows - 1, low = 0, high = numRows - 1; float eps = 2e-16f, exshift = 0f, p = 0f, q = 0f, r = 0f, s = 0f, z = 0f, t, w, x, y;
 
@@ -703,7 +703,7 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="alpha">The alpha.</param>
         /// <returns></returns>
-        public void Update_RankOne(VectorX v, VectorX w, float alpha)
+        public void Update_RankOne(in VectorX v, in VectorX w, float alpha)
         {
             int i, j; float s;
             Debug.Assert(v.Size >= numRows);
@@ -723,7 +723,7 @@ namespace System.NumericsX
         /// <param name="v">The v.</param>
         /// <param name="alpha">The alpha.</param>
         /// <returns></returns>
-        public void Update_RankOneSymmetric(VectorX v, float alpha)
+        public void Update_RankOneSymmetric(in VectorX v, float alpha)
         {
             int i, j; float s;
             Debug.Assert(numRows == numColumns);
@@ -749,7 +749,7 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="r">The r.</param>
         /// <returns></returns>
-        public void Update_RowColumn(VectorX v, VectorX w, int r)
+        public void Update_RowColumn(in VectorX v, in VectorX w, int r)
         {
             int i;
             Debug.Assert(w[r] == 0f);
@@ -774,7 +774,7 @@ namespace System.NumericsX
         /// <param name="v">The v.</param>
         /// <param name="r">The r.</param>
         /// <returns></returns>
-        public void Update_RowColumnSymmetric(VectorX v, int r)
+        public void Update_RowColumnSymmetric(in VectorX v, int r)
         {
             int i;
             Debug.Assert(numRows == numColumns);
@@ -804,7 +804,7 @@ namespace System.NumericsX
         /// <param name="v">The v.</param>
         /// <param name="w">The w.</param>
         /// <returns></returns>
-        public void Update_Increment(VectorX v, VectorX w)
+        public void Update_Increment(in VectorX v, in VectorX w)
         {
             int i;
             Debug.Assert(numRows == numColumns);
@@ -829,7 +829,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="v">The v.</param>
         /// <returns></returns>
-        public void Update_IncrementSymmetric(VectorX v)
+        public void Update_IncrementSymmetric(in VectorX v)
         {
             int i;
             Debug.Assert(numRows == numColumns);
@@ -941,7 +941,7 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="alpha">The alpha.</param>
         /// <returns></returns>
-        public bool Inverse_UpdateRankOne(VectorX v, VectorX w, float alpha)
+        public bool Inverse_UpdateRankOne(in VectorX v, in VectorX w, float alpha)
         {
             int i, j; float beta, s; VectorX y = new(), z = new();
             Debug.Assert(numRows == numColumns);
@@ -951,8 +951,8 @@ namespace System.NumericsX
             y.SetData(numRows, VectorX.VECX_ALLOCA(numRows));
             z.SetData(numRows, VectorX.VECX_ALLOCA(numRows));
 
-            Multiply(ref y, ref v);
-            TransposeMultiply(ref z, ref w);
+            Multiply(y, v);
+            TransposeMultiply(z, w);
             beta = 1f + (w * y);
 
             if (beta == 0f)
@@ -982,7 +982,7 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="r">The r.</param>
         /// <returns></returns>
-        public bool Inverse_UpdateRowColumn(VectorX v, VectorX w, int r)
+        public bool Inverse_UpdateRowColumn(in VectorX v, in VectorX w, int r)
         {
             VectorX s = new();
             Debug.Assert(numRows == numColumns);
@@ -1010,7 +1010,7 @@ namespace System.NumericsX
         /// <param name="v">The v.</param>
         /// <param name="w">The w.</param>
         /// <returns></returns>
-        public bool Inverse_UpdateIncrement(VectorX v, VectorX w)
+        public bool Inverse_UpdateIncrement(in VectorX v, in VectorX w)
         {
             VectorX v2 = new();
             Debug.Assert(numRows == numColumns);
@@ -1035,7 +1035,7 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="r">The r.</param>
         /// <returns></returns>
-        public bool Inverse_UpdateDecrement(VectorX v, VectorX w, int r)
+        public bool Inverse_UpdateDecrement(in VectorX v, in VectorX w, int r)
         {
             VectorX v1 = new(), w1 = new();
             Debug.Assert(numRows == numColumns);
@@ -1067,14 +1067,17 @@ namespace System.NumericsX
         /// <param name="x">The x.</param>
         /// <param name="b">The b.</param>
         /// <returns></returns>
-        public void Inverse_Solve(VectorX x, VectorX b)
-            => Multiply(ref x, ref b);
+        public void Inverse_Solve(in VectorX x, in VectorX b)
+            => Multiply(x, b);
 
         #endregion
 
         #region LU
 
-        public bool LU_Factor(int[] index, out float det) { var w = 0f; var r = LU_Factor(index, x => w = x); det = w; return r; }
+        public bool LU_Factor(int[] index, out float det)
+        {
+            var w = 0f; var r = LU_Factor(index, x => w = x); det = w; return r;
+        }
 
         /// <summary>
         /// in-place factorization: LU
@@ -1170,7 +1173,7 @@ namespace System.NumericsX
         /// <param name="alpha">The alpha.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public unsafe bool LU_UpdateRankOne(VectorX v, VectorX w, float alpha, int[] index)
+        public unsafe bool LU_UpdateRankOne(in VectorX v, in VectorX w, float alpha, int[] index)
         {
             int i, j, max; double diag, beta, p0, p1, d;
             Debug.Assert(v.Size >= numColumns);
@@ -1186,7 +1189,8 @@ namespace System.NumericsX
                 for (i = 0; i < numRows; i++)
                     y[i] = alpha * v[i];
 
-            w.ToFloatPtr(_ => Unsafe.CopyBlock(z, _, (uint)w.Size * sizeof(float)));
+            fixed (float* _ = &w.p[w.pi])
+                Unsafe.CopyBlock(z, _, (uint)w.Size * sizeof(float));
 
             max = Math.Min(numRows, numColumns);
             for (i = 0; i < max; i++)
@@ -1241,7 +1245,7 @@ namespace System.NumericsX
         /// <param name="r">The r.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public unsafe bool LU_UpdateRowColumn(VectorX v, VectorX w, int r, int[] index)
+        public unsafe bool LU_UpdateRowColumn(in VectorX v, in VectorX w, int r, int[] index)
         {
             int i, j, min, max, rp; double diag, beta0, beta1, p0, p1, q0, q1, d;
             Debug.Assert(v.Size >= numColumns);
@@ -1268,7 +1272,8 @@ namespace System.NumericsX
             }
             else
             {
-                v.ToFloatPtr(_ => Unsafe.CopyBlock(y0, _, (uint)v.Size * sizeof(float)));
+                fixed (float* _ = &v.p[v.pi])
+                    Unsafe.CopyBlock(y0, _, (uint)v.Size * sizeof(float));
                 rp = r;
             }
 
@@ -1279,7 +1284,8 @@ namespace System.NumericsX
 
             z0[r] = 1f;
 
-            w.ToFloatPtr(_ => Unsafe.CopyBlock(z1, _, (uint)w.Size * sizeof(float)));
+            fixed (float* _ = &w.p[v.pi])
+                Unsafe.CopyBlock(z1, _, (uint)w.Size * sizeof(float));
 
             // update the beginning of the to be updated row and column
             min = Math.Min(r, rp);
@@ -1363,7 +1369,7 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public bool LU_UpdateIncrement(VectorX v, VectorX w, int[] index)
+        public bool LU_UpdateIncrement(in VectorX v, in VectorX w, int[] index)
         {
             int i, j; float sum;
             Debug.Assert(numRows == numColumns);
@@ -1408,7 +1414,7 @@ namespace System.NumericsX
         /// <param name="r">The r.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public bool LU_UpdateDecrement(VectorX v, VectorX w, VectorX u, int r, int[] index)
+        public bool LU_UpdateDecrement(in VectorX v, in VectorX w, in VectorX u, int r, int[] index)
         {
             int i, p; VectorX v1 = new(), w1 = new();
             Debug.Assert(numRows == numColumns);
@@ -1496,7 +1502,7 @@ namespace System.NumericsX
         /// <param name="b">The b.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public void LU_Solve(VectorX x, VectorX b, int[] index)
+        public void LU_Solve(ref VectorX x, in VectorX b, int[] index)
         {
             int i, j; double sum;
             Debug.Assert(x.Size == numColumns && b.Size == numRows);
@@ -1526,7 +1532,7 @@ namespace System.NumericsX
         /// <param name="inv">The inv.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public void LU_Inverse(MatrixX inv, int[] index)
+        public void LU_Inverse(ref MatrixX inv, int[] index)
         {
             int i, j; VectorX x = new(), b = new();
             Debug.Assert(numRows == numColumns);
@@ -1539,7 +1545,7 @@ namespace System.NumericsX
             for (i = 0; i < numRows; i++)
             {
                 b[i] = 1f;
-                LU_Solve(x, b, index);
+                LU_Solve(ref x, b, index);
                 for (j = 0; j < numRows; j++)
                     inv[j][i] = x[j];
                 b[i] = 0f;
@@ -1574,7 +1580,7 @@ namespace System.NumericsX
         /// <param name="m">The m.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public void LU_MultiplyFactors(MatrixX m, int[] index)
+        public void LU_MultiplyFactors(ref MatrixX m, int[] index)
         {
             int r, rp, i, j; double sum;
 
@@ -1608,7 +1614,7 @@ namespace System.NumericsX
         /// <param name="c">The c.</param>
         /// <param name="d">The d.</param>
         /// <returns></returns>
-        public bool QR_Factor(VectorX c, VectorX d)                // factor in-place: Q * R
+        public bool QR_Factor(ref VectorX c, ref VectorX d)                // factor in-place: Q * R
         {
             int i, j, k; double scale, s, t, sum; bool singular = false;
             Debug.Assert(numRows == numColumns);
@@ -1674,7 +1680,7 @@ namespace System.NumericsX
         /// <param name="a">a.</param>
         /// <param name="b">The b.</param>
         /// <returns></returns>
-        private void QR_Rotate(MatrixX R, int i, float a, float b)
+        void QR_Rotate(ref MatrixX R, int i, float a, float b)
         {
             int j; float f, c, s, w, y;
 
@@ -1723,14 +1729,14 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="alpha">The alpha.</param>
         /// <returns></returns>
-        public bool QR_UpdateRankOne(MatrixX R, VectorX v, VectorX w, float alpha)
+        public bool QR_UpdateRankOne(ref MatrixX R, in VectorX v, in VectorX w, float alpha)
         {
             int i, k; float f; VectorX u = new();
             Debug.Assert(v.Size >= numColumns);
             Debug.Assert(w.Size >= numRows);
 
             u.SetData(v.Size, VectorX.VECX_ALLOCA(v.Size));
-            TransposeMultiply(ref u, ref v);
+            TransposeMultiply(u, v);
             u *= alpha;
 
             for (k = v.Size - 1; k > 0; k--)
@@ -1738,7 +1744,7 @@ namespace System.NumericsX
                     break;
             for (i = k - 1; i >= 0; i--)
             {
-                QR_Rotate(R, i, u[i], -u[i + 1]);
+                QR_Rotate(ref R, i, u[i], -u[i + 1]);
                 if (u[i] == 0f)
                     u[i] = MathX.Fabs(u[i + 1]);
                 else if (MathX.Fabs(u[i]) > MathX.Fabs(u[i + 1]))
@@ -1755,7 +1761,7 @@ namespace System.NumericsX
             for (i = 0; i < v.Size; i++)
                 R[0][i] += u[0] * w[i];
             for (i = 0; i < k; i++)
-                QR_Rotate(R, i, -R[i][i], R[i + 1][i]);
+                QR_Rotate(ref R, i, -R[i][i], R[i + 1][i]);
             return true;
         }
 
@@ -1773,7 +1779,7 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="r">The r.</param>
         /// <returns></returns>
-        public bool QR_UpdateRowColumn(MatrixX R, VectorX v, VectorX w, int r)
+        public bool QR_UpdateRowColumn(ref MatrixX R, in VectorX v, in VectorX w, int r)
         {
             VectorX s = new();
             Debug.Assert(v.Size >= numColumns);
@@ -1785,8 +1791,8 @@ namespace System.NumericsX
             s.Zero();
             s[r] = 1f;
 
-            return QR_UpdateRankOne(R, v, s, 1f)
-                && QR_UpdateRankOne(R, s, w, 1f); //: opt
+            return QR_UpdateRankOne(ref R, v, s, 1f)
+                && QR_UpdateRankOne(ref R, s, w, 1f); //: opt
         }
 
         /// <summary>
@@ -1801,7 +1807,7 @@ namespace System.NumericsX
         /// <param name="v">The v.</param>
         /// <param name="w">The w.</param>
         /// <returns></returns>
-        public bool QR_UpdateIncrement(MatrixX R, VectorX v, VectorX w)
+        public bool QR_UpdateIncrement(ref MatrixX R, in VectorX v, in VectorX w)
         {
             VectorX v2 = new();
             Debug.Assert(numRows == numColumns);
@@ -1818,7 +1824,7 @@ namespace System.NumericsX
             v2 = v;
             v2[numRows - 1] -= 1f;
 
-            return QR_UpdateRowColumn(R, v2, w, numRows - 1);
+            return QR_UpdateRowColumn(ref R, v2, w, numRows - 1);
         }
 
         /// <summary>
@@ -1830,7 +1836,7 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="r">The r.</param>
         /// <returns></returns>
-        public bool QR_UpdateDecrement(MatrixX R, VectorX v, VectorX w, int r)
+        public bool QR_UpdateDecrement(ref MatrixX R, in VectorX v, in VectorX w, int r)
         {
             VectorX v1 = new(), w1 = new();
             Debug.Assert(numRows == numColumns);
@@ -1847,7 +1853,7 @@ namespace System.NumericsX
             v1[r] += 1f;
             w1[r] = 0f;
 
-            if (!QR_UpdateRowColumn(R, v1, w1, r))
+            if (!QR_UpdateRowColumn(ref R, v1, w1, r))
                 return false;
 
             // physically remove the row and column
@@ -1864,7 +1870,7 @@ namespace System.NumericsX
         /// <param name="c">The c.</param>
         /// <param name="d">The d.</param>
         /// <returns></returns>
-        public void QR_Solve(VectorX x, VectorX b, VectorX c, VectorX d)
+        public void QR_Solve(ref VectorX x, in VectorX b, in VectorX c, in VectorX d)
         {
             int i, j; double sum, t;
             Debug.Assert(numRows == numColumns);
@@ -1902,13 +1908,13 @@ namespace System.NumericsX
         /// <param name="b">The b.</param>
         /// <param name="R">The r.</param>
         /// <returns></returns>
-        public void QR_Solve(VectorX x, VectorX b, MatrixX R)
+        public void QR_Solve(ref VectorX x, in VectorX b, in MatrixX R)
         {
             int i, j; double sum;
             Debug.Assert(numRows == numColumns);
 
             // multiply b with transpose of Q
-            TransposeMultiply(ref x, ref b);
+            TransposeMultiply(x, b);
 
             // backsubstitution with R
             for (i = numRows - 1; i >= 0; i--)
@@ -1927,7 +1933,7 @@ namespace System.NumericsX
         /// <param name="c">The c.</param>
         /// <param name="d">The d.</param>
         /// <returns></returns>
-        public void QR_Inverse(MatrixX inv, VectorX c, VectorX d)
+        public void QR_Inverse(ref MatrixX inv, in VectorX c, in VectorX d)
         {
             int i, j; VectorX x = new(), b = new();
             Debug.Assert(numRows == numColumns);
@@ -1940,7 +1946,7 @@ namespace System.NumericsX
             for (i = 0; i < numRows; i++)
             {
                 b[i] = 1f;
-                QR_Solve(x, b, c, d);
+                QR_Solve(ref x, b, c, d);
                 for (j = 0; j < numRows; j++)
                     inv[j][i] = x[j];
                 b[i] = 0f;
@@ -1955,7 +1961,7 @@ namespace System.NumericsX
         /// <param name="c">The c.</param>
         /// <param name="d">The d.</param>
         /// <returns></returns>
-        public void QR_UnpackFactors(out MatrixX Q, out MatrixX R, VectorX c, VectorX d)
+        public void QR_UnpackFactors(out MatrixX Q, out MatrixX R, in VectorX c, in VectorX d)
         {
             int i, j, k; double sum; Q = new(); R = new();
 
@@ -1991,7 +1997,7 @@ namespace System.NumericsX
         /// <param name="c">The c.</param>
         /// <param name="d">The d.</param>
         /// <returns></returns>
-        public void QR_MultiplyFactors(MatrixX m, VectorX c, VectorX d)
+        public void QR_MultiplyFactors(ref MatrixX m, in VectorX c, in VectorX d)
         {
             int i, j, k; double sum; MatrixX Q = new();
 
@@ -2049,7 +2055,7 @@ namespace System.NumericsX
             }
         }
 
-        void SVD_BiDiag(VectorX w, VectorX rv1, float anorm)
+        void SVD_BiDiag(ref VectorX w, ref VectorX rv1, float anorm)
         {
             int i, j, k, l; double f, h, r, g, s, scale;
 
@@ -2129,7 +2135,7 @@ namespace System.NumericsX
             }
         }
 
-        void SVD_InitialWV(VectorX w, MatrixX V, VectorX rv1)
+        void SVD_InitialWV(in VectorX w, ref MatrixX V, in VectorX rv1)
         {
             int i, j, k, l; double f, g, s;
 
@@ -2197,7 +2203,7 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="V">The v.</param>
         /// <returns></returns>
-        public bool SVD_Factor(VectorX w, MatrixX V)               // factor in-place: U * Diag(w) * V.Transpose()
+        public bool SVD_Factor(ref VectorX w, ref MatrixX V)               // factor in-place: U * Diag(w) * V.Transpose()
         {
             int flag, i, its, j, jj, k, l, nm; double c, f, h, s, x, y, z, r, g; float anorm = 0f; VectorX rv1 = new();
 
@@ -2209,8 +2215,8 @@ namespace System.NumericsX
             w.Zero(numColumns);
             V.Zero(numColumns, numColumns);
 
-            SVD_BiDiag(w, rv1, anorm);
-            SVD_InitialWV(w, V, rv1);
+            SVD_BiDiag(ref w, ref rv1, anorm);
+            SVD_InitialWV(w, ref V, rv1);
 
             for (k = numColumns - 1; k >= 0; k--)
                 for (its = 1; its <= 30; its++)
@@ -2332,7 +2338,7 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="V">The v.</param>
         /// <returns></returns>
-        public void SVD_Solve(VectorX x, VectorX b, VectorX w, MatrixX V)
+        public void SVD_Solve(ref VectorX x, in VectorX b, in VectorX w, in MatrixX V)
         {
             int i, j; double sum; VectorX tmp = new();
             Debug.Assert(x.Size >= numColumns);
@@ -2369,7 +2375,7 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="V">The v.</param>
         /// <returns></returns>
-        public void SVD_Inverse(MatrixX inv, VectorX w, MatrixX V)
+        public void SVD_Inverse(ref MatrixX inv, in VectorX w, in MatrixX V)
         {
             int i, j, k; double wi, sum; MatrixX V2 = new();
             Debug.Assert(numRows == numColumns);
@@ -2403,7 +2409,7 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="V">The v.</param>
         /// <returns></returns>
-        public void SVD_MultiplyFactors(MatrixX m, VectorX w, MatrixX V)
+        public void SVD_MultiplyFactors(ref MatrixX m, in VectorX w, in MatrixX V)
         {
             int r, i, j; double sum;
 
@@ -2473,7 +2479,7 @@ namespace System.NumericsX
         /// <param name="alpha">The alpha.</param>
         /// <param name="offset">The offset.</param>
         /// <returns></returns>
-        public unsafe bool Cholesky_UpdateRankOne(VectorX v, float alpha, int offset = 0)
+        public unsafe bool Cholesky_UpdateRankOne(in VectorX v, float alpha, int offset = 0)
         {
             int i, j; double diag, invDiag, diagSqr, newDiag, newDiagSqr, beta, p, d;
             Debug.Assert(numRows == numColumns);
@@ -2481,7 +2487,8 @@ namespace System.NumericsX
             Debug.Assert(offset >= 0 && offset < numRows);
 
             var y = stackalloc float[v.Size];
-            v.ToFloatPtr(_ => Unsafe.CopyBlock(y, _, (uint)v.Size * sizeof(float)));
+            fixed (float* _ = &v.p[v.pi])
+                Unsafe.CopyBlock(y, _, (uint)v.Size * sizeof(float));
 
             for (i = offset; i < numColumns; i++)
             {
@@ -2525,7 +2532,7 @@ namespace System.NumericsX
         /// <param name="v">The v.</param>
         /// <param name="r">The r.</param>
         /// <returns></returns>
-        public unsafe bool Cholesky_UpdateRowColumn(VectorX v, int r)
+        public unsafe bool Cholesky_UpdateRowColumn(in VectorX v, int r)
         {
             int i, j; double sum; VectorX addSub = new();
             Debug.Assert(numRows == numColumns);
@@ -2668,7 +2675,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="v">The v.</param>
         /// <returns></returns>
-        public unsafe bool Cholesky_UpdateIncrement(VectorX v)
+        public unsafe bool Cholesky_UpdateIncrement(in VectorX v)
         {
             int i, j; double sum;
             Debug.Assert(numRows == numColumns);
@@ -2711,7 +2718,7 @@ namespace System.NumericsX
         /// <param name="v">The v.</param>
         /// <param name="r">The r.</param>
         /// <returns></returns>
-        public bool Cholesky_UpdateDecrement(VectorX v, int r)
+        public bool Cholesky_UpdateDecrement(in VectorX v, int r)
         {
             VectorX v1 = new();
             Debug.Assert(numRows == numColumns);
@@ -2746,7 +2753,7 @@ namespace System.NumericsX
         /// <param name="x">The x.</param>
         /// <param name="b">The b.</param>
         /// <returns></returns>
-        public void Cholesky_Solve(VectorX x, VectorX b)
+        public void Cholesky_Solve(ref VectorX x, in VectorX b)
         {
             int i, j; double sum;
             Debug.Assert(numRows == numColumns);
@@ -2776,7 +2783,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="inv">The inv.</param>
         /// <returns></returns>
-        public void Cholesky_Inverse(MatrixX inv)
+        public void Cholesky_Inverse(ref MatrixX inv)
         {
             int i, j; VectorX x = new(), b = new();
             Debug.Assert(numRows == numColumns);
@@ -2789,7 +2796,7 @@ namespace System.NumericsX
             for (i = 0; i < numRows; i++)
             {
                 b[i] = 1f;
-                Cholesky_Solve(x, b);
+                Cholesky_Solve(ref x, b);
                 for (j = 0; j < numRows; j++)
                     inv[j][i] = x[j];
                 b[i] = 0f;
@@ -2801,7 +2808,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="m">The m.</param>
         /// <returns></returns>
-        public void Cholesky_MultiplyFactors(MatrixX m)
+        public void Cholesky_MultiplyFactors(ref MatrixX m)
         {
             int r, i, j; double sum;
 
@@ -2876,7 +2883,7 @@ namespace System.NumericsX
         /// <param name="alpha">The alpha.</param>
         /// <param name="offset">The offset.</param>
         /// <returns></returns>
-        public unsafe bool LDLT_UpdateRankOne(VectorX v, float alpha, int offset = 0)
+        public unsafe bool LDLT_UpdateRankOne(in VectorX v, float alpha, int offset = 0)
         {
             int i, j; double diag, newDiag, beta, p, d;
             Debug.Assert(numRows == numColumns);
@@ -2884,7 +2891,8 @@ namespace System.NumericsX
             Debug.Assert(offset >= 0 && offset < numRows);
 
             var y = stackalloc float[v.Size];
-            v.ToFloatPtr(_ => Unsafe.CopyBlock(y, _, (uint)v.Size * sizeof(float)));
+            fixed (float* _ = &v.p[v.pi])
+                Unsafe.CopyBlock(y, _, (uint)v.Size * sizeof(float));
 
             for (i = offset; i < numColumns; i++)
             {
@@ -2925,7 +2933,7 @@ namespace System.NumericsX
         /// <param name="v">The v.</param>
         /// <param name="r">The r.</param>
         /// <returns></returns>
-        public unsafe bool LDLT_UpdateRowColumn(VectorX v, int r)
+        public unsafe bool LDLT_UpdateRowColumn(in VectorX v, int r)
         {
             int i, j; double sum; VectorX addSub = new();
             Debug.Assert(numRows == numColumns);
@@ -3070,7 +3078,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="v">The v.</param>
         /// <returns></returns>
-        public unsafe bool LDLT_UpdateIncrement(VectorX v)
+        public unsafe bool LDLT_UpdateIncrement(in VectorX v)
         {
             int i, j; double sum, d;
             Debug.Assert(numRows == numColumns);
@@ -3113,7 +3121,7 @@ namespace System.NumericsX
         /// <param name="v">The v.</param>
         /// <param name="r">The r.</param>
         /// <returns></returns>
-        public bool LDLT_UpdateDecrement(VectorX v, int r)
+        public bool LDLT_UpdateDecrement(in VectorX v, int r)
         {
             VectorX v1 = new();
             Debug.Assert(numRows == numColumns);
@@ -3148,7 +3156,7 @@ namespace System.NumericsX
         /// <param name="x">The x.</param>
         /// <param name="b">The b.</param>
         /// <returns></returns>
-        public void LDLT_Solve(VectorX x, VectorX b)
+        public void LDLT_Solve(ref VectorX x, in VectorX b)
         {
             int i, j; double sum;
             Debug.Assert(numRows == numColumns);
@@ -3182,7 +3190,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="inv">The inv.</param>
         /// <returns></returns>
-        public void LDLT_Inverse(MatrixX inv)
+        public void LDLT_Inverse(ref MatrixX inv)
         {
             int i, j; VectorX x = new(), b = new();
             Debug.Assert(numRows == numColumns);
@@ -3195,7 +3203,7 @@ namespace System.NumericsX
             for (i = 0; i < numRows; i++)
             {
                 b[i] = 1f;
-                LDLT_Solve(x, b);
+                LDLT_Solve(ref x, b);
                 for (j = 0; j < numRows; j++)
                     inv[j][i] = x[j];
                 b[i] = 0f;
@@ -3208,7 +3216,7 @@ namespace System.NumericsX
         /// <param name="L">The l.</param>
         /// <param name="D">The d.</param>
         /// <returns></returns>
-        public void LDLT_UnpackFactors(MatrixX L, MatrixX D)
+        public void LDLT_UnpackFactors(in MatrixX L, in MatrixX D)
         {
             int i, j;
 
@@ -3228,7 +3236,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="m">The m.</param>
         /// <returns></returns>
-        public unsafe void LDLT_MultiplyFactors(MatrixX m)
+        public unsafe void LDLT_MultiplyFactors(ref MatrixX m)
         {
             int r, i, j; double sum;
 
@@ -3275,7 +3283,7 @@ namespace System.NumericsX
         /// <param name="x">The x.</param>
         /// <param name="b">The b.</param>
         /// <returns></returns>
-        public bool TriDiagonal_Solve(VectorX x, VectorX b)
+        public bool TriDiagonal_Solve(ref VectorX x, in VectorX b)
         {
             int i; float d; VectorX tmp = new();
             Debug.Assert(numRows == numColumns);
@@ -3307,7 +3315,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="inv">The inv.</param>
         /// <returns></returns>
-        public void TriDiagonal_Inverse(MatrixX inv)
+        public void TriDiagonal_Inverse(ref MatrixX inv)
         {
             int i, j; VectorX x = new(), b = new();
             Debug.Assert(numRows == numColumns);
@@ -3320,7 +3328,7 @@ namespace System.NumericsX
             for (i = 0; i < numRows; i++)
             {
                 b[i] = 1f;
-                TriDiagonal_Solve(x, b);
+                TriDiagonal_Solve(ref x, b);
                 for (j = 0; j < numRows; j++)
                     inv[j][i] = x[j];
                 b[i] = 0f;
@@ -3339,7 +3347,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="eigenValues">The eigen values.</param>
         /// <returns></returns>
-        public bool Eigen_SolveSymmetricTriDiagonal(VectorX eigenValues)
+        public bool Eigen_SolveSymmetricTriDiagonal(ref VectorX eigenValues)
         {
             int i; VectorX subd = new();
             Debug.Assert(numRows == numColumns);
@@ -3356,7 +3364,7 @@ namespace System.NumericsX
 
             Identity();
 
-            return QL(eigenValues, subd);
+            return QL(ref eigenValues, ref subd);
         }
 
         /// <summary>
@@ -3367,7 +3375,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="eigenValues">The eigen values.</param>
         /// <returns></returns>
-        public bool Eigen_SolveSymmetric(VectorX eigenValues)
+        public bool Eigen_SolveSymmetric(ref VectorX eigenValues)
         {
             VectorX subd = new();
             Debug.Assert(numRows == numColumns);
@@ -3375,8 +3383,8 @@ namespace System.NumericsX
             subd.SetData(numRows, VectorX.VECX_ALLOCA(numRows));
             eigenValues.SetSize(numRows);
 
-            HouseholderReduction(eigenValues, subd);
-            return QL(eigenValues, subd);
+            HouseholderReduction(ref eigenValues, ref subd);
+            return QL(ref eigenValues, ref subd);
         }
 
         /// <summary>
@@ -3387,7 +3395,7 @@ namespace System.NumericsX
         /// <param name="realEigenValues">The real eigen values.</param>
         /// <param name="imaginaryEigenValues">The imaginary eigen values.</param>
         /// <returns></returns>
-        public bool Eigen_Solve(VectorX realEigenValues, VectorX imaginaryEigenValues)
+        public bool Eigen_Solve(ref VectorX realEigenValues, ref VectorX imaginaryEigenValues)
         {
             MatrixX H;
             Debug.Assert(numRows == numColumns);
@@ -3395,13 +3403,13 @@ namespace System.NumericsX
             realEigenValues.SetSize(numRows);
             imaginaryEigenValues.SetSize(numRows);
 
-            H = new MatrixX(ref this);
+            H = new MatrixX(this);
 
             // reduce to Hessenberg form
-            HessenbergReduction(H);
+            HessenbergReduction(ref H);
 
             // reduce Hessenberg to real Schur form
-            return HessenbergToRealSchur(H, realEigenValues, imaginaryEigenValues);
+            return HessenbergToRealSchur(ref H, ref realEigenValues, ref imaginaryEigenValues);
         }
 
         /// <summary>
@@ -3409,7 +3417,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="eigenValues">The eigen values.</param>
         /// <returns></returns>
-        public void Eigen_SortIncreasing(VectorX eigenValues)
+        public void Eigen_SortIncreasing(in VectorX eigenValues)
         {
             int i, j, k; float min;
 
@@ -3436,7 +3444,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="eigenValues">The eigen values.</param>
         /// <returns></returns>
-        public void Eigen_SortDecreasing(VectorX eigenValues)
+        public void Eigen_SortDecreasing(in VectorX eigenValues)
         {
             int i, j, k; float max;
 

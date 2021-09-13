@@ -109,19 +109,20 @@ namespace System.NumericsX.OpenStack
 
                 if (newFormat)
                 {
-                    if (side.plane.ToFloatPtr(x => !src.Parse1DMatrix(4, x)))
-                    {
-                        src.Error("MapBrush::Parse: unable to read brush side plane definition");
-                        sides.Clear();
-                        return null;
-                    }
+                    fixed (float* _ = &side.plane.a)
+                        if (!src.Parse1DMatrix(4, _))
+                        {
+                            src.Error("MapBrush::Parse: unable to read brush side plane definition");
+                            sides.Clear();
+                            return null;
+                        }
                 }
                 else
                 {
                     // read the three point plane definition
-                    if (planepts0.ToFloatPtr(x => !src.Parse1DMatrix(3, x)) || planepts1.ToFloatPtr(x => !src.Parse1DMatrix(3, x)) || planepts2.ToFloatPtr(x => !src.Parse1DMatrix(3, x)))
+                    if (!src.Parse1DMatrix(3, &planepts0.x) || !src.Parse1DMatrix(3, &planepts1.x) || !src.Parse1DMatrix(3, &planepts2.x))
                     {
-                        src.Error("idMapBrush::Parse: unable to read brush side plane definition");
+                        src.Error("MapBrush::Parse: unable to read brush side plane definition");
                         sides.Clear();
                         return null;
                     }
@@ -134,7 +135,8 @@ namespace System.NumericsX.OpenStack
                 }
 
                 // read the texture matrix. this is odd, because the texmat is 2D relative to default planar texture axis
-                if (side.texMat0.ToFloatPtr(x => !src.Parse2DMatrix(2, 3, x))) { src.Error("MapBrush::Parse: unable to read brush side texture matrix"); sides.Clear(); return null; }
+                fixed (float* _ = &side.texMat0.x)
+                    if (!src.Parse2DMatrix(2, 3, _)) { src.Error("MapBrush::Parse: unable to read brush side texture matrix"); sides.Clear(); return null; }
                 side.origin = origin;
 
                 // read the material
@@ -177,7 +179,7 @@ namespace System.NumericsX.OpenStack
                 sides.Add(side);
 
                 // read the three point plane definition
-                if (planepts0.ToFloatPtr(x => !src.Parse1DMatrix(3, x)) || planepts1.ToFloatPtr(x => !src.Parse1DMatrix(3, x)) || planepts2.ToFloatPtr(x => !src.Parse1DMatrix(3, x)))
+                if (!src.Parse1DMatrix(3, &planepts0.x) || !src.Parse1DMatrix(3, &planepts1.x) || !src.Parse1DMatrix(3, &planepts2.x))
                 {
                     src.Error("MapBrush::ParseQ3: unable to read brush side plane definition");
                     sides.Clear();

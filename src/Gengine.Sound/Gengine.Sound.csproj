@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
-    <ProjectReference Include="..\OggVorbis\OggVorbis.csproj" />
+    <ProjectReference Include="..\System.NumericsX.OggVorbis\System.NumericsX.OggVorbis.csproj" />
     <ProjectReference Include="..\System.NumericsX.OpenAL\System.NumericsX.OpenAL.csproj" />
   </ItemGroup>
 

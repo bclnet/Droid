@@ -1,17 +1,24 @@
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
 namespace System.NumericsX
 {
+    [StructLayout(LayoutKind.Sequential)]
     public struct Sphere
     {
+        static readonly Sphere zero = new(Vector3.origin, 0f);
+
         Vector3 origin;
         float radius;
 
-        //public Sphere() { }
-        public Sphere(Vector3 point)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Sphere(in Vector3 point)
         {
             origin = point;
             radius = 0f;
         }
-        public Sphere(Vector3 point, float r)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Sphere(in Vector3 point, float r)
         {
             origin = point;
             radius = r;
@@ -19,36 +26,43 @@ namespace System.NumericsX
 
         public unsafe float this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (float* p = &origin.x)
                     return p[index];
             }
         }
-        public static Sphere operator +(Sphere _, Vector3 t)              // returns tranlated sphere
-            => new(_.origin + t, _.radius);
-        //public static Sphere operator +(Sphere _, Sphere s)
-        //{
-        //}
 
-        public bool Compare(Sphere a)                          // exact compare, no epsilon
-            => origin.Compare(ref a.origin) && radius == a.radius;
-        public bool Compare(Sphere a, float epsilon)    // compare with epsilon
-            => origin.Compare(ref a.origin, epsilon) && MathX.Fabs(radius - a.radius) <= epsilon;
-        public static bool operator ==(Sphere _, Sphere a)                      // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Sphere operator +(in Sphere _, in Vector3 t)              // returns tranlated sphere
+            => new(_.origin + t, _.radius);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in Sphere a)                          // exact compare, no epsilon
+            => origin.Compare(a.origin) && radius == a.radius;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in Sphere a, float epsilon)    // compare with epsilon
+            => origin.Compare(a.origin, epsilon) && MathX.Fabs(radius - a.radius) <= epsilon;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(in Sphere _, in Sphere a)                      // exact compare, no epsilon
             => _.Compare(a);
-        public static bool operator !=(Sphere _, Sphere a)                      // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in Sphere _, in Sphere a)                      // exact compare, no epsilon
             => !_.Compare(a);
         public override bool Equals(object obj)
             => obj is Sphere q && Compare(q);
         public override int GetHashCode()
             => origin.GetHashCode() ^ radius.GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()                                   // inside out sphere
         {
             origin.Zero();
             radius = -1f;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()                                    // single point at origin
         {
             origin.Zero();
@@ -58,21 +72,29 @@ namespace System.NumericsX
         // origin of sphere
         public Vector3 Origin
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => origin;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => origin = value;
         }
 
         // sphere radius
         public float Radius
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => radius;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => radius = value;
         }
 
         public bool IsCleared                       // returns true if sphere is inside out
-            => radius < 0f;
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => radius < 0f;
+        }
 
-        public bool AddPoint(Vector3 p)                    // add the point, returns true if the sphere expanded
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool AddPoint(in Vector3 p)                    // add the point, returns true if the sphere expanded
         {
             if (radius < 0f)
             {
@@ -93,7 +115,9 @@ namespace System.NumericsX
                 return false;
             }
         }
-        public bool AddSphere(Sphere s)                    // add the sphere, returns true if the sphere expanded
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool AddSphere(in Sphere s)                    // add the sphere, returns true if the sphere expanded
         {
             if (radius < 0f)
             {
@@ -114,22 +138,28 @@ namespace System.NumericsX
                 return false;
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Sphere Expand(float d)                    // return bounds expanded in all directions with the given value
             => new(origin, radius + d);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Sphere ExpandSelf(float d)                 // expand bounds in all directions with the given value
         {
             radius += d;
             return this;
         }
-        public Sphere Translate(Vector3 translation)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Sphere Translate(in Vector3 translation)
             => new(origin + translation, radius);
-        public Sphere TranslateSelf(Vector3 translation)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Sphere TranslateSelf(in Vector3 translation)
         {
             origin += translation;
             return this;
         }
 
-        public float PlaneDistance(Plane plane)
+        public float PlaneDistance(in Plane plane)
         {
             var d = plane.Distance(origin);
             if (d > radius) return d - radius;
@@ -137,7 +167,7 @@ namespace System.NumericsX
             return 0f;
         }
 
-        public PLANESIDE PlaneSide(Plane plane, float epsilon = Plane.ON_EPSILON)
+        public PLANESIDE PlaneSide(in Plane plane, float epsilon = Plane.ON_EPSILON)
         {
             var d = plane.Distance(origin);
             if (d > radius + epsilon) return PLANESIDE.FRONT;
@@ -145,17 +175,19 @@ namespace System.NumericsX
             return PLANESIDE.CROSS;
         }
 
-        public bool ContainsPoint(Vector3 p)           // includes touching
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool ContainsPoint(in Vector3 p)           // includes touching
             => (p - origin).LengthSqr <= radius * radius;
 
-        public bool IntersectsSphere(Sphere s) // includes touching
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IntersectsSphere(in Sphere s) // includes touching
         {
             var r = s.radius + radius;
             return (s.origin - origin).LengthSqr <= r * r;
         }
 
         // Returns true if the line intersects the sphere between the start and end point.
-        public bool LineIntersection(Vector3 start, Vector3 end)
+        public bool LineIntersection(in Vector3 start, in Vector3 end)
         {
             var s = start - origin;
             var e = end - origin;
@@ -174,7 +206,7 @@ namespace System.NumericsX
         // The ray can intersect the sphere in both directions from the start point.
         // If start is inside the sphere then scale1< 0 and scale2> 0.
         // intersection points are (start + dir * scale1) and (start + dir * scale2)
-        public bool RayIntersection(Vector3 start, Vector3 dir, out float scale1, out float scale2)
+        public bool RayIntersection(in Vector3 start, in Vector3 dir, out float scale1, out float scale2)
         {
             var p = start - origin;
             var a = dir * dir; //: double
@@ -217,40 +249,43 @@ namespace System.NumericsX
         }
 
         // Most tight sphere for a translation.
-        public void FromPointTranslation(Vector3 point, Vector3 translation)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void FromPointTranslation(in Vector3 point, in Vector3 translation)
         {
             origin = point + 0.5f * translation;
             radius = MathX.Sqrt(0.5f * translation.LengthSqr);
         }
 
-        public void FromSphereTranslation(Sphere sphere, Vector3 start, Vector3 translation)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void FromSphereTranslation(in Sphere sphere, in Vector3 start, in Vector3 translation)
         {
             origin = start + sphere.origin + 0.5f * translation;
             radius = MathX.Sqrt(0.5f * translation.LengthSqr) + sphere.radius;
         }
 
         // Most tight sphere for a rotation.
-        public void FromPointRotation(Vector3 point, Rotation rotation)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void FromPointRotation(in Vector3 point, in Rotation rotation)
         {
             var end = rotation * point;
             origin = (point + end) * 0.5f;
             radius = MathX.Sqrt(0.5f * (end - point).LengthSqr);
         }
 
-        public void FromSphereRotation(Sphere sphere, Vector3 start, Rotation rotation)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void FromSphereRotation(in Sphere sphere, in Vector3 start, in Rotation rotation)
         {
             var end = rotation * sphere.origin;
             origin = start + (sphere.origin + end) * 0.5f;
             radius = MathX.Sqrt(0.5f * (end - sphere.origin).LengthSqr) + sphere.radius;
         }
 
-        public void AxisProjection(Vector3 dir, out float min, out float max)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AxisProjection(in Vector3 dir, out float min, out float max)
         {
             var d = dir * origin;
             min = d - radius;
             max = d + radius;
         }
-
-        static readonly Sphere zero = new(Vector3.origin, 0f);
     }
 }

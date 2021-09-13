@@ -2034,7 +2034,7 @@ namespace System.NumericsX
             {
                 var j = index[i];
                 joints[j].q.Slerp(joints[j].q, blendJoints[j].q, lerp);
-                joints[j].t.Lerp(ref joints[j].t, ref blendJoints[j].t, lerp);
+                joints[j].t.Lerp(joints[j].t, blendJoints[j].t, lerp);
             }
         }
         public void ConvertJointQuatsToJointMats(JointMat* jointMats, JointQuat* jointQuats, int numJoints)

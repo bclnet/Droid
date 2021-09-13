@@ -1,7 +1,10 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace System.NumericsX
 {
+    [StructLayout(LayoutKind.Sequential)]
     public struct Rectangle
     {
         public float x;    // horiz position
@@ -9,25 +12,33 @@ namespace System.NumericsX
         public float w;    // width
         public float h;    // height;
 
-        public Rectangle(Vector4 v)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Rectangle(in Vector4 v)
         {
             x = v.x;
             y = v.y;
             w = v.z;
             h = v.w;
         }
-        public Rectangle(Rectangle r)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Rectangle(in Rectangle r)
         {
             x = r.x;
             y = r.y;
             w = r.w;
             h = r.h;
         }
-        //public Rectangle() => x = y = w = h = 0f;
-        public Rectangle(float ix, float iy, float iw, float ih) { x = ix; y = iy; w = iw; h = ih; }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Rectangle(float ix, float iy, float iw, float ih)
+        {
+            x = ix; y = iy; w = iw; h = ih;
+        }
 
-        public float Bottom => y + h;
-        public float Right => x + w;
+        public float Bottom
+            => y + h;
+
+        public float Right
+            => x + w;
 
         public void Offset(float x, float y)
         {
@@ -45,7 +56,7 @@ namespace System.NumericsX
         public void Empty()
             => x = y = w = h = 0f;
 
-        public void ClipAgainst(Rectangle r, bool sizeOnly)
+        public void ClipAgainst(in Rectangle r, bool sizeOnly)
         {
             if (!sizeOnly)
             {
@@ -80,7 +91,8 @@ namespace System.NumericsX
             o.h = (p3 - p1).Length;
         }
 
-        public static Rectangle operator +(Rectangle _, Rectangle a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Rectangle operator +(Rectangle _, in Rectangle a)
         {
             _.x += a.x;
             _.y += a.y;
@@ -88,7 +100,8 @@ namespace System.NumericsX
             _.h += a.h;
             return _;
         }
-        public static Rectangle operator -(Rectangle _, Rectangle a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Rectangle operator -(Rectangle _, in Rectangle a)
         {
             _.x -= a.x;
             _.y -= a.y;
@@ -96,7 +109,8 @@ namespace System.NumericsX
             _.h -= a.h;
             return _;
         }
-        public static Rectangle operator /(Rectangle _, Rectangle a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Rectangle operator /(Rectangle _, in Rectangle a)
         {
             _.x /= a.x;
             _.y /= a.y;
@@ -104,6 +118,7 @@ namespace System.NumericsX
             _.h /= a.h;
             return _;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Rectangle operator *(Rectangle _, float a)
         {
             var inva = 1f / a;
@@ -113,23 +128,33 @@ namespace System.NumericsX
             _.h *= inva;
             return _;
         }
-        public static bool operator ==(Rectangle _, Rectangle a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(in Rectangle _, in Rectangle a)
             => _.x == a.x && _.y == a.y && _.w == a.w && a.h != 0f;
-        public static bool operator !=(Rectangle _, Rectangle a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in Rectangle _, in Rectangle a)
             => _.x != a.x && _.y != a.y && _.w != a.w && a.h == 0f;
-        public override bool Equals(object obj) => obj is Rectangle q && this == q;
-        public override int GetHashCode() => base.GetHashCode();
+        public override bool Equals(object obj)
+            => obj is Rectangle q && this == q;
+        public override int GetHashCode()
+            => base.GetHashCode();
 
-        public unsafe float this[int index]
+        public unsafe ref float this[int index]
         {
-            get { fixed (float* p = &x) return p[index]; }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                fixed (float* p = &x)
+                    return ref p[index];
+            }
         }
 
         public override string ToString()
             => $"{x:2} {y:2} {w:2} {h:2}";
 
-        public Vector4 ToVec4()
-            => reinterpret.cast_vec4(this);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref Vector4 ToVec4()
+            => ref reinterpret.cast_vec4(this);
     }
 
     public class Region

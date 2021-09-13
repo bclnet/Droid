@@ -1,19 +1,21 @@
 namespace System.NumericsX
 {
-    public delegate void deriveFunction(float t, object userData, float[] state, float[] derivatives);
+    public delegate void DeriveFunction(float t, object userData, float[] state, float[] derivatives);
 
     public abstract class ODE
     {
         public abstract float Evaluate(float[] state, float[] newState, float t0, float t1);
 
         protected int dimension;            // dimension in floats allocated for
-        protected deriveFunction derive;    // derive function
+        protected DeriveFunction derive;    // derive function
         protected object userData;          // client data
     }
 
     public class ODE_Euler : ODE
     {
-        public ODE_Euler(int dim, deriveFunction dr, object ud)
+        protected float[] derivatives;      // space to store derivatives
+
+        public ODE_Euler(int dim, DeriveFunction dr, object ud)
         {
             dimension = dim;
             derivatives = new float[dim];
@@ -29,13 +31,14 @@ namespace System.NumericsX
                 newState[i] = state[i] + delta * derivatives[i];
             return delta;
         }
-
-        protected float[] derivatives;      // space to store derivatives
     }
 
     public class ODE_Midpoint : ODE
     {
-        public ODE_Midpoint(int dim, deriveFunction dr, object ud)
+        protected float[] tmpState;
+        protected float[] derivatives;      // space to store derivatives
+
+        public ODE_Midpoint(int dim, DeriveFunction dr, object ud)
         {
             dimension = dim;
             tmpState = new float[dim];
@@ -59,14 +62,17 @@ namespace System.NumericsX
                 newState[i] = state[i] + delta * derivatives[i];
             return delta;
         }
-
-        protected float[] tmpState;
-        protected float[] derivatives;      // space to store derivatives
     }
 
     public class ODE_RK4 : ODE
     {
-        public ODE_RK4(int dim, deriveFunction dr, object ud)
+        protected float[] tmpState;
+        protected float[] d1;              // derivatives
+        protected float[] d2;
+        protected float[] d3;
+        protected float[] d4;
+
+        public ODE_RK4(int dim, DeriveFunction dr, object ud)
         {
             dimension = dim;
             derive = dr;
@@ -101,17 +107,19 @@ namespace System.NumericsX
                 newState[i] = state[i] + sixthDelta * (d1[i] + 2.0F * (d2[i] + d3[i]) + d4[i]);
             return delta;
         }
-
-        protected float[] tmpState;
-        protected float[] d1;              // derivatives
-        protected float[] d2;
-        protected float[] d3;
-        protected float[] d4;
     }
 
     public class ODE_RK4Adaptive : ODE
     {
-        public ODE_RK4Adaptive(int dim, deriveFunction dr, object ud)
+        protected float maxError;     // maximum allowed error
+        protected float[] tmpState;
+        protected float[] d1;              // derivatives
+        protected float[] d1half;
+        protected float[] d2;
+        protected float[] d3;
+        protected float[] d4;
+
+        public ODE_RK4Adaptive(int dim, DeriveFunction dr, object ud)
         {
             dimension = dim;
             derive = dr;
@@ -210,13 +218,5 @@ namespace System.NumericsX
             if (err > 0.0f)
                 maxError = err;
         }
-
-        protected float maxError;     // maximum allowed error
-        protected float[] tmpState;
-        protected float[] d1;              // derivatives
-        protected float[] d1half;
-        protected float[] d2;
-        protected float[] d3;
-        protected float[] d4;
     }
 }

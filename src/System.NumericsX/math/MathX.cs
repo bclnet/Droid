@@ -1,33 +1,34 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace System.NumericsX
 {
     // token types
     public static class MathX
     {
-        public static float DEG2RAD(float a) => a * M_DEG2RAD;
-        public static float RAD2DEG(float a) => a * M_RAD2DEG;
-        public static double RAD2DEG(double a) => a * M_RAD2DEG;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float DEG2RAD(float a) => a * M_DEG2RAD;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float RAD2DEG(float a) => a * M_RAD2DEG;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static double RAD2DEG(double a) => a * M_RAD2DEG;
 
-        public static int SEC2MS(float t) => FtoiFast(t * M_SEC2MS);
-        public static float MS2SEC(int t) => t * M_MS2SEC;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int SEC2MS(float t) => FtoiFast(t * M_SEC2MS);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float MS2SEC(int t) => t * M_MS2SEC;
 
-        public static int ANGLE2SHORT(float x) => FtoiFast(x * 65536f / 360f) & 65535;
-        public static float SHORT2ANGLE(int x) => x * (360f / 65536f);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int ANGLE2SHORT(float x) => FtoiFast(x * 65536f / 360f) & 65535;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float SHORT2ANGLE(int x) => x * (360f / 65536f);
 
-        public static int ANGLE2BYTE(float x) => FtoiFast(x * 256f / 360f) & 255;
-        public static float BYTE2ANGLE(int x) => x * (360f / 256f);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int ANGLE2BYTE(float x) => FtoiFast(x * 256f / 360f) & 255;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float BYTE2ANGLE(int x) => x * (360f / 256f);
 
-        public static unsafe bool FLOATSIGNBITSET(float f) => ((*(uint*)&f) >> 31) != 0; public static unsafe int FLOATSIGNBITSET_(float f) => ((*(int*)&f) >> 31);
-        public static unsafe bool FLOATSIGNBITNOTSET(float f) => ((~*(uint*)&f) >> 31) != 0; public static unsafe int FLOATSIGNBITNOTSET_(float f) => (~*(int*)&f) >> 31;
-        public static unsafe bool FLOATNOTZERO(float f) => ((*(uint*)&f) & ~(1 << 31)) != 0;
-        public static unsafe bool INTSIGNBITSET(int i) => (((uint)i) >> 31) != 0; public static unsafe int INTSIGNBITSET_(int i) => i >> 31;
-        public static unsafe bool INTSIGNBITNOTSET(int i) => ((~(uint)i) >> 31) != 0; public static unsafe int INTSIGNBITNOTSET_(int i) => (~i) >> 31;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOATSIGNBITSET(float f) => ((*(uint*)&f) >> 31) != 0;[MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe int FLOATSIGNBITSET_(float f) => ((*(int*)&f) >> 31);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOATSIGNBITNOTSET(float f) => ((~*(uint*)&f) >> 31) != 0;[MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe int FLOATSIGNBITNOTSET_(float f) => (~*(int*)&f) >> 31;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOATNOTZERO(float f) => ((*(uint*)&f) & ~(1 << 31)) != 0;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool INTSIGNBITSET(int i) => (((uint)i) >> 31) != 0;[MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe int INTSIGNBITSET_(int i) => i >> 31;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool INTSIGNBITNOTSET(int i) => ((~(uint)i) >> 31) != 0;[MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe int INTSIGNBITNOTSET_(int i) => (~i) >> 31;
 
-        public static unsafe bool FLOAT_IS_NAN(float x) => ((*(uint*)&x) & 0x7f800000) == 0x7f800000;
-        public static unsafe bool FLOAT_IS_INF(float x) => ((*(uint*)&x) & 0x7fffffff) == 0x7f800000;
-        public static unsafe bool FLOAT_IS_IND(float x) => (*(uint*)&x) == 0xffc00000;
-        public static unsafe bool FLOAT_IS_DENORMAL(float x) => ((*(uint*)&x) & 0x7f800000) == 0x00000000 && ((*(uint*)&x) & 0x007fffff) != 0x00000000;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOAT_IS_NAN(float x) => ((*(uint*)&x) & 0x7f800000) == 0x7f800000;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOAT_IS_INF(float x) => ((*(uint*)&x) & 0x7fffffff) == 0x7f800000;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOAT_IS_IND(float x) => (*(uint*)&x) == 0xffc00000;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOAT_IS_DENORMAL(float x) => ((*(uint*)&x) & 0x7f800000) == 0x00000000 && ((*(uint*)&x) & 0x007fffff) != 0x00000000;
 
         public const int IEEE_FLT_MANTISSA_BITS = 23;
         public const int IEEE_FLT_EXPONENT_BITS = 8;
@@ -44,26 +45,26 @@ namespace System.NumericsX
         public const int IEEE_DBLE_EXPONENT_BIAS = 0;
         public const int IEEE_DBLE_SIGN_BIT = 79;
 
-        public static int MaxIndex(int x, int y) => x > y ? 0 : 1;
-        public static int MinIndex(int x, int y) => x < y ? 0 : 1;
-        public static float MaxIndex(float x, float y) => x > y ? 0 : 1;
-        public static float MinIndex(float x, float y) => x < y ? 0 : 1;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int MaxIndex(int x, int y) => x > y ? 0 : 1;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int MinIndex(int x, int y) => x < y ? 0 : 1;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float MaxIndex(float x, float y) => x > y ? 0 : 1;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float MinIndex(float x, float y) => x < y ? 0 : 1;
 
-        public static int Max3(int x, int y, int z) => x > y ? (x > z ? x : z) : (y > z ? y : z);
-        public static int Min3(int x, int y, int z) => x < y ? (x < z ? x : z) : (y < z ? y : z);
-        public static int Max3Index(int x, int y, int z) => x > y ? (x > z ? 0 : 2) : (y > z ? 1 : 2);
-        public static int Min3Index(int x, int y, int z) => x < y ? (x < z ? 0 : 2) : (y < z ? 1 : 2);
-        public static float Max3(float x, float y, float z) => x > y ? (x > z ? x : z) : (y > z ? y : z);
-        public static float Min3(float x, float y, float z) => x < y ? (x < z ? x : z) : (y < z ? y : z);
-        public static int Max3Index(float x, float y, float z) => x > y ? (x > z ? 0 : 2) : (y > z ? 1 : 2);
-        public static int Min3Index(float x, float y, float z) => x < y ? (x < z ? 0 : 2) : (y < z ? 1 : 2);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int Max3(int x, int y, int z) => x > y ? (x > z ? x : z) : (y > z ? y : z);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int Min3(int x, int y, int z) => x < y ? (x < z ? x : z) : (y < z ? y : z);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int Max3Index(int x, int y, int z) => x > y ? (x > z ? 0 : 2) : (y > z ? 1 : 2);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int Min3Index(int x, int y, int z) => x < y ? (x < z ? 0 : 2) : (y < z ? 1 : 2);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float Max3(float x, float y, float z) => x > y ? (x > z ? x : z) : (y > z ? y : z);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float Min3(float x, float y, float z) => x < y ? (x < z ? x : z) : (y < z ? y : z);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int Max3Index(float x, float y, float z) => x > y ? (x > z ? 0 : 2) : (y > z ? 1 : 2);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int Min3Index(float x, float y, float z) => x < y ? (x < z ? 0 : 2) : (y < z ? 1 : 2);
 
-        public static int Sign(int f) => f > 0 ? 1 : (f < 0 ? -1 : 0);
-        public static int Square(int x) => x * x;
-        public static int Cube(int x) => x * x * x;
-        public static float Sign(float f) => f > 0 ? 1 : (f < 0 ? -1 : 0);
-        public static float Square(float x) => x * x;
-        public static float Cube(float x) => x * x * x;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int Sign(int f) => f > 0 ? 1 : (f < 0 ? -1 : 0);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int Square(int x) => x * x;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int Cube(int x) => x * x * x;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float Sign(float f) => f > 0 ? 1 : (f < 0 ? -1 : 0);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float Square(float x) => x * x;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float Cube(float x) => x * x * x;
 
         public static void Init()
         {
@@ -78,6 +79,7 @@ namespace System.NumericsX
             initialized = true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float RSqrt(float x)            // reciprocal square root, returns huge number when x == 0.0
         {
             float y = x * 0.5f;
@@ -88,6 +90,7 @@ namespace System.NumericsX
             return r;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float InvSqrt(float x)          // inverse square root with 32 bits precision, returns huge number when x == 0.0
         {
             Debug.Assert(initialized);
@@ -101,6 +104,7 @@ namespace System.NumericsX
             r *= 1.5f - r * r * y;
             return (float)r;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float InvSqrt16(float x)        // inverse square root with 16 bits precision, returns huge number when x == 0.0
         {
             Debug.Assert(initialized);
@@ -113,6 +117,7 @@ namespace System.NumericsX
             r *= 1.5f - r * r * y;
             return (float)r;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double InvSqrt64(float x)       // inverse square root with 64 bits precision, returns huge number when x == 0.0
         {
             Debug.Assert(initialized);
@@ -128,15 +133,20 @@ namespace System.NumericsX
             return r;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sqrt(float x)          // square root with 32 bits precision
             => x * InvSqrt(x);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sqrt16(float x)           // square root with 16 bits precision
             => x * InvSqrt16(x);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Sqrt64(float x)          // square root with 64 bits precision
             => x * InvSqrt64(x);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sin(float a)             // sine with 32 bits precision
             => (float)Math.Sin(a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sin16(float a)            // sine with 16 bits precision, maximum absolute error is 2.3082e-09
         {
             float s;
@@ -161,11 +171,14 @@ namespace System.NumericsX
             s = a * a;
             return a * (((((-2.39e-08f * s + 2.7526e-06f) * s - 1.98409e-04f) * s + 8.3333315e-03f) * s - 1.666666664e-01f) * s + 1f);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Sin64(float a)          // sine with 64 bits precision
             => Math.Sin(a);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Cos(float a)              // cosine with 32 bits precision
             => (float)Math.Cos(a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Cos16(float a)            // cosine with 16 bits precision, maximum absolute error is 2.3082e-09
         {
             float s, d;
@@ -191,9 +204,11 @@ namespace System.NumericsX
             s = a * a;
             return d * (((((-2.605e-07f * s + 2.47609e-05f) * s - 1.3888397e-03f) * s + 4.16666418e-02f) * s - 4.999999963e-01f) * s + 1f);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Cos64(float a)           // cosine with 64 bits precision
              => Math.Cos(a);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void SinCos(float a, out float s, out float c)       // sine and cosine with 32 bits precision
         {
 #if _M_IX86
@@ -210,6 +225,7 @@ namespace System.NumericsX
             c = (float)Math.Cos(a);
 #endif
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void SinCos16(float a, out float s, out float c) // sine and cosine with 16 bits precision
         {
             float t, d;
@@ -236,6 +252,7 @@ namespace System.NumericsX
             s = a * (((((-2.39e-08f * t + 2.7526e-06f) * t - 1.98409e-04f) * t + 8.3333315e-03f) * t - 1.666666664e-01f) * t + 1f);
             c = d * (((((-2.605e-07f * t + 2.47609e-05f) * t - 1.3888397e-03f) * t + 4.16666418e-02f) * t - 4.999999963e-01f) * t + 1f);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void SinCos64(float a, out double s, out double c) // sine and cosine with 64 bits precision
         {
 #if _M_IX86
@@ -253,8 +270,10 @@ namespace System.NumericsX
 #endif
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Tan(float a)               // tangent with 32 bits precision
             => (float)Math.Tan(a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Tan16(float a)            // tangent with 16 bits precision, maximum absolute error is 1.8897e-08
         {
             float s; bool reciprocal;
@@ -282,15 +301,18 @@ namespace System.NumericsX
             if (reciprocal) return 1f / s;
             else return s;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Tan64(float a)            // tangent with 64 bits precision
             => Math.Tan(a);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ASin(float a)         // arc sine with 32 bits precision, input is clamped to [-1, 1] to avoid a silent NaN
         {
             if (a <= -1f) return -HALF_PI;
             if (a >= 1f) return HALF_PI;
             return (float)Math.Asin(a);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ASin16(float a)           // arc sine with 16 bits precision, maximum absolute error is 6.7626e-05
         {
             if (FLOATSIGNBITSET(a))
@@ -305,6 +327,7 @@ namespace System.NumericsX
                 return HALF_PI - (((-0.0187293f * a + 0.0742610f) * a - 0.2121144f) * a + 1.5707288f) * (float)Math.Sqrt(1f - a);
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double ASin64(float a)          // arc sine with 64 bits precision
         {
             if (a <= -1f) return -HALF_PI;
@@ -312,12 +335,14 @@ namespace System.NumericsX
             return Math.Asin(a);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ACos(float a)         // arc cosine with 32 bits precision, input is clamped to [-1, 1] to avoid a silent NaN
         {
             if (a <= -1f) return PI;
             if (a >= 1f) return 0f;
             return (float)Math.Acos(a);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ACos16(float a)           // arc cosine with 16 bits precision, maximum absolute error is 6.7626e-05
         {
             if (FLOATSIGNBITSET(a))
@@ -332,6 +357,7 @@ namespace System.NumericsX
                 return (((-0.0187293f * a + 0.0742610f) * a - 0.2121144f) * a + 1.5707288f) * (float)Math.Sqrt(1f - a);
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double ACos64(float a)          // arc cosine with 64 bits precision
         {
             if (a <= -1f) return PI;
@@ -339,8 +365,10 @@ namespace System.NumericsX
             return Math.Acos(a);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ATan(float a)         // arc tangent with 32 bits precision
             => (float)Math.Atan(a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ATan16(float a)           // arc tangent with 16 bits precision, maximum absolute error is 1.3593e-08
         {
             float s;
@@ -361,11 +389,14 @@ namespace System.NumericsX
                     * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s) + 1f) * a;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double ATan64(float a)           // arc tangent with 64 bits precision
             => Math.Atan(a);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ATan(float y, float x)     // arc tangent with 32 bits precision
             => (float)Math.Atan2(y, x);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ATan16(float y, float x)  // arc tangent with 16 bits precision, maximum absolute error is 1.3593e-08
         {
             float a, s;
@@ -387,18 +418,24 @@ namespace System.NumericsX
                     * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s) + 1f) * a;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double ATan64(float y, float x) // arc tangent with 64 bits precision
             => Math.Atan2(y, x);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Pow(float x, float y)  // x raised to the power y with 32 bits precision
             => (float)Math.Pow(x, y);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Pow16(float x, float y)   // x raised to the power y with 16 bits precision
              => Exp16(y * Log16(x));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Pow64(float x, float y)  // x raised to the power y with 64 bits precision
              => Math.Pow(x, y);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Exp(float f)              // e raised to the power f with 32 bits precision
              => (float)Math.Exp(f);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Exp16(float f)            // e raised to the power f with 16 bits precision
         {
             int i, s, e, m, exponent;
@@ -430,11 +467,14 @@ namespace System.NumericsX
             x = y * (q + p) / (q - p);
             return x;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Exp64(float f)           // e raised to the power f with 64 bits precision
              => Math.Exp(f);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Log(float f)              // natural logarithm with 32 bits precision
             => (float)Math.Log(f);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Log16(float f)            // natural logarithm with 16 bits precision
         {
             int i, exponent;
@@ -451,35 +491,45 @@ namespace System.NumericsX
             y += 0.693147180559945f * (exponent + 0.5f);
             return y;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Log64(float f)           // natural logarithm with 64 bits precision
             => Math.Log(f);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int IPow(int x, int y)      // integral x raised to the power y
         {
             int r; for (r = x; y > 1; y--) { r *= x; }
             return r;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ILog2(float f)         // integral base-2 logarithm of the floating point value
             => ((reinterpret.cast_int(f) >> IEEE_FLT_MANTISSA_BITS) & ((1 << IEEE_FLT_EXPONENT_BITS) - 1)) - IEEE_FLT_EXPONENT_BIAS;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ILog2(int i)                // integral base-2 logarithm of the integer value
              => ILog2((float)i);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int BitsForFloat(float f)   // minumum number of bits required to represent ceil( f )
             => ILog2(f) + 1;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int BitsForInteger(int i)   // minumum number of bits required to represent i
             => ILog2((float)i) + 1;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int MaskForFloatSign(float f)// returns 0x00000000 if x >= 0f and returns 0xFFFFFFFF if x <= -0f
             => (reinterpret.cast_int(f) >> 31);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int MaskForIntegerSign(int i)// returns 0x00000000 if x >= 0 and returns 0xFFFFFFFF if x < 0
             => (i >> 31);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int FloorPowerOfTwo(int x)  // round x down to the nearest power of 2
             => CeilPowerOfTwo(x) >> 1;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int CeilPowerOfTwo(int x)   // round x up to the nearest power of 2
         {
             x--;
@@ -492,9 +542,11 @@ namespace System.NumericsX
             return x;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsPowerOfTwo(int x)        // returns true if x is a power of 2
             => (x & (x - 1)) == 0 && x > 0;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int BitCount(int x)         // returns the number of 1 bits in x
         {
             x -= ((x >> 1) & 0x55555555);
@@ -504,6 +556,7 @@ namespace System.NumericsX
             return (x + (x >> 16)) & 0x0000003f;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int BitReverse(int x)       // returns the bit reverse of x
         {
             x = (((x >> 1) & 0x55555555) | ((x & 0x55555555) << 1));
@@ -513,18 +566,21 @@ namespace System.NumericsX
             return (x >> 16) | (x << 16);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Abs(int x)              // returns the absolute value of the integer value (for reference only)
         {
             int y = x >> 31;
             return (x ^ y) - y;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Fabs(float f)         // returns the absolute value of the floating point value
         {
             int tmp = reinterpret.cast_int(f);
             tmp &= 0x7FFFFFFF;
             return reinterpret.cast_float(tmp);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Fabs(double f)         // returns the absolute value of the floating point value
         {
             int tmp = reinterpret.cast_int((float)f);
@@ -532,17 +588,22 @@ namespace System.NumericsX
             return reinterpret.cast_float(tmp);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Floor(float f)            // returns the largest integer that is less than or equal to the given value
             => (float)Math.Floor(f);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Ceil(float f)         // returns the smallest integer that is greater than or equal to the given value
             => (float)Math.Ceiling(f);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Rint(float f)         // returns the nearest integer
             => (float)Math.Floor(f + 0.5f);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Ftoi(float f)           // float to int conversion
             => (int)f;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int FtoiFast(float f)       // fast float to int conversion but uses current FPU round mode (default round nearest)
         {
 #if _M_IX86
@@ -555,10 +616,13 @@ namespace System.NumericsX
 #endif
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint Ftol(float f)          // float to int conversion
             => (uint)f;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint Ftol(double f)          // float to int conversion
             => (uint)f;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint FtolFast(float f)           // fast float to int conversion but uses current FPU round mode (default round nearest)
         {
 #if _M_IX86
@@ -572,6 +636,7 @@ namespace System.NumericsX
 #endif
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static sbyte ClampChar(int i)
         {
             if (i < -128) return -128;
@@ -579,6 +644,7 @@ namespace System.NumericsX
             return (sbyte)i;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static short ClampShort(int i)
         {
             if (i < -32768) return -32768;
@@ -586,6 +652,7 @@ namespace System.NumericsX
             return (short)i;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ClampInt(int min, int max, int value)
         {
             if (value < min) return min;
@@ -593,6 +660,7 @@ namespace System.NumericsX
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ClampFloat(float min, float max, float value)
         {
             if (value < min) return min;
@@ -600,6 +668,7 @@ namespace System.NumericsX
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float AngleNormalize360(float angle)
         {
             if ((angle >= 360f) || (angle < 0f))
@@ -607,6 +676,7 @@ namespace System.NumericsX
             return angle;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float AngleNormalize180(float angle)
         {
             angle = AngleNormalize360(angle);
@@ -615,6 +685,7 @@ namespace System.NumericsX
             return angle;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float AngleDelta(float angle1, float angle2)
             => AngleNormalize180(angle1 - angle2);
 
@@ -667,6 +738,7 @@ namespace System.NumericsX
             return reinterpret.cast_float(value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int FloatHash(float[] array, int numFloats)
         {
             throw new NotImplementedException();
@@ -709,11 +781,10 @@ namespace System.NumericsX
         // Old 3D vector macros, should no longer be used.
 
         //#define DotProduct( a, b)			((a)[0]*(b)[0]+(a)[1]*(b)[1]+(a)[2]*(b)[2])
-        public static void VectorSubtract(ref Vector3 a, ref Vector3 b, float[] c) { c[0] = a.x - b.x; c[1] = a.y - b.y; c[2] = a.z - b.z; }
-        public static void VectorAdd(ref Vector3 a, ref Vector3 b, float[] c) { c[0] = a.x + b.x; c[1] = a.y + b.y; c[2] = a.z + b.z; }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorSubtract(in Vector3 a, in Vector3 b, float[] c) { c[0] = a.x - b.x; c[1] = a.y - b.y; c[2] = a.z - b.z; }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorAdd(in Vector3 a, in Vector3 b, float[] c) { c[0] = a.x + b.x; c[1] = a.y + b.y; c[2] = a.z + b.z; }
         //#define VectorScale( v, s, o )		((o)[0]=(v)[0]*(s),(o)[1]=(v)[1]*(s),(o)[2]=(v)[2]*(s))
-        public static void VectorMA(ref Vector3 v, float s, ref Vector3 b, ref Vector3 o) { o.x = v.x + b.x * s; o.y = v.y + b.y * s; o.z = v.z + b.z * s; }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorMA(in Vector3 v, float s, in Vector3 b, out Vector3 o) { o.x = v.x + b.x * s; o.y = v.y + b.y * s; o.z = v.z + b.z * s; }
         //#define VectorCopy( a, b )			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2])
-
     }
 }

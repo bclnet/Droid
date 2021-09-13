@@ -6,8 +6,6 @@ namespace System.NumericsX
     {
         const float POLYTOPE_VERTEX_EPSILON = 0.1f;
 
-        public Surface_Polytope() { }
-
         public unsafe void FromPlanes(Plane[] planes, int numPlanes)
         {
             int i, j, k; FixedWinding w = new(); DrawVert newVert = new();
@@ -31,7 +29,7 @@ namespace System.NumericsX
                 for (j = 0; j < w.NumPoints; j++)
                 {
                     for (k = 0; k < verts.Count; k++)
-                        if (verts[k].xyz.Compare(ref w[j].ToVec3(), POLYTOPE_VERTEX_EPSILON))
+                        if (verts[k].xyz.Compare(w[j].ToVec3(), POLYTOPE_VERTEX_EPSILON))
                             break;
                     if (k >= verts.Count)
                     {
@@ -52,7 +50,7 @@ namespace System.NumericsX
             GenerateEdgeIndexes();
         }
 
-        public void SetupTetrahedron(Bounds bounds)
+        public void SetupTetrahedron(in Bounds bounds)
         {
             Vector3 center, scale;
             float c1, c2, c3;
@@ -87,7 +85,7 @@ namespace System.NumericsX
             GenerateEdgeIndexes();
         }
 
-        public void SetupHexahedron(Bounds bounds)
+        public void SetupHexahedron(in Bounds bounds)
         {
             Vector3 center, scale;
 
@@ -145,7 +143,7 @@ namespace System.NumericsX
             GenerateEdgeIndexes();
         }
 
-        public void SetupOctahedron(Bounds bounds)
+        public void SetupOctahedron(in Bounds bounds)
         {
             Vector3 center, scale;
 
@@ -189,19 +187,19 @@ namespace System.NumericsX
             GenerateEdgeIndexes();
         }
 
-        public void SetupDodecahedron(Bounds bounds)
+        public void SetupDodecahedron(in Bounds bounds)
             => throw new NotSupportedException();
 
-        public void SetupIcosahedron(Bounds bounds)
+        public void SetupIcosahedron(in Bounds bounds)
             => throw new NotSupportedException();
 
-        public void SetupCylinder(Bounds bounds, int numSides)
+        public void SetupCylinder(in Bounds bounds, int numSides)
             => throw new NotSupportedException();
 
-        public void SetupCone(Bounds bounds, int numSides)
+        public void SetupCone(in Bounds bounds, int numSides)
             => throw new NotSupportedException();
 
-        public unsafe int SplitPolytope(Plane plane, float epsilon, out Surface_Polytope front, out Surface_Polytope back)
+        public unsafe int SplitPolytope(in Plane plane, float epsilon, out Surface_Polytope front, out Surface_Polytope back)
         {
             int side, i, j, s, v0, v1, v2, edgeNum;
             var surface = new Surface[2];

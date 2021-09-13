@@ -1,7 +1,10 @@
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
+    [StructLayout(LayoutKind.Sequential)]
     public struct Quat
     {
         public float x;
@@ -9,6 +12,7 @@ namespace System.NumericsX
         public float z;
         public float w;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Quat(float x, float y, float z, float w)
         {
             this.x = x;
@@ -17,6 +21,7 @@ namespace System.NumericsX
             this.w = w;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(float x, float y, float z, float w)
         {
             this.x = x;
@@ -27,11 +32,13 @@ namespace System.NumericsX
 
         public unsafe float this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (float* p = &x)
                     return p[index];
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 fixed (float* p = &x)
@@ -39,19 +46,23 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Quat operator -(Quat _)
             => new(-_.x, -_.y, -_.z, -_.w);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Quat operator +(Quat _, Quat a)
             => new(_.x + a.x, _.y + a.y, _.z + a.z, _.w + a.w);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Quat operator -(Quat _, Quat a)
             => new(_.x - a.x, _.y - a.y, _.z - a.z, _.w - a.w);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Quat operator *(Quat _, Quat a)
             => new(
                 _.w * a.x + _.x * a.w + _.y * a.z - _.z * a.y,
                 _.w * a.y + _.y * a.w + _.z * a.x - _.x * a.z,
                 _.w * a.z + _.z * a.w + _.x * a.y - _.y * a.x,
                 _.w * a.w - _.x * a.x - _.y * a.y - _.z * a.z);
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 operator *(Quat _, Vector3 a)
         {
 #if false
@@ -74,43 +85,47 @@ namespace System.NumericsX
                 (xz2 + yw2) * a.x + (yz2 - xw2) * a.y + (wwyy - xxzz) * a.z);
 #endif
         }
-        public static Quat operator *(Quat _, float a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Quat operator *(in Quat _, float a)
             => new(_.x * a, _.y * a, _.z * a, _.w * a);
-
-        public static Quat operator *(float a, Quat b)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Quat operator *(float a, in Quat b)
             => b * a;
-        public static Vector3 operator *(Vector3 a, Quat b)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3 operator *(in Vector3 a, in Quat b)
             => b * a;
 
-        public bool Compare(Quat a)                       // exact compare, no epsilon
-            => (x == a.x) && (y == a.y) && (z == a.z) && (w == a.w);
-        public bool Compare(Quat a, float epsilon)  // compare with epsilon
-        {
-            if (MathX.Fabs(x - a.x) > epsilon) return false;
-            if (MathX.Fabs(y - a.y) > epsilon) return false;
-            if (MathX.Fabs(z - a.z) > epsilon) return false;
-            if (MathX.Fabs(w - a.w) > epsilon) return false;
-            return true;
-        }
-        public static bool operator ==(Quat _, Quat a)                   // exact compare, no epsilon
+        public bool Compare(in Quat a)                       // exact compare, no epsilon
+            => x == a.x && y == a.y && z == a.z && w == a.w;
+        public bool Compare(in Quat a, float epsilon)  // compare with epsilon
+            => MathX.Fabs(x - a.x) <= epsilon &&
+               MathX.Fabs(y - a.y) <= epsilon &&
+               MathX.Fabs(z - a.z) <= epsilon &&
+               MathX.Fabs(w - a.w) <= epsilon;
+        public static bool operator ==(in Quat _, in Quat a)                   // exact compare, no epsilon
             => _.Compare(a);
-        public static bool operator !=(Quat _, Quat a)                   // exact compare, no epsilon
+        public static bool operator !=(in Quat _, in Quat a)                   // exact compare, no epsilon
             => !_.Compare(a);
         public override bool Equals(object obj)
             => obj is Quat q && Compare(q);
         public override int GetHashCode()
             => x.GetHashCode() ^ y.GetHashCode() ^ z.GetHashCode() ^ w.GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Quat Inverse()
             => new(-x, -y, -z, w);
+
         public float Length
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 var len = x * x + y * y + z * z + w * w;
                 return MathX.Sqrt(len);
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Quat Normalize()
         {
             var len = Length;
@@ -125,14 +140,16 @@ namespace System.NumericsX
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float CalcW()
             // take the absolute value because floating point rounding may cause the dot of x,y,z to be larger than 1
             => (float)Math.Sqrt((float)Math.Abs(1f - (x * x + y * y + z * z)));
-        public static int Dimension
-            => 4;
+
+        public const int Dimension = 4;
 
         public Angles ToAngles()
             => ToMat3().ToAngles();
+
         public Rotation ToRotation()
         {
             var vec = new Vector3 { x = x, y = y, z = z };
@@ -147,6 +164,7 @@ namespace System.NumericsX
             }
             return new(Vector3.origin, vec, angle);
         }
+
         public Matrix3x3 ToMat3()
         {
             float x2 = x + x, y2 = y + y, z2 = z + z;
@@ -169,10 +187,13 @@ namespace System.NumericsX
 
             return mat;
         }
+
         public Matrix4x4 ToMat4()
             => ToMat3().ToMat4();
+
         public CQuat ToCQuat()
             => w < 0f ? new CQuat(-x, -y, -z) : new CQuat(x, y, z);
+
         public Vector3 ToAngularVelocity()
         {
             var vec = new Vector3
@@ -184,13 +205,19 @@ namespace System.NumericsX
             vec.Normalize();
             return vec * MathX.ACos(w);
         }
-        public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //{
+        //    fixed (float* _ = &x)
+        //        return callback(_);
+        //}
+
+        public unsafe string ToString(int precision = 2)
         {
             fixed (float* _ = &x)
-                return callback(_);
+                return FloatArrayToString(_, Dimension, precision);
         }
-        public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
 
         /// <summary>
         /// Spherical linear interpolation between two quaternions.
@@ -199,7 +226,7 @@ namespace System.NumericsX
         /// <param name="to">To.</param>
         /// <param name="t">The t.</param>
         /// <returns></returns>
-        public Quat Slerp(Quat from, Quat to, float t)
+        public Quat Slerp(in Quat from, in Quat to, float t)
         {
             Quat temp;
             float omega, cosom, sinom, scale0, scale1;
@@ -232,12 +259,14 @@ namespace System.NumericsX
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct CQuat
     {
         public float x;
         public float y;
         public float z;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CQuat(float x, float y, float z)
         {
             this.x = x;
@@ -245,6 +274,7 @@ namespace System.NumericsX
             this.z = z;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(float x, float y, float z)
         {
             this.x = x;
@@ -254,11 +284,13 @@ namespace System.NumericsX
 
         public unsafe float this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (float* p = &x)
                     return p[index];
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 fixed (float* p = &x)
@@ -266,44 +298,54 @@ namespace System.NumericsX
             }
         }
 
-        public bool Compare(CQuat a)                     // exact compare, no epsilon
-            => (x == a.x) && (y == a.y) && (z == a.z);
-        public bool Compare(CQuat a, float epsilon)    // compare with epsilon
-        {
-            if (MathX.Fabs(x - a.x) > epsilon) return false;
-            if (MathX.Fabs(y - a.y) > epsilon) return false;
-            if (MathX.Fabs(z - a.z) > epsilon) return false;
-            return true;
-        }
-        public static bool operator ==(CQuat _, CQuat a)                 // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in CQuat a)                     // exact compare, no epsilon
+            => x == a.x && y == a.y && z == a.z;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in CQuat a, float epsilon)    // compare with epsilon
+            => MathX.Fabs(x - a.x) <= epsilon &&
+               MathX.Fabs(y - a.y) <= epsilon &&
+               MathX.Fabs(z - a.z) <= epsilon;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(in CQuat _, in CQuat a)                 // exact compare, no epsilon
             => _.Compare(a);
-        public static bool operator !=(CQuat _, CQuat a)                 // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in CQuat _, in CQuat a)                 // exact compare, no epsilon
             => !_.Compare(a);
         public override bool Equals(object obj)
             => obj is CQuat q && Compare(q);
         public override int GetHashCode()
             => x.GetHashCode() ^ y.GetHashCode() ^ z.GetHashCode();
 
-        public static int Dimension
-            => 3;
+        public const int Dimension = 3;
 
         public Angles ToAngles()
             => ToQuat().ToAngles();
+
         public Rotation ToRotation()
             => ToQuat().ToRotation();
+
         public Matrix3x3 ToMat3()
             => ToQuat().ToMat3();
+
         public Matrix4x4 ToMat4()
             => ToQuat().ToMat4();
+
         public Quat ToQuat()
             // take the absolute value because floating point rounding may cause the dot of x,y,z to be larger than 1
             => new(x, y, z, (float)Math.Sqrt((float)Math.Abs(1f - (x * x + y * y + z * z))));
-        public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //{
+        //    fixed (float* _ = &x)
+        //        return callback(_);
+        //}
+
+        public unsafe string ToString(int precision = 2)
         {
             fixed (float* _ = &x)
-                return callback(_);
+                return FloatArrayToString(_, Dimension, precision);
         }
-        public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
     }
 }

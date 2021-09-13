@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using static System.NumericsX.Platform;
 using TraceModelVert = System.NumericsX.Vector3;
 
@@ -19,12 +20,14 @@ namespace System.NumericsX
         CUSTOM          // loaded from map model or ASE/LWO
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct TraceModelEdge
     {
         public fixed int v[2];
         public Vector3 normal;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct TraceModelPoly
     {
         public Vector3 normal;
@@ -53,6 +56,7 @@ namespace System.NumericsX
         public Bounds bounds;           // bounds of model
         public bool isConvex;       // true when model is convex
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TraceModel()
         {
             type = TRM.INVALID;
@@ -60,15 +64,18 @@ namespace System.NumericsX
             bounds.Zero();
         }
         // axial bounding box
-        public TraceModel(Bounds boxBounds)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TraceModel(in Bounds boxBounds)
         {
             InitBox();
             SetupBox(boxBounds);
         }
         // cylinder approximation
-        public TraceModel(Bounds cylBounds, int numSides)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TraceModel(in Bounds cylBounds, int numSides)
             => SetupCylinder(cylBounds, numSides);
         // bone
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TraceModel(float length, float width)
         {
             InitBone();
@@ -147,7 +154,7 @@ namespace System.NumericsX
             GenerateEdgeNormals();
         }
 
-        public void SetupBox(Bounds boxBounds)
+        public void SetupBox(in Bounds boxBounds)
         {
             int i;
 
@@ -263,7 +270,7 @@ namespace System.NumericsX
             isConvex = true;
         }
 
-        public unsafe void SetupOctahedron(Bounds octBounds)
+        public unsafe void SetupOctahedron(in Bounds octBounds)
         {
             int i, e0, e1, v0, v1, v2; Vector3 v = new();
 
@@ -292,7 +299,7 @@ namespace System.NumericsX
                 v1 = edges[Math.Abs(e0)].v[MathX.INTSIGNBITNOTSET_(e0)];
                 v2 = edges[Math.Abs(e1)].v[MathX.INTSIGNBITNOTSET_(e1)];
                 // polygon plane
-                polys[i].normal = (verts[v1] - verts[v0]).Cross_(verts[v2] - verts[v0]);
+                polys[i].normal = (verts[v1] - verts[v0]).Cross(verts[v2] - verts[v0]);
                 polys[i].normal.Normalize();
                 polys[i].dist = polys[i].normal * verts[v0];
                 // polygon bounds
@@ -450,7 +457,7 @@ namespace System.NumericsX
             isConvex = true;
         }
 
-        public unsafe void SetupDodecahedron(Bounds dodBounds)
+        public unsafe void SetupDodecahedron(in Bounds dodBounds)
         {
             int i, e0, e1, e2, e3, v0, v1, v2, v3, v4;
             float s, d;
@@ -513,7 +520,7 @@ namespace System.NumericsX
                 v3 = edges[Math.Abs(e2)].v[MathX.INTSIGNBITNOTSET_(e2)];
                 v4 = edges[Math.Abs(e3)].v[MathX.INTSIGNBITNOTSET_(e3)];
                 // polygon plane
-                polys[i].normal = (verts[v1] - verts[v0]).Cross_(verts[v2] - verts[v0]);
+                polys[i].normal = (verts[v1] - verts[v0]).Cross(verts[v2] - verts[v0]);
                 polys[i].normal.Normalize();
                 polys[i].dist = polys[i].normal * verts[v0];
                 // polygon bounds
@@ -544,7 +551,7 @@ namespace System.NumericsX
 
         #region Cylinder: cylinder approximation
 
-        public unsafe void SetupCylinder(Bounds cylBounds, int numSides)
+        public unsafe void SetupCylinder(in Bounds cylBounds, int numSides)
         {
             int i, n, ii, n2; float angle; Vector3 halfSize;
 
@@ -609,7 +616,7 @@ namespace System.NumericsX
             for (i = 0; i < n; i++)
             {
                 // vertical polygon plane
-                polys[i].normal = (verts[(i + 1) % n] - verts[i]).Cross_(verts[n + i] - verts[i]);
+                polys[i].normal = (verts[(i + 1) % n] - verts[i]).Cross(verts[n + i] - verts[i]);
                 polys[i].normal.Normalize();
                 polys[i].dist = polys[i].normal * verts[i];
                 // vertical polygon bounds
@@ -652,7 +659,7 @@ namespace System.NumericsX
 
         #region Cone: cone approximation
 
-        public unsafe void SetupCone(Bounds coneBounds, int numSides)
+        public unsafe void SetupCone(in Bounds coneBounds, int numSides)
         {
             int i, n, ii; float angle; Vector3 halfSize;
 
@@ -710,7 +717,7 @@ namespace System.NumericsX
             for (i = 0; i < n; i++)
             {
                 // polygon plane
-                polys[i].normal = (verts[(i + 1) % n] - verts[i]).Cross_(verts[n] - verts[i]);
+                polys[i].normal = (verts[(i + 1) % n] - verts[i]).Cross(verts[n] - verts[i]);
                 polys[i].normal.Normalize();
                 polys[i].dist = polys[i].normal * verts[i];
                 // polygon bounds
@@ -822,12 +829,12 @@ namespace System.NumericsX
             bounds[0].Set(width * -0.5f, width * -0.5f, -halfLength);
             bounds[1].Set(width * 0.5f, width * 0.25f, halfLength);
             // poly plane normals
-            polys[0].normal = (verts[2] - verts[0]).Cross_(verts[1] - verts[0]);
+            polys[0].normal = (verts[2] - verts[0]).Cross(verts[1] - verts[0]);
             polys[0].normal.Normalize();
             polys[2].normal.Set(-polys[0].normal[0], polys[0].normal[1], polys[0].normal[2]);
             polys[3].normal.Set(polys[0].normal[0], polys[0].normal[1], -polys[0].normal[2]);
             polys[5].normal.Set(-polys[0].normal[0], polys[0].normal[1], -polys[0].normal[2]);
-            polys[1].normal = (verts[3] - verts[0]).Cross_(verts[2] - verts[0]);
+            polys[1].normal = (verts[3] - verts[0]).Cross(verts[2] - verts[0]);
             polys[1].normal.Normalize();
             polys[4].normal.Set(polys[1].normal[0], polys[1].normal[1], -polys[1].normal[2]);
             // poly plane distances
@@ -866,7 +873,7 @@ namespace System.NumericsX
             numPolys = 2;
             // set polygon planes
             polys[0].numEdges = numEdges;
-            polys[0].normal = (v[1] - v[0]).Cross_(v[2] - v[0]);
+            polys[0].normal = (v[1] - v[0]).Cross(v[2] - v[0]);
             polys[0].normal.Normalize();
             polys[0].dist = polys[0].normal * v[0];
             polys[1].numEdges = numEdges;
@@ -882,7 +889,7 @@ namespace System.NumericsX
                 verts[i] = v[i];
                 edges[i + 1].v[0] = i;
                 edges[i + 1].v[1] = j;
-                edges[i + 1].normal = polys[0].normal.Cross_(v[i] - v[j]);
+                edges[i + 1].normal = polys[0].normal.Cross(v[i] - v[j]);
                 edges[i + 1].normal.Normalize();
                 polys[0].edges[i] = i + 1;
                 polys[1].edges[i] = -(numVerts - i);
@@ -898,7 +905,7 @@ namespace System.NumericsX
             isConvex = false;
         }
 
-        public unsafe void SetupPolygon(Winding w)
+        public unsafe void SetupPolygon(in Winding w)
         {
             int i;
 
@@ -930,7 +937,7 @@ namespace System.NumericsX
                 trm.polys[2 + i].edges[1] = numEdges * 2 + i + 1;
                 trm.polys[2 + i].edges[2] = numEdges + i + 1;
                 trm.polys[2 + i].edges[3] = -(numEdges * 2 + (i + 1) % numEdges + 1);
-                trm.polys[2 + i].normal = (verts[(i + 1) % numVerts] - verts[i]).Cross(ref polys[0].normal);
+                trm.polys[2 + i].normal = (verts[(i + 1) % numVerts] - verts[i]).Cross(polys[0].normal);
                 trm.polys[2 + i].normal.Normalize();
                 trm.polys[2 + i].dist = trm.polys[2 + i].normal * verts[i];
             }
@@ -969,7 +976,7 @@ namespace System.NumericsX
                             {
                                 // max length normal pointing outside both polygons
                                 dir = verts[edge->v[edgeNum > 0 ? 1 : 0]] - verts[edge->v[edgeNum < 0 ? 1 : 0]];
-                                edge->normal = edge->normal.Cross(ref dir) + poly.normal.Cross_(-dir);
+                                edge->normal = edge->normal.Cross(dir) + poly.normal.Cross(-dir);
                                 edge->normal *= 0.5f / (0.5f + 0.5f * SHARP_EDGE_DOT) / edge->normal.Length;
                                 numSharpEdges++;
                             }
@@ -981,7 +988,7 @@ namespace System.NumericsX
         }
 
         // translate the trm
-        public void Translate(Vector3 translation)
+        public void Translate(in Vector3 translation)
         {
             int i;
 
@@ -999,7 +1006,7 @@ namespace System.NumericsX
         }
 
         // rotate the trm
-        public unsafe void Rotate(Matrix3x3 rotation)
+        public unsafe void Rotate(in Matrix3x3 rotation)
         {
             int i, j, edgeNum;
 
@@ -1062,7 +1069,7 @@ namespace System.NumericsX
         }
 
         // compare
-        public bool Compare(TraceModel a)
+        public bool Compare(in TraceModel a)
         {
             int i;
 
@@ -1091,9 +1098,11 @@ namespace System.NumericsX
             }
             return true;
         }
-        public static bool operator ==(TraceModel _, TraceModel a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(in TraceModel _, in TraceModel a)
             => _.Compare(a);
-        public static bool operator !=(TraceModel _, TraceModel a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in TraceModel _, in TraceModel a)
             => !_.Compare(a);
         public override bool Equals(object obj)
             => obj is TraceModel q && Compare(q);
@@ -1114,7 +1123,7 @@ namespace System.NumericsX
             {
                 v1 = verts[edges[Math.Abs(poly.edges[i])].v[MathX.INTSIGNBITSET_(poly.edges[i])]] - base_;
                 v2 = verts[edges[Math.Abs(poly.edges[i])].v[MathX.INTSIGNBITNOTSET_(poly.edges[i])]] - base_;
-                cross = v1.Cross(ref v2);
+                cross = v1.Cross(v2);
                 total += cross.Length;
             }
             return total * 0.5f;
@@ -1163,7 +1172,7 @@ namespace System.NumericsX
         }
 
         // get the silhouette edges
-        public unsafe int GetProjectionSilhouetteEdges(Vector3 projectionOrigin, int[] silEdges)
+        public unsafe int GetProjectionSilhouetteEdges(in Vector3 projectionOrigin, int[] silEdges)
         {
             int i, j, edgeNum; int* edgeIsSilEdge = stackalloc int[MAX_TRACEMODEL_EDGES + 1]; Vector3 dir;
 
@@ -1185,7 +1194,7 @@ namespace System.NumericsX
             return GetOrderedSilhouetteEdges(edgeIsSilEdge, silEdges);
         }
 
-        public unsafe int GetParallelProjectionSilhouetteEdges(Vector3 projectionDir, int[] silEdges)
+        public unsafe int GetParallelProjectionSilhouetteEdges(in Vector3 projectionDir, int[] silEdges)
         {
             int i, j, edgeNum; int* edgeIsSilEdge = stackalloc int[MAX_TRACEMODEL_EDGES + 1];
 
@@ -1208,13 +1217,13 @@ namespace System.NumericsX
         #endregion
 
         // calculate mass properties assuming an uniform density
-        public void GetMassProperties(float density, float mass, Vector3 centerOfMass, Matrix3x3 inertiaTensor)
+        public void GetMassProperties(float density, float mass, out Vector3 centerOfMass, in Matrix3x3 inertiaTensor)
         {
             // if polygon trace model
             if (type == TRM.POLYGON)
             {
                 VolumeFromPolygon(out var trm, 1f);
-                trm.GetMassProperties(density, mass, centerOfMass, inertiaTensor);
+                trm.GetMassProperties(density, mass, out centerOfMass, inertiaTensor);
                 return;
             }
 
@@ -1224,7 +1233,7 @@ namespace System.NumericsX
             if (integrals.T0 == 0f)
             {
                 mass = 1f;
-                centerOfMass.Zero();
+                centerOfMass = Vector3.origin;
                 inertiaTensor.Identity();
                 return;
             }

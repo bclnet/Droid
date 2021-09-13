@@ -12,28 +12,37 @@ namespace System.NumericsX
         int numPoints;
         Vector2[] p = new Vector2[MAX_POINTS_ON_WINDING_2D];
 
-        public Winding2D(Winding2D winding)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Winding2D(in Winding2D winding)
         {
             for (var i = 0; i < winding.numPoints; i++)
                 p[i] = winding.p[i];
             numPoints = winding.numPoints;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Winding2D()
            => numPoints = 0;
 
-        public Vector2 this[int index]
-            => p[index];
+        public ref Vector2 this[int index]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => ref p[index];
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()
             => numPoints = 0;
 
-        public void AddPoint(Vector2 point)
+        public void AddPoint(in Vector2 point)
            => p[numPoints++] = point;
 
         public int NumPoints
-            => numPoints;
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => numPoints;
+        }
 
-        static bool GetAxialBevel(Vector3 plane1, Vector3 plane2, Vector2 point, out Vector3 bevel)
+        static bool GetAxialBevel(in Vector3 plane1, in Vector3 plane2, in Vector2 point, out Vector3 bevel)
         {
             bevel = new();
             if (MathX.FLOATSIGNBITSET(plane1.x) ^ MathX.FLOATSIGNBITSET(plane2.x) &&
@@ -106,12 +115,12 @@ namespace System.NumericsX
 
             // get intersection points of the planes
             for (numPoints = i = 0; i < numPlanes; i++)
-                if (Plane2DIntersection(planes[(i + numPlanes - 1) % numPlanes], planes[i], p[numPoints]))
+                if (Plane2DIntersection(planes[(i + numPlanes - 1) % numPlanes], planes[i], ref p[numPoints]))
                     numPoints++;
         }
 
         // splits the winding into a front and back winding, the winding itself stays unchanged, returns a SIDE_?
-        public unsafe int Split(Vector3 plane, float epsilon, out Winding2D front, out Winding2D back)
+        public unsafe int Split(in Vector3 plane, float epsilon, out Winding2D front, out Winding2D back)
         {
             int i, j; float dot; Vector2 mid = new(); Vector2* p1, p2; Winding2D f, b;
 
@@ -213,7 +222,7 @@ namespace System.NumericsX
         }
 
         // cuts off the part at the back side of the plane, returns true if some part was at the front, if there is nothing at the front the number of points is set to zero
-        public unsafe bool ClipInPlace(Vector3 plane, float epsilon = Plane.ON_EPSILON, bool keepOn = false)
+        public unsafe bool ClipInPlace(in Vector3 plane, float epsilon = Plane.ON_EPSILON, bool keepOn = false)
         {
             int i, j, maxpts, newNumPoints;
             int* sides = stackalloc int[MAX_POINTS_ON_WINDING_2D + 1], counts = stackalloc int[3];
@@ -346,7 +355,7 @@ namespace System.NumericsX
             }
         }
 
-        public float GetRadius(Vector2 center)
+        public float GetRadius(in Vector2 center)
         {
             var radius = 0f;
             for (var i = 0; i < numPoints; i++)
@@ -414,7 +423,7 @@ namespace System.NumericsX
                 Printf($"({p[i].x:5.1}, {p[i].y:5.1})\n");
         }
 
-        public float PlaneDistance(Vector3 plane)
+        public float PlaneDistance(in Vector3 plane)
         {
 
             var min = MathX.INFINITY;
@@ -440,7 +449,7 @@ namespace System.NumericsX
             return 0f;
         }
 
-        public int PlaneSide(Vector3 plane, float epsilon = Plane.ON_EPSILON)
+        public int PlaneSide(in Vector3 plane, float epsilon = Plane.ON_EPSILON)
         {
             var front = false;
             var back = false;
@@ -468,7 +477,7 @@ namespace System.NumericsX
             return SIDE_ON;
         }
 
-        public bool PointInside(Vector2 point, float epsilon)
+        public bool PointInside(in Vector2 point, float epsilon)
         {
             for (var i = 0; i < numPoints; i++)
             {
@@ -480,7 +489,7 @@ namespace System.NumericsX
             return true;
         }
 
-        public unsafe bool LineIntersection(Vector2 start, Vector2 end)
+        public unsafe bool LineIntersection(in Vector2 start, in Vector2 end)
         {
             int i, numEdges; int* sides = stackalloc int[MAX_POINTS_ON_WINDING_2D + 1], counts = stackalloc int[3];
             float d1, d2, epsilon = 0.1f;
@@ -526,7 +535,7 @@ namespace System.NumericsX
             return true;
         }
 
-        public unsafe bool RayIntersection(Vector2 start, Vector2 dir, out float scale1, out float scale2, int[] edgeNums = null)
+        public unsafe bool RayIntersection(in Vector2 start, in Vector2 dir, out float scale1, out float scale2, int[] edgeNums = null)
         {
             int i, numEdges; int* localEdgeNums = stackalloc int[2], sides = stackalloc int[MAX_POINTS_ON_WINDING_2D + 1], counts = stackalloc int[3];
             float d1, d2, epsilon = 0.1f;
@@ -588,7 +597,8 @@ namespace System.NumericsX
             return true;
         }
 
-        public static Vector3 Plane2DFromPoints(Vector2 start, Vector2 end, bool normalize = false)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3 Plane2DFromPoints(in Vector2 start, in Vector2 end, bool normalize = false)
         {
             Vector3 plane = new();
             plane.x = start.y - end.y;
@@ -599,7 +609,8 @@ namespace System.NumericsX
             return plane;
         }
 
-        public static Vector3 Plane2DFromVecs(Vector2 start, Vector2 dir, bool normalize = false)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3 Plane2DFromVecs(in Vector2 start, in Vector2 dir, bool normalize = false)
         {
             Vector3 plane = new();
             plane.x = -dir.y;
@@ -610,7 +621,8 @@ namespace System.NumericsX
             return plane;
         }
 
-        public static bool Plane2DIntersection(Vector3 plane1, Vector3 plane2, Vector2 point)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool Plane2DIntersection(in Vector3 plane1, in Vector3 plane2, ref Vector2 point)
         {
             float n00, n01, n11, det, invDet, f0, f1;
 

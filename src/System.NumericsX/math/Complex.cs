@@ -1,33 +1,43 @@
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
+    [StructLayout(LayoutKind.Sequential)]
     public struct Complex
     {
+        public static Complex origin = new(0f, 0f);
         public float r;     // real part
         public float i;      // imaginary part
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Complex(float r, float i)
         {
             this.r = r;
             this.i = i;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(float r, float i)
         {
             this.r = r;
             this.i = i;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()
             => r = i = 0f;
 
         public unsafe float this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (float* p = &r)
                     return p[index];
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 fixed (float* p = &r)
@@ -35,12 +45,14 @@ namespace System.NumericsX
             }
         }
 
-        public static Complex operator -(Complex _)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Complex operator -(in Complex _)
             => new(-_.r, -_.i);
-
-        public static Complex operator *(Complex _, Complex a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Complex operator *(in Complex _, in Complex a)
             => new(_.r * a.r - _.i * a.i, _.i * a.r + _.r * a.i);
-        public static Complex operator /(Complex _, Complex a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Complex operator /(in Complex _, in Complex a)
         {
             float s, t;
             if (MathX.Fabs(a.r) >= MathX.Fabs(a.i))
@@ -56,26 +68,26 @@ namespace System.NumericsX
                 return new((_.r * s + _.i) * t, (_.i * s - _.r) * t);
             }
         }
-        public static Complex operator +(Complex _, Complex a)
+        public static Complex operator +(in Complex _, in Complex a)
             => new(_.r + a.r, _.i + a.i);
-        public static Complex operator -(Complex _, Complex a)
+        public static Complex operator -(in Complex _, in Complex a)
             => new(_.r - a.r, _.i - a.i);
 
-        public static Complex operator *(Complex _, float a)
+        public static Complex operator *(in Complex _, float a)
             => new(_.r * a, _.i * a);
-        public static Complex operator /(Complex _, float a)
+        public static Complex operator /(in Complex _, float a)
         {
             var s = 1f / a;
             return new(_.r * s, _.i * s);
         }
-        public static Complex operator +(Complex _, float a)
+        public static Complex operator +(in Complex _, float a)
             => new(_.r + a, _.i);
-        public static Complex operator -(Complex _, float a)
+        public static Complex operator -(in Complex _, float a)
             => new(_.r - a, _.i);
 
-        public static Complex operator *(float a, Complex b)
+        public static Complex operator *(float a, in Complex b)
             => new(a * b.r, a * b.i);
-        public static Complex operator /(float a, Complex b)
+        public static Complex operator /(float a, in Complex b)
         {
             float s, t;
             if (MathX.Fabs(b.r) >= MathX.Fabs(b.i))
@@ -91,9 +103,9 @@ namespace System.NumericsX
                 return new(s * t, -t);
             }
         }
-        public static Complex operator +(float a, Complex b)
+        public static Complex operator +(float a, in Complex b)
             => new(a + b.r, b.i);
-        public static Complex operator -(float a, Complex b)
+        public static Complex operator -(float a, in Complex b)
             => new(a - b.r, -b.i);
 
         /// <summary>
@@ -101,20 +113,17 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="a">a.</param>
         /// <returns></returns>
-        public bool Compare(Complex a)
-            => (r == a.r) && (i == a.i);
+        public bool Compare(in Complex a)
+            => r == a.r && i == a.i;
         /// <summary>
         /// compare with epsilon
         /// </summary>
         /// <param name="a">a.</param>
         /// <param name="epsilon">The epsilon.</param>
         /// <returns></returns>
-        public bool Compare(Complex a, float epsilon)
-        {
-            if (MathX.Fabs(r - a.r) > epsilon) return false;
-            if (MathX.Fabs(i - a.i) > epsilon) return false;
-            return true;
-        }
+        public bool Compare(in Complex a, float epsilon)
+            => MathX.Fabs(r - a.r) <= epsilon &&
+               MathX.Fabs(i - a.i) <= epsilon;
         /// <summary>
         /// exact compare, no epsilon
         /// </summary>
@@ -123,7 +132,7 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static bool operator ==(Complex _, Complex a)
+        public static bool operator ==(in Complex _, in Complex a)
             => _.Compare(a);
         /// <summary>
         /// exact compare, no epsilon
@@ -133,13 +142,15 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static bool operator !=(Complex _, Complex a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in Complex _, in Complex a)
             => !_.Compare(a);
         public override bool Equals(object obj)
             => obj is Complex q && Compare(q);
         public override int GetHashCode()
             => r.GetHashCode() ^ i.GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Complex Reciprocal()
         {
             float s, t;
@@ -156,6 +167,8 @@ namespace System.NumericsX
                 return new(s * t, -t);
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Complex Sqrt()
         {
             if (r == 0f && i == 0f)
@@ -177,6 +190,8 @@ namespace System.NumericsX
             if (r >= 0f) return new(w, 0.5f * i / w);
             else return new(0.5f * y / w, (i >= 0f) ? w : -w);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float Abs()
         {
             float t;
@@ -188,17 +203,16 @@ namespace System.NumericsX
             else { t = x / y; return y * MathX.Sqrt(1f + t * t); }
         }
 
-        public static int Dimension
-            => 2;
+        public const int Dimension = 2;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
             fixed (float* _ = &r)
                 return callback(_);
         }
+
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
-
-        public static Complex origin = new(0f, 0f);
     }
 }

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace System.NumericsX
 {
@@ -10,8 +11,10 @@ namespace System.NumericsX
         internal Matrix3x3 axis;          // rotation axis
         internal bool axisValid;     // true if rotation axis is valid
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Rotation() { }
-        public Rotation(Vector3 rotationOrigin, Vector3 rotationVec, float rotationAngle)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Rotation(in Vector3 rotationOrigin, in Vector3 rotationVec, float rotationAngle)
         {
             origin = rotationOrigin;
             vec = rotationVec;
@@ -20,7 +23,8 @@ namespace System.NumericsX
             axisValid = false;
         }
 
-        public void Set(Vector3 rotationOrigin, Vector3 rotationVec, float rotationAngle)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Set(in Vector3 rotationOrigin, in Vector3 rotationVec, float rotationAngle)
         {
             origin = rotationOrigin;
             vec = rotationVec;
@@ -34,6 +38,7 @@ namespace System.NumericsX
         /// <param name="x">The x.</param>
         /// <param name="y">The y.</param>
         /// <param name="z">The z.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetVec(float x, float y, float z)
         {
             vec.x = x;
@@ -42,12 +47,14 @@ namespace System.NumericsX
             axisValid = false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Scale(float s)
         {
             angle *= s;
             axisValid = false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReCalculateMatrix()
         {
             axisValid = false;
@@ -56,13 +63,17 @@ namespace System.NumericsX
 
         public Vector3 Origin
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => origin;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => origin = value;
         }
 
         public Vector3 Vec
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => vec;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 vec = value;
@@ -72,7 +83,9 @@ namespace System.NumericsX
 
         public float Angle
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => angle;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 angle = value;
@@ -87,7 +100,8 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static Rotation operator -(Rotation _)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Rotation operator -(in Rotation _)
             => new(_.origin, _.vec, -_.angle);
         /// <summary>
         /// scale rotation
@@ -97,7 +111,8 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static Rotation operator *(Rotation _, float s)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Rotation operator *(in Rotation _, float s)
             => new(_.origin, _.vec, _.angle * s);
         /// <summary>
         /// scale rotation
@@ -107,12 +122,12 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static Rotation operator /(Rotation _, float s)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Rotation operator /(in Rotation _, float s)
         {
             Debug.Assert(s != 0f);
             return new Rotation(_.origin, _.vec, _.angle / s);
         }
-
         /// <summary>
         /// rotate vector
         /// </summary>
@@ -121,13 +136,13 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static Vector3 operator *(Rotation _, Vector3 v)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3 operator *(in Rotation _, in Vector3 v)
         {
             if (!_.axisValid)
                 _.ToMat3();
             return (v - _.origin) * _.axis + _.origin;
         }
-
         /// <summary>
         /// scale rotation
         /// </summary>
@@ -136,7 +151,8 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static Rotation operator *(float s, Rotation r)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Rotation operator *(float s, in Rotation r)
             => r * s;
         /// <summary>
         /// rotate vector
@@ -146,21 +162,24 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static Vector3 operator *(Vector3 v, Rotation r)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3 operator *(in Vector3 v, in Rotation r)
             => r * v;
 
         public Angles ToAngles()
             => ToMat3().ToAngles();
+
         public Quat ToQuat()
         {
             var a = angle * (MathX.M_DEG2RAD * 0.5f);
             MathX.SinCos(a, out var s, out var c);
             return new Quat(vec.x * s, vec.y * s, vec.z * s, c);
         }
-        public Matrix3x3 ToMat3()
+
+        public ref Matrix3x3 ToMat3()
         {
             if (axisValid)
-                return axis;
+                return ref axis;
 
             var a = angle * (MathX.M_DEG2RAD * 0.5f);
             MathX.SinCos(a, out var s, out var c);
@@ -177,13 +196,15 @@ namespace System.NumericsX
 
             axisValid = true;
 
-            return axis;
+            return ref axis;
         }
         public Matrix4x4 ToMat4()
             => ToMat3().ToMat4();
+
         public Vector3 ToAngularVelocity()
             => vec * MathX.DEG2RAD(angle);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RotatePoint(ref Vector3 point)
         {
             if (!axisValid)

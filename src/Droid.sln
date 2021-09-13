@@ -25,7 +25,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.Render", "Gengine.R
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenAL", "System.NumericsX.OpenAL\System.NumericsX.OpenAL.csproj", "{ACC3CC82-EC38-4550-94E4-F7A772FAA089}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OggVorbis", "OggVorbis\OggVorbis.csproj", "{3FA3004D-1C07-47E0-ADE0-316A45579DEE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OggVorbis", "System.NumericsX.OggVorbis\System.NumericsX.OggVorbis.csproj", "{3FA3004D-1C07-47E0-ADE0-316A45579DEE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack", "System.NumericsX.OpenStack\System.NumericsX.OpenStack.csproj", "{9BBFCF1E-7233-464A-B498-4BE5A3E16EC3}"
 EndProject

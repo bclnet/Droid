@@ -1,42 +1,31 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
-    public partial class Polynomial
+    public class Polynomial
     {
         int degree;
         int allocated;
         float[] coefficient;
         const float EPSILON = 1e-6f;
 
-        void Resize(int d, bool keep)
-        {
-            var alloc = (d + 1 + 3) & ~3;
-            if (alloc > allocated)
-            {
-                var ptr = new float[alloc];
-                if (coefficient != null && keep)
-                    for (int i = 0; i <= degree; i++)
-                        ptr[i] = coefficient[i];
-                allocated = alloc;
-                coefficient = ptr;
-            }
-            degree = d;
-        }
-
-        public Polynomial(Polynomial p)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Polynomial(in Polynomial p)
         {
             Resize(p.degree, false);
             for (var i = 0; i <= degree; i++)
                 coefficient[i] = p.coefficient[i];
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Polynomial()
         {
             degree = -1;
             allocated = 0;
             coefficient = null;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Polynomial(int d)
         {
             degree = -1;
@@ -44,6 +33,7 @@ namespace System.NumericsX
             coefficient = null;
             Resize(d, false);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Polynomial(float a, float b)
         {
             degree = -1;
@@ -53,6 +43,7 @@ namespace System.NumericsX
             coefficient[0] = b;
             coefficient[1] = a;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Polynomial(float a, float b, float c)
         {
             degree = -1;
@@ -63,6 +54,7 @@ namespace System.NumericsX
             coefficient[1] = b;
             coefficient[2] = a;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Polynomial(float a, float b, float c, float d)
         {
             degree = -1;
@@ -74,6 +66,7 @@ namespace System.NumericsX
             coefficient[2] = b;
             coefficient[3] = a;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Polynomial(float a, float b, float c, float d, float e)
         {
             degree = -1;
@@ -87,23 +80,26 @@ namespace System.NumericsX
             coefficient[4] = a;
         }
 
-        //public float this[int index]
-        //{
-        //    get
-        //    {
-        //        Debug.Assert(index >= 0 && index <= degree);
-        //        return coefficient[index];
-        //    }
-        //}
+        public ref float this[int index]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                Debug.Assert(index >= 0 && index <= degree);
+                return ref coefficient[index];
+            }
+        }
 
-        public static Polynomial operator -(Polynomial _)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Polynomial operator -(in Polynomial _)
         {
             Polynomial n = new(_);
             for (var i = 0; i <= _.degree; i++)
                 n.coefficient[i] = -n.coefficient[i];
             return n;
         }
-        public static Polynomial operator +(Polynomial _, Polynomial p)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Polynomial operator +(in Polynomial _, in Polynomial p)
         {
             int i; Polynomial n = new();
 
@@ -138,7 +134,8 @@ namespace System.NumericsX
             }
             return n;
         }
-        public static Polynomial operator -(Polynomial _, Polynomial p)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Polynomial operator -(in Polynomial _, in Polynomial p)
         {
             int i; Polynomial n = new();
 
@@ -173,7 +170,8 @@ namespace System.NumericsX
             }
             return n;
         }
-        public static Polynomial operator *(Polynomial _, float s)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Polynomial operator *(in Polynomial _, float s)
         {
             Polynomial n = new();
 
@@ -187,7 +185,8 @@ namespace System.NumericsX
             }
             return n;
         }
-        public static Polynomial operator /(Polynomial _, float s)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Polynomial operator /(in Polynomial _, float s)
         {
             float invs; Polynomial n = new();
 
@@ -199,7 +198,8 @@ namespace System.NumericsX
             return n;
         }
 
-        public bool Compare(Polynomial p)                      // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in Polynomial p)                      // exact compare, no epsilon
         {
             if (degree != p.degree)
                 return false;
@@ -208,7 +208,8 @@ namespace System.NumericsX
                     return false;
             return true;
         }
-        public bool Compare(Polynomial p, float epsilon) // compare with epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in Polynomial p, float epsilon) // compare with epsilon
         {
             if (degree != p.degree)
                 return false;
@@ -217,17 +218,21 @@ namespace System.NumericsX
                     return false;
             return true;
         }
-        public static bool operator ==(Polynomial _, Polynomial p)                   // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(in Polynomial _, in Polynomial p)                   // exact compare, no epsilon
             => _.Compare(p);
-        public static bool operator !=(Polynomial _, Polynomial p)                   // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in Polynomial _, in Polynomial p)                   // exact compare, no epsilon
             => !_.Compare(p);
         public override bool Equals(object obj)
             => obj is Polynomial q && Compare(q);
         public override int GetHashCode()
             => coefficient[0].GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()
             => degree = 0;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero(int d)
         {
             Resize(d, false);
@@ -236,10 +241,18 @@ namespace System.NumericsX
         }
 
         public int Dimension                                   // get the degree of the polynomial
-            => degree;
-        public int Degree                                  // get the degree of the polynomial
-            => degree;
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => degree;
+        }
 
+        public int Degree                                  // get the degree of the polynomial
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => degree;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float GetValue(float x)                         // evaluate the polynomial with the given real value
         {
             var y = coefficient[0];
@@ -251,8 +264,8 @@ namespace System.NumericsX
             }
             return y;
         }
-
-        public Complex GetValue(Complex x)                     // evaluate the polynomial with the given complex value
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Complex GetValue(in Complex x)                     // evaluate the polynomial with the given complex value
         {
             var y = new Complex(coefficient[0], 0f);
             var z = x;
@@ -264,6 +277,7 @@ namespace System.NumericsX
             return y;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Polynomial GetDerivative()                                // get the first derivative of the polynomial
         {
             Polynomial n = new();
@@ -276,6 +290,7 @@ namespace System.NumericsX
             return n;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Polynomial GetAntiDerivative()                            // get the anti derivative of the polynomial
         {
             Polynomial n = new();
@@ -301,7 +316,7 @@ namespace System.NumericsX
             for (i = degree - 1; i >= 0; i--)
             {
                 x.Zero();
-                Laguer(coef, i + 1, x);
+                Laguer(coef, i + 1, ref x);
                 if (MathX.Fabs(x.i) < 2f * EPSILON * MathX.Fabs(x.r))
                     x.i = 0f;
                 roots[i] = x;
@@ -317,7 +332,7 @@ namespace System.NumericsX
             for (i = 0; i <= degree; i++)
                 coef[i].Set(coefficient[i], 0f);
             for (i = 0; i < degree; i++)
-                Laguer(coef, degree, roots[i]);
+                Laguer(coef, degree, ref roots[i]);
 
             for (i = 1; i < degree; i++)
             {
@@ -358,6 +373,7 @@ namespace System.NumericsX
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetRoots1(float a, float b, out float[] roots)
         {
             Debug.Assert(a != 0f);
@@ -365,6 +381,7 @@ namespace System.NumericsX
             roots[0] = -b / a;
             return 1;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetRoots2(float a, float b, float c, out float[] roots)
         {
             float inva, ds;
@@ -393,6 +410,7 @@ namespace System.NumericsX
                 return 1;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetRoots3(float a, float b, float c, float d, out float[] roots)
         {
             float inva, f, g, halfg, ofs, ds, dist, angle, cs, ss, t;
@@ -451,6 +469,7 @@ namespace System.NumericsX
                 return 3;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetRoots4(float a, float b, float c, float d, float e, out float[] roots)
         {
             int count; float inva, y, ds, r, s1, s2, t1, t2, tp, tm;
@@ -520,16 +539,37 @@ namespace System.NumericsX
             }
         }
 
-        public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //{
+        //    fixed (float* _ = this.coefficient)
+        //        return callback(_);
+        //}
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void Resize(int d, bool keep)
         {
-            fixed (float* _ = this.coefficient)
-                return callback(_);
+            var alloc = (d + 1 + 3) & ~3;
+            if (alloc > allocated)
+            {
+                var ptr = new float[alloc];
+                if (coefficient != null && keep)
+                    for (int i = 0; i <= degree; i++)
+                        ptr[i] = coefficient[i];
+                allocated = alloc;
+                coefficient = ptr;
+            }
+            degree = d;
         }
+
         public unsafe string ToString(int precision = 2)
-            => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
+        {
+            fixed (float* _ = coefficient)
+                return FloatArrayToString(_, Dimension, precision);
+        }
 
         static readonly float[] Laguer_frac = new[] { 0f, 0.5f, 0.25f, 0.75f, 0.13f, 0.38f, 0.62f, 0.88f, 1f };
-        unsafe int Laguer(Complex* coef, int degree, Complex r)
+        unsafe int Laguer(Complex* coef, int degree, ref Complex r)
         {
             const int MT = 10, MAX_ITERATIONS = MT * 8;
             int i, j;

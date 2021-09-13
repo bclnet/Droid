@@ -2,6 +2,9 @@
 <#@ import namespace="System" #>
 <#@ output extension=".cs" #>
 <# String type = null; #>
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
 namespace System.NumericsX
 {
     public enum EXTRAPOLATION
@@ -15,8 +18,6 @@ namespace System.NumericsX
         NOSTOP = 0x40   // do not stop at startTime + duration
     }
 
-<# type = "float"; #>
-<#@ include file="Extrapolate.t4" #>
 <# type = "Vector4"; #>
 <#@ include file="Extrapolate.t4" #>
 }

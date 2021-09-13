@@ -2,10 +2,11 @@
 <#@ import namespace="System" #>
 <#@ output extension=".cs" #>
 <# String type = null; #>
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
 namespace System.NumericsX
 {
-<# type = "float"; #>
-<#@ include file="Interpolate.t4" #>
 <# type = "Vector4"; #>
 <#@ include file="Interpolate.t4" #>
 }

@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace System.NumericsX
 {
     public class Surface_SweptSpline : Surface
@@ -70,7 +72,7 @@ namespace System.NumericsX
                 splinePos = spline.GetCurrentValue(t);
                 splineD1 = spline.GetCurrentFirstDerivative(t);
 
-                GetFrame(splineMat, splineD1.ToVec3(), splineMat);
+                GetFrame(splineMat, splineD1.ToVec3(), out splineMat);
 
                 offset = i * sweptSplineSubdivisions;
                 for (j = 0; j < sweptSplineSubdivisions; j++)
@@ -79,7 +81,7 @@ namespace System.NumericsX
                     v.xyz = splinePos.ToVec3() + verts[baseOffset + j].xyz * splineMat;
                     v.st.x = verts[baseOffset + j].st[0]; v.st.y = splinePos.w;
                     v.tangents0 = verts[baseOffset + j].tangents0 * splineMat; v.tangents1 = splineD1.ToVec3();
-                    v.normal = v.tangents1.Cross(ref v.tangents0); v.normal.Normalize();
+                    v.normal = v.tangents1.Cross(v.tangents0); v.normal.Normalize();
                     v.color0 = v.color1 = v.color2 = v.color3 = 0;
                 }
             }
@@ -111,6 +113,7 @@ namespace System.NumericsX
             GenerateEdgeIndexes();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override void Clear()
         {
             base.Clear();
@@ -118,7 +121,7 @@ namespace System.NumericsX
             sweptSpline = null;
         }
 
-        protected void GetFrame(Matrix3x3 previousFrame, Vector3 dir, Matrix3x3 newFrame)
+        protected void GetFrame(in Matrix3x3 previousFrame, in Vector3 dir, out Matrix3x3 newFrame)
         {
             float wx, wy, wz;
             float xx, yy, yz;
@@ -129,7 +132,7 @@ namespace System.NumericsX
 
             d = dir;
             d.Normalize();
-            v = d.Cross(ref previousFrame[2]);
+            v = d.Cross(previousFrame[2]);
             v.Normalize();
 
             a = MathX.ACos(previousFrame[2] * d) * 0.5f;
@@ -153,21 +156,21 @@ namespace System.NumericsX
             wy = c * y2;
             wz = c * z2;
 
-            axis[0][0] = 1f - (yy + zz);
-            axis[0][1] = xy - wz;
-            axis[0][2] = xz + wy;
-            axis[1][0] = xy + wz;
-            axis[1][1] = 1f - (xx + zz);
-            axis[1][2] = yz - wx;
-            axis[2][0] = xz - wy;
-            axis[2][1] = yz + wx;
-            axis[2][2] = 1f - (xx + yy);
+            axis[0].x = 1f - (yy + zz);
+            axis[0].y = xy - wz;
+            axis[0].z = xz + wy;
+            axis[1].x = xy + wz;
+            axis[1].y = 1f - (xx + zz);
+            axis[1].z = yz - wx;
+            axis[2].x = xz - wy;
+            axis[2].y = yz + wx;
+            axis[2].z = 1f - (xx + yy);
 
             newFrame = previousFrame * axis;
 
             newFrame[2] = dir; newFrame[2].Normalize();
-            newFrame[1].Cross(ref newFrame[2], ref newFrame[0]); newFrame[1].Normalize();
-            newFrame[0].Cross(ref newFrame[1], ref newFrame[2]); newFrame[0].Normalize();
+            newFrame[1].Cross(newFrame[2], newFrame[0]); newFrame[1].Normalize();
+            newFrame[0].Cross(newFrame[1], newFrame[2]); newFrame[0].Normalize();
         }
     }
 }

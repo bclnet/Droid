@@ -1,10 +1,27 @@
 //#define FRUSTUM_DEBUG
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace System.NumericsX
 {
     public class Frustum
     {
+        // bit 0 = min x
+        // bit 1 = max x
+        // bit 2 = min y
+        // bit 3 = max y
+        // bit 4 = min z
+        // bit 5 = max z
+        static readonly int[] BoxVertPlanes = new[]{
+            (1<<0) | (1<<2) | (1<<4),
+            (1<<1) | (1<<2) | (1<<4),
+            (1<<1) | (1<<3) | (1<<4),
+            (1<<0) | (1<<3) | (1<<4),
+            (1<<0) | (1<<2) | (1<<5),
+            (1<<1) | (1<<2) | (1<<5),
+            (1<<1) | (1<<3) | (1<<5),
+            (1<<0) | (1<<3) | (1<<5)};
+
         Vector3 origin;      // frustum origin
         Matrix3x3 axis;        // frustum orientation
         float dNear;        // distance of near plane, dNear >= 0f
@@ -13,7 +30,8 @@ namespace System.NumericsX
         float dUp;      // half the height at the far plane
         float invFar;       // 1f / dFar
 
-        public Frustum(Frustum a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Frustum(in Frustum a)
         {
             origin = a.origin;
             axis = new(a.axis);
@@ -23,13 +41,19 @@ namespace System.NumericsX
             dUp = a.dUp;
             invFar = a.invFar;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Frustum()
             => dNear = dFar = 0f;
 
-        public void SetOrigin(Vector3 origin)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetOrigin(in Vector3 origin)
             => this.origin = origin;
-        public void SetAxis(Matrix3x3 axis)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetAxis(in Matrix3x3 axis)
             => this.axis = axis;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetSize(float dNear, float dFar, float dLeft, float dUp)
         {
             Debug.Assert(dNear >= 0f && dFar > dNear && dLeft > 0f && dUp > 0f);
@@ -39,6 +63,8 @@ namespace System.NumericsX
             this.dUp = dUp;
             this.invFar = 1f / dFar;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetPyramid(float dNear, float dFar)
         {
             Debug.Assert(dNear >= 0f && dFar > dNear);
@@ -48,11 +74,15 @@ namespace System.NumericsX
             this.dUp = dFar;
             this.invFar = 1f / dFar;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void MoveNearDistance(float dNear)
         {
             Debug.Assert(dNear >= 0f);
             this.dNear = dNear;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void MoveFarDistance(float dFar)
         {
             Debug.Assert(dFar > this.dNear);
@@ -64,23 +94,54 @@ namespace System.NumericsX
         }
 
         public Vector3 Origin                     // returns frustum origin
-            => origin;
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => origin;
+        }
+
         public Matrix3x3 Axis                         // returns frustum orientation
-            => axis;
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => axis;
+        }
+
         public Vector3 Center                     // returns center of frustum
-            => origin + axis[0] * ((dFar - dNear) * 0.5f);
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => origin + axis[0] * ((dFar - dNear) * 0.5f);
+        }
 
         public bool IsValid                          // returns true if the frustum is valid
-            => dFar > dNear;
-        public float NearDistance                 // returns distance to near plane
-            => dNear;
-        public float FarDistance                  // returns distance to far plane
-            => dFar;
-        public float Left                         // returns left vector length
-            => dLeft;
-        public float Up                           // returns up vector length
-            => dUp;
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => dFar > dNear;
+        }
 
+        public float NearDistance                 // returns distance to near plane
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => dNear;
+        }
+
+        public float FarDistance                  // returns distance to far plane
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => dFar;
+        }
+
+        public float Left                         // returns left vector length
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => dLeft;
+        }
+
+        public float Up                           // returns up vector length
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => dUp;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Frustum Expand(float d)                   // returns frustum expanded in all directions with the given value
         {
             Frustum f = new(this);
@@ -91,6 +152,7 @@ namespace System.NumericsX
             f.invFar = 1f / dFar;
             return f;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Frustum ExpandSelf(float d)                   // expands frustum in all directions with the given value
         {
             origin -= d * axis[0];
@@ -101,30 +163,35 @@ namespace System.NumericsX
             return this;
         }
 
-        public Frustum Translate(Vector3 translation)    // returns translated frustum
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Frustum Translate(in Vector3 translation)    // returns translated frustum
         {
             Frustum f = new(this);
             f.origin += translation;
             return f;
         }
-        public Frustum TranslateSelf(Vector3 translation)        // translates frustum
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Frustum TranslateSelf(in Vector3 translation)        // translates frustum
         {
             origin += translation;
             return this;
         }
-        public Frustum Rotate(Matrix3x3 rotation)            // returns rotated frustum
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Frustum Rotate(in Matrix3x3 rotation)            // returns rotated frustum
         {
             Frustum f = new(this);
             f.axis *= rotation;
             return f;
         }
-        public Frustum RotateSelf(Matrix3x3 rotation)            // rotates frustum
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Frustum RotateSelf(in Matrix3x3 rotation)            // rotates frustum
         {
             axis *= rotation;
             return this;
         }
 
-        void BoxToPoints(Vector3 center, Vector3 extents, Matrix3x3 axis, out Vector3[] points)
+        void BoxToPoints(in Vector3 center, in Vector3 extents, in Matrix3x3 axis, out Vector3[] points)
         {
             Matrix3x3 ax = new();
             ax[0] = extents.x * axis[0];
@@ -146,7 +213,7 @@ namespace System.NumericsX
             };
         }
 
-        public float PlaneDistance(Plane plane)
+        public float PlaneDistance(in Plane plane)
         {
             AxisProjection(plane.Normal, out var min, out var max);
             if (min + plane[3] > 0f) return min + plane[3];
@@ -154,7 +221,7 @@ namespace System.NumericsX
             return 0f;
         }
 
-        public PLANESIDE PlaneSide(Plane plane, float epsilon = Plane.ON_EPSILON)
+        public PLANESIDE PlaneSide(in Plane plane, float epsilon = Plane.ON_EPSILON)
         {
             AxisProjection(plane.Normal, out var min, out var max);
             if (min + plane[3] > epsilon) return PLANESIDE.FRONT;
@@ -163,7 +230,7 @@ namespace System.NumericsX
         }
 
         // fast culling but might not cull everything outside the frustum
-        public bool CullPoint(Vector3 point)
+        public bool CullPoint(in Vector3 point)
         {
             // transform point to frustum space
             var p = (point - origin) * axis.Transpose();
@@ -178,7 +245,7 @@ namespace System.NumericsX
         // Tests if any of the planes of the frustum can be used as a separating plane.
         // 24 muls best case
         // 37 muls worst case
-        public bool CullBounds(Bounds bounds)
+        public bool CullBounds(in Bounds bounds)
         {
             var center = (bounds[0] + bounds[1]) * 0.5f;
             var extents = bounds[1] - center;
@@ -193,7 +260,7 @@ namespace System.NumericsX
         // Tests if any of the planes of the frustum can be used as a separating plane.
         // 39 muls best case
         // 61 muls worst case
-        public bool CullBox(Box box)
+        public bool CullBox(in Box box)
         {
             // transform the box into the space of this frustum
             var localOrigin = (box.Center - origin) * axis.Transpose();
@@ -205,7 +272,7 @@ namespace System.NumericsX
         // Tests if any of the planes of the frustum can be used as a separating plane.
         // 9 muls best case
         // 21 muls worst case
-        public bool CullSphere(Sphere sphere)
+        public bool CullSphere(in Sphere sphere)
         {
             var center = (sphere.Origin - origin) * axis.Transpose();
             var r = sphere.Radius;
@@ -237,7 +304,7 @@ namespace System.NumericsX
         // Tests if any of the planes of this frustum can be used as a separating plane.
         // 58 muls best case
         // 88 muls worst case
-        public bool CullFrustum(Frustum frustum)
+        public bool CullFrustum(in Frustum frustum)
         {
             // transform the given frustum into the space of this frustum
             Frustum localFrustum = new(frustum);
@@ -249,7 +316,7 @@ namespace System.NumericsX
             return CullLocalFrustum(localFrustum, indexPoints, cornerVecs);
         }
 
-        public unsafe bool CullWinding(Winding winding)
+        public unsafe bool CullWinding(in Winding winding)
         {
             var localPoints = stackalloc Vector3[winding.NumPoints];
             var pointCull = stackalloc int[winding.NumPoints];
@@ -262,10 +329,10 @@ namespace System.NumericsX
         }
 
         // exact intersection tests
-        public bool ContainsPoint(Vector3 point)
+        public bool ContainsPoint(in Vector3 point)
             => !CullPoint(point);
 
-        public bool IntersectsBounds(Bounds bounds)
+        public bool IntersectsBounds(in Bounds bounds)
         {
             var center = (bounds[0] + bounds[1]) * 0.5f;
             var extents = bounds[1] - center;
@@ -295,7 +362,7 @@ namespace System.NumericsX
             return false;
         }
 
-        public bool IntersectsBox(Box box)
+        public bool IntersectsBox(in Box box)
         {
             var localOrigin = (box.Center - origin) * axis.Transpose();
             var localAxis = box.Axis * axis.Transpose();
@@ -354,7 +421,7 @@ namespace System.NumericsX
         const int VORONOI_INDEX_012 = 0 + 1 * 3 + 2 * 9;
         const int VORONOI_INDEX_022 = 0 + 2 * 3 + 2 * 9;
 
-        public bool IntersectsSphere(Sphere sphere)
+        public bool IntersectsSphere(in Sphere sphere)
         {
             if (CullSphere(sphere))
                 return false;
@@ -444,7 +511,7 @@ namespace System.NumericsX
             }
         }
 
-        public bool IntersectsFrustum(Frustum frustum)
+        public bool IntersectsFrustum(in Frustum frustum)
         {
             Frustum localFrustum2 = new(frustum);
             localFrustum2.origin = (frustum.origin - origin) * axis.Transpose();
@@ -477,7 +544,7 @@ namespace System.NumericsX
             return false;
         }
 
-        public unsafe bool IntersectsWinding(Winding winding)
+        public unsafe bool IntersectsWinding(in Winding winding)
         {
             int i, j;
             var localPoints = stackalloc Vector3[winding.NumPoints];
@@ -528,12 +595,13 @@ namespace System.NumericsX
         }
 
         // Returns true if the line intersects the box between the start and end point.
-        public bool LineIntersection(Vector3 start, Vector3 end)
+        public bool LineIntersection(in Vector3 start, in Vector3 end)
             => LocalLineIntersection((start - origin) * axis.Transpose(), (end - origin) * axis.Transpose());
+
         // Returns true if the ray intersects the bounds.
         // The ray can intersect the bounds in both directions from the start point.
         // If start is inside the frustum then scale1< 0 and scale2> 0.
-        public bool RayIntersection(Vector3 start, Vector3 dir, out float scale1, out float scale2)
+        public bool RayIntersection(in Vector3 start, in Vector3 dir, out float scale1, out float scale2)
         {
             if (LocalRayIntersection((start - origin) * axis.Transpose(), dir * axis.Transpose(), out scale1, out scale2)) return true;
             if (scale1 <= scale2) return true;
@@ -542,10 +610,10 @@ namespace System.NumericsX
 
         // Creates a frustum which contains the projection of the bounds.
         // returns true if the projection origin is far enough away from the bounding volume to create a valid frustum
-        public bool FromProjection(Bounds bounds, Vector3 projectionOrigin, float dFar)
+        public bool FromProjection(in Bounds bounds, in Vector3 projectionOrigin, float dFar)
             => FromProjection(new Box(bounds, Vector3.origin, Matrix3x3.identity), projectionOrigin, dFar);
         // Creates a frustum which contains the projection of the box.
-        public bool FromProjection(Box box, Vector3 projectionOrigin, float dFar)
+        public bool FromProjection(in Box box, in Vector3 projectionOrigin, float dFar)
         {
             int i; float value;
 
@@ -578,7 +646,7 @@ namespace System.NumericsX
                 axis[0] = dir;
                 axis[1] = box.Axis[bestAxis] - (box.Axis[bestAxis] * axis[0]) * axis[0];
                 axis[1].Normalize();
-                axis[2].Cross(ref axis[0], ref axis[1]);
+                axis[2].Cross(axis[0], axis[1]);
 
                 BoxToPoints((box.Center - projectionOrigin) * axis.Transpose(), box.Extents, box.Axis * axis.Transpose(), out points);
 
@@ -676,9 +744,8 @@ namespace System.NumericsX
 #endif
             return true;
         }
-
         // Creates a frustum which contains the projection of the sphere.
-        public bool FromProjection(Sphere sphere, Vector3 projectionOrigin, float dFar)
+        public bool FromProjection(in Sphere sphere, in Vector3 projectionOrigin, float dFar)
         {
             Debug.Assert(dFar > 0f);
 
@@ -710,7 +777,7 @@ namespace System.NumericsX
 
         // Returns false if no part of the bounds extends beyond the near plane.
         // moves the far plane so it extends just beyond the bounding volume
-        public bool ConstrainToBounds(Bounds bounds)
+        public bool ConstrainToBounds(in Bounds bounds)
         {
             bounds.AxisProjection(axis[0], out var min, out var max);
             var newdFar = max - axis[0] * origin;
@@ -724,7 +791,7 @@ namespace System.NumericsX
         }
 
         // Returns false if no part of the box extends beyond the near plane.
-        public bool ConstrainToBox(Box box)
+        public bool ConstrainToBox(in Box box)
         {
             box.AxisProjection(axis[0], out var min, out var max);
             var newdFar = max - axis[0] * origin;
@@ -738,7 +805,7 @@ namespace System.NumericsX
         }
 
         // Returns false if no part of the sphere extends beyond the near plane.
-        public bool ConstrainToSphere(Sphere sphere)
+        public bool ConstrainToSphere(in Sphere sphere)
         {
             sphere.AxisProjection(axis[0], out var min, out var max);
             var newdFar = max - axis[0] * origin;
@@ -752,7 +819,7 @@ namespace System.NumericsX
         }
 
         // Returns false if no part of the frustum extends beyond the near plane.
-        public bool ConstrainToFrustum(Frustum frustum)
+        public bool ConstrainToFrustum(in Frustum frustum)
         {
             frustum.AxisProjection(axis[0], out var min, out var max);
             var newdFar = max - axis[0] * origin;
@@ -785,7 +852,7 @@ namespace System.NumericsX
 
             for (var i = 0; i < 4; i++)
             {
-                planes[i + 2].Normal = points[i].Cross_(points[(i + 1) & 3] - points[i]);
+                planes[i + 2].Normal = points[i].Cross(points[(i + 1) & 3] - points[i]);
                 planes[i + 2].Normalize();
                 planes[i + 2].FitThroughPoint(points[i]);
             }
@@ -912,7 +979,7 @@ namespace System.NumericsX
         }
 
         // 18 muls
-        void AxisProjection(Vector3[] indexPoints, Vector3[] cornerVecs, Vector3 dir, out float min, out float max)
+        void AxisProjection(Vector3[] indexPoints, Vector3[] cornerVecs, in Vector3 dir, out float min, out float max)
         {
             float dx, dy, dz;
             int index;
@@ -931,14 +998,14 @@ namespace System.NumericsX
 
         // calculates the projection of this frustum onto the given axis
         // 40 muls
-        public void AxisProjection(Vector3 dir, out float min, out float max)
+        public void AxisProjection(in Vector3 dir, out float min, out float max)
         {
             ToIndexPointsAndCornerVecs(out var indexPoints, out var cornerVecs);
             AxisProjection(indexPoints, cornerVecs, dir, out min, out max);
         }
 
         // 76 muls
-        public void AxisProjection(Matrix3x3 ax, Bounds bounds)
+        public void AxisProjection(in Matrix3x3 ax, in Bounds bounds)
         {
             ToIndexPointsAndCornerVecs(out var indexPoints, out var cornerVecs);
             AxisProjection(indexPoints, cornerVecs, ax[0], out bounds[0].x, out bounds[1].x);
@@ -946,7 +1013,7 @@ namespace System.NumericsX
             AxisProjection(indexPoints, cornerVecs, ax[2], out bounds[0].z, out bounds[1].z);
         }
 
-        void AddLocalLineToProjectionBoundsSetCull(Vector3 start, Vector3 end, out int startCull, out int endCull, Bounds bounds)
+        void AddLocalLineToProjectionBoundsSetCull(in Vector3 start, in Vector3 end, out int startCull, out int endCull, in Bounds bounds)
         {
             Vector3 p; float d1, d2, fstart, fend, lstart, lend, f; int cull1, cull2;
 
@@ -1085,7 +1152,7 @@ namespace System.NumericsX
             endCull = cull2;
         }
 
-        void AddLocalLineToProjectionBoundsUseCull(Vector3 start, Vector3 end, int startCull, int endCull, Bounds bounds)
+        void AddLocalLineToProjectionBoundsUseCull(in Vector3 start, in Vector3 end, int startCull, int endCull, in Bounds bounds)
         {
             Vector3 p; float d1, d2, fstart, fend, lstart, lend, f;
 
@@ -1214,7 +1281,7 @@ namespace System.NumericsX
         }
 
         // Clips the frustum far extents to the box.
-        void ClipFrustumToBox(Box box, float[] clipFractions, int[] clipPlanes)
+        void ClipFrustumToBox(in Box box, float[] clipFractions, int[] clipPlanes)
         {
             var transpose = box.Axis;
             transpose.TransposeSelf();
@@ -1395,7 +1462,7 @@ namespace System.NumericsX
             new[]{ 2, 3 },
         };
 
-        bool AddLocalCapsToProjectionBounds(Span<Vector3> endPoints, Span<int> endPointCull, Vector3 point, int pointCull, int pointClip, Bounds projectionBounds)
+        bool AddLocalCapsToProjectionBounds(Span<Vector3> endPoints, Span<int> endPointCull, in Vector3 point, int pointCull, int pointClip, in Bounds projectionBounds)
         {
             if (pointClip < 0)
                 return false;
@@ -1407,7 +1474,7 @@ namespace System.NumericsX
 
         //  Returns true if the ray starts inside the bounds.
         // If there was an intersection scale1 <= scale2
-        bool BoundsRayIntersection(Bounds bounds, Vector3 start, Vector3 dir, out float scale1, out float scale2)
+        bool BoundsRayIntersection(in Bounds bounds, in Vector3 start, in Vector3 dir, out float scale1, out float scale2)
         {
             Vector3 p = new(); float d1, d2, f;
 
@@ -1478,10 +1545,10 @@ namespace System.NumericsX
         }
 
         // calculates the bounds for the projection in this frustum
-        public bool ProjectionBounds(Bounds bounds, Bounds projectionBounds)
+        public bool ProjectionBounds(in Bounds bounds, in Bounds projectionBounds)
             => ProjectionBounds(new Box(bounds, Vector3.origin, Matrix3x3.identity), projectionBounds);
 
-        public bool ProjectionBounds(Box box, Bounds projectionBounds)
+        public bool ProjectionBounds(in Box box, in Bounds projectionBounds)
         {
             var bounds = new Bounds(-box.Extents, box.Extents);
 
@@ -1594,7 +1661,7 @@ namespace System.NumericsX
             return true;
         }
 
-        public bool ProjectionBounds(Sphere sphere, Bounds projectionBounds)
+        public bool ProjectionBounds(in Sphere sphere, in Bounds projectionBounds)
         {
             projectionBounds.Clear();
 
@@ -1621,7 +1688,7 @@ namespace System.NumericsX
             return true;
         }
 
-        public bool ProjectionBounds(Frustum frustum, Bounds projectionBounds)
+        public bool ProjectionBounds(in Frustum frustum, in Bounds projectionBounds)
         {
             // if the frustum origin is inside the other frustum
             if (frustum.ContainsPoint(origin))
@@ -1736,7 +1803,7 @@ namespace System.NumericsX
             return true;
         }
 
-        public unsafe bool ProjectionBounds(Winding winding, Bounds projectionBounds)
+        public unsafe bool ProjectionBounds(in Winding winding, in Bounds projectionBounds)
         {
             int i, p1, p2;
 
@@ -1805,7 +1872,7 @@ namespace System.NumericsX
         }
 
         // calculates the bounds for the projection in this frustum of the given frustum clipped to the given box
-        public bool ClippedProjectionBounds(Frustum frustum, Box clipBox, Bounds projectionBounds)
+        public bool ClippedProjectionBounds(in Frustum frustum, in Box clipBox, in Bounds projectionBounds)
         {
             int i, p1, p2; int[] clipPointCull = new int[8], clipPlanes = new int[4]; int usedClipPlanes, nearCull, farCull, outside;
             int[] pointCull = new int[2], boxPointCull = new int[8]; int startClip, endClip;
@@ -2043,7 +2110,7 @@ namespace System.NumericsX
         // Tests if any of the planes of the frustum can be used as a separating plane.
         // 3 muls best case
         // 25 muls worst case
-        bool CullLocalBox(Vector3 localOrigin, Vector3 extents, Matrix3x3 localAxis)
+        bool CullLocalBox(in Vector3 localOrigin, in Vector3 extents, in Matrix3x3 localAxis)
         {
             // near plane
             var d1 = dNear - localOrigin.x;
@@ -2102,7 +2169,7 @@ namespace System.NumericsX
         // Tests if any of the planes of this frustum can be used as a separating plane.
         // 0 muls best case
         // 30 muls worst case
-        bool CullLocalFrustum(Frustum localFrustum, Vector3[] indexPoints, Vector3[] cornerVecs)
+        bool CullLocalFrustum(in Frustum localFrustum, Vector3[] indexPoints, Vector3[] cornerVecs)
         {
             // test near plane
             var dy = -localFrustum.axis[1].x;
@@ -2192,9 +2259,8 @@ namespace System.NumericsX
             return culled != 0;
         }
 
-
         // Tests if any of the bounding box planes can be used as a separating plane.
-        bool BoundsCullLocalFrustum(Bounds bounds, Frustum localFrustum, Vector3[] indexPoints, Vector3[] cornerVecs)
+        bool BoundsCullLocalFrustum(in Bounds bounds, in Frustum localFrustum, Vector3[] indexPoints, Vector3[] cornerVecs)
         {
             var dy = -localFrustum.axis[1].x;
             var dz = -localFrustum.axis[2].x;
@@ -2257,7 +2323,7 @@ namespace System.NumericsX
 
         // 7 divs
         // 30 muls
-        bool LocalLineIntersection(Vector3 start, Vector3 end)
+        bool LocalLineIntersection(in Vector3 start, in Vector3 end)
         {
             float d1, d2, fstart, fend, lstart, lend, f, x; int startInside = 1;
 
@@ -2377,7 +2443,7 @@ namespace System.NumericsX
 
         // Returns true if the ray starts inside the frustum.
         // If there was an intersection scale1 <= scale2
-        bool LocalRayIntersection(Vector3 start, Vector3 dir, out float scale1, out float scale2)
+        bool LocalRayIntersection(in Vector3 start, in Vector3 dir, out float scale1, out float scale2)
         {
             float d1, d2, fstart, fend, lstart, lend, f, x; int startInside = 1;
 
@@ -2531,21 +2597,5 @@ namespace System.NumericsX
                     return true;
             return false;
         }
-
-        // bit 0 = min x
-        // bit 1 = max x
-        // bit 2 = min y
-        // bit 3 = max y
-        // bit 4 = min z
-        // bit 5 = max z
-        static readonly int[] BoxVertPlanes = new[]{
-            (1<<0) | (1<<2) | (1<<4),
-            (1<<1) | (1<<2) | (1<<4),
-            (1<<1) | (1<<3) | (1<<4),
-            (1<<0) | (1<<3) | (1<<4),
-            (1<<0) | (1<<2) | (1<<5),
-            (1<<1) | (1<<2) | (1<<5),
-            (1<<1) | (1<<3) | (1<<5),
-            (1<<0) | (1<<3) | (1<<5)};
     }
 }

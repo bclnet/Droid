@@ -21,31 +21,31 @@ namespace System.NumericsX
 
             //  MatrixX::LowerTriangularInverse
 
-            m1 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
             m1.ClearUpperTriangle();
-            m2 = new MatrixX(ref m1);
+            m2 = new MatrixX(m1);
 
             m2.InverseSelf();
             m1.LowerTriangularInverse();
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::LowerTriangularInverse failed");
 
             //  MatrixX::UpperTriangularInverse
 
-            m1 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
             m1.ClearLowerTriangle();
-            m2 = new MatrixX(ref m1);
+            m2 = new MatrixX(m1);
 
             m2.InverseSelf();
             m1.UpperTriangularInverse();
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::UpperTriangularInverse failed");
 
             //    MatrixX::Inverse_GaussJordan
 
-            m1 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
 
             m1.Inverse_GaussJordan();
             m1 *= original;
@@ -55,8 +55,8 @@ namespace System.NumericsX
 
             //    MatrixX::Inverse_UpdateRankOne
 
-            m1 = new MatrixX(ref original);
-            m2 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             w.Random(size, 1);
             v.Random(size, 2);
@@ -72,15 +72,15 @@ namespace System.NumericsX
             // update inverse of m1
             m1.Inverse_UpdateRankOne(v, w, 1f);
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::Inverse_UpdateRankOne failed");
 
             // MatrixX::Inverse_UpdateRowColumn
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = new MatrixX(ref original);
-                m2 = new MatrixX(ref original);
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.Random(size, 1);
                 w.Random(size, 2);
@@ -97,14 +97,14 @@ namespace System.NumericsX
                 // update inverse of m1
                 m1.Inverse_UpdateRowColumn(v, w, offset);
 
-                if (!m1.Compare(ref m2, 1e-3f))
+                if (!m1.Compare(m2, 1e-3f))
                     Warning("MatrixX::Inverse_UpdateRowColumn failed");
             }
 
             //    MatrixX::Inverse_UpdateIncrement
 
-            m1 = new MatrixX(ref original);
-            m2 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             v.Random(size + 1, 1);
             w.Random(size + 1, 2);
@@ -121,15 +121,15 @@ namespace System.NumericsX
             // update inverse of m1
             m1.Inverse_UpdateIncrement(v, w);
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::Inverse_UpdateIncrement failed");
 
             //    MatrixX::Inverse_UpdateDecrement
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = new MatrixX(ref original);
-                m2 = new MatrixX(ref original);
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.SetSize(6);
                 w.SetSize(6);
@@ -150,25 +150,25 @@ namespace System.NumericsX
                 // update inverse of m1
                 m1.Inverse_UpdateDecrement(v, w, offset);
 
-                if (!m1.Compare(ref m2, 1e-3f))
+                if (!m1.Compare(m2, 1e-3f))
                     Warning("MatrixX::Inverse_UpdateDecrement failed");
             }
 
             //    MatrixX::LU_Factor
 
-            m1 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
 
             m1.LU_Factor(null); // no pivoting
             m1.LU_UnpackFactors(out m2, out m3);
             m1 = m2 * m3;
 
-            if (!original.Compare(ref m1, 1e-4f))
+            if (!original.Compare(m1, 1e-4f))
                 Warning("MatrixX::LU_Factor failed");
 
             //    MatrixX::LU_UpdateRankOne
 
-            m1 = new MatrixX(ref original);
-            m2 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             w.Random(size, 1);
             v.Random(size, 2);
@@ -180,23 +180,23 @@ namespace System.NumericsX
             m2.Update_RankOne(v, w, 1f);
             if (!m2.LU_Factor(index2))
                 Debug.Assert(false);
-            m2.LU_MultiplyFactors(m3, index2);
-            m2 = new MatrixX(ref m3);
+            m2.LU_MultiplyFactors(ref m3, index2);
+            m2 = new MatrixX(m3);
 
             // update factored m1
             m1.LU_UpdateRankOne(v, w, 1f, index1);
-            m1.LU_MultiplyFactors(m3, index1);
-            m1 = new MatrixX(ref m3);
+            m1.LU_MultiplyFactors(ref m3, index1);
+            m1 = new MatrixX(m3);
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::LU_UpdateRankOne failed");
 
             //    MatrixX::LU_UpdateRowColumn
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = new MatrixX(ref original);
-                m2 = new MatrixX(ref original);
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.Random(size, 1);
                 w.Random(size, 2);
@@ -209,22 +209,22 @@ namespace System.NumericsX
                 m2.Update_RowColumn(v, w, offset);
                 if (!m2.LU_Factor(index2))
                     Debug.Assert(false);
-                m2.LU_MultiplyFactors(m3, index2);
-                m2 = new MatrixX(ref m3);
+                m2.LU_MultiplyFactors(ref m3, index2);
+                m2 = new MatrixX(m3);
 
                 // update m1
                 m1.LU_UpdateRowColumn(v, w, offset, index1);
-                m1.LU_MultiplyFactors(m3, index1);
-                m1 = new MatrixX(ref m3);
+                m1.LU_MultiplyFactors(ref m3, index1);
+                m1 = new MatrixX(m3);
 
-                if (!m1.Compare(ref m2, 1e-3f))
+                if (!m1.Compare(m2, 1e-3f))
                     Warning("MatrixX::LU_UpdateRowColumn failed");
             }
 
             //    MatrixX::LU_UpdateIncrement
 
-            m1 = new MatrixX(ref original);
-            m2 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             v.Random(size + 1, 1);
             w.Random(size + 1, 2);
@@ -237,23 +237,23 @@ namespace System.NumericsX
             m2.Update_Increment(v, w);
             if (!m2.LU_Factor(index2))
                 Debug.Assert(false);
-            m2.LU_MultiplyFactors(m3, index2);
-            m2 = new MatrixX(ref m3);
+            m2.LU_MultiplyFactors(ref m3, index2);
+            m2 = new MatrixX(m3);
 
             // update factored m1
             m1.LU_UpdateIncrement(v, w, index1);
-            m1.LU_MultiplyFactors(m3, index1);
-            m1 = new MatrixX(ref m3);
+            m1.LU_MultiplyFactors(ref m3, index1);
+            m1 = new MatrixX(m3);
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::LU_UpdateIncrement failed");
 
             //    MatrixX::LU_UpdateDecrement
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = new MatrixX(ref original);
-                m2 = new MatrixX(ref original);
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.SetSize(6);
                 w.SetSize(6);
@@ -270,8 +270,8 @@ namespace System.NumericsX
                 m2.Update_Decrement(offset);
                 if (!m2.LU_Factor(index2))
                     Debug.Assert(false);
-                m2.LU_MultiplyFactors(m3, index2);
-                m2 = new MatrixX(ref m3);
+                m2.LU_MultiplyFactors(ref m3, index2);
+                m2 = new MatrixX(m3);
 
                 u.SetSize(6);
                 for (var i = 0; i < size; i++)
@@ -279,19 +279,19 @@ namespace System.NumericsX
 
                 // update factors of m1
                 m1.LU_UpdateDecrement(v, w, u, offset, index1);
-                m1.LU_MultiplyFactors(m3, index1);
-                m1 = new MatrixX(ref m3);
+                m1.LU_MultiplyFactors(ref m3, index1);
+                m1 = new MatrixX(m3);
 
-                if (!m1.Compare(ref m2, 1e-3f))
+                if (!m1.Compare(m2, 1e-3f))
                     Warning("MatrixX::LU_UpdateDecrement failed");
             }
 
             //    MatrixX::LU_Inverse
 
-            m2 = new MatrixX(ref original);
+            m2 = new MatrixX(original);
 
             m2.LU_Factor(null);
-            m2.LU_Inverse(m1, null);
+            m2.LU_Inverse(ref m1, null);
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
@@ -302,13 +302,13 @@ namespace System.NumericsX
             c.SetSize(size);
             d.SetSize(size);
 
-            m1 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
 
-            m1.QR_Factor(c, d);
+            m1.QR_Factor(ref c, ref d);
             m1.QR_UnpackFactors(out q1, out r1, c, d);
             m1 = q1 * r1;
 
-            if (!original.Compare(ref m1, 1e-4f))
+            if (!original.Compare(m1, 1e-4f))
                 Warning("MatrixX::QR_Factor failed");
 
             //    MatrixX::QR_UpdateRankOne
@@ -316,28 +316,28 @@ namespace System.NumericsX
             c.SetSize(size);
             d.SetSize(size);
 
-            m1 = new MatrixX(ref original);
-            m2 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             w.Random(size, 0);
-            v = new VectorX(ref w);
+            v = new VectorX(w);
 
             // factor m1
-            m1.QR_Factor(c, d);
+            m1.QR_Factor(ref c, ref d);
             m1.QR_UnpackFactors(out q1, out r1, c, d);
 
             // modify and factor m2
             m2.Update_RankOne(v, w, 1f);
-            if (!m2.QR_Factor(c, d))
+            if (!m2.QR_Factor(ref c, ref d))
                 Debug.Assert(false);
             m2.QR_UnpackFactors(out q2, out r2, c, d);
             m2 = q2 * r2;
 
             // update factored m1
-            q1.QR_UpdateRankOne(r1, v, w, 1f);
+            q1.QR_UpdateRankOne(ref r1, v, w, 1f);
             m1 = q1 * r1;
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::QR_UpdateRankOne failed");
 
             //    MatrixX::QR_UpdateRowColumn
@@ -347,29 +347,29 @@ namespace System.NumericsX
                 c.SetSize(size);
                 d.SetSize(size);
 
-                m1 = new MatrixX(ref original);
-                m2 = new MatrixX(ref original);
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.Random(size, 1);
                 w.Random(size, 2);
                 w[offset] = 0f;
 
                 // factor m1
-                m1.QR_Factor(c, d);
+                m1.QR_Factor(ref c, ref d);
                 m1.QR_UnpackFactors(out q1, out r1, c, d);
 
                 // modify and factor m2
                 m2.Update_RowColumn(v, w, offset);
-                if (!m2.QR_Factor(c, d))
+                if (!m2.QR_Factor(ref c, ref d))
                     Debug.Assert(false);
                 m2.QR_UnpackFactors(out q2, out r2, c, d);
                 m2 = q2 * r2;
 
                 // update m1
-                q1.QR_UpdateRowColumn(r1, v, w, offset);
+                q1.QR_UpdateRowColumn(ref r1, v, w, offset);
                 m1 = q1 * r1;
 
-                if (!m1.Compare(ref m2, 1e-3f))
+                if (!m1.Compare(m2, 1e-3f))
                     Warning("MatrixX::QR_UpdateRowColumn failed");
             }
 
@@ -378,29 +378,29 @@ namespace System.NumericsX
             c.SetSize(size + 1);
             d.SetSize(size + 1);
 
-            m1 = new MatrixX(ref original);
-            m2 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             v.Random(size + 1, 1);
             w.Random(size + 1, 2);
             w[size] = 0f;
 
             // factor m1
-            m1.QR_Factor(c, d);
+            m1.QR_Factor(ref c, ref d);
             m1.QR_UnpackFactors(out q1, out r1, c, d);
 
             // modify and factor m2
             m2.Update_Increment(v, w);
-            if (!m2.QR_Factor(c, d))
+            if (!m2.QR_Factor(ref c, ref d))
                 Debug.Assert(false);
             m2.QR_UnpackFactors(out q2, out r2, c, d);
             m2 = q2 * r2;
 
             // update factored m1
-            q1.QR_UpdateIncrement(r1, v, w);
+            q1.QR_UpdateIncrement(ref r1, v, w);
             m1 = q1 * r1;
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::QR_UpdateIncrement failed");
 
             //    MatrixX::QR_UpdateDecrement
@@ -410,8 +410,8 @@ namespace System.NumericsX
                 c.SetSize(size + 1);
                 d.SetSize(size + 1);
 
-                m1 = new MatrixX(ref original);
-                m2 = new MatrixX(ref original);
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.SetSize(6);
                 w.SetSize(6);
@@ -422,30 +422,30 @@ namespace System.NumericsX
                 }
 
                 // factor m1
-                m1.QR_Factor(c, d);
+                m1.QR_Factor(ref c, ref d);
                 m1.QR_UnpackFactors(out q1, out r1, c, d);
 
                 // modify and factor m2
                 m2.Update_Decrement(offset);
-                if (!m2.QR_Factor(c, d))
+                if (!m2.QR_Factor(ref c, ref d))
                     Debug.Assert(false);
                 m2.QR_UnpackFactors(out q2, out r2, c, d);
                 m2 = q2 * r2;
 
                 // update factors of m1
-                q1.QR_UpdateDecrement(r1, v, w, offset);
+                q1.QR_UpdateDecrement(ref r1, v, w, offset);
                 m1 = q1 * r1;
 
-                if (!m1.Compare(ref m2, 1e-3f))
+                if (!m1.Compare(m2, 1e-3f))
                     Warning("MatrixX::QR_UpdateDecrement failed");
             }
 
             //    MatrixX::QR_Inverse
 
-            m2 = new MatrixX(ref original);
+            m2 = new MatrixX(original);
 
-            m2.QR_Factor(c, d);
-            m2.QR_Inverse(m1, c, d);
+            m2.QR_Factor(ref c, ref d);
+            m2.QR_Inverse(ref m1, c, d);
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
@@ -453,24 +453,24 @@ namespace System.NumericsX
 
             //    MatrixX::SVD_Factor
 
-            m1 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
             m3.Zero(size, size);
             w.Zero(size);
 
-            m1.SVD_Factor(w, m3);
+            m1.SVD_Factor(ref w, ref m3);
             m2.Diag(w);
             m3.TransposeSelf();
             m1 = m1 * m2 * m3;
 
-            if (!original.Compare(ref m1, 1e-4f))
+            if (!original.Compare(m1, 1e-4f))
                 Warning("MatrixX::SVD_Factor failed");
 
             //    MatrixX::SVD_Inverse
 
-            m2 = new MatrixX(ref original);
+            m2 = new MatrixX(original);
 
-            m2.SVD_Factor(w, m3);
-            m2.SVD_Inverse(m1, w, m3);
+            m2.SVD_Factor(ref w, ref m3);
+            m2.SVD_Inverse(ref m1, w, m3);
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
@@ -478,18 +478,18 @@ namespace System.NumericsX
 
             //    MatrixX::Cholesky_Factor
 
-            m1 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
 
             m1.Cholesky_Factor();
-            m1.Cholesky_MultiplyFactors(m2);
+            m1.Cholesky_MultiplyFactors(ref m2);
 
-            if (!original.Compare(ref m2, 1e-4f))
+            if (!original.Compare(m2, 1e-4f))
                 Warning("MatrixX::Cholesky_Factor failed");
 
             //    MatrixX::Cholesky_UpdateRankOne
 
-            m1 = new MatrixX(ref original);
-            m2 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             w.Random(size, 0);
 
@@ -506,15 +506,15 @@ namespace System.NumericsX
             // update factored m1
             m1.Cholesky_UpdateRankOne(w, 1f, 0);
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::Cholesky_UpdateRankOne failed");
 
             //    MatrixX::Cholesky_UpdateRowColumn
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = new MatrixX(ref original);
-                m2 = new MatrixX(ref original);
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 // factor m1
                 m1.Cholesky_Factor();
@@ -533,7 +533,7 @@ namespace System.NumericsX
                 // update m1
                 m1.Cholesky_UpdateRowColumn(w, offset);
 
-                if (!m1.Compare(ref m2, 1e-3f))
+                if (!m1.Compare(m2, 1e-3f))
                     Warning("MatrixX::Cholesky_UpdateRowColumn failed");
             }
 
@@ -543,7 +543,7 @@ namespace System.NumericsX
             m3 = m1 * m1.Transpose();
 
             m1.SquareSubMatrix(m3, size);
-            m2 = new MatrixX(ref m1);
+            m2 = new MatrixX(m1);
 
             w.SetSize(size + 1);
             for (var i = 0; i < size + 1; i++)
@@ -563,15 +563,15 @@ namespace System.NumericsX
             m1.ClearUpperTriangle();
             m2.ClearUpperTriangle();
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::Cholesky_UpdateIncrement failed");
 
             //    MatrixX::Cholesky_UpdateDecrement
 
             for (offset = 0; offset < size; offset += size - 1)
             {
-                m1 = new MatrixX(ref original);
-                m2 = new MatrixX(ref original);
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.SetSize(6);
                 for (var i = 0; i < size; i++)
@@ -588,16 +588,16 @@ namespace System.NumericsX
                 // update factors of m1
                 m1.Cholesky_UpdateDecrement(v, offset);
 
-                if (!m1.Compare(ref m2, 1e-3f))
+                if (!m1.Compare(m2, 1e-3f))
                     Warning("MatrixX::Cholesky_UpdateDecrement failed");
             }
 
             //    MatrixX::Cholesky_Inverse
 
-            m2 = new MatrixX(ref original);
+            m2 = new MatrixX(original);
 
             m2.Cholesky_Factor();
-            m2.Cholesky_Inverse(m1);
+            m2.Cholesky_Inverse(ref m1);
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
@@ -605,24 +605,24 @@ namespace System.NumericsX
 
             //    MatrixX::LDLT_Factor
 
-            m1 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
 
             m1.LDLT_Factor();
-            m1.LDLT_MultiplyFactors(m2);
+            m1.LDLT_MultiplyFactors(ref m2);
 
-            if (!original.Compare(ref m2, 1e-4f))
+            if (!original.Compare(m2, 1e-4f))
                 Warning("MatrixX::LDLT_Factor failed");
 
             m1.LDLT_UnpackFactors(m2, m3);
             m2 = m2 * m3 * m2.Transpose();
 
-            if (!original.Compare(ref m2, 1e-4f))
+            if (!original.Compare(m2, 1e-4f))
                 Warning("MatrixX::LDLT_Factor failed");
 
             //    MatrixX::LDLT_UpdateRankOne
 
-            m1 = new MatrixX(ref original);
-            m2 = new MatrixX(ref original);
+            m1 = new MatrixX(original);
+            m2 = new MatrixX(original);
 
             w.Random(size, 0);
 
@@ -639,15 +639,15 @@ namespace System.NumericsX
             // update factored m1
             m1.LDLT_UpdateRankOne(w, 1f, 0);
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::LDLT_UpdateRankOne failed");
 
             //    MatrixX::LDLT_UpdateRowColumn
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = new MatrixX(ref original);
-                m2 = new MatrixX(ref original);
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 w.Random(size, 0);
 
@@ -664,7 +664,7 @@ namespace System.NumericsX
                 // update m1
                 m1.LDLT_UpdateRowColumn(w, offset);
 
-                if (!m1.Compare(ref m2, 1e-3f))
+                if (!m1.Compare(m2, 1e-3f))
                     Warning("MatrixX::LDLT_UpdateRowColumn failed");
             }
 
@@ -674,7 +674,7 @@ namespace System.NumericsX
             m3 = m1 * m1.Transpose();
 
             m1.SquareSubMatrix(m3, size);
-            m2 = new MatrixX(ref m1);
+            m2 = new MatrixX(m1);
 
             w.SetSize(size + 1);
             for (var i = 0; i < size + 1; i++)
@@ -694,15 +694,15 @@ namespace System.NumericsX
             m1.ClearUpperTriangle();
             m2.ClearUpperTriangle();
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::LDLT_UpdateIncrement failed");
 
             //    MatrixX::LDLT_UpdateDecrement
 
             for (offset = 0; offset < size; offset++)
             {
-                m1 = new MatrixX(ref original);
-                m2 = new MatrixX(ref original);
+                m1 = new MatrixX(original);
+                m2 = new MatrixX(original);
 
                 v.SetSize(6);
                 for (var i = 0; i < size; i++)
@@ -719,16 +719,16 @@ namespace System.NumericsX
                 // update factors of m1
                 m1.LDLT_UpdateDecrement(v, offset);
 
-                if (!m1.Compare(ref m2, 1e-3f))
+                if (!m1.Compare(m2, 1e-3f))
                     Warning("MatrixX::LDLT_UpdateDecrement failed");
             }
 
             //    MatrixX::LDLT_Inverse
 
-            m2 = new MatrixX(ref original);
+            m2 = new MatrixX(original);
 
             m2.LDLT_Factor();
-            m2.LDLT_Inverse(m1);
+            m2.LDLT_Inverse(ref m1);
             m1 *= original;
 
             if (!m1.IsIdentity(1e-4f))
@@ -738,56 +738,56 @@ namespace System.NumericsX
 
             m3 = original;
             m3.TriDiagonal_ClearTriangles();
-            m1 = new MatrixX(ref m3);
+            m1 = new MatrixX(m3);
 
             v.SetSize(size);
 
-            m1.Eigen_SolveSymmetricTriDiagonal(v);
+            m1.Eigen_SolveSymmetricTriDiagonal(ref v);
 
-            m3.TransposeMultiply(ref m2, ref m1);
+            m3.TransposeMultiply(m2, m1);
 
             for (var i = 0; i < size; i++)
                 for (int j = 0; j < size; j++)
                     m1[i][j] *= v[j];
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::Eigen_SolveSymmetricTriDiagonal failed");
 
             //    MatrixX::Eigen_SolveSymmetric
 
             m3 = original;
-            m1 = new MatrixX(ref m3);
+            m1 = new MatrixX(m3);
 
             v.SetSize(size);
 
-            m1.Eigen_SolveSymmetric(v);
+            m1.Eigen_SolveSymmetric(ref v);
 
-            m3.TransposeMultiply(ref m2, ref m1);
+            m3.TransposeMultiply(m2, m1);
 
             for (var i = 0; i < size; i++)
                 for (var j = 0; j < size; j++)
                     m1[i][j] *= v[j];
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::Eigen_SolveSymmetric failed");
 
             //    MatrixX::Eigen_Solve
 
             m3 = original;
-            m1 = new MatrixX(ref m3);
+            m1 = new MatrixX(m3);
 
             v.SetSize(size);
             w.SetSize(size);
 
-            m1.Eigen_Solve(v, w);
+            m1.Eigen_Solve(ref v, ref w);
 
-            m3.TransposeMultiply(ref m2, ref m1);
+            m3.TransposeMultiply(m2, m1);
 
             for (var i = 0; i < size; i++)
                 for (var j = 0; j < size; j++)
                     m1[i][j] *= v[j];
 
-            if (!m1.Compare(ref m2, 1e-4f))
+            if (!m1.Compare(m2, 1e-4f))
                 Warning("MatrixX::Eigen_Solve failed");
         }
     }

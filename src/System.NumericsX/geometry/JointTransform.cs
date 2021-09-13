@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace System.NumericsX
@@ -14,7 +15,8 @@ namespace System.NumericsX
     {
         fixed float mat[3 * 4];
 
-        public void SetRotation(Matrix3x3 m)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetRotation(in Matrix3x3 m)
         {
             // NOTE: Matrix3 is transposed because it is column-major
             mat[0 * 4 + 0] = m[0].x;
@@ -28,24 +30,28 @@ namespace System.NumericsX
             mat[2 * 4 + 2] = m[2].z;
         }
 
-        public void SetTranslation(Vector3 t)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetTranslation(in Vector3 t)
         {
             mat[0 * 4 + 3] = t.x;
             mat[1 * 4 + 3] = t.y;
             mat[2 * 4 + 3] = t.z;
         }
 
-        public static Vector3 operator *(JointMat _, Vector3 v)                           // only rotate
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3 operator *(in JointMat _, in Vector3 v)                           // only rotate
             => new(
             _.mat[0 * 4 + 0] * v.x + _.mat[0 * 4 + 1] * v.y + _.mat[0 * 4 + 2] * v.z,
             _.mat[1 * 4 + 0] * v.x + _.mat[1 * 4 + 1] * v.y + _.mat[1 * 4 + 2] * v.z,
             _.mat[2 * 4 + 0] * v.x + _.mat[2 * 4 + 1] * v.y + _.mat[2 * 4 + 2] * v.z);
-        public static Vector3 operator *(JointMat _, Vector4 v)                          // rotate and translate
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3 operator *(in JointMat _, in Vector4 v)                          // rotate and translate
             => new(
             _.mat[0 * 4 + 0] * v.x + _.mat[0 * 4 + 1] * v.y + _.mat[0 * 4 + 2] * v.z + _.mat[0 * 4 + 3] * v.w,
             _.mat[1 * 4 + 0] * v.x + _.mat[1 * 4 + 1] * v.y + _.mat[1 * 4 + 2] * v.z + _.mat[1 * 4 + 3] * v.w,
             _.mat[2 * 4 + 0] * v.x + _.mat[2 * 4 + 1] * v.y + _.mat[2 * 4 + 2] * v.z + _.mat[2 * 4 + 3] * v.w);
-        public static JointMat operator *(JointMat _, JointMat a)                          // transform
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static JointMat operator *(JointMat _, in JointMat a)                          // transform
         {
             float dst_0, dst_1, dst_2;
 
@@ -83,7 +89,8 @@ namespace System.NumericsX
 
             return _;
         }
-        public static JointMat operator /(JointMat _, JointMat a)                          // untransform
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static JointMat operator /(JointMat _, in JointMat a)                          // untransform
         {
             float dst_0, dst_1, dst_2;
 
@@ -122,29 +129,34 @@ namespace System.NumericsX
             return _;
         }
 
-        public bool Compare(JointMat a)                       // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in JointMat a)                       // exact compare, no epsilon
         {
             for (var i = 0; i < 12; i++)
                 if (mat[i] != a.mat[i])
                     return false;
             return true;
         }
-        public bool Compare(JointMat a, float epsilon)  // compare with epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in JointMat a, float epsilon)  // compare with epsilon
         {
             for (var i = 0; i < 12; i++)
                 if (MathX.Fabs(mat[i] - a.mat[i]) > epsilon)
                     return false;
             return true;
         }
-        public static bool operator ==(JointMat _, JointMat a)                   // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(in JointMat _, in JointMat a)                   // exact compare, no epsilon
             => _.Compare(a);
-        public static bool operator !=(JointMat _, JointMat a)                   // exact compare, no epsilon
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in JointMat _, in JointMat a)                   // exact compare, no epsilon
             => !_.Compare(a);
         public override bool Equals(object obj)
             => obj is JointMat q && Compare(q);
         public override int GetHashCode()
             => base.GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Invert()
         {
             float tmp_0, tmp_1, tmp_2;
@@ -169,12 +181,14 @@ namespace System.NumericsX
             mat[2 * 4 + 1] = tmp_2;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3 ToMat3()
             => new(
             mat[0 * 4 + 0], mat[1 * 4 + 0], mat[2 * 4 + 0],
             mat[0 * 4 + 1], mat[1 * 4 + 1], mat[2 * 4 + 1],
             mat[0 * 4 + 2], mat[1 * 4 + 2], mat[2 * 4 + 2]);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 ToVec3()
             => new(mat[0 * 4 + 3], mat[1 * 4 + 3], mat[2 * 4 + 3]);
 
@@ -220,10 +234,11 @@ namespace System.NumericsX
             return jq;
         }
 
-        public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
-        {
-            fixed (float* _ = mat)
-                return callback(_);
-        }
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //{
+        //    fixed (float* _ = mat)
+        //        return callback(_);
+        //}
     }
 }

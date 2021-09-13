@@ -1,3 +1,6 @@
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
 namespace System.NumericsX
 {
     public enum EXTRAPOLATION
@@ -11,62 +14,69 @@ namespace System.NumericsX
         NOSTOP = 0x40   // do not stop at startTime + duration
     }
 
-public struct Extrapolate_float
-{
-    /*
-    public Extrapolate_float()
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Extrapolate_Vector4
     {
-        extrapolationType = EXTRAPOLATION.NONE;
-        startTime = duration = 0f;
-        startValue = default;
-        baseSpeed = default;
-        speed = default;
-        currentTime = -1;
-        currentValue = startValue;
-    }
-    */
+        EXTRAPOLATION extrapolationType;
+        float startTime;
+        float duration;
+        Vector4 startValue;
+        Vector4 baseSpeed;
+        Vector4 speed;
+        float currentTime;
+        Vector4 currentValue;
 
-    public void Init(float startTime, float duration, float startValue, float baseSpeed, float speed, EXTRAPOLATION extrapolationType)
-    {
-        this.extrapolationType = extrapolationType;
-        this.startTime = startTime;
-        this.duration = duration;
-        this.startValue = startValue;
-        this.baseSpeed = baseSpeed;
-        this.speed = speed;
-        currentTime = -1;
-        currentValue = startValue;
-    }
-    public float GetCurrentValue(float time)
-    {
-        float deltaTime, s;
-        if (time == currentTime)
-            return currentValue;
-        currentTime = time;
-        if (time < startTime)
-            return startValue;
-
-        if ((extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && (time > startTime + duration))
-            time = startTime + duration;
-
-        switch (extrapolationType & ~EXTRAPOLATION.NOSTOP)
+        /*
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Extrapolate_Vector4()
         {
-            case EXTRAPOLATION.NONE:
-                {
+            extrapolationType = EXTRAPOLATION.NONE;
+            startTime = duration = 0f;
+            startValue = default;
+            baseSpeed = default;
+            speed = default;
+            currentTime = -1;
+            currentValue = startValue;
+        }
+        */
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Init(float startTime, float duration, in Vector4 startValue, in Vector4 baseSpeed, in Vector4 speed, EXTRAPOLATION extrapolationType)
+        {
+            this.extrapolationType = extrapolationType;
+            this.startTime = startTime;
+            this.duration = duration;
+            this.startValue = startValue;
+            this.baseSpeed = baseSpeed;
+            this.speed = speed;
+            currentTime = -1;
+            currentValue = startValue;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector4 GetCurrentValue(float time)
+        {
+            float deltaTime, s;
+            if (time == currentTime)
+                return currentValue;
+            currentTime = time;
+            if (time < startTime) return startValue;
+
+            if ((extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && (time > startTime + duration))
+                time = startTime + duration;
+
+            switch (extrapolationType & ~EXTRAPOLATION.NOSTOP)
+            {
+                case EXTRAPOLATION.NONE:
                     deltaTime = (time - startTime) * 0.001f;
                     currentValue = startValue + deltaTime * baseSpeed;
                     break;
-                }
-            case EXTRAPOLATION.LINEAR:
-                {
+                case EXTRAPOLATION.LINEAR:
                     deltaTime = (time - startTime) * 0.001f;
                     currentValue = startValue + deltaTime * (baseSpeed + speed);
                     break;
-                }
-            case EXTRAPOLATION.ACCELLINEAR:
-                {
-                    if (duration == 0)
-                        currentValue = startValue;
+                case EXTRAPOLATION.ACCELLINEAR:
+                    if (duration == 0) currentValue = startValue;
                     else
                     {
                         deltaTime = (time - startTime) / duration;
@@ -74,11 +84,8 @@ public struct Extrapolate_float
                         currentValue = startValue + deltaTime * baseSpeed + s * speed;
                     }
                     break;
-                }
-            case EXTRAPOLATION.DECELLINEAR:
-                {
-                    if (duration == 0)
-                        currentValue = startValue;
+                case EXTRAPOLATION.DECELLINEAR:
+                    if (duration == 0) currentValue = startValue;
                     else
                     {
                         deltaTime = (time - startTime) / duration;
@@ -86,11 +93,8 @@ public struct Extrapolate_float
                         currentValue = startValue + deltaTime * baseSpeed + s * speed;
                     }
                     break;
-                }
-            case EXTRAPOLATION.ACCELSINE:
-                {
-                    if (duration == 0)
-                        currentValue = startValue;
+                case EXTRAPOLATION.ACCELSINE:
+                    if (duration == 0) currentValue = startValue;
                     else
                     {
                         deltaTime = (time - startTime) / duration;
@@ -98,11 +102,8 @@ public struct Extrapolate_float
                         currentValue = startValue + deltaTime * baseSpeed + s * speed;
                     }
                     break;
-                }
-            case EXTRAPOLATION.DECELSINE:
-                {
-                    if (duration == 0)
-                        currentValue = startValue;
+                case EXTRAPOLATION.DECELSINE:
+                    if (duration == 0) currentValue = startValue;
                     else
                     {
                         deltaTime = (time - startTime) / duration;
@@ -110,263 +111,75 @@ public struct Extrapolate_float
                         currentValue = startValue + deltaTime * baseSpeed + s * speed;
                     }
                     break;
-                }
-        }
-        return currentValue;
-    }
-    public float GetCurrentSpeed(float time)
-    {
-        if (time < startTime || duration == 0)
-            return startValue - startValue;
-
-        if ((extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && (time > startTime + duration))
-            return startValue - startValue;
-
-        float deltaTime, s;
-        switch (extrapolationType & ~EXTRAPOLATION.NOSTOP)
-        {
-            case EXTRAPOLATION.NONE:
-                {
-                    return baseSpeed;
-                }
-            case EXTRAPOLATION.LINEAR:
-                {
-                    return baseSpeed + speed;
-                }
-            case EXTRAPOLATION.ACCELLINEAR:
-                {
-                    deltaTime = (time - startTime) / duration;
-                    s = deltaTime;
-                    return baseSpeed + s * speed;
-                }
-            case EXTRAPOLATION.DECELLINEAR:
-                {
-                    deltaTime = (time - startTime) / duration;
-                    s = 1f - deltaTime;
-                    return baseSpeed + s * speed;
-                }
-            case EXTRAPOLATION.ACCELSINE:
-                {
-                    deltaTime = (time - startTime) / duration;
-                    s = MathX.Sin(deltaTime * MathX.HALF_PI);
-                    return baseSpeed + s * speed;
-                }
-            case EXTRAPOLATION.DECELSINE:
-                {
-                    deltaTime = (time - startTime) / duration;
-                    s = MathX.Cos(deltaTime * MathX.HALF_PI);
-                    return baseSpeed + s * speed;
-                }
-            default:
-                {
-                    return baseSpeed;
-                }
-        }
-    }
-    public bool IsDone(float time) => (extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && time >= startTime + duration;
-    public float StartTime
-    {
-        get => startTime;
-        set { startTime = value; currentTime = -1; }
-    }
-    public float EndTime => ((extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && duration > 0) ? startTime + duration : 0;
-    public float Duration => duration;
-    public float StartValue
-    {
-        get => startValue;
-        set { startValue = value; currentTime = -1; }
-    }
-    public float BaseSpeed => baseSpeed;
-    public float Speed => speed;
-    public EXTRAPOLATION ExtrapolationType => extrapolationType;
-
-    EXTRAPOLATION extrapolationType;
-    float startTime;
-    float duration;
-    float startValue;
-    float baseSpeed;
-    float speed;
-    float currentTime;
-    float currentValue;
-}
-
-public struct Extrapolate_Vector4
-{
-    /*
-    public Extrapolate_Vector4()
-    {
-        extrapolationType = EXTRAPOLATION.NONE;
-        startTime = duration = 0f;
-        startValue = default;
-        baseSpeed = default;
-        speed = default;
-        currentTime = -1;
-        currentValue = startValue;
-    }
-    */
-
-    public void Init(float startTime, float duration, Vector4 startValue, Vector4 baseSpeed, Vector4 speed, EXTRAPOLATION extrapolationType)
-    {
-        this.extrapolationType = extrapolationType;
-        this.startTime = startTime;
-        this.duration = duration;
-        this.startValue = startValue;
-        this.baseSpeed = baseSpeed;
-        this.speed = speed;
-        currentTime = -1;
-        currentValue = startValue;
-    }
-    public Vector4 GetCurrentValue(float time)
-    {
-        float deltaTime, s;
-        if (time == currentTime)
+            }
             return currentValue;
-        currentTime = time;
-        if (time < startTime)
-            return startValue;
-
-        if ((extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && (time > startTime + duration))
-            time = startTime + duration;
-
-        switch (extrapolationType & ~EXTRAPOLATION.NOSTOP)
-        {
-            case EXTRAPOLATION.NONE:
-                {
-                    deltaTime = (time - startTime) * 0.001f;
-                    currentValue = startValue + deltaTime * baseSpeed;
-                    break;
-                }
-            case EXTRAPOLATION.LINEAR:
-                {
-                    deltaTime = (time - startTime) * 0.001f;
-                    currentValue = startValue + deltaTime * (baseSpeed + speed);
-                    break;
-                }
-            case EXTRAPOLATION.ACCELLINEAR:
-                {
-                    if (duration == 0)
-                        currentValue = startValue;
-                    else
-                    {
-                        deltaTime = (time - startTime) / duration;
-                        s = (0.5f * deltaTime * deltaTime) * (duration * 0.001f);
-                        currentValue = startValue + deltaTime * baseSpeed + s * speed;
-                    }
-                    break;
-                }
-            case EXTRAPOLATION.DECELLINEAR:
-                {
-                    if (duration == 0)
-                        currentValue = startValue;
-                    else
-                    {
-                        deltaTime = (time - startTime) / duration;
-                        s = (deltaTime - (0.5f * deltaTime * deltaTime)) * (duration * 0.001f);
-                        currentValue = startValue + deltaTime * baseSpeed + s * speed;
-                    }
-                    break;
-                }
-            case EXTRAPOLATION.ACCELSINE:
-                {
-                    if (duration == 0)
-                        currentValue = startValue;
-                    else
-                    {
-                        deltaTime = (time - startTime) / duration;
-                        s = (1f - MathX.Cos(deltaTime * MathX.HALF_PI)) * duration * 0.001f * MathX.SQRT_1OVER2;
-                        currentValue = startValue + deltaTime * baseSpeed + s * speed;
-                    }
-                    break;
-                }
-            case EXTRAPOLATION.DECELSINE:
-                {
-                    if (duration == 0)
-                        currentValue = startValue;
-                    else
-                    {
-                        deltaTime = (time - startTime) / duration;
-                        s = MathX.Sin(deltaTime * MathX.HALF_PI) * duration * 0.001f * MathX.SQRT_1OVER2;
-                        currentValue = startValue + deltaTime * baseSpeed + s * speed;
-                    }
-                    break;
-                }
         }
-        return currentValue;
-    }
-    public Vector4 GetCurrentSpeed(float time)
-    {
-        if (time < startTime || duration == 0)
-            return startValue - startValue;
 
-        if ((extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && (time > startTime + duration))
-            return startValue - startValue;
-
-        float deltaTime, s;
-        switch (extrapolationType & ~EXTRAPOLATION.NOSTOP)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector4 GetCurrentSpeed(float time)
         {
-            case EXTRAPOLATION.NONE:
-                {
+            if (time < startTime || duration == 0)
+                return startValue - startValue;
+
+            if ((extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && (time > startTime + duration))
+                return startValue - startValue;
+
+            float deltaTime, s;
+            switch (extrapolationType & ~EXTRAPOLATION.NOSTOP)
+            {
+                case EXTRAPOLATION.NONE:
                     return baseSpeed;
-                }
-            case EXTRAPOLATION.LINEAR:
-                {
+                case EXTRAPOLATION.LINEAR:
                     return baseSpeed + speed;
-                }
-            case EXTRAPOLATION.ACCELLINEAR:
-                {
+                case EXTRAPOLATION.ACCELLINEAR:
                     deltaTime = (time - startTime) / duration;
                     s = deltaTime;
                     return baseSpeed + s * speed;
-                }
-            case EXTRAPOLATION.DECELLINEAR:
-                {
+                case EXTRAPOLATION.DECELLINEAR:
                     deltaTime = (time - startTime) / duration;
                     s = 1f - deltaTime;
                     return baseSpeed + s * speed;
-                }
-            case EXTRAPOLATION.ACCELSINE:
-                {
+                case EXTRAPOLATION.ACCELSINE:
                     deltaTime = (time - startTime) / duration;
                     s = MathX.Sin(deltaTime * MathX.HALF_PI);
                     return baseSpeed + s * speed;
-                }
-            case EXTRAPOLATION.DECELSINE:
-                {
+                case EXTRAPOLATION.DECELSINE:
                     deltaTime = (time - startTime) / duration;
                     s = MathX.Cos(deltaTime * MathX.HALF_PI);
                     return baseSpeed + s * speed;
-                }
-            default:
-                {
+                default:
                     return baseSpeed;
-                }
+            }
         }
-    }
-    public bool IsDone(float time) => (extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && time >= startTime + duration;
-    public float StartTime
-    {
-        get => startTime;
-        set { startTime = value; currentTime = -1; }
-    }
-    public float EndTime => ((extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && duration > 0) ? startTime + duration : 0;
-    public float Duration => duration;
-    public Vector4 StartValue
-    {
-        get => startValue;
-        set { startValue = value; currentTime = -1; }
-    }
-    public Vector4 BaseSpeed => baseSpeed;
-    public Vector4 Speed => speed;
-    public EXTRAPOLATION ExtrapolationType => extrapolationType;
 
-    EXTRAPOLATION extrapolationType;
-    float startTime;
-    float duration;
-    Vector4 startValue;
-    Vector4 baseSpeed;
-    Vector4 speed;
-    float currentTime;
-    Vector4 currentValue;
-}
+        public bool IsDone(float time)
+            => (extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && time >= startTime + duration;
 
+        public float StartTime
+        {
+            get => startTime;
+            set { startTime = value; currentTime = -1; }
+        }
+
+        public float EndTime
+            => (extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && duration > 0 ? startTime + duration : 0;
+
+        public float Duration
+            => duration;
+
+        public Vector4 StartValue
+        {
+            get => startValue;
+            set { startValue = value; currentTime = -1; }
+        }
+
+        public Vector4 BaseSpeed
+            => baseSpeed;
+    
+        public Vector4 Speed
+            => speed;
+
+        public EXTRAPOLATION ExtrapolationType
+            => extrapolationType;
+    }
 }

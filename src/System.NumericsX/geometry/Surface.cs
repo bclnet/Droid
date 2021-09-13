@@ -2,17 +2,22 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using static System.NumericsX.Plane;
 
 namespace System.NumericsX
 {
+    [StructLayout(LayoutKind.Sequential)]
     public struct SurfaceEdge
     {
         public (int v0, int v1) verts;      // edge vertices always with ( verts[0] < verts[1] )
         public (int t0, int t1) tris;       // edge triangles
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int verts_(int index)
             => index == 0 ? verts.v0 : verts.v1;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int tris_(int index)
             => index == 0 ? tris.t0 : tris.t1;
     }
@@ -24,7 +29,9 @@ namespace System.NumericsX
         protected List<SurfaceEdge> edges = new();  // edges
         protected List<int> edgeIndexes = new();    // 3 references to edges for each triangle, may be negative for reversed edge
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Surface() { }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Surface(Surface surf)
         {
             this.verts = surf.verts;
@@ -32,6 +39,7 @@ namespace System.NumericsX
             this.edges = surf.edges;
             this.edgeIndexes = surf.edgeIndexes;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Surface(DrawVert[] verts, int numVerts, int[] indexes, int numIndexes)
         {
             Debug.Assert(verts != null && indexes != null && numVerts > 0 && numIndexes > 0);
@@ -43,7 +51,12 @@ namespace System.NumericsX
         }
 
         public DrawVert this[int index]
-            => verts[index];
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => verts[index];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Surface operator +(Surface _, Surface surf)
         {
             var n = _.verts.Count;
@@ -74,6 +87,7 @@ namespace System.NumericsX
         public IList<SurfaceEdge> Edges
             => edges;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Clear()
         {
             verts.Clear();
@@ -82,6 +96,7 @@ namespace System.NumericsX
             edgeIndexes.Clear();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SwapTriangles(Surface surf)
         {
             UnsafeX.Swap(ref verts, ref surf.verts);
@@ -90,12 +105,14 @@ namespace System.NumericsX
             UnsafeX.Swap(ref edgeIndexes, ref surf.edgeIndexes);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void TranslateSelf(Vector3 translation)
         {
             for (var i = 0; i < verts.Count; i++)
                 verts[i].xyz += translation;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RotateSelf(Matrix3x3 rotation)
         {
             for (var i = 0; i < verts.Count; i++)
@@ -157,7 +174,7 @@ namespace System.NumericsX
             // if coplanar, put on the front side if the normals match
             if (counts[SIDE_FRONT] == 0 && counts[SIDE_BACK] == 0)
             {
-                f = (verts[indexes[1]].xyz - verts[indexes[0]].xyz).Cross_(verts[indexes[0]].xyz - verts[indexes[2]].xyz) * plane.Normal;
+                f = (verts[indexes[1]].xyz - verts[indexes[0]].xyz).Cross(verts[indexes[0]].xyz - verts[indexes[2]].xyz) * plane.Normal;
                 if (MathX.FLOATSIGNBITSET(f))
                 {
                     back = new Surface(this);
@@ -265,7 +282,7 @@ namespace System.NumericsX
                             if ((sides[v0] & sides[v1] & sides[v2] & SIDE_ON) != 0)
                             {
                                 // coplanar
-                                f = (verts[v1].xyz - verts[v0].xyz).Cross_(verts[v0].xyz - verts[v2].xyz) * plane.Normal;
+                                f = (verts[v1].xyz - verts[v0].xyz).Cross(verts[v0].xyz - verts[v2].xyz) * plane.Normal;
                                 s = MathX.FLOATSIGNBITSET_(f);
                             }
                             else s = (sides[v0] | sides[v1] | sides[v2]) & SIDE_BACK;
@@ -477,14 +494,13 @@ namespace System.NumericsX
             // if coplanar, put on the front side if the normals match
             if (counts[SIDE_FRONT] == 0 && counts[SIDE_BACK] == 0)
             {
-                f = (verts[indexes[1]].xyz - verts[indexes[0]].xyz).Cross_(verts[indexes[0]].xyz - verts[indexes[2]].xyz) * plane.Normal;
+                f = (verts[indexes[1]].xyz - verts[indexes[0]].xyz).Cross(verts[indexes[0]].xyz - verts[indexes[2]].xyz) * plane.Normal;
                 if (MathX.FLOATSIGNBITSET(f))
                 {
                     Clear();
                     return false;
                 }
-                else
-                    return true;
+                else return true;
             }
             // if nothing at the front of the clipping plane
             if (counts[SIDE_FRONT] == 0)
@@ -561,7 +577,7 @@ namespace System.NumericsX
                                 // coplanar
                                 if (!keepOn)
                                     break;
-                                f = (verts[v1].xyz - verts[v0].xyz).Cross_(verts[v0].xyz - verts[v2].xyz) * plane.Normal;
+                                f = (verts[v1].xyz - verts[v0].xyz).Cross(verts[v0].xyz - verts[v2].xyz) * plane.Normal;
                                 if (MathX.FLOATSIGNBITSET(f))
                                     break;
                             }

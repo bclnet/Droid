@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using static System.NumericsX.Platform;
 
 namespace System.NumericsX
@@ -11,11 +12,13 @@ namespace System.NumericsX
         protected int maxHeight;        // maximum height allocated for
         protected bool expanded;        // true if vertices are spaced out
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Surface_Patch()
         {
             height = width = maxHeight = maxWidth = 0;
             expanded = false;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Surface_Patch(int maxPatchWidth, int maxPatchHeight)
         {
             width = height = 0;
@@ -24,10 +27,11 @@ namespace System.NumericsX
             verts.SetNum(maxWidth * maxHeight);
             expanded = false;
         }
-        //public Surface_Patch(Surface_Patch patch)
-        //{
-        //    this = patch;
-        //}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Surface_Patch(Surface_Patch patch)
+        {
+            throw new NotImplementedException();
+        }
 
         public void SetSize(int patchWidth, int patchHeight)
         {
@@ -41,10 +45,16 @@ namespace System.NumericsX
         }
 
         public int Width
-            => width;
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => width;
+        }
 
         public int Height
-            => height;
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => height;
+        }
 
         // subdivide the patch mesh based on error
         public void Subdivide(float maxHorizontalError, float maxVerticalError, float maxLength, bool genNormals = false)
@@ -351,7 +361,7 @@ namespace System.NumericsX
         }
 
         // project a point onto a vector to calculate maximum curve error
-        static void ProjectPointOntoVector(Vector3 point, Vector3 vStart, Vector3 vEnd, out Vector3 vProj)
+        static void ProjectPointOntoVector(in Vector3 point, in Vector3 vStart, in Vector3 vEnd, out Vector3 vProj)
         {
             var pVec = point - vStart;
             var vec = vEnd - vStart;
@@ -385,12 +395,12 @@ namespace System.NumericsX
             extent[1] = verts[(height - 1) * width + width - 1].xyz - verts[0].xyz;
             extent[2] = verts[(height - 1) * width].xyz - verts[0].xyz;
 
-            norm = extent[0].Cross(ref extent[1]);
+            norm = extent[0].Cross(extent[1]);
             if (norm.LengthSqr == 0f)
             {
-                norm = extent[0].Cross(ref extent[2]);
+                norm = extent[0].Cross(extent[2]);
                 if (norm.LengthSqr == 0f)
-                    norm = extent[1].Cross(ref extent[2]);
+                    norm = extent[1].Cross(extent[2]);
             }
 
             // wrapped patched may not get a valid normal here
@@ -482,7 +492,7 @@ namespace System.NumericsX
                     {
                         if (!good[k] || !good[(k + 1) & 7])
                             continue;   // didn't get two points
-                        norm = around[(k + 1) & 7].Cross(ref around[k]);
+                        norm = around[(k + 1) & 7].Cross(around[k]);
                         if (norm.Normalize() == 0f)
                             continue;
                         sum += norm;
@@ -524,7 +534,7 @@ namespace System.NumericsX
         }
 
         // lerp point from two patch point
-        void LerpVert(DrawVert a, DrawVert b, out DrawVert o)
+        void LerpVert(in DrawVert a, in DrawVert b, out DrawVert o)
         {
             o = new();
             o.xyz[0] = 0.5f * (a.xyz[0] + b.xyz[0]);

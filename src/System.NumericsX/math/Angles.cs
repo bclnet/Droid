@@ -1,9 +1,13 @@
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
+    [StructLayout(LayoutKind.Sequential)]
     public struct Angles
     {
+        public static Angles zero = new(0f, 0f, 0f);
         // angle indexes
         public const int PITCH = 0;     // up / down
         public const int YAW = 1;       // left / right
@@ -13,19 +17,22 @@ namespace System.NumericsX
         public float yaw;
         public float roll;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Angles(float pitch, float yaw, float roll)
         {
             this.pitch = pitch;
             this.yaw = yaw;
             this.roll = roll;
         }
-        public Angles(Vector3 v)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Angles(in Vector3 v)
         {
             this.pitch = v.x;
             this.yaw = v.y;
             this.roll = v.z;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(float pitch, float yaw, float roll)
         {
             this.pitch = pitch;
@@ -33,6 +40,8 @@ namespace System.NumericsX
             this.roll = roll;
 
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Angles Zero()
         {
             pitch = yaw = roll = 0f;
@@ -41,11 +50,13 @@ namespace System.NumericsX
 
         public unsafe float this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 fixed (float* p = &pitch)
                     return p[index];
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 fixed (float* p = &pitch)
@@ -60,25 +71,25 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static Angles operator -(Angles _)
+        public static Angles operator -(in Angles _)
             => new(-_.pitch, -_.yaw, -_.roll);
-
-        public static Angles operator +(Angles _, Angles a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Angles operator +(in Angles _, in Angles a)
             => new(_.pitch + a.pitch, _.yaw + a.yaw, _.roll + a.roll);
-
-        public static Angles operator -(Angles _, Angles a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Angles operator -(in Angles _, in Angles a)
             => new(_.pitch - a.pitch, _.yaw - a.yaw, _.roll - a.roll);
-
-        public static Angles operator *(Angles _, float a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Angles operator *(in Angles _, float a)
             => new(_.pitch * a, _.yaw * a, _.roll * a);
-
-        public static Angles operator /(Angles _, float a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Angles operator /(in Angles _, float a)
         {
             var inva = 1f / a;
             return new(_.pitch * inva, _.yaw * inva, _.roll * inva);
         }
-
-        public static Angles operator *(float a, Angles b)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Angles operator *(float a, in Angles b)
             => new(a * b.pitch, a * b.yaw, a * b.roll);
 
         /// <summary>
@@ -86,21 +97,20 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="a">a.</param>
         /// <returns></returns>
-        public bool Compare(Angles a)
-            => (a.pitch == pitch) && (a.yaw == yaw) && (a.roll == roll);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in Angles a)
+            => a.pitch == pitch && a.yaw == yaw && a.roll == roll;
         /// <summary>
         /// compare with epsilon
         /// </summary>
         /// <param name="a">a.</param>
         /// <param name="epsilon">The epsilon.</param>
         /// <returns></returns>
-        public bool Compare(Angles a, float epsilon)
-        {
-            if (MathX.Fabs(pitch - a.pitch) > epsilon) return false;
-            if (MathX.Fabs(yaw - a.yaw) > epsilon) return false;
-            if (MathX.Fabs(roll - a.roll) > epsilon) return false;
-            return true;
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in Angles a, float epsilon)
+            => MathX.Fabs(pitch - a.pitch) <= epsilon &&
+               MathX.Fabs(yaw - a.yaw) <= epsilon &&
+               MathX.Fabs(roll - a.roll) <= epsilon;
         /// <summary>
         /// exact compare, no epsilon
         /// </summary>
@@ -109,7 +119,8 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static bool operator ==(Angles _, Angles a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(in Angles _, in Angles a)
             => _.Compare(a);
         /// <summary>
         /// exact compare, no epsilon
@@ -119,7 +130,8 @@ namespace System.NumericsX
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static bool operator !=(Angles _, Angles a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in Angles _, in Angles a)
             => !_.Compare(a);
         public override bool Equals(object obj)
             => obj is Angles q && Compare(q);
@@ -155,7 +167,8 @@ namespace System.NumericsX
             return this;
         }
 
-        public void Clamp(Angles min, Angles max)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Clamp(in Angles min, in Angles max)
         {
             if (pitch < min.pitch) pitch = min.pitch;
             else if (pitch > max.pitch) pitch = max.pitch;
@@ -165,8 +178,7 @@ namespace System.NumericsX
             else if (roll > max.roll) roll = max.roll;
         }
 
-        public static int Dimension
-            => 3;
+        public const int Dimension = 3;
 
         public void ToVectors(out Vector3 forward, out Vector3 right, out Vector3 up)
         {
@@ -178,12 +190,14 @@ namespace System.NumericsX
             right = new Vector3(-sr * sp * cy + cr * sy, -sr * sp * sy + -cr * cy, -sr * cp);
             up = new Vector3(cr * sp * cy + -sr * -sy, cr * sp * sy + -sr * cy, cr * cp);
         }
+
         public Vector3 ToForward()
         {
             MathX.SinCos(MathX.DEG2RAD(yaw), out var sy, out var cy);
             MathX.SinCos(MathX.DEG2RAD(pitch), out var sp, out var cp);
             return new(cp * cy, cp * sy, -sp);
         }
+
         public Quat ToQuat()
         {
             MathX.SinCos(MathX.DEG2RAD(yaw) * 0.5f, out var sz, out var cz);
@@ -197,6 +211,7 @@ namespace System.NumericsX
 
             return new(cxsy * sz - sxcy * cz, -cxsy * cz - sxcy * sz, sxsy * cz - cxcy * sz, cxcy * cz + sxsy * sz);
         }
+
         public Rotation ToRotation()
         {
             if (pitch == 0f)
@@ -233,6 +248,7 @@ namespace System.NumericsX
             }
             return new(Vector3.origin, vec, angle);
         }
+
         public Matrix3x3 ToMat3()
         {
             MathX.SinCos(MathX.DEG2RAD(yaw), out var sy, out var cy);
@@ -246,21 +262,24 @@ namespace System.NumericsX
 
             return mat;
         }
+
         public Matrix4x4 ToMat4()
             => ToMat3().ToMat4();
+
         public Vector3 ToAngularVelocity()
         {
             var rotation = ToRotation();
             return rotation.Vec * MathX.DEG2RAD(rotation.Angle);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
             fixed (float* _ = &pitch)
                 return callback(_);
         }
+
         public unsafe string ToString(int precision = 2)
             => ToFloatPtr(_ => FloatArrayToString(_, Dimension, precision));
-
-        public static Angles zero = new(0f, 0f, 0f);
     }
 }

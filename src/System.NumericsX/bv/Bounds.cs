@@ -1,244 +1,283 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace System.NumericsX
 {
+    [StructLayout(LayoutKind.Sequential)]
     public struct Bounds
     {
-        Vector3[] b;
+        public static readonly Bounds zero = new(Vector3.origin, Vector3.origin);
 
-        public Bounds(Bounds a)
-        {
-            b = (Vector3[])a.b.Clone();
-        }
-        //internal Bounds()
-        //{
-        //    b = new Vector3[2];
-        //}
-        public Bounds(Vector3 mins, Vector3 maxs)
-        {
-            b = new Vector3[2];
-            b[0] = mins;
-            b[1] = maxs;
-        }
+        Vector3 b0;
+        Vector3 b1;
 
-        public Bounds(Vector3 point)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Bounds(in Bounds a)
+            => this = a;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Bounds(in Vector3 mins, in Vector3 maxs)
         {
-            b = new Vector3[2];
-            b[0] = point;
-            b[1] = point;
+            b0 = mins;
+            b1 = maxs;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Bounds(in Vector3 point)
+        {
+            b0 = point;
+            b1 = point;
         }
 
-        public ref Vector3 this[int index]
-            => ref b[index];
+        public unsafe ref Vector3 this[int index]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                fixed (Vector3* _ = &b0)
+                    return ref _[index];
+            }
+        }
 
-        public static Bounds operator +(Bounds _, Vector3 t)                // returns translated bounds
-            => new(_.b[0] + t, _.b[1] + t);
-        public static Bounds operator *(Bounds _, Matrix3x3 r)              // returns rotated bounds
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Bounds operator +(in Bounds _, in Vector3 t)                // returns translated bounds
+            => new(_.b0 + t, _.b1 + t);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Bounds operator *(in Bounds _, in Matrix3x3 r)              // returns rotated bounds
         {
             Bounds bounds = new();
             bounds.FromTransformedBounds(_, Vector3.origin, r);
             return bounds;
         }
-        public static Bounds operator +(Bounds _, Bounds a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Bounds operator +(in Bounds _, in Bounds a)
         {
             Bounds newBounds = new(_);
             newBounds.AddBounds(a);
             return newBounds;
         }
-        public static Bounds operator -(Bounds _, Bounds a)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Bounds operator -(in Bounds _, in Bounds a)
         {
             Debug.Assert(
-                _.b[1].x - _.b[0].x > a.b[1].x - a.b[0].x &&
-                _.b[1].y - _.b[0].y > a.b[1].y - a.b[0].y &&
-                _.b[1].z - _.b[0].z > a.b[1].z - a.b[0].z);
+                _.b1.x - _.b0.x > a.b1.x - a.b0.x &&
+                _.b1.y - _.b0.y > a.b1.y - a.b0.y &&
+                _.b1.z - _.b0.z > a.b1.z - a.b0.z);
             return new(
-                new Vector3(_.b[0].x + a.b[1].x, _.b[0].y + a.b[1].y, _.b[0].z + a.b[1].z),
-                new Vector3(_.b[1].x + a.b[0].x, _.b[1].y + a.b[0].y, _.b[1].z + a.b[0].z));
+                new Vector3(_.b0.x + a.b1.x, _.b0.y + a.b1.y, _.b0.z + a.b1.z),
+                new Vector3(_.b1.x + a.b0.x, _.b1.y + a.b0.y, _.b1.z + a.b0.z));
         }
 
-        public bool Compare(ref Bounds a)                          // exact compare, no epsilon
-            => b[0].Compare(ref a.b[0]) && b[1].Compare(ref a.b[1]);
-        public bool Compare(ref Bounds a, float epsilon)   // compare with epsilon
-            => b[0].Compare(ref a.b[0], epsilon) && b[1].Compare(ref a.b[1], epsilon);
-        public static bool operator ==(Bounds _, Bounds a)                      // exact compare, no epsilon
-            => _.Compare(ref a);
-        public static bool operator !=(Bounds _, Bounds a)                      // exact compare, no epsilon
-            => !_.Compare(ref a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in Bounds a)                          // exact compare, no epsilon
+            => b0.Compare(a.b0) && b1.Compare(a.b1);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Compare(in Bounds a, float epsilon)   // compare with epsilon
+            => b0.Compare(a.b0, epsilon) && b1.Compare(a.b1, epsilon);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(in Bounds _, in Bounds a)                      // exact compare, no epsilon
+            => _.Compare(a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in Bounds _, in Bounds a)                      // exact compare, no epsilon
+            => !_.Compare(a);
         public override bool Equals(object obj)
-            => obj is Bounds q && Compare(ref q);
+            => obj is Bounds q && Compare(q);
         public override int GetHashCode()
-            => b.GetHashCode();
+            => b0.GetHashCode() ^ b1.GetHashCode();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()                                    // inside out bounds
         {
-            b[0].x = b[0].y = b[0].z = MathX.INFINITY;
-            b[1].x = b[1].y = b[1].z = -MathX.INFINITY;
+            b0.x = b0.y = b0.z = MathX.INFINITY;
+            b1.x = b1.y = b1.z = -MathX.INFINITY;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()                                 // single point at origin
             =>
-            b[0].x = b[0].y = b[0].z =
-            b[1].x = b[1].y = b[1].z = 0;
+            b0.x = b0.y = b0.z =
+            b1.x = b1.y = b1.z = 0;
 
         public Vector3 Center                      // returns center of bounds
-            => new((b[1].x + b[0].x) * 0.5f, (b[1].y + b[0].y) * 0.5f, (b[1].z + b[0].z) * 0.5f);
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => new((b1.x + b0.x) * 0.5f, (b1.y + b0.y) * 0.5f, (b1.z + b0.z) * 0.5f);
+        }
 
         public float GetRadius()                       // returns the radius relative to the bounds origin
         {
             var total = 0f;
             for (var i = 0; i < 3; i++)
             {
-                var b0 = (float)MathX.Fabs(b[0][i]);
-                var b1 = (float)MathX.Fabs(b[1][i]);
-                if (b0 > b1) total += b0 * b0;
-                else total += b1 * b1;
+                var b0_ = (float)MathX.Fabs(b0[i]);
+                var b1_ = (float)MathX.Fabs(b1[i]);
+                if (b0_ > b1_) total += b0_ * b0_;
+                else total += b1_ * b1_;
             }
             return MathX.Sqrt(total);
         }
-        public float GetRadius(Vector3 center)     // returns the radius relative to the given center
+        public float GetRadius(in Vector3 center)     // returns the radius relative to the given center
         {
             var total = 0f;
             for (var i = 0; i < 3; i++)
             {
-                var b0 = (float)MathX.Fabs(center[i] - b[0][i]);
-                var b1 = (float)MathX.Fabs(b[1][i] - center[i]);
-                if (b0 > b1) total += b0 * b0;
-                else total += b1 * b1;
+                var b0_ = (float)MathX.Fabs(center[i] - b0[i]);
+                var b1_ = (float)MathX.Fabs(b1[i] - center[i]);
+                if (b0_ > b1_) total += b0_ * b0_;
+                else total += b1_ * b1_;
             }
             return MathX.Sqrt(total);
         }
 
-        public float GetVolume()                       // returns the volume of the bounds
-            => b[0].x >= b[1].x || b[0].y >= b[1].y || b[0].z >= b[1].z ? 0f
-            : (b[1].x - b[0].x) * (b[1].y - b[0].y) * (b[1].z - b[0].z);
+        public float Volume                       // returns the volume of the bounds
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => b0.x >= b1.x || b0.y >= b1.y || b0.z >= b1.z ? 0f
+                : (b1.x - b0.x) * (b1.y - b0.y) * (b1.z - b0.z);
+        }
 
-        public bool IsCleared                        // returns true if bounds are inside out
-            => b[0].x > b[1].x;
+        public bool IsCleared
+        {                        // returns true if bounds are inside out
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => b0.x > b1.x;
+        }
 
-        public bool AddPoint(Vector3 v)                    // add the point, returns true if the bounds expanded
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool AddPoint(in Vector3 v)                    // add the point, returns true if the bounds expanded
         {
             var expanded = false;
-            if (v.x < b[0].x) { b[0].x = v.x; expanded = true; }
-            if (v.x > b[1].x) { b[1].x = v.x; expanded = true; }
-            if (v.y < b[0].y) { b[0].y = v.y; expanded = true; }
-            if (v.y > b[1].y) { b[1].y = v.y; expanded = true; }
-            if (v.z < b[0].z) { b[0].z = v.z; expanded = true; }
-            if (v.z > b[1].z) { b[1].z = v.z; expanded = true; }
+            if (v.x < b0.x) { b0.x = v.x; expanded = true; }
+            if (v.x > b1.x) { b1.x = v.x; expanded = true; }
+            if (v.y < b0.y) { b0.y = v.y; expanded = true; }
+            if (v.y > b1.y) { b1.y = v.y; expanded = true; }
+            if (v.z < b0.z) { b0.z = v.z; expanded = true; }
+            if (v.z > b1.z) { b1.z = v.z; expanded = true; }
             return expanded;
         }
 
-        public bool AddBounds(Bounds a)                    // add the bounds, returns true if the bounds expanded
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool AddBounds(in Bounds a)                    // add the bounds, returns true if the bounds expanded
         {
             var expanded = false;
-            if (a.b[0].x < b[0].x) { b[0].x = a.b[0].x; expanded = true; }
-            if (a.b[0].y < b[0].y) { b[0].y = a.b[0].y; expanded = true; }
-            if (a.b[0].z < b[0].z) { b[0].z = a.b[0].z; expanded = true; }
-            if (a.b[1].x > b[1].x) { b[1].x = a.b[1].x; expanded = true; }
-            if (a.b[1].y > b[1].y) { b[1].y = a.b[1].y; expanded = true; }
-            if (a.b[1].z > b[1].z) { b[1].z = a.b[1].z; expanded = true; }
+            if (a.b0.x < b0.x) { b0.x = a.b0.x; expanded = true; }
+            if (a.b0.y < b0.y) { b0.y = a.b0.y; expanded = true; }
+            if (a.b0.z < b0.z) { b0.z = a.b0.z; expanded = true; }
+            if (a.b1.x > b1.x) { b1.x = a.b1.x; expanded = true; }
+            if (a.b1.y > b1.y) { b1.y = a.b1.y; expanded = true; }
+            if (a.b1.z > b1.z) { b1.z = a.b1.z; expanded = true; }
             return expanded;
         }
 
-        public Bounds Intersect(Bounds a)          // return intersection of this bounds with the given bounds
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Bounds Intersect(in Bounds a)          // return intersection of this bounds with the given bounds
         {
             Bounds n = new();
-            n.b[0].x = a.b[0].x > b[0].x ? a.b[0].x : b[0].x;
-            n.b[0].y = a.b[0].y > b[0].y ? a.b[0].y : b[0].y;
-            n.b[0].z = a.b[0].z > b[0].z ? a.b[0].z : b[0].z;
-            n.b[1].x = a.b[1].x < b[1].x ? a.b[1].x : b[1].x;
-            n.b[1].y = a.b[1].y < b[1].y ? a.b[1].y : b[1].y;
-            n.b[1].z = a.b[1].z < b[1].z ? a.b[1].z : b[1].z;
+            n.b0.x = a.b0.x > b0.x ? a.b0.x : b0.x;
+            n.b0.y = a.b0.y > b0.y ? a.b0.y : b0.y;
+            n.b0.z = a.b0.z > b0.z ? a.b0.z : b0.z;
+            n.b1.x = a.b1.x < b1.x ? a.b1.x : b1.x;
+            n.b1.y = a.b1.y < b1.y ? a.b1.y : b1.y;
+            n.b1.z = a.b1.z < b1.z ? a.b1.z : b1.z;
             return n;
         }
-        public Bounds IntersectSelf(Bounds a)              // intersect this bounds with the given bounds
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Bounds IntersectSelf(in Bounds a)              // intersect this bounds with the given bounds
         {
-            if (a.b[0].x > b[0].x) b[0].x = a.b[0].x;
-            if (a.b[0].y > b[0].y) b[0].y = a.b[0].y;
-            if (a.b[0].z > b[0].z) b[0].z = a.b[0].z;
-            if (a.b[1].x < b[1].x) b[1].x = a.b[1].x;
-            if (a.b[1].y < b[1].y) b[1].y = a.b[1].y;
-            if (a.b[1].z < b[1].z) b[1].z = a.b[1].z;
+            if (a.b0.x > b0.x) b0.x = a.b0.x;
+            if (a.b0.y > b0.y) b0.y = a.b0.y;
+            if (a.b0.z > b0.z) b0.z = a.b0.z;
+            if (a.b1.x < b1.x) b1.x = a.b1.x;
+            if (a.b1.y < b1.y) b1.y = a.b1.y;
+            if (a.b1.z < b1.z) b1.z = a.b1.z;
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Bounds Expand(float d)                  // return bounds expanded in all directions with the given value
-            => new(
-            new Vector3(b[0].x - d, b[0].y - d, b[0].z - d),
-            new Vector3(b[1].x + d, b[1].y + d, b[1].z + d));
+        => new(
+        new Vector3(b0.x - d, b0.y - d, b0.z - d),
+        new Vector3(b1.x + d, b1.y + d, b1.z + d));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Bounds ExpandSelf(float d)                  // expand bounds in all directions with the given value
         {
-            b[0].x -= d; b[0].y -= d; b[0].z -= d;
-            b[1].x += d; b[1].y += d; b[1].z += d;
+            b0.x -= d; b0.y -= d; b0.z -= d;
+            b1.x += d; b1.y += d; b1.z += d;
             return this;
         }
 
-        public Bounds Translate(Vector3 translation)   // return translated bounds
-            => new(b[0] + translation, b[1] + translation);
-        public Bounds TranslateSelf(Vector3 translation)       // translate this bounds
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Bounds Translate(in Vector3 translation)   // return translated bounds
+        => new(b0 + translation, b1 + translation);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Bounds TranslateSelf(in Vector3 translation)       // translate this bounds
         {
-            b[0] += translation;
-            b[1] += translation;
+            b0 += translation;
+            b1 += translation;
             return this;
         }
 
-        public Bounds Rotate(Matrix3x3 rotation)           // return rotated bounds
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Bounds Rotate(in Matrix3x3 rotation)           // return rotated bounds
         {
             Bounds bounds = new();
             bounds.FromTransformedBounds(this, Vector3.origin, rotation);
             return bounds;
         }
-        public Bounds RotateSelf(Matrix3x3 rotation)           // rotate this bounds
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Bounds RotateSelf(in Matrix3x3 rotation)           // rotate this bounds
         {
             FromTransformedBounds(this, Vector3.origin, rotation);
             return this;
         }
 
-        public float PlaneDistance(Plane plane)
+        public float PlaneDistance(in Plane plane)
         {
-            var center = (b[0] + b[1]) * 0.5f;
+            var center = (b0 + b1) * 0.5f;
 
             var pn = plane.Normal;
             var d1 = plane.Distance(center);
             var d2 =
-                MathX.Fabs((b[1].x - center.x) * pn.x) +
-                MathX.Fabs((b[1].y - center.y) * pn.y) +
-                MathX.Fabs((b[1].z - center.z) * pn.z); //: opt
+                MathX.Fabs((b1.x - center.x) * pn.x) +
+                MathX.Fabs((b1.y - center.y) * pn.y) +
+                MathX.Fabs((b1.z - center.z) * pn.z); //: opt
 
             if (d1 - d2 > 0f) return d1 - d2;
             if (d1 + d2 < 0f) return d1 + d2;
             return 0f;
         }
 
-        public PLANESIDE PlaneSide(Plane plane, float epsilon = Plane.ON_EPSILON)
+        public PLANESIDE PlaneSide(in Plane plane, float epsilon = Plane.ON_EPSILON)
         {
-            var center = (b[0] + b[1]) * 0.5f;
+            var center = (b0 + b1) * 0.5f;
 
             var pn = plane.Normal;
             var d1 = plane.Distance(center);
             var d2 =
-                MathX.Fabs((b[1].x - center.x) * pn[0]) +
-                MathX.Fabs((b[1].y - center.y) * pn[1]) +
-                MathX.Fabs((b[1].z - center.z) * pn[2]);
+                MathX.Fabs((b1.x - center.x) * pn[0]) +
+                MathX.Fabs((b1.y - center.y) * pn[1]) +
+                MathX.Fabs((b1.z - center.z) * pn[2]);
 
             if (d1 - d2 > epsilon) return PLANESIDE.FRONT;
             if (d1 + d2 < -epsilon) return PLANESIDE.BACK;
             return PLANESIDE.CROSS;
         }
 
-        public bool ContainsPoint(Vector3 p)           // includes touching
-            =>
-            p.x >= b[0].x && p.y >= b[0].y && p.z >= b[0].z &&
-            p.x <= b[1].x && p.y <= b[1].y && p.z <= b[1].z; //: opt
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool ContainsPoint(in Vector3 p)           // includes touching
+        =>
+        p.x >= b0.x && p.y >= b0.y && p.z >= b0.z &&
+        p.x <= b1.x && p.y <= b1.y && p.z <= b1.z; //: opt
 
-        public bool IntersectsBounds(Bounds a) // includes touching
-            =>
-            a.b[1].x >= b[0].x && a.b[1].y >= b[0].y && a.b[1].z >= b[0].z &&
-            a.b[0].x <= b[1].x && a.b[0].y <= b[1].y && a.b[0].z <= b[1].z; //: opt
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IntersectsBounds(in Bounds a) // includes touching
+        =>
+        a.b1.x >= b0.x && a.b1.y >= b0.y && a.b1.z >= b0.z &&
+        a.b0.x <= b1.x && a.b0.y <= b1.y && a.b0.z <= b1.z; //: opt
 
         // Returns true if the line intersects the bounds between the start and end point.
-        public bool LineIntersection(Vector3 start, Vector3 end)
+        public bool LineIntersection(in Vector3 start, in Vector3 end)
         {
-            var center = (b[0] + b[1]) * 0.5f;
-            var extents = b[1] - center;
+            var center = (b0 + b1) * 0.5f;
+            var extents = b1 - center;
             var lineDir = 0.5f * (end - start);
             var lineCenter = start + lineDir;
             var dir = lineCenter - center;
@@ -247,7 +286,7 @@ namespace System.NumericsX
             var ld_y = MathX.Fabs(lineDir.y); if (MathX.Fabs(dir.y) > extents.y + ld_y) return false;
             var ld_z = MathX.Fabs(lineDir.z); if (MathX.Fabs(dir.z) > extents.z + ld_z) return false;
 
-            var cross = lineDir.Cross(ref dir);
+            var cross = lineDir.Cross(dir);
             if (MathX.Fabs(cross.x) > extents.y * ld_z + extents.z * ld_y) return false;
             if (MathX.Fabs(cross.y) > extents.x * ld_z + extents.z * ld_x) return false;
             if (MathX.Fabs(cross.z) > extents.x * ld_y + extents.y * ld_x) return false;
@@ -258,14 +297,14 @@ namespace System.NumericsX
         // The ray can intersect the bounds in both directions from the start point.
         // If start is inside the bounds it is considered an intersection with scale = 0
         // intersection point is start + dir * scale
-        public bool RayIntersection(Vector3 start, Vector3 dir, ref float scale)
+        public bool RayIntersection(in Vector3 start, in Vector3 dir, ref float scale)
         {
             var ax0 = -1;
             int inside = 0, side;
             for (var i = 0; i < 3; i++)
             {
-                if (start[i] < b[0][i]) side = 0;
-                else if (start[i] > b[1][i]) side = 1;
+                if (start[i] < b0[i]) side = 0;
+                else if (start[i] > b1[i]) side = 1;
                 else
                 {
                     inside++;
@@ -273,7 +312,7 @@ namespace System.NumericsX
                 }
                 if (dir[i] == 0f)
                     continue;
-                var f = start[i] - b[side][i];
+                var f = start[i] - (side == 0 ? b0[i] : b1[i]);
                 if (ax0 < 0 || MathX.Fabs(f) > MathX.Fabs(scale * dir[i]))
                 {
                     scale = -(f / dir[i]);
@@ -294,12 +333,12 @@ namespace System.NumericsX
             hit[ax1] = start[ax1] + scale * dir[ax1];
             hit[ax2] = start[ax2] + scale * dir[ax2];
             return
-                hit[ax1] >= b[0][ax1] && hit[ax1] <= b[1][ax1] &&
-                hit[ax2] >= b[0][ax2] && hit[ax2] <= b[1][ax2];
+                hit[ax1] >= b0[ax1] && hit[ax1] <= b1[ax1] &&
+                hit[ax2] >= b0[ax2] && hit[ax2] <= b1[ax2];
         }
 
         // most tight bounds for the given transformed bounds
-        public void FromTransformedBounds(Bounds bounds, Vector3 origin, Matrix3x3 axis)
+        public void FromTransformedBounds(in Bounds bounds, in Vector3 origin, in Matrix3x3 axis)
         {
             var center = (bounds[0] + bounds[1]) * 0.5f;
             var extents = bounds[1] - center;
@@ -318,55 +357,55 @@ namespace System.NumericsX
             }; //: unroll
 
             center = origin + center * axis;
-            b[0] = center - rotatedExtents;
-            b[1] = center + rotatedExtents;
+            b0 = center - rotatedExtents;
+            b1 = center + rotatedExtents;
         }
 
         // most tight bounds for a point set
         public unsafe void FromPoints(Vector3[] points, int numPoints)
         {
-            fixed (Vector3* pointsF = points)
-                ISimd.Processor.MinMax(out b[0], out b[1], pointsF, numPoints);
+            fixed (Vector3* _ = points)
+                ISimd.Processor.MinMax(out b0, out b1, _, numPoints);
         }
 
         // Most tight bounds for the translational movement of the given point.
         public void FromPointTranslation(Vector3 point, Vector3 translation)
         {
-            if (translation.x < 0f) { b[0].x = point.x + translation.x; b[1].x = point.x; }
-            else { b[0].x = point.y; b[1].x = point.x + translation.x; } //: unroll
-            if (translation.y < 0f) { b[0].y = point.y + translation.y; b[1].y = point.y; }
-            else { b[0].y = point.y; b[1].y = point.y + translation.y; } //: unroll
-            if (translation.z < 0f) { b[0].z = point.z + translation.z; b[1].z = point.z; }
-            else { b[0].z = point.z; b[1].z = point.z + translation.z; } //: unroll
+            if (translation.x < 0f) { b0.x = point.x + translation.x; b1.x = point.x; }
+            else { b0.x = point.y; b1.x = point.x + translation.x; } //: unroll
+            if (translation.y < 0f) { b0.y = point.y + translation.y; b1.y = point.y; }
+            else { b0.y = point.y; b1.y = point.y + translation.y; } //: unroll
+            if (translation.z < 0f) { b0.z = point.z + translation.z; b1.z = point.z; }
+            else { b0.z = point.z; b1.z = point.z + translation.z; } //: unroll
         }
 
         // Most tight bounds for the translational movement of the given bounds.
-        public void FromBoundsTranslation(Bounds bounds, Vector3 origin, Matrix3x3 axis, Vector3 translation)
+        public void FromBoundsTranslation(in Bounds bounds, in Vector3 origin, in Matrix3x3 axis, in Vector3 translation)
         {
             if (axis.IsRotated())
                 FromTransformedBounds(bounds, origin, axis);
             else
             {
-                b[0] = bounds[0] + origin;
-                b[1] = bounds[1] + origin;
+                b0 = bounds[0] + origin;
+                b1 = bounds[1] + origin;
             }
-            if (translation.x < 0f) b[0].x += translation.x;
-            else b[1].x += translation.x; //: unroll
-            if (translation.y < 0f) b[0].y += translation.y;
-            else b[1].y += translation.y; //: unroll
-            if (translation.z < 0f) b[0].z += translation.z;
-            else b[1].z += translation.z; //: unroll
+            if (translation.x < 0f) b0.x += translation.x;
+            else b1.x += translation.x; //: unroll
+            if (translation.y < 0f) b0.y += translation.y;
+            else b1.y += translation.y; //: unroll
+            if (translation.z < 0f) b0.z += translation.z;
+            else b1.z += translation.z; //: unroll
         }
 
         // only for rotations < 180 degrees
-        Bounds BoundsForPointRotation(Vector3 start, Rotation rotation)
+        Bounds BoundsForPointRotation(in Vector3 start, in Rotation rotation)
         {
             var end = start * rotation;
             var axis = rotation.Vec;
             var origin = rotation.Origin + axis * (axis * (start - rotation.Origin));
             var radiusSqr = (start - origin).LengthSqr;
-            var v1 = (start - origin).Cross(ref axis);
-            var v2 = (end - origin).Cross(ref axis);
+            var v1 = (start - origin).Cross(axis);
+            var v2 = (end - origin).Cross(axis);
 
             Bounds bounds = new();
             for (var i = 0; i < 3; i++)
@@ -402,7 +441,7 @@ namespace System.NumericsX
         }
 
         // Most tight bounds for the rotational movement of the given point.
-        public void FromPointRotation(Vector3 point, Rotation rotation)
+        public void FromPointRotation(in Vector3 point, in Rotation rotation)
         {
             if (MathX.Fabs(rotation.Angle) < 180f)
                 this = BoundsForPointRotation(point, rotation);
@@ -410,13 +449,13 @@ namespace System.NumericsX
             {
                 var radius = (point - rotation.Origin).Length;
                 // FIXME: these bounds are usually way larger
-                b[0].Set(-radius, -radius, -radius);
-                b[1].Set(radius, radius, radius);
+                b0.Set(-radius, -radius, -radius);
+                b1.Set(radius, radius, radius);
             }
         }
 
         // Most tight bounds for the rotational movement of the given bounds.
-        public void FromBoundsRotation(Bounds bounds, Vector3 origin, Matrix3x3 axis, Rotation rotation)
+        public void FromBoundsRotation(in Bounds bounds, in Vector3 origin, in Matrix3x3 axis, in Rotation rotation)
         {
             if (MathX.Fabs(rotation.Angle) < 180f)
             {
@@ -437,8 +476,8 @@ namespace System.NumericsX
                 var point = (bounds[1] - bounds[0]) * 0.5f;
                 var radius = (bounds[1] - point).Length + (point - rotation.Origin).Length;
                 // FIXME: these bounds are usually way larger
-                b[0].Set(-radius, -radius, -radius);
-                b[1].Set(radius, radius, radius);
+                b0.Set(-radius, -radius, -radius);
+                b1.Set(radius, radius, radius);
             }
         }
 
@@ -446,24 +485,26 @@ namespace System.NumericsX
         {
             for (var i = 0; i < 8; i++)
             {
-                points[i].x = b[(i ^ (i >> 1)) & 1].x;
-                points[i].y = b[(i >> 1) & 1].y;
-                points[i].z = b[(i >> 2) & 1].z;
+                points[i].x = ((i ^ (i >> 1)) & 1) == 0 ? b0.x : b1.x;
+                points[i].y = ((i >> 1) & 1) == 0 ? b0.y : b1.y;
+                points[i].z = ((i >> 2) & 1) == 0 ? b0.z : b1.z;
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Sphere ToSphere()
         {
             Sphere sphere = new();
-            sphere.Origin = (b[0] + b[1]) * 0.5f;
-            sphere.Radius = (b[1] - sphere.Origin).Length;
+            sphere.Origin = (b0 + b1) * 0.5f;
+            sphere.Radius = (b1 - sphere.Origin).Length;
             return sphere;
         }
 
-        public void AxisProjection(Vector3 dir, out float min, out float max)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AxisProjection(in Vector3 dir, out float min, out float max)
         {
-            var center = (b[0] + b[1]) * 0.5f;
-            var extents = b[1] - center;
+            var center = (b0 + b1) * 0.5f;
+            var extents = b1 - center;
 
             var d1 = dir * center;
             var d2 =
@@ -474,11 +515,11 @@ namespace System.NumericsX
             min = d1 - d2;
             max = d1 + d2;
         }
-
-        public void AxisProjection(Vector3 origin, Matrix3x3 axis, Vector3 dir, out float min, out float max)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AxisProjection(in Vector3 origin, in Matrix3x3 axis, in Vector3 dir, out float min, out float max)
         {
-            var center = (b[0] + b[1]) * 0.5f;
-            var extents = b[1] - center;
+            var center = (b0 + b1) * 0.5f;
+            var extents = b1 - center;
             center = origin + center * axis;
 
             var d1 = dir * center;
@@ -490,7 +531,5 @@ namespace System.NumericsX
             min = d1 - d2;
             max = d1 + d2;
         }
-
-        public static readonly Bounds zero = new(Vector3.origin, Vector3.origin);
     }
 }
