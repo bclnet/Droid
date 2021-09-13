@@ -429,7 +429,7 @@ namespace Gengine.Sound
 
         // direct mixing called from the sound driver thread for OSes that support it
         // Mac OSX version. The system uses it's own thread and an IOProc callback
-        public virtual int AsyncMix(int soundTime, float[] mixBuffer)
+        public unsafe virtual int AsyncMix(int soundTime, float* mixBuffer)
         {
             if (!isInitialized || shutdown)
                 return 0;
@@ -684,7 +684,7 @@ namespace Gengine.Sound
         public int MillisecondsToSamples(int ms)
             => ms * (PRIMARYFREQ / 1000);
 
-        public unsafe void DoEnviroSuit(float[] samples, int numSamples, int numSpeakers)
+        public unsafe void DoEnviroSuit(float* samples, int numSamples, int numSpeakers)
         {
             // TODO port to OpenAL
             Debug.Assert(false);

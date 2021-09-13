@@ -1124,7 +1124,7 @@ namespace Gengine.Sound
 
         // Adds the contribution of a single sound channel to finalMixBuffer this is called from the async thread
         // Mixes MIXBUFFER_SAMPLES samples starting at current44kHz sample time into finalMixBuffer
-        public unsafe void AddChannelContribution(SoundEmitterLocal sound, SoundChannel chan, int current44kHz, int numSpeakers, float[] finalMixBuffer)
+        public unsafe void AddChannelContribution(SoundEmitterLocal sound, SoundChannel chan, int current44kHz, int numSpeakers, float* finalMixBuffer)
         {
             int j; float volume;
 
@@ -1437,7 +1437,7 @@ namespace Gengine.Sound
         // of 2 or 6 floats depending on numSpeakers.
         // 
         // this is normally called from the sound thread, but also from the main thread for AVIdemo writing
-        public void MixLoop(int current44kHz, int numSpeakers, float[] finalMixBuffer)
+        public unsafe void MixLoop(int current44kHz, int numSpeakers, float* finalMixBuffer)
         {
             int i, j; SoundEmitterLocal sound;
 
@@ -1559,9 +1559,9 @@ namespace Gengine.Sound
 
             MixLoop(lastAVI44kHz, numSpeakers, mix_p);
 
+            var outD = stackalloc short[ISimd.MIXBUFFER_SAMPLES];
             for (var i = 0; i < numSpeakers; i++)
             {
-                var outD = new short[ISimd.MIXBUFFER_SAMPLES];
                 for (var j = 0; j < ISimd.MIXBUFFER_SAMPLES; j++)
                 {
                     var s = mix_p[j * numSpeakers + i];
@@ -1570,7 +1570,7 @@ namespace Gengine.Sound
                         : (short)MathX.FtoiFast(s);
                 }
                 // write to file
-                fpa[i].Write(outD, ISimd.MIXBUFFER_SAMPLES * sizeof(short));
+                fpa[i].Write((byte*)outD, ISimd.MIXBUFFER_SAMPLES * sizeof(short));
             }
 
             lastAVI44kHz += ISimd.MIXBUFFER_SAMPLES;

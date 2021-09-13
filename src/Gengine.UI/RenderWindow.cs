@@ -108,8 +108,8 @@ namespace Gengine.UI
                 var spawnArgs = new Dictionary<string, string> {
                     {"classname", "light"},
                     {"name", "light_1"},
-                    {"origin", lightOrigin.ToVec3.ToString()},
-                    {"_color", lightColor.ToVec3.ToString()},
+                    {"origin", lightOrigin.ToVec3().ToString()},
+                    {"_color", lightColor.ToVec3().ToString()},
                 };
                 gameEdit.ParseSpawnArgsToRenderLight(spawnArgs, rLight);
                 lightDef = world.AddLightDef(rLight);
@@ -123,8 +123,8 @@ namespace Gengine.UI
                 gameEdit.ParseSpawnArgsToRenderEntity(spawnArgs, worldEntity);
                 if (worldEntity.hModel != null)
                 {
-                    var v = modelRotate.ToVec3;
-                    worldEntity.axis = v.ToMatrix3x3();
+                    var v = modelRotate.ToVec3();
+                    worldEntity.axis = v.ToMat3();
                     worldEntity.shaderParms[0] = 1f;
                     worldEntity.shaderParms[1] = 1f;
                     worldEntity.shaderParms[2] = 1f;
@@ -137,7 +137,7 @@ namespace Gengine.UI
 
         void Render(int time)
         {
-            rLight.origin = lightOrigin.ToVec3;
+            rLight.origin = lightOrigin.ToVec3();
             rLight.shaderParms[IRenderWorld.SHADERPARM_RED] = lightColor.x;
             rLight.shaderParms[IRenderWorld.SHADERPARM_GREEN] = lightColor.y;
             rLight.shaderParms[IRenderWorld.SHADERPARM_BLUE] = lightColor.z;
@@ -163,7 +163,7 @@ namespace Gengine.UI
             Render(time);
 
             refdef.memset();
-            refdef.vieworg = viewOffset.ToVec3; //: refdef.vieworg.Set(-128f, 0f, 0f);
+            refdef.vieworg = viewOffset.ToVec3(); //: refdef.vieworg.Set(-128f, 0f, 0f);
 
             refdef.viewaxis.Identity();
             refdef.shaderParms[0] = 1;

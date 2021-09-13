@@ -217,6 +217,20 @@ namespace System.NumericsX
 #else
             => BinaryPrimitives.ReverseEndianness(l);
 #endif
+
+        public static uint LittleUInt(uint l)
+#if !BIG_ENDIAN
+            => l;
+#else
+            => BinaryPrimitives.ReverseEndianness(l);
+#endif
+        public static void LittleUInt(ref uint l)
+#if !BIG_ENDIAN
+        { }
+#else
+            => BinaryPrimitives.ReverseEndianness(l);
+#endif
+
         public static float BigFloat(float l)
 #if !BIG_ENDIAN
             => FloatSwap(l);

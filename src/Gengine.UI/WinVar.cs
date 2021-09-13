@@ -593,7 +593,8 @@ namespace Gengine.UI
             guiDict?.SetVec4(Name, data);
         }
 
-        public Vector3 ToVec3 => data.ToVec3();
+        public ref Vector3 ToVec3()
+            => ref data.ToVec3();
 
         public override void WriteToSaveGame(VFile savefile)
         {

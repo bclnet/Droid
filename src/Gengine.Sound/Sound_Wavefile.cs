@@ -7,7 +7,7 @@ using static System.NumericsX.Platform;
 
 namespace Gengine.Sound
 {
-    public partial class WaveFile
+    public unsafe partial class WaveFile
     {
         WaveformatExtensible mpwfx;        // Pointer to waveformatex structure
         VFile mhmmio;         // I/O handle for the WAVE
@@ -20,7 +20,7 @@ namespace Gengine.Sound
 
         bool mbIsReadingFromMemory;
         short[] mpbData;
-        short[] mpbDataCur;
+        int mpbDataCur;
         int mulDataSize;
 
         object ogg;          // only !null when !s_realTimeDecoding
@@ -79,8 +79,8 @@ namespace Gengine.Sound
             if (ResetFile() != 0) { Close(); return -1; }
 
             // After the reset, the size of the wav file is mck.cksize so store it now
-            mdwSize = mck.cksize / sizeof(short);
-            mMemSize = mck.cksize;
+            mdwSize = (int)(mck.cksize / sizeof(short));
+            mMemSize = (int)mck.cksize;
 
             if (mck.cksize != 0xffffffff)
             {
@@ -115,7 +115,7 @@ namespace Gengine.Sound
             mhmmio.Read((byte*)&mckRiff, 12);
             Debug.Assert(!isOgg);
             mckRiff.ckid = LittleInt(mckRiff.ckid);
-            mckRiff.cksize = LittleInt(mckRiff.cksize);
+            mckRiff.cksize = LittleUInt(mckRiff.cksize);
             mckRiff.fccType = LittleInt(mckRiff.fccType);
             mckRiff.dwDataOffset = 12;
 
@@ -127,12 +127,12 @@ namespace Gengine.Sound
             ckIn.dwDataOffset = 12;
             do
             {
-                if (mhmmio.Read(&ckIn, 8) != 8)
+                if (mhmmio.Read((byte*)&ckIn, 8) != 8)
                     return -1;
                 Debug.Assert(!isOgg);
                 ckIn.ckid = LittleInt(ckIn.ckid);
-                ckIn.cksize = LittleInt(ckIn.cksize);
-                ckIn.dwDataOffset += ckIn.cksize - 8;
+                ckIn.cksize = LittleUInt(ckIn.cksize);
+                ckIn.dwDataOffset += (int)(ckIn.cksize - 8);
             } while (ckIn.ckid != SoundSystemLocal.mmioFOURCC('f', 'm', 't', ' '));
 
             // Expect the 'fmt' chunk to be at least as large as <PCMWAVEFORMAT>; if there are extra parameters at the end, we'll ignore them
@@ -206,7 +206,7 @@ namespace Gengine.Sound
                 uint mck_cksize;
                 mhmmio.Read((byte*)&mck_cksize, 4);
                 Debug.Assert(!isOgg);
-                mck.cksize = LittleInt(mck_cksize);
+                mck.cksize = LittleUInt(mck_cksize);
                 mseekBase = mhmmio.Tell;
             }
 
