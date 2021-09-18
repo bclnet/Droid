@@ -7,7 +7,7 @@ using static System.NumericsX.Platform;
 namespace System.NumericsX
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct Matrix2x2
+    public unsafe struct Matrix2x2
     {
         public static Matrix2x2 zero = new(new Vector2(0f, 0f), new Vector2(0f, 0f));
         public static Matrix2x2 identity = new(new Vector2(1f, 0f), new Vector2(0f, 1f));
@@ -31,14 +31,14 @@ namespace System.NumericsX
             mat1.x = yx; mat1.y = yy;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe Matrix2x2(float[] src)
+        public Matrix2x2(float[] src)
         {
             this = default;
             fixed (void* mat_ = &mat0, src_ = src)
                 Unsafe.CopyBlock(mat_, src_, 2 * 2 * sizeof(float));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe Matrix2x2(float[,] src)
+        public Matrix2x2(float[,] src)
         {
             this = default;
             fixed (void* mat_ = &mat0, src_ = &src[0, 0])
@@ -47,7 +47,7 @@ namespace System.NumericsX
             //mat1 = new Vector2(src[1, 0], src[1, 1]);
         }
 
-        public unsafe ref Vector2 this[int index]
+        public ref Vector2 this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -221,10 +221,10 @@ namespace System.NumericsX
         public const int Dimension = 4;
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //    => mat0.ToFloatPtr(callback);
 
-        public unsafe string ToString(int precision = 2)
+        public string ToString(int precision = 2)
         {
             fixed (float* _ = &mat0.x)
                 return FloatArrayToString(_, Dimension, precision);
@@ -232,7 +232,7 @@ namespace System.NumericsX
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct Matrix3x3
+    public unsafe struct Matrix3x3
     {
         public const int SizeOf = 3 * 3 * sizeof(float);
         public static Matrix3x3 zero = new(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0));
@@ -260,14 +260,14 @@ namespace System.NumericsX
             mat2.x = zx; mat2.y = zy; mat2.z = zz;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe Matrix3x3(float[] src)
+        public Matrix3x3(float[] src)
         {
             this = default;
             fixed (void* mat_ = &mat0, src_ = src)
                 Unsafe.CopyBlock(mat_, src_, 2U * 2U * sizeof(float));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe Matrix3x3(float[,] src)
+        public Matrix3x3(float[,] src)
         {
             this = default;
             fixed (void* mat_ = &mat0, src_ = &src[0, 0])
@@ -277,7 +277,7 @@ namespace System.NumericsX
             //mat2 = new Vector3(src[2, 0], src[2, 1], src[2, 2]);
         }
 
-        public unsafe ref Vector3 this[int index]
+        public ref Vector3 this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -306,7 +306,7 @@ namespace System.NumericsX
             _.mat0.y * vec.x + _.mat1.y * vec.y + _.mat2.y * vec.z,
             _.mat0.z * vec.x + _.mat1.z * vec.y + _.mat2.z * vec.z);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe Matrix3x3 operator *(in Matrix3x3 _, in Matrix3x3 a)
+        public static Matrix3x3 operator *(in Matrix3x3 _, in Matrix3x3 a)
         {
             Matrix3x3 dst = default;
             void* dst_ = &dst.mat0;
@@ -370,7 +370,7 @@ namespace System.NumericsX
             => mat0.GetHashCode();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void Zero()
+        public void Zero()
         {
             fixed (void* mat_ = &mat0)
                 Unsafe.InitBlock(mat_, 0, 3U * (uint)sizeof(Vector3));
@@ -750,10 +750,10 @@ namespace System.NumericsX
         }
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //    => mat0.ToFloatPtr(callback);
 
-        public unsafe string ToString(int precision = 2)
+        public string ToString(int precision = 2)
         {
             fixed (float* _ = &mat0.x)
                 return FloatArrayToString(_, Dimension, precision);
@@ -780,7 +780,7 @@ namespace System.NumericsX
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct Matrix4x4
+    public unsafe struct Matrix4x4
     {
         public static Matrix4x4 zero = new(new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0));
         public static Matrix4x4 identity = new(new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), new Vector4(0, 0, 1, 0), new Vector4(0, 0, 0, 1));
@@ -834,14 +834,14 @@ namespace System.NumericsX
             mat3.w = 1f;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe Matrix4x4(float[] src)
+        public Matrix4x4(float[] src)
         {
             this = default;
             fixed (void* mat_ = &mat0, src_ = src)
                 Unsafe.CopyBlock(mat_, src_, 4U * 4U * sizeof(float));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe Matrix4x4(float[,] src)
+        public Matrix4x4(float[,] src)
         {
             this = default;
             fixed (void* mat_ = &mat0, src_ = &src[0, 0])
@@ -852,7 +852,7 @@ namespace System.NumericsX
             //mat3 = new Vector4(src[3, 0], src[3, 1], src[3, 2], src[3, 3]);
         }
 
-        public unsafe ref Vector4 this[int index]
+        public ref Vector4 this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -897,7 +897,7 @@ namespace System.NumericsX
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe Matrix4x4 operator *(in Matrix4x4 _, in Matrix4x4 a)
+        public static Matrix4x4 operator *(in Matrix4x4 _, in Matrix4x4 a)
         {
             Matrix4x4 dst = default;
             void* dst_ = &dst.mat0;
@@ -946,7 +946,7 @@ namespace System.NumericsX
             => mat * vec;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe bool Compare(in Matrix4x4 a)                       // exact compare, no epsilon
+        public bool Compare(in Matrix4x4 a)                       // exact compare, no epsilon
         {
             fixed (void* mat_ = &mat0, a_ = &a.mat0)
             {
@@ -959,7 +959,7 @@ namespace System.NumericsX
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe bool Compare(in Matrix4x4 a, float epsilon)  // compare with epsilon
+        public bool Compare(in Matrix4x4 a, float epsilon)  // compare with epsilon
         {
             fixed (void* mat_ = &mat0, a_ = &a.mat0)
             {
@@ -983,7 +983,7 @@ namespace System.NumericsX
             => mat0.GetHashCode();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void Zero()
+        public void Zero()
         {
             fixed (void* mat_ = &mat0)
                 Unsafe.InitBlock(mat_, 0, 4U * (uint)sizeof(Vector4));
@@ -1162,7 +1162,7 @@ namespace System.NumericsX
             Debug.Assert(r);
             return invMat;
         }
-        public unsafe bool InverseFastSelf()    // returns false if determinant is zero
+        public bool InverseFastSelf()    // returns false if determinant is zero
         {
 #if false
             // 84+4+16 = 104 multiplications
@@ -1317,10 +1317,10 @@ namespace System.NumericsX
         public const int Dimension = 16;
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //    => mat0.ToFloatPtr(callback);
 
-        public unsafe string ToString(int precision = 2)
+        public string ToString(int precision = 2)
         {
             fixed (float* _ = &mat0.x)
                 return FloatArrayToString(_, Dimension, precision);
@@ -1328,7 +1328,7 @@ namespace System.NumericsX
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct Matrix5x5
+    public unsafe struct Matrix5x5
     {
         public static Matrix5x5 zero = new(new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0), new Vector5(0, 0, 0, 0, 0));
         public static Matrix5x5 identity = new(new Vector5(1, 0, 0, 0, 0), new Vector5(0, 1, 0, 0, 0), new Vector5(0, 0, 1, 0, 0), new Vector5(0, 0, 0, 1, 0), new Vector5(0, 0, 0, 0, 1));
@@ -1352,14 +1352,14 @@ namespace System.NumericsX
             mat4 = v4;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe Matrix5x5(float[] src)
+        public Matrix5x5(float[] src)
         {
             this = default;
             fixed (void* mat_ = &mat0, src_ = src)
                 Unsafe.CopyBlock(mat_, src_, 5U * 5U * sizeof(float));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe Matrix5x5(float[,] src)
+        public Matrix5x5(float[,] src)
         {
             this = default;
             fixed (void* mat_ = &mat0, src_ = &src[0, 0])
@@ -1371,7 +1371,7 @@ namespace System.NumericsX
             //mat4 = new Vector5(src[4, 0], src[4, 1], src[4, 2], src[4, 3], src[4, 4]);
         }
 
-        public unsafe ref Vector5 this[int index]
+        public ref Vector5 this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -1398,7 +1398,7 @@ namespace System.NumericsX
             _.mat3.x * vec.x + _.mat3.y * vec.y + _.mat3.z * vec.z + _.mat3.s * vec.s + _.mat3.t * vec.t,
             _.mat4.x * vec.x + _.mat4.y * vec.y + _.mat4.z * vec.z + _.mat4.s * vec.s + _.mat4.t * vec.t);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe Matrix5x5 operator *(in Matrix5x5 _, in Matrix5x5 a)
+        public static Matrix5x5 operator *(in Matrix5x5 _, in Matrix5x5 a)
         {
             Matrix5x5 dst = default;
             void* dst_ = &dst.mat0;
@@ -1447,7 +1447,7 @@ namespace System.NumericsX
             => mat * vec;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe bool Compare(in Matrix5x5 a)                       // exact compare, no epsilon
+        public bool Compare(in Matrix5x5 a)                       // exact compare, no epsilon
         {
             fixed (void* mat_ = &mat0, a_ = &a.mat0)
             {
@@ -1460,7 +1460,7 @@ namespace System.NumericsX
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe bool Compare(in Matrix5x5 a, float epsilon)  // compare with epsilon
+        public bool Compare(in Matrix5x5 a, float epsilon)  // compare with epsilon
         {
             fixed (void* mat_ = &mat0, a_ = &a.mat0)
             {
@@ -1484,7 +1484,7 @@ namespace System.NumericsX
             => mat0.GetHashCode();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void Zero()
+        public void Zero()
         {
             fixed (void* mat_ = &mat0)
                 Unsafe.InitBlock(mat_, 0, 5U * (uint)sizeof(Vector5));
@@ -1726,7 +1726,7 @@ namespace System.NumericsX
             Debug.Assert(r);
             return invMat;
         }
-        public unsafe bool InverseFastSelf()    // returns false if determinant is zero
+        public bool InverseFastSelf()    // returns false if determinant is zero
         {
             // 86+30+6 = 122 multiplications
             //	  2*1  =   2 divisions
@@ -1836,10 +1836,10 @@ namespace System.NumericsX
         public const int Dimension = 25;
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //    => mat0.ToFloatPtr(callback);
 
-        public unsafe string ToString(int precision = 2)
+        public string ToString(int precision = 2)
         {
             fixed (float* _ = &mat0.x)
                 return FloatArrayToString(_, Dimension, precision);
@@ -1847,7 +1847,7 @@ namespace System.NumericsX
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct Matrix6x6
+    public unsafe struct Matrix6x6
     {
         public static Matrix6x6 zero = new(new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0), new Vector6(0, 0, 0, 0, 0, 0));
         public static Matrix6x6 identity = new(new Vector6(1, 0, 0, 0, 0, 0), new Vector6(0, 1, 0, 0, 0, 0), new Vector6(0, 0, 1, 0, 0, 0), new Vector6(0, 0, 0, 1, 0, 0), new Vector6(0, 0, 0, 0, 1, 0), new Vector6(0, 0, 0, 0, 0, 1));
@@ -1883,14 +1883,14 @@ namespace System.NumericsX
             mat5 = new Vector6(m2.mat2.x, m2.mat2.y, m2.mat2.z, m3.mat2.x, m3.mat2.y, m3.mat2.z);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe Matrix6x6(float[] src)
+        public Matrix6x6(float[] src)
         {
             this = default;
             fixed (void* mat_ = &mat0, src_ = src)
                 Unsafe.CopyBlock(mat_, src_, 6U * 6U * sizeof(float));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe Matrix6x6(float[,] src)
+        public Matrix6x6(float[,] src)
         {
             this = default;
             fixed (void* mat_ = &mat0, src_ = &src[0, 0])
@@ -1903,7 +1903,7 @@ namespace System.NumericsX
             //mat5 = new Vector6(src[5, 0], src[5, 1], src[5, 2], src[5, 3], src[5, 4], src[5, 5]);
         }
 
-        public unsafe ref Vector6 this[int index]
+        public ref Vector6 this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -1932,7 +1932,7 @@ namespace System.NumericsX
             _.mat4[0] * vec[0] + _.mat4[1] * vec[1] + _.mat4[2] * vec[2] + _.mat4[3] * vec[3] + _.mat4[4] * vec[4] + _.mat4[5] * vec[5],
             _.mat5[0] * vec[0] + _.mat5[1] * vec[1] + _.mat5[2] * vec[2] + _.mat5[3] * vec[3] + _.mat5[4] * vec[4] + _.mat5[5] * vec[5]);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe Matrix6x6 operator *(in Matrix6x6 _, in Matrix6x6 a)
+        public static Matrix6x6 operator *(in Matrix6x6 _, in Matrix6x6 a)
         {
             Matrix6x6 dst = default;
             void* dst_ = &dst.mat0;
@@ -1984,7 +1984,7 @@ namespace System.NumericsX
             => mat * vec;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe bool Compare(in Matrix6x6 a)                       // exact compare, no epsilon
+        public bool Compare(in Matrix6x6 a)                       // exact compare, no epsilon
         {
             fixed (void* mat_ = &mat0, a_ = &a.mat0)
             {
@@ -1997,7 +1997,7 @@ namespace System.NumericsX
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe bool Compare(in Matrix6x6 a, float epsilon)  // compare with epsilon
+        public bool Compare(in Matrix6x6 a, float epsilon)  // compare with epsilon
         {
             fixed (void* mat_ = &mat0, a_ = &a.mat0)
             {
@@ -2021,7 +2021,7 @@ namespace System.NumericsX
             => mat0.GetHashCode();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void Zero()
+        public void Zero()
         {
             fixed (void* mat_ = &mat0)
                 Unsafe.InitBlock(mat_, 0, 6U * (uint)sizeof(Vector6));
@@ -2465,7 +2465,7 @@ namespace System.NumericsX
             Debug.Assert(r);
             return invMat;
         }
-        public unsafe bool InverseFastSelf()    // returns false if determinant is zero
+        public bool InverseFastSelf()    // returns false if determinant is zero
         {
             // 6*27+2*30 = 222 multiplications
             //		2*1  =	 2 divisions
@@ -2617,10 +2617,10 @@ namespace System.NumericsX
         public const int Dimension = 36;
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //    => mat0.ToFloatPtr(callback);
 
-        public unsafe string ToString(int precision = 2)
+        public string ToString(int precision = 2)
         {
             fixed (float* _ = mat0.p)
                 return FloatArrayToString(_, Dimension, precision);
@@ -2628,7 +2628,7 @@ namespace System.NumericsX
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public partial struct MatrixX
+    public unsafe partial struct MatrixX
     {
         const int MATX_MAX_TEMP = 1024;
         static int MATX_QUAD(int x) => ((x) + 3) & ~3;
@@ -2648,7 +2648,7 @@ namespace System.NumericsX
         int alloced;              // floats allocated, if -1 then mat points to data set with SetData
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe MatrixX(in MatrixX a)
+        public MatrixX(in MatrixX a)
         {
             numRows = numColumns = alloced = 0;
             mat = null;
@@ -2677,7 +2677,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void Set(int rows, int columns, float[] src)
+        public void Set(int rows, int columns, float[] src)
         {
             SetSize(rows, columns);
             fixed (void* mat = this.mat, src_ = src)
@@ -2915,7 +2915,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void Zero()                                                   // clear matrix
+        public void Zero()                                                   // clear matrix
         {
 #if MATX_SIMD
             SIMDProcessor.Zero16(mat, numRows * numColumns);
@@ -2925,7 +2925,7 @@ namespace System.NumericsX
 #endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void Zero(int rows, int columns)                                   // set size and clear matrix
+        public void Zero(int rows, int columns)                                   // set size and clear matrix
         {
             SetSize(rows, columns);
 #if MATX_SIMD
@@ -2937,7 +2937,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void Identity()                                               // clear to identity matrix
+        public void Identity()                                               // clear to identity matrix
         {
             Debug.Assert(numRows == numColumns);
 #if MATX_SIMD
@@ -3009,7 +3009,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe MatrixX SwapRows(int r1, int r2)                                     // swap rows
+        public MatrixX SwapRows(int r1, int r2)                                     // swap rows
         {
             var ptr = stackalloc float[numColumns];
             fixed (float* mat = this.mat)
@@ -3022,7 +3022,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe MatrixX SwapColumns(int r1, int r2)                                  // swap columns
+        public MatrixX SwapColumns(int r1, int r2)                                  // swap columns
         {
             fixed (float* mat = this.mat)
                 for (var i = 0; i < numRows; i++)
@@ -3043,7 +3043,7 @@ namespace System.NumericsX
             return this;
         }
 
-        public unsafe MatrixX RemoveRow(int r)                                             // remove a row
+        public MatrixX RemoveRow(int r)                                             // remove a row
         {
             Debug.Assert(r < numRows);
 
@@ -3056,7 +3056,7 @@ namespace System.NumericsX
             return this;
         }
 
-        public unsafe MatrixX RemoveColumn(int r)                                          // remove a column
+        public MatrixX RemoveColumn(int r)                                          // remove a column
         {
             int i;
             Debug.Assert(r < numColumns);
@@ -3072,7 +3072,7 @@ namespace System.NumericsX
             }
         }
 
-        public unsafe MatrixX RemoveRowColumn(int r)                                       // remove a row and column
+        public MatrixX RemoveRowColumn(int r)                                       // remove a row and column
         {
             int i;
             Debug.Assert(r < numRows && r < numColumns);
@@ -3097,7 +3097,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ClearUpperTriangle()                                     // clear the upper triangle
+        public void ClearUpperTriangle()                                     // clear the upper triangle
         {
             Debug.Assert(numRows == numColumns);
 
@@ -3117,7 +3117,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void SquareSubMatrix(in MatrixX m, int size)                  // get square sub-matrix from 0,0 to size,size
+        public void SquareSubMatrix(in MatrixX m, int size)                  // get square sub-matrix from 0,0 to size,size
         {
             Debug.Assert(size <= m.numRows && size <= m.numColumns);
 
@@ -3222,7 +3222,7 @@ namespace System.NumericsX
         /// <returns>
         ///   <c>true</c> if the specified epsilon is orthogonal; otherwise, <c>false</c>.
         /// </returns>
-        public unsafe bool IsOrthogonal(float epsilon = EPSILON)
+        public bool IsOrthogonal(float epsilon = EPSILON)
         {
             if (!IsSquare())
                 return false;
@@ -3255,7 +3255,7 @@ namespace System.NumericsX
         /// <returns>
         ///   <c>true</c> if the specified epsilon is orthonormal; otherwise, <c>false</c>.
         /// </returns>
-        public unsafe bool IsOrthonormal(float epsilon = EPSILON)
+        public bool IsOrthonormal(float epsilon = EPSILON)
         {
             if (!IsSquare())
                 return false;
@@ -3499,7 +3499,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe float Determinant()                                     // returns determinant of matrix
+        public float Determinant()                                     // returns determinant of matrix
         {
             Debug.Assert(numRows == numColumns);
             if (numRows == 1)
@@ -3534,7 +3534,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe MatrixX Inverse()                                           // returns the inverse ( m * m.Inverse() = identity )
+        public MatrixX Inverse()                                           // returns the inverse ( m * m.Inverse() = identity )
         {
             MatrixX invMat = new();
             invMat.SetTempSize(numRows, numColumns);
@@ -3545,7 +3545,7 @@ namespace System.NumericsX
             return invMat;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe bool InverseSelf()                                            // returns false if determinant is zero
+        public bool InverseSelf()                                            // returns false if determinant is zero
         {
             Debug.Assert(numRows == numColumns);
             if (numRows == 1)
@@ -3568,7 +3568,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe MatrixX InverseFast()                                       // returns the inverse ( m * m.Inverse() = identity )
+        public MatrixX InverseFast()                                       // returns the inverse ( m * m.Inverse() = identity )
         {
             MatrixX invMat = new();
             invMat.SetTempSize(numRows, numColumns);
@@ -3579,7 +3579,7 @@ namespace System.NumericsX
             return invMat;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe bool InverseFastSelf()                                        // returns false if determinant is zero
+        public bool InverseFastSelf()                                        // returns false if determinant is zero
         {
             Debug.Assert(numRows == numColumns);
             if (numRows == 1)
@@ -3705,7 +3705,7 @@ namespace System.NumericsX
             return dst;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void Multiply(in VectorX dst, in VectorX vec)             // dst = this * vec
+        public void Multiply(in VectorX dst, in VectorX vec)             // dst = this * vec
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplyVecX(dst, *this, vec);
@@ -3727,7 +3727,7 @@ namespace System.NumericsX
 #endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void MultiplyAdd(in VectorX dst, in VectorX vec)          // dst += this * vec
+        public void MultiplyAdd(in VectorX dst, in VectorX vec)          // dst += this * vec
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplyAddVecX(dst, *this, vec);
@@ -3749,7 +3749,7 @@ namespace System.NumericsX
 #endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void MultiplySub(in VectorX dst, in VectorX vec)          // dst -= this * vec
+        public void MultiplySub(in VectorX dst, in VectorX vec)          // dst -= this * vec
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplySubVecX(dst, *this, vec);
@@ -3771,7 +3771,7 @@ namespace System.NumericsX
 #endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void TransposeMultiply(in VectorX dst, in VectorX vec)        // dst = this.Transpose() * vec
+        public void TransposeMultiply(in VectorX dst, in VectorX vec)        // dst = this.Transpose() * vec
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_TransposeMultiplyVecX(dst, *this, vec);
@@ -3795,7 +3795,7 @@ namespace System.NumericsX
 #endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void TransposeMultiplyAdd(in VectorX dst, in VectorX vec) // dst += this.Transpose() * vec
+        public void TransposeMultiplyAdd(in VectorX dst, in VectorX vec) // dst += this.Transpose() * vec
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_TransposeMultiplyAddVecX(dst, *this, vec);
@@ -3819,7 +3819,7 @@ namespace System.NumericsX
 #endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void TransposeMultiplySub(in VectorX dst, in VectorX vec) // dst -= this.Transpose() * vec
+        public void TransposeMultiplySub(in VectorX dst, in VectorX vec) // dst -= this.Transpose() * vec
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_TransposeMultiplySubVecX(dst, *this, vec);
@@ -3843,7 +3843,7 @@ namespace System.NumericsX
 #endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void Multiply(in MatrixX dst, in MatrixX a)                   // dst = this * a
+        public void Multiply(in MatrixX dst, in MatrixX a)                   // dst = this * a
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_MultiplyMatX(dst, *this, a);
@@ -3878,7 +3878,7 @@ namespace System.NumericsX
 #endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void TransposeMultiply(in MatrixX dst, in MatrixX a)      // dst = this.Transpose() * a
+        public void TransposeMultiply(in MatrixX dst, in MatrixX a)      // dst = this.Transpose() * a
         {
 #if MATX_SIMD
             SIMDProcessor.MatX_TransposeMultiplyMatX(dst, *this, a);
@@ -3920,7 +3920,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe ref Vector6 SubVec6(int row)                                       // interpret beginning of row as a Vector6
+        public ref Vector6 SubVec6(int row)                                       // interpret beginning of row as a Vector6
         {
             Debug.Assert(numColumns >= 6 && row >= 0 && row < numRows);
             fixed (float* mat = &this.mat[0])
@@ -3935,22 +3935,23 @@ namespace System.NumericsX
             return v;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
-        {
-            fixed (float* _ = mat)
-                return callback(_);
-        }
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //public T ToFloatPtr<T>(FloatPtr<T> callback)
+        //{
+        //    fixed (float* _ = mat)
+        //        return callback(_);
+        //}
 
-        public unsafe string ToString(int precision = 2)
+        public string ToString(int precision = 2)
         {
             var dimension = Dimension;
-            return ToFloatPtr(_ => FloatArrayToString(_, dimension, precision));
+            fixed (float* _ = mat)
+                return FloatArrayToString(_, dimension, precision);
         }
 
         float DeterminantGeneric()
         {
-            var index = new int[numRows];
+            var index = stackalloc int[numRows]; index = (int*)_alloca16(index);
             var tmp = new MatrixX();
             tmp.SetData(numRows, numColumns, MATX_ALLOCA(numRows * numColumns));
             tmp = this;
@@ -3963,7 +3964,7 @@ namespace System.NumericsX
 
         bool InverseSelfGeneric()
         {
-            var index = new int[numRows];
+            var index = stackalloc int[numRows]; index = (int*)_alloca16(index);
             var tmp = new MatrixX();
             tmp.SetData(numRows, numColumns, MATX_ALLOCA(numRows * numColumns));
             tmp = this;

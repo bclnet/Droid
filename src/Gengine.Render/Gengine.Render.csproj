@@ -13,10 +13,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Render\M_Local\ModelDecal.cs" />
-    <Compile Remove="Render\M_Local\ModelOverlay.cs" />
-    <Compile Remove="Render\M_Local\Model_local.cs" />
-    <Compile Remove="Render\M_Local\Model_lwo.cs" />
+    <Compile Remove="M_Local\ModelDecal.cs" />
+    <Compile Remove="M_Local\ModelOverlay.cs" />
+    <Compile Remove="M_Local\Model_local.cs" />
+    <Compile Remove="M_Local\Model_lwo.cs" />
   </ItemGroup>
 
   <ItemGroup>

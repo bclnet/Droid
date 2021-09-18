@@ -2,37 +2,16 @@ using System.NumericsX.OpenStack;
 
 namespace Gengine.Framework.Async
 {
-    public interface INetworkSystem
-    {
-        void ServerSendReliableMessage(int clientNum, BitMsg msg);
-        void ServerSendReliableMessageExcluding(int clientNum, BitMsg msg);
-        int ServerGetClientPing(int clientNum);
-        int ServerGetClientPrediction(int clientNum);
-        int ServerGetClientTimeSinceLastPacket(int clientNum);
-        int ServerGetClientTimeSinceLastInput(int clientNum);
-        int ServerGetClientOutgoingRate(int clientNum);
-        int ServerGetClientIncomingRate(int clientNum);
-        float ServerGetClientIncomingPacketLoss(int clientNum);
-        void ClientSendReliableMessage(BitMsg msg);
-        int ClientPrediction { get; }
-        int ClientTimeSinceLastPacket { get; }
-        int ClientOutgoingRate { get; }
-        int ClientIncomingRate { get; }
-        float ClientIncomingPacketLoss { get; }
-    }
-
     class NetworkSystemLocal : INetworkSystem
     {
         public void ServerSendReliableMessage(int clientNum, BitMsg msg)
         {
-            if (AsyncNetwork.server.IsActive)
-                AsyncNetwork.server.SendReliableGameMessage(clientNum, msg);
+            if (AsyncNetwork.server.IsActive) AsyncNetwork.server.SendReliableGameMessage(clientNum, msg);
         }
 
         public void ServerSendReliableMessageExcluding(int clientNum, BitMsg msg)
         {
-            if (AsyncNetwork.server.IsActive)
-                AsyncNetwork.server.SendReliableGameMessageExcluding(clientNum, msg);
+            if (AsyncNetwork.server.IsActive) AsyncNetwork.server.SendReliableGameMessageExcluding(clientNum, msg);
         }
 
         public int ServerGetClientPing(int clientNum)
@@ -58,10 +37,8 @@ namespace Gengine.Framework.Async
 
         public void ClientSendReliableMessage(BitMsg msg)
         {
-            if (AsyncNetwork.client.IsActive)
-                AsyncNetwork.client.SendReliableGameMessage(msg);
-            else if (AsyncNetwork.server.IsActive)
-                AsyncNetwork.server.LocalClientSendReliableMessage(msg);
+            if (AsyncNetwork.client.IsActive) AsyncNetwork.client.SendReliableGameMessage(msg);
+            else if (AsyncNetwork.server.IsActive) AsyncNetwork.server.LocalClientSendReliableMessage(msg);
         }
 
         public int ClientPrediction

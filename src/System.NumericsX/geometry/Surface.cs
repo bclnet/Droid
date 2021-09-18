@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using static System.NumericsX.Plane;
+using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
@@ -722,9 +723,9 @@ namespace System.NumericsX
 
                 var numIslands = 0;
                 var numTris = indexes.Count / 3;
-                var islandNum = stackalloc int[numTris];
-                unchecked { Unsafe.InitBlock((void*)islandNum, (byte)-1, (uint)numTris * sizeof(int)); }
-                var queue = stackalloc int[numTris];
+                var islandNum = stackalloc int[numTris]; islandNum = (int*)_alloca16(islandNum);
+                unchecked { Unsafe.InitBlock(islandNum, (byte)-1, (uint)numTris * sizeof(int)); }
+                var queue = stackalloc int[numTris]; queue = (int*)_alloca16(queue);
 
                 for (i = 0; i < numTris; i++)
                 {
@@ -916,9 +917,9 @@ namespace System.NumericsX
             Span<int> index;
             var e = stackalloc SurfaceEdge[3];
 
-            var vertexEdges = stackalloc int[verts.Count];
+            var vertexEdges = stackalloc int[verts.Count]; vertexEdges = (int*)_alloca16(vertexEdges);
             unchecked { Unsafe.InitBlock((void*)vertexEdges, (byte)-1, (uint)verts.Count * sizeof(int)); }
-            var edgeChain = stackalloc int[indexes.Count];
+            var edgeChain = stackalloc int[indexes.Count]; edgeChain = (int*)_alloca16(edgeChain);
 
             edgeIndexes.SetNum(indexes.Count, true);
 

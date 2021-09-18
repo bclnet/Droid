@@ -484,9 +484,6 @@ namespace Gengine.Render
         public int currentTexture;
 
         public ShaderProgram currentProgram;
-
-        public void Clear()
-            => this = new();
     }
 
     // all state modified by the back end is separated from the front end state

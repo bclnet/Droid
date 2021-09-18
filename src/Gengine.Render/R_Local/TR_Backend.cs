@@ -1,6 +1,9 @@
-using System.Linq;
+using System.NumericsX;
+using System.NumericsX.OpenStack.System;
 using WaveEngine.Bindings.OpenGLES;
+using static Gengine.Lib;
 using static Gengine.Render.QGL;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Render
 {
@@ -20,7 +23,7 @@ namespace Gengine.Render
             qglClearDepthf(1f);
 
             // make sure our GL state vector is set correctly
-            backEnd.glState.Clear();
+            backEnd.glState = default;
             backEnd.glState.forceGlState = true;
 
             // All color channels are used
@@ -37,14 +40,13 @@ namespace Gengine.Render
 
             qglCullFace(CullFaceMode.FrontAndBack);
 
-            if (r_useScissor.Bool)
-                qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+            if (r_useScissor.Bool) qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
 
             backEnd.glState.currentTexture = -1;  // Force texture unit to be reset
             for (var i = glConfig.maxTextureUnits - 1; i >= 0; i--)
             {
                 GL_SelectTexture(i);
-                R.globalImages.BindNull();
+                globalImages.BindNull();
             }
             // Last active texture is Tex0
         }
@@ -61,15 +63,12 @@ namespace Gengine.Render
         // This handles the flipping needed when the view being rendered is a mirored view.
         public static void GL_Cull(CT cullType)
         {
-            if (backEnd.glState.faceCulling == cullType)
-                return;
+            if (backEnd.glState.faceCulling == cullType) return;
 
-            if (cullType == CT.TWO_SIDED)
-                qglDisable(EnableCap.CullFace);
+            if (cullType == CT.TWO_SIDED) qglDisable(EnableCap.CullFace);
             else
             {
-                if (backEnd.glState.faceCulling == CT.TWO_SIDED)
-                    qglEnable(EnableCap.CullFace);
+                if (backEnd.glState.faceCulling == CT.TWO_SIDED) qglEnable(EnableCap.CullFace);
                 qglCullFace(cullType == CT.BACK_SIDED
                     ? backEnd.viewDef.isMirror ? CullFaceMode.Front : CullFaceMode.Back
                     : backEnd.viewDef.isMirror ? CullFaceMode.Back : CullFaceMode.Front);
@@ -86,7 +85,6 @@ namespace Gengine.Render
         public static void GL_State(int stateBits)
         {
             int diff;
-
             if (!r_useStateCaching.Bool || backEnd.glState.forceGlState)
             {
                 // make sure everything is set all the time, so we can see if our delta checking is screwing up
@@ -96,8 +94,7 @@ namespace Gengine.Render
             else
             {
                 diff = stateBits ^ backEnd.glState.glStateBits;
-                if (diff == 0)
-                    return;
+                if (diff == 0) return;
             }
 
             // check depthFunc bits
@@ -121,10 +118,7 @@ namespace Gengine.Render
                     case GLS_SRCBLEND_DST_ALPHA: srcFactor = BlendingFactor.DstAlpha; break;
                     case GLS_SRCBLEND_ONE_MINUS_DST_ALPHA: srcFactor = BlendingFactor.OneMinusDstAlpha; break;
                     case GLS_SRCBLEND_ALPHA_SATURATE: srcFactor = BlendingFactor.SrcAlphaSaturate; break;
-                    default:
-                        srcFactor = BlendingFactor.One;
-                        common.Error("GL_State: invalid src blend state bits\n");
-                        break;
+                    default: srcFactor = BlendingFactor.One; common.Error("GL_State: invalid src blend state bits\n"); break;
                 }
                 BlendingFactor dstFactor;
                 switch (stateBits & GLS_DSTBLEND_BITS)
@@ -137,10 +131,7 @@ namespace Gengine.Render
                     case GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA: dstFactor = BlendingFactor.OneMinusSrcAlpha; break;
                     case GLS_DSTBLEND_DST_ALPHA: dstFactor = BlendingFactor.DstAlpha; break;
                     case GLS_DSTBLEND_ONE_MINUS_DST_ALPHA: dstFactor = BlendingFactor.OneMinusConstantAlpha; break;
-                    default:
-                        dstFactor = BlendingFactor.One;
-                        common.Error("GL_State: invalid dst blend state bits\n");
-                        break;
+                    default: dstFactor = BlendingFactor.One; common.Error("GL_State: invalid dst blend state bits\n"); break;
                 }
                 qglBlendFunc(srcFactor, dstFactor);
             }
@@ -159,10 +150,11 @@ namespace Gengine.Render
             backEnd.glState.glStateBits = stateBits;
         }
 
+        #region RENDER BACK END THREAD FUNCTIONS
+
         static void RB_SetBuffer(SetBufferCommand cmd)
         {
             // see which draw buffer we want to render the frame to
-
             backEnd.frameCount = cmd.frameCount;
 
             // Disabled for OES2
@@ -171,11 +163,10 @@ namespace Gengine.Render
             GLimp_SetupFrame(cmd.buffer);
 
             // clear screen for debugging automatically enable this with several other debug tools that might leave unrendered portions of the screen
-            if (r_clear.Float != 0f || r_clear.String.Length != 1 || r_lockSurfaces.Bool || r_singleArea.Bool)
+            if (R.r_clear.Float != 0f || R.r_clear.String.Length != 1 || r_lockSurfaces.Bool || r_singleArea.Bool)
             {
-                var c = r_clear.String.Split(' ').Where(float.TryParse).Select(float.Parse).ToArray();
-                if (c.Length == 3) qglClearColor(c[0], c[1], c[2], 1f);
-                else if (r_clear.Integer == 2) qglClearColor(0f, 0f, 0f, 1f);
+                if (TextScanFormatted.Scan(R.r_clear.String, "%f %f %f", out float c0, out float c1, out float c2) == 3) qglClearColor(c0, c1, c2, 1f);
+                else if (R.r_clear.Integer == 2) qglClearColor(0f, 0f, 0f, 1f);
                 else qglClearColor(0.4f, 0f, 0.25f, 1f);
                 qglClear((uint)AttribMask.ColorBufferBit);
             }
@@ -184,14 +175,13 @@ namespace Gengine.Render
         static void RB_SwapBuffers(EmptyCommand data)
         {
 #if WEBGL
-        // GAB Note Dec 2018: Clear the Alpha channel, so that final render will not blend with the HTML5 background (canvas with premultiplied alpha)
-        qglColorMask(0, 0, 0, 1);
-        qglClear(GL_COLOR_BUFFER_BIT);
+            // GAB Note Dec 2018: Clear the Alpha channel, so that final render will not blend with the HTML5 background (canvas with premultiplied alpha)
+            qglColorMask(false, false, false, true);
+            qglClear(GL_COLOR_BUFFER_BIT);
 #endif
 
             // force a gl sync if requested
-            if (r_finish.Bool)
-                qglFinish();
+            if (R.r_finish.Bool) qglFinish();
 
             // don't flip if drawing to front buffer
             GLimp_SwapBuffers();
@@ -200,8 +190,7 @@ namespace Gengine.Render
         // Copy part of the current framebuffer to an image
         static void RB_CopyRender(CopyRenderCommand cmd)
         {
-            if (r_skipCopyTexture.Bool)
-                return;
+            if (r_skipCopyTexture.Bool) return;
 
             cmd.image?.CopyFramebuffer(cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, false);
         }
@@ -214,11 +203,9 @@ namespace Gengine.Render
             // r_debugRenderToTexture
             int c_draw3d = 0, c_draw2d = 0, c_setBuffers = 0, c_swapBuffers = 0, c_copyRenders = 0;
 
-            if (cmds.commandId == RC.NOP && cmds.next == null)
-                return;
+            if (cmds.commandId == RC.NOP && cmds.next == null) return;
 
-            EmptyCommand cmd = cmds;
-
+            var cmd = cmds;
             backEndStartTime = SysW.Milliseconds;
 
             // needed for editor rendering
@@ -247,5 +234,7 @@ namespace Gengine.Render
                 backEnd.c_copyFrameBuffer = 0;
             }
         }
+
+        #endregion
     }
 }

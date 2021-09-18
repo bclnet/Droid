@@ -238,12 +238,11 @@ namespace Gengine.Render
         // Tries to allocate space for the given data in fast vertex memory, and copies it over.
         // Alloc does NOT do a touch, which allows purging of things created at level load time even if a frame hasn't passed yet.
         // These allocations can be purged, which will zero the pointer.
-        public void Alloc(byte[] data, int size, out VertCache buffer, bool indexBuffer)
+        public void Alloc(void* data, int size, out VertCache buffer, bool indexBuffer)
         {
             VertCache block;
 
-            if (size <= 0)
-                common.Error($"VertexCache::Alloc: size = {size}\n");
+            if (size <= 0) common.Error($"VertexCache::Alloc: size = {size}\n");
 
             // if we can't find anything, it will be NULL
             buffer = null;
@@ -308,21 +307,11 @@ namespace Gengine.Render
             block.tag = TAG.USED;
 
             // save data for debugging
-            if (indexBuffer)
-            {
-                staticAllocThisFrame_Index += block.size;
-                staticCountThisFrame_Index++;
-            }
-            else
-            {
-                staticAllocThisFrame += block.size;
-                staticCountThisFrame++;
-            }
+            if (indexBuffer) { staticAllocThisFrame_Index += block.size; staticCountThisFrame_Index++; }
+            else { staticAllocThisFrame += block.size; staticCountThisFrame++; }
             staticCountTotal++;
             staticAllocTotal += size;
-
-            if (staticAllocTotal > staticAllocMaximum)
-                staticAllocMaximum = staticAllocTotal;
+            if (staticAllocTotal > staticAllocMaximum) staticAllocMaximum = staticAllocTotal;
 
             // this will be set to zero when it is purged
             block.user = buffer;
@@ -335,12 +324,10 @@ namespace Gengine.Render
             block.indexBuffer = indexBuffer;
 
             // TODO, make this more efficient...
-            if (block.frontEndMemory != IntPtr.Zero)
-                Marshal.FreeHGlobal(block.frontEndMemory);
+            if (block.frontEndMemory != IntPtr.Zero) Marshal.FreeHGlobal(block.frontEndMemory);
             block.frontEndMemory = Marshal.AllocHGlobal(size + 16);
             block.size = size;
-            fixed (byte* data_ = data)
-                Unsafe.CopyBlock((byte*)block.frontEndMemory, data_, (uint)size);
+            Unsafe.CopyBlock((byte*)block.frontEndMemory, data, (uint)size);
             block.frontEndMemoryDirty = true;
 
             //Position(block);
@@ -453,12 +440,11 @@ namespace Gengine.Render
         //
         // A frame temp allocation must never be allowed to fail due to overflow. We can't simply sync with the GPU and overwrite what we have, because
         // there may still be future references to dynamically created surfaces.
-        public VertCache AllocFrameTemp(byte[] data, int size, bool indexBuffer)
+        public VertCache AllocFrameTemp(void* data, int size, bool indexBuffer)
         {
             VertCache block;
 
-            if (size <= 0)
-                common.Error($"VertexCache::AllocFrameTemp: size = {size}\n");
+            if (size <= 0) common.Error($"VertexCache::AllocFrameTemp: size = {size}\n");
 
             if (indexBuffer)
             {
@@ -572,15 +558,13 @@ namespace Gengine.Render
             if (indexBuffer)
             {
                 block.vbo = tempIndexBuffers[listNum].vbo;
-                fixed (byte* data_ = data)
-                    Unsafe.CopyBlock((byte*)tempIndexBuffers[listNum].frontEndMemory + block.offset, data_, (uint)size);
+                Unsafe.CopyBlock((byte*)tempIndexBuffers[listNum].frontEndMemory + block.offset, data, (uint)size);
                 block.frontEndMemory = tempIndexBuffers[listNum].frontEndMemory;
             }
             else
             {
                 block.vbo = tempBuffers[listNum].vbo;
-                fixed (byte* data_ = data)
-                    Unsafe.CopyBlock((byte*)tempBuffers[listNum].frontEndMemory + block.offset, data_, (uint)size);
+                Unsafe.CopyBlock((byte*)tempBuffers[listNum].frontEndMemory + block.offset, data, (uint)size);
                 block.frontEndMemory = tempBuffers[listNum].frontEndMemory;
             }
 
@@ -590,13 +574,9 @@ namespace Gengine.Render
         // notes that a buffer is used this frame, so it can't be purged out from under the GPU
         public void Touch(VertCache block)
         {
-            if (block == null)
-                common.Error("VertexCache Touch: NULL pointer");
-
-            if (block.tag == TAG.FREE)
-                common.FatalError("VertexCache Touch: freed pointer");
-            if (block.tag == TAG.TEMP)
-                common.FatalError("VertexCache Touch: temporary pointer");
+            if (block == null) common.Error("VertexCache Touch: NULL pointer");
+            if (block.tag == TAG.FREE) common.FatalError("VertexCache Touch: freed pointer");
+            if (block.tag == TAG.TEMP) common.FatalError("VertexCache Touch: temporary pointer");
 
             block.frameUsed = currentFrame;
 
@@ -623,13 +603,9 @@ namespace Gengine.Render
         // this block won't have to zero a buffer pointer when it is purged, but it must still wait for the frames to pass, in case the GPU is still referencing it
         public void Free(ref VertCache block)
         {
-            if (block == null)
-                return;
-
-            if (block.tag == TAG.FREE)
-                common.FatalError("VertexCache Free: freed pointer");
-            if (block.tag == TAG.TEMP)
-                common.FatalError("VertexCache Free: temporary pointer");
+            if (block == null) return;
+            if (block.tag == TAG.FREE) common.FatalError("VertexCache Free: freed pointer");
+            if (block.tag == TAG.TEMP) common.FatalError("VertexCache Free: temporary pointer");
 
             // this block still can't be purged until the frame count has expired, but it won't need to clear a user pointer when it is
             block.user = null;
@@ -653,13 +629,8 @@ namespace Gengine.Render
             if (r_showVertexCache.Bool)
             {
                 int staticUseCount = 0, staticUseSize = 0;
-
                 for (block = staticHeaders.next; block != staticHeaders; block = block.next)
-                    if (block.frameUsed == currentFrame)
-                    {
-                        staticUseCount++;
-                        staticUseSize += block.size;
-                    }
+                    if (block.frameUsed == currentFrame) { staticUseCount++; staticUseSize += block.size; }
 
                 var frameOverflow = tempOverflow ? "(OVERFLOW)" : string.Empty;
 
@@ -668,11 +639,7 @@ namespace Gengine.Render
             }
 
             if (staticAllocTotal > r_vertexBufferMegs.Integer * 1024 * 1024)
-                if (EndFrame_bOnce)
-                {
-                    common.Printf($"VBO size exceeds {r_vertexBufferMegs.Integer}MB. Consider updating r_vertexBufferMegs.\n");
-                    EndFrame_bOnce = false;
-                }
+                if (EndFrame_bOnce) { common.Printf($"VBO size exceeds {r_vertexBufferMegs.Integer}MB. Consider updating r_vertexBufferMegs.\n"); EndFrame_bOnce = false; }
 
 #if false
             // if our total static count is above our working memory limit, start purging things
@@ -805,19 +772,14 @@ namespace Gengine.Render
             for (block = staticHeaders.next; block != staticHeaders; block = block.next)
             {
                 numActive++;
-
                 totalStatic += block.size;
-                if (block.frameUsed == currentFrame)
-                    frameStatic += block.size;
+                if (block.frameUsed == currentFrame) frameStatic += block.size;
             }
 
             int numFreeStaticHeaders = 0, numFreeDynamicHeaders = 0, numFreeDynamicIndexHeaders = 0;
-            for (block = freeStaticHeaders.next; block != freeStaticHeaders; block = block.next)
-                numFreeStaticHeaders++;
-            for (block = freeDynamicHeaders.next; block != freeDynamicHeaders; block = block.next)
-                numFreeDynamicHeaders++;
-            for (block = freeDynamicIndexHeaders.next; block != freeDynamicIndexHeaders; block = block.next)
-                numFreeDynamicIndexHeaders++;
+            for (block = freeStaticHeaders.next; block != freeStaticHeaders; block = block.next) numFreeStaticHeaders++;
+            for (block = freeDynamicHeaders.next; block != freeDynamicHeaders; block = block.next) numFreeDynamicHeaders++;
+            for (block = freeDynamicIndexHeaders.next; block != freeDynamicIndexHeaders; block = block.next) numFreeDynamicIndexHeaders++;
 
             common.Printf($"{r_vertexBufferMegs.Integer} megs working set\n");
             common.Printf($"{NUM_VERTEX_FRAMES} dynamic temp buffers of {frameBytes / 1024}k\n");

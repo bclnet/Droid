@@ -316,7 +316,7 @@ namespace System.NumericsX
 
             maxpts = numPoints + 4;     // cant use counts[0]+2 because of fp grouping errors
 
-            var newPoints = stackalloc Vector5[maxpts];
+            var newPoints = stackalloc Vector5[maxpts]; newPoints = (Vector5*)_alloca16(newPoints);
             newNumPoints = 0;
 
             fixed (Vector5* p = this.p)
@@ -410,7 +410,7 @@ namespace System.NumericsX
 
             maxpts = numPoints + 4;     // cant use counts[0]+2 because of fp grouping errors
 
-            var newPoints = stackalloc Vector5[maxpts];
+            var newPoints = stackalloc Vector5[maxpts]; newPoints = (Vector5*)_alloca16(newPoints);
             newNumPoints = 0;
 
             fixed (Vector5* p = this.p)

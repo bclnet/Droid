@@ -14,11 +14,6 @@ namespace System.NumericsX
 
     public unsafe interface ISimd
     {
-        public static float* Align16(float* value)
-            => (float*)((nint)((byte*)value + 15) & ~15);
-        public static byte* Align16(byte* value)
-            => (byte*)((nint)(value + 15) & ~15);
-
         public static ISimd processor = null;          // pointer to SIMD processor
         public static ISimd generic = new SIMD_Generic();                // pointer to generic SIMD implementation
         public static ISimd _ = null;

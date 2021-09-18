@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace System.NumericsX
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct Vector3i
+    public unsafe struct Vector3i
     {
         public static Vector3i origin = new(0, 0, 0);
 
@@ -39,7 +39,7 @@ namespace System.NumericsX
         public void Zero()
             => x = y = z = 0;
 
-        public unsafe int this[int index]
+        public int this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get

@@ -2,6 +2,8 @@ using Gengine.Framework;
 using System;
 using System.Collections.Generic;
 using System.NumericsX.OpenStack;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using GLenum = System.Int32;
 using GLuint = System.Int32;
 
@@ -43,9 +45,10 @@ namespace Gengine.Render
         const uint DDSF_TEXTURE = 0x00001000;
         const uint DDSF_MIPMAP = 0x00400000;
 
-        static uint DDS_MAKEFOURCC(uint a, uint b, uint c, uint d) => ((a) | ((b) << 8) | ((c) << 16) | ((d) << 24));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] static uint DDS_MAKEFOURCC(uint a, uint b, uint c, uint d) => a | (b << 8) | (c << 16) | (d << 24);
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     struct DdsFilePixelFormat
     {
         public uint dwSize;
@@ -58,6 +61,7 @@ namespace Gengine.Render
         public uint dwABitMask;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     unsafe struct DdsFileHeader
     {
         public uint dwSize;
@@ -73,8 +77,6 @@ namespace Gengine.Render
         public uint dwCaps2;
         public fixed uint dwReserved2[3];
     }
-
-    //#define MAX_IMAGE_NAME	256
 
     public unsafe class Image
     {
@@ -120,6 +122,9 @@ namespace Gengine.Render
             CAMERA       // _forward, _back, etc, rotated and flipped as needed before sending to GL
         }
 
+        const int MAX_IMAGE_NAME = 256;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Image()
         {
             texnum = TEXTURE_NOT_LOADED;
@@ -256,8 +261,10 @@ namespace Gengine.Render
     {
         // data is RGBA
         public static void WriteTGA(string filename, byte[] data, int width, int height, bool flipVertical = false) => throw new NotImplementedException();
+
         // data is an 8 bit index into palette, which is RGB (no A)
         public static void WritePalTGA(string filename, byte[] data, byte[] palette, int width, int height, bool flipVertical = false) => throw new NotImplementedException();
+
         // data is in top-to-bottom raster order unless flipVertical is set
     }
 
@@ -270,9 +277,7 @@ namespace Gengine.Render
         // Be careful not to use the same image file with different filter / repeat / etc parameters if possible, because it will cause a second copy to be loaded.
         // If the load fails for any reason, the image will be filled in with the default grid pattern.
         // Will automatically resample non-power-of-two images and execute image programs if needed.
-        public Image ImageFromFile(string name,
-                                Image.TF filter, bool allowDownSize,
-                                Image.TR repeat, Image.TD depth, Image.CF cubeMap = Image.CF._2D) => throw new NotImplementedException();
+        public Image ImageFromFile(string name,                                Image.TF filter, bool allowDownSize,                                Image.TR repeat, Image.TD depth, Image.CF cubeMap = Image.CF._2D) => throw new NotImplementedException();
 
         // look for a loaded image, whatever the parameters
         public Image GetImage(string name) => throw new NotImplementedException();

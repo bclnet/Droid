@@ -10,6 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="math\Lcp.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Update="math\Curve.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>

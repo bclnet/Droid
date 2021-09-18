@@ -8,49 +8,54 @@ namespace System.NumericsX
     /// </summary>
     public class TextScanFormatted
     {
-        public static void Scan<T1, T2>(string s, string fmt, out T1 t1, out T2 t2)
+        public static int Scan<T1, T2>(string s, string fmt, out T1 t1, out T2 t2)
         {
-            Parse(s, fmt, out var values);
+            var r = Parse(s, fmt, out var values);
             t1 = (T1)values[0];
             t2 = (T2)values[1];
+            return r;
         }
-        public static void Scan<T1, T2, T3>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3)
+        public static int Scan<T1, T2, T3>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3)
         {
-            Parse(s, fmt, out var values);
+            var r = Parse(s, fmt, out var values);
             t1 = (T1)values[0];
             t2 = (T2)values[1];
             t3 = (T3)values[2];
+            return r;
         }
-        public static void Scan<T1, T2, T3, T4>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3, out T4 t4)
+        public static int Scan<T1, T2, T3, T4>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3, out T4 t4)
         {
-            Parse(s, fmt, out var values);
+            var r = Parse(s, fmt, out var values);
             t1 = (T1)values[0];
             t2 = (T2)values[1];
             t3 = (T3)values[2];
             t4 = (T4)values[3];
+            return r;
         }
-        public static void Scan<T1, T2, T3, T4, T5>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3, out T4 t4, out T5 t5)
+        public static int Scan<T1, T2, T3, T4, T5>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3, out T4 t4, out T5 t5)
         {
-            Parse(s, fmt, out var values);
+            var r = Parse(s, fmt, out var values);
             t1 = (T1)values[0];
             t2 = (T2)values[1];
             t3 = (T3)values[2];
             t4 = (T4)values[3];
             t5 = (T5)values[4];
+            return r;
         }
-        public static void Scan<T1, T2, T3, T4, T5, T6>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3, out T4 t4, out T5 t5, out T6 t6)
+        public static int Scan<T1, T2, T3, T4, T5, T6>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3, out T4 t4, out T5 t5, out T6 t6)
         {
-            Parse(s, fmt, out var values);
+            var r = Parse(s, fmt, out var values);
             t1 = (T1)values[0];
             t2 = (T2)values[1];
             t3 = (T3)values[2];
             t4 = (T4)values[3];
             t5 = (T5)values[4];
             t6 = (T6)values[5];
+            return r;
         }
-        public static void Scan<T1, T2, T3, T4, T5, T6, T7>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3, out T4 t4, out T5 t5, out T6 t6, out T7 t7)
+        public static int Scan<T1, T2, T3, T4, T5, T6, T7>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3, out T4 t4, out T5 t5, out T6 t6, out T7 t7)
         {
-            Parse(s, fmt, out var values);
+            var r = Parse(s, fmt, out var values);
             t1 = (T1)values[0];
             t2 = (T2)values[1];
             t3 = (T3)values[2];
@@ -58,10 +63,11 @@ namespace System.NumericsX
             t5 = (T5)values[4];
             t6 = (T6)values[5];
             t7 = (T7)values[6];
+            return r;
         }
-        public static void Scan<T1, T2, T3, T4, T5, T6, T7, T8>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3, out T4 t4, out T5 t5, out T6 t6, out T7 t7, out T8 t8)
+        public static int Scan<T1, T2, T3, T4, T5, T6, T7, T8>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3, out T4 t4, out T5 t5, out T6 t6, out T7 t7, out T8 t8)
         {
-            Parse(s, fmt, out var values);
+            var r = Parse(s, fmt, out var values);
             t1 = (T1)values[0];
             t2 = (T2)values[1];
             t3 = (T3)values[2];
@@ -70,10 +76,11 @@ namespace System.NumericsX
             t6 = (T6)values[5];
             t7 = (T7)values[6];
             t8 = (T8)values[7];
+            return r;
         }
-        public static void Scan<T1, T2, T3, T4, T5, T6, T7, T8, T9>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3, out T4 t4, out T5 t5, out T6 t6, out T7 t7, out T8 t8, out T9 t9)
+        public static int Scan<T1, T2, T3, T4, T5, T6, T7, T8, T9>(string s, string fmt, out T1 t1, out T2 t2, out T3 t3, out T4 t4, out T5 t5, out T6 t6, out T7 t7, out T8 t8, out T9 t9)
         {
-            Parse(s, fmt, out var values);
+            var r = Parse(s, fmt, out var values);
             t1 = (T1)values[0];
             t2 = (T2)values[1];
             t3 = (T3)values[2];
@@ -83,6 +90,7 @@ namespace System.NumericsX
             t7 = (T7)values[6];
             t8 = (T8)values[7];
             t9 = (T9)values[8];
+            return r;
         }
 
         // Format type specifiers

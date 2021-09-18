@@ -1,10 +1,11 @@
 //#define MATX_SIMD
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
-    public partial struct MatrixX
+    public unsafe partial struct MatrixX
     {
         #region General
 
@@ -859,14 +860,14 @@ namespace System.NumericsX
         /// in-place inversion using Gauss-Jordan elimination
         /// </summary>
         /// <returns></returns>
-        public unsafe bool Inverse_GaussJordan()                    // invert in-place with Gauss-Jordan elimination
+        public bool Inverse_GaussJordan()                    // invert in-place with Gauss-Jordan elimination
         {
             int i, j, k, r, c; float d, max;
             Debug.Assert(numRows == numColumns);
 
-            var columnIndex = stackalloc int[numRows];
-            var rowIndex = stackalloc int[numRows];
-            var pivot = stackalloc bool[numRows];
+            var columnIndex = stackalloc int[numRows]; columnIndex = (int*)_alloca16(columnIndex);
+            var rowIndex = stackalloc int[numRows]; rowIndex = (int*)_alloca16(rowIndex);
+            var pivot = stackalloc bool[numRows]; pivot = (bool*)_alloca16(pivot);
 
             Unsafe.InitBlock(pivot, 0, (uint)numRows * sizeof(float));
 
@@ -1074,7 +1075,7 @@ namespace System.NumericsX
 
         #region LU
 
-        public bool LU_Factor(int[] index, out float det)
+        public bool LU_Factor(int* index, out float det)
         {
             var w = 0f; var r = LU_Factor(index, x => w = x); det = w; return r;
         }
@@ -1091,7 +1092,7 @@ namespace System.NumericsX
         /// <param name="index">The index.</param>
         /// <param name="det">The det.</param>
         /// <returns></returns>
-        public bool LU_Factor(int[] index, Action<float> det = null)      // factor in-place: L * U
+        public bool LU_Factor(int* index, Action<float> det = null)      // factor in-place: L * U
         {
             int i, j, k, newi, min; double s, t, d, w;
 
@@ -1173,14 +1174,14 @@ namespace System.NumericsX
         /// <param name="alpha">The alpha.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public unsafe bool LU_UpdateRankOne(in VectorX v, in VectorX w, float alpha, int[] index)
+        public bool LU_UpdateRankOne(in VectorX v, in VectorX w, float alpha, int[] index)
         {
             int i, j, max; double diag, beta, p0, p1, d;
             Debug.Assert(v.Size >= numColumns);
             Debug.Assert(w.Size >= numRows);
 
-            var y = stackalloc float[v.Size];
-            var z = stackalloc float[w.Size];
+            var y = stackalloc float[v.Size]; y = (float*)_alloca16(y);
+            var z = stackalloc float[w.Size]; z = (float*)_alloca16(z);
 
             if (index != null)
                 for (i = 0; i < numRows; i++)
@@ -1245,7 +1246,7 @@ namespace System.NumericsX
         /// <param name="r">The r.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public unsafe bool LU_UpdateRowColumn(in VectorX v, in VectorX w, int r, int[] index)
+        public bool LU_UpdateRowColumn(in VectorX v, in VectorX w, int r, int[] index)
         {
             int i, j, min, max, rp; double diag, beta0, beta1, p0, p1, q0, q1, d;
             Debug.Assert(v.Size >= numColumns);
@@ -1253,10 +1254,10 @@ namespace System.NumericsX
             Debug.Assert(r >= 0 && r < numColumns && r < numRows);
             Debug.Assert(w[r] == 0f);
 
-            var y0 = stackalloc float[v.Size];
-            var z0 = stackalloc float[w.Size];
-            var y1 = stackalloc float[v.Size];
-            var z1 = stackalloc float[w.Size];
+            var y0 = stackalloc float[v.Size]; y0 = (float*)_alloca16(y0);
+            var z0 = stackalloc float[w.Size]; z0 = (float*)_alloca16(z0);
+            var y1 = stackalloc float[v.Size]; y1 = (float*)_alloca16(y1);
+            var z1 = stackalloc float[w.Size]; z1 = (float*)_alloca16(z1);
 
             if (index != null)
             {
@@ -2441,12 +2442,12 @@ namespace System.NumericsX
         /// The initial matrix has to be symmetric positive definite.
         /// </summary>
         /// <returns></returns>
-        public unsafe bool Cholesky_Factor()                        // factor in-place: L * L.Transpose()
+        public bool Cholesky_Factor()                        // factor in-place: L * L.Transpose()
         {
             int i, j, k; double sum;
             Debug.Assert(numRows == numColumns);
 
-            var invSqrt = stackalloc float[numRows];
+            var invSqrt = stackalloc float[numRows]; invSqrt = (float*)_alloca16(invSqrt);
 
             for (i = 0; i < numRows; i++)
             {
@@ -2479,16 +2480,15 @@ namespace System.NumericsX
         /// <param name="alpha">The alpha.</param>
         /// <param name="offset">The offset.</param>
         /// <returns></returns>
-        public unsafe bool Cholesky_UpdateRankOne(in VectorX v, float alpha, int offset = 0)
+        public bool Cholesky_UpdateRankOne(in VectorX v, float alpha, int offset = 0)
         {
             int i, j; double diag, invDiag, diagSqr, newDiag, newDiagSqr, beta, p, d;
             Debug.Assert(numRows == numColumns);
             Debug.Assert(v.Size >= numRows);
             Debug.Assert(offset >= 0 && offset < numRows);
 
-            var y = stackalloc float[v.Size];
-            fixed (float* _ = &v.p[v.pi])
-                Unsafe.CopyBlock(y, _, (uint)v.Size * sizeof(float));
+            var y = stackalloc float[v.Size]; y = (float*)_alloca16(y);
+            fixed (float* _ = &v.p[v.pi]) Unsafe.CopyBlock(y, _, (uint)v.Size * sizeof(float));
 
             for (i = offset; i < numColumns; i++)
             {
@@ -2532,14 +2532,14 @@ namespace System.NumericsX
         /// <param name="v">The v.</param>
         /// <param name="r">The r.</param>
         /// <returns></returns>
-        public unsafe bool Cholesky_UpdateRowColumn(in VectorX v, int r)
+        public bool Cholesky_UpdateRowColumn(in VectorX v, int r)
         {
             int i, j; double sum; VectorX addSub = new();
             Debug.Assert(numRows == numColumns);
             Debug.Assert(v.Size >= numRows);
             Debug.Assert(r >= 0 && r < numRows);
 
-            addSub.SetData(numColumns, new float[numColumns]);
+            addSub.SetData(numColumns, new float[numColumns]); //:_alloca16
 
             if (r == 0)
             {
@@ -2559,7 +2559,7 @@ namespace System.NumericsX
             }
             else
             {
-                var original = stackalloc float[numColumns];
+                var original = stackalloc float[numColumns]; original = (float*)_alloca16(original);
 
                 // calculate original row/column of matrix
                 for (i = 0; i < numRows; i++)
@@ -2607,8 +2607,8 @@ namespace System.NumericsX
             double diag, invDiag, diagSqr, newDiag, newDiagSqr;
             double alpha1, alpha2, beta1, beta2, p1, p2, d;
 
-            var v1 = stackalloc float[numColumns];
-            var v2 = stackalloc float[numColumns];
+            var v1 = stackalloc float[numColumns]; v1 = (float*)_alloca16(v1);
+            var v2 = stackalloc float[numColumns]; v2 = (float*)_alloca16(v2);
 
             d = MathX.SQRT_1OVER2;
             v1[r] = (float)((0.5f * addSub[r] + 1f) * d);
@@ -2675,7 +2675,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="v">The v.</param>
         /// <returns></returns>
-        public unsafe bool Cholesky_UpdateIncrement(in VectorX v)
+        public bool Cholesky_UpdateIncrement(in VectorX v)
         {
             int i, j; double sum;
             Debug.Assert(numRows == numColumns);
@@ -2683,7 +2683,7 @@ namespace System.NumericsX
 
             ChangeSize(numRows + 1, numColumns + 1, false);
 
-            var x = stackalloc float[numRows];
+            var x = stackalloc float[numRows]; x = (float*)_alloca16(x);
 
             // solve for x in L * x = v
             for (i = 0; i < numRows - 1; i++)
@@ -2840,12 +2840,12 @@ namespace System.NumericsX
         /// The initial matrix has to be symmetric.
         /// </summary>
         /// <returns></returns>
-        public unsafe bool LDLT_Factor()                            // factor in-place: L * D * L.Transpose()
+        public bool LDLT_Factor()                            // factor in-place: L * D * L.Transpose()
         {
             int i, j, k; double d, sum;
             Debug.Assert(numRows == numColumns);
 
-            var v = stackalloc float[numRows];
+            var v = stackalloc float[numRows]; v = (float*)_alloca16(v);
 
             for (i = 0; i < numRows; i++)
             {
@@ -2883,16 +2883,15 @@ namespace System.NumericsX
         /// <param name="alpha">The alpha.</param>
         /// <param name="offset">The offset.</param>
         /// <returns></returns>
-        public unsafe bool LDLT_UpdateRankOne(in VectorX v, float alpha, int offset = 0)
+        public bool LDLT_UpdateRankOne(in VectorX v, float alpha, int offset = 0)
         {
             int i, j; double diag, newDiag, beta, p, d;
             Debug.Assert(numRows == numColumns);
             Debug.Assert(v.Size >= numRows);
             Debug.Assert(offset >= 0 && offset < numRows);
 
-            var y = stackalloc float[v.Size];
-            fixed (float* _ = &v.p[v.pi])
-                Unsafe.CopyBlock(y, _, (uint)v.Size * sizeof(float));
+            var y = stackalloc float[v.Size]; y = (float*)_alloca16(y);
+            fixed (float* _ = &v.p[v.pi]) Unsafe.CopyBlock(y, _, (uint)v.Size * sizeof(float));
 
             for (i = offset; i < numColumns; i++)
             {
@@ -2933,14 +2932,14 @@ namespace System.NumericsX
         /// <param name="v">The v.</param>
         /// <param name="r">The r.</param>
         /// <returns></returns>
-        public unsafe bool LDLT_UpdateRowColumn(in VectorX v, int r)
+        public bool LDLT_UpdateRowColumn(in VectorX v, int r)
         {
             int i, j; double sum; VectorX addSub = new();
             Debug.Assert(numRows == numColumns);
             Debug.Assert(v.Size >= numRows);
             Debug.Assert(r >= 0 && r < numRows);
 
-            addSub.SetData(numColumns, new float[numColumns]);
+            addSub.SetData(numColumns, new float[numColumns]); //:_alloca16
 
             if (r == 0)
             {
@@ -2954,8 +2953,8 @@ namespace System.NumericsX
             }
             else
             {
-                var original = stackalloc float[numColumns];
-                var y = stackalloc float[numColumns];
+                var original = stackalloc float[numColumns]; original = (float*)_alloca16(original);
+                var y = stackalloc float[numColumns]; y = (float*)_alloca16(y);
 
                 // calculate original row/column of matrix
                 for (i = 0; i < r; i++)
@@ -3012,8 +3011,8 @@ namespace System.NumericsX
             // add row/column to the lower right sub matrix starting at (r, r)
             double d, diag, newDiag, p1, p2, alpha1, alpha2, beta1, beta2;
 
-            var v1 = stackalloc float[numColumns];
-            var v2 = stackalloc float[numColumns];
+            var v1 = stackalloc float[numColumns]; v1 = (float*)_alloca16(v1);
+            var v2 = stackalloc float[numColumns]; v2 = (float*)_alloca16(v2);
 
             d = MathX.SQRT_1OVER2;
             v1[r] = (float)((0.5f * addSub[r] + 1f) * d);
@@ -3078,7 +3077,7 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="v">The v.</param>
         /// <returns></returns>
-        public unsafe bool LDLT_UpdateIncrement(in VectorX v)
+        public bool LDLT_UpdateIncrement(in VectorX v)
         {
             int i, j; double sum, d;
             Debug.Assert(numRows == numColumns);
@@ -3086,7 +3085,7 @@ namespace System.NumericsX
 
             ChangeSize(numRows + 1, numColumns + 1, false);
 
-            var x = stackalloc float[numRows];
+            var x = stackalloc float[numRows]; x = (float*)_alloca16(x);
 
             // solve for x in L * x = v
             for (i = 0; i < numRows - 1; i++)
@@ -3236,11 +3235,11 @@ namespace System.NumericsX
         /// </summary>
         /// <param name="m">The m.</param>
         /// <returns></returns>
-        public unsafe void LDLT_MultiplyFactors(ref MatrixX m)
+        public void LDLT_MultiplyFactors(ref MatrixX m)
         {
             int r, i, j; double sum;
 
-            var v = stackalloc float[numRows];
+            var v = stackalloc float[numRows]; v = (float*)_alloca16(v);
             m.SetSize(numRows, numColumns);
 
             for (r = 0; r < numRows; r++)

@@ -1,5 +1,6 @@
 using Gengine.CM;
 using Gengine.Framework;
+using Gengine.Framework.Async;
 using Gengine.Render;
 using Gengine.Sound;
 using Gengine.UI;
@@ -28,6 +29,7 @@ namespace Gengine
         public static ISession session;
         public static EventLoop eventLoop = new();
         public static ICollisionModelManager collisionModelManager;
+        public static INetworkSystem networkSystem;
 
         public static IGame game;
         public static IGameEdit gameEdit;

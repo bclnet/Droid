@@ -6,7 +6,7 @@ namespace System.NumericsX
 {
     public class MatrixTest
     {
-        public static void Test()
+        public unsafe static void Test()
         {
             MatrixX original = default, m1, m2, m3, q1 = default, q2 = default, r1 = default, r2 = default;
             VectorX v = default, w = default, u = default, c = default, d = default;
@@ -16,8 +16,8 @@ namespace System.NumericsX
             original.Random(size, size, 0);
             original *= original.Transpose();
 
-            var index1 = new int[size + 1];
-            var index2 = new int[size + 1];
+            var index1 = stackalloc int[size + 1]; index1 = (int*)_alloca16(index1);
+            var index2 = stackalloc int[size + 1]; index2 = (int*)_alloca16(index2);
 
             //  MatrixX::LowerTriangularInverse
 

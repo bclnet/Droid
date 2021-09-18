@@ -7,7 +7,7 @@ using static System.NumericsX.Platform;
 namespace System.NumericsX
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct Vector2
+    public unsafe struct Vector2
     {
         public static Vector2 origin = new(0f, 0f);
 
@@ -32,7 +32,7 @@ namespace System.NumericsX
         public void Zero()
             => x = y = 0f;
 
-        public unsafe float this[int index]
+        public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -216,13 +216,13 @@ namespace System.NumericsX
         public const int Dimension = 2;
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
         //    fixed (float* _ = &x)
         //        return callback(_);
         //}
 
-        public unsafe string ToString(int precision = 2)
+        public string ToString(int precision = 2)
         {
             fixed (float* _ = &x)
                 return FloatArrayToString(_, Dimension, precision);
@@ -244,7 +244,7 @@ namespace System.NumericsX
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct Vector3
+    public unsafe struct Vector3
     {
         public static Vector3 origin = new(0f, 0f, 0f);
 
@@ -278,7 +278,7 @@ namespace System.NumericsX
         public void Zero()
             => x = y = z = 0f;
 
-        public unsafe float this[int index]
+        public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -643,13 +643,13 @@ namespace System.NumericsX
             => ref reinterpret.cast_vec2(this);
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
         //    fixed (float* _ = &x)
         //        return callback(_);
         //}
 
-        public unsafe string ToString(int precision = 2)
+        public string ToString(int precision = 2)
         {
             fixed (float* _ = &x)
                 return FloatArrayToString(_, Dimension, precision);
@@ -796,7 +796,7 @@ namespace System.NumericsX
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct Vector4
+    public unsafe struct Vector4
     {
         public static Vector4 origin = new(0f, 0f, 0f, 0f);
 
@@ -827,7 +827,7 @@ namespace System.NumericsX
         public void Zero()
             => x = y = z = w = 0f;
 
-        public unsafe float this[int index]
+        public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -957,13 +957,13 @@ namespace System.NumericsX
             => ref reinterpret.cast_vec3(this);
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
         //    fixed (float* _ = &x)
         //        return callback(_);
         //}
 
-        public unsafe string ToString(int precision = 2)
+        public string ToString(int precision = 2)
         {
             fixed (float* _ = &x)
                 return FloatArrayToString(_, Dimension, precision);
@@ -985,7 +985,7 @@ namespace System.NumericsX
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct Vector5
+    public unsafe struct Vector5
     {
         public static Vector5 origin = new(0f, 0f, 0f, 0f, 0f);
 
@@ -1014,7 +1014,7 @@ namespace System.NumericsX
             this.t = t;
         }
 
-        public unsafe float this[int index]
+        public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -1037,13 +1037,13 @@ namespace System.NumericsX
             => ref reinterpret.cast_vec3(this);
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
         //    fixed (float* _ = &x)
         //        return callback(_);
         //}
 
-        public unsafe string ToString(int precision = 2)
+        public string ToString(int precision = 2)
         {
             fixed (float* _ = &x)
                 return FloatArrayToString(_, Dimension, precision);
@@ -1073,7 +1073,7 @@ namespace System.NumericsX
         internal fixed float p[6];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe Vector6(float[] a)
+        public Vector6(float[] a)
         {
             fixed (float* p = this.p, a_ = a)
                 Unsafe.CopyBlock(p, a_, 6U * sizeof(float));
@@ -1242,13 +1242,13 @@ namespace System.NumericsX
         }
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
         //    fixed (float* _ = p)
         //        return callback(_);
         //}
 
-        public unsafe string ToString(int precision = 2)
+        public string ToString(int precision = 2)
         {
             fixed (float* _ = p)
                 return FloatArrayToString(_, Dimension, precision);
@@ -1256,16 +1256,16 @@ namespace System.NumericsX
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct VectorX
+    public unsafe struct VectorX
     {
         public const float EPSILON = 0.001f;
         static float[] temp = new float[VECX_MAX_TEMP + 4];   // used to store intermediate results
         static int tempPtr = 0; // (float *) ( ( (intptr_t)temp + 15 ) & ~15 );              // pointer to 16 byte aligned temporary memory
         static int tempIndex = 0;               // index into memory pool, wraps around
         const int VECX_MAX_TEMP = 1024;
-        static unsafe int VECX_QUAD(int x) => ((x + 3) & ~3) * sizeof(float);
-        void VECX_CLEAREND() { var s = size; while (s < ((s + 3) & ~3)) p[pi + s++] = 0f; }
-        internal static float[] VECX_ALLOCA(int n) => new float[VECX_QUAD(n)];
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] static int VECX_QUAD(int x) => ((x + 3) & ~3) * sizeof(float);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] void VECX_CLEAREND() { var s = size; while (s < ((s + 3) & ~3)) p[pi + s++] = 0f; }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] internal static float[] VECX_ALLOCA(int n) => new float[VECX_QUAD(n)];
 
         internal float[] p;                       // memory the vector is stored
         internal int pi;
@@ -1273,7 +1273,7 @@ namespace System.NumericsX
         int alloced;                // if -1 p points to data set with SetData
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe VectorX(in VectorX a)
+        public VectorX(in VectorX a)
         {
             size = alloced = 0;
             p = null; pi = 0;
@@ -1478,7 +1478,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal unsafe void SetTempSize(int size)
+        internal void SetTempSize(int size)
         {
             this.size = size;
             alloced = (size + 3) & ~3;
@@ -1508,7 +1508,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void Zero()
+        public void Zero()
         {
 #if VECX_SIMD
             SIMDProcessor.Zero16(p, size);
@@ -1518,7 +1518,7 @@ namespace System.NumericsX
 #endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void Zero(int length)
+        public void Zero(int length)
         {
             SetSize(length);
 #if VECX_SIMD
@@ -1635,14 +1635,14 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe ref Vector3 SubVec3(int index)
+        public ref Vector3 SubVec3(int index)
         {
             Debug.Assert(index >= 0 && index * 3 + 3 <= size);
             fixed (float* p = this.p)
                 return ref reinterpret.cast_vec3(p, pi + index * 3);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe ref Vector6 SubVec6(int index)
+        public ref Vector6 SubVec6(int index)
         {
             Debug.Assert(index >= 0 && index * 6 + 6 <= size);
             fixed (float* p = this.p)
@@ -1650,19 +1650,19 @@ namespace System.NumericsX
         }
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
+        //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
         //    fixed (float* _ = p)
         //        return callback(_ + pi);
         //}
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe void ToFloatPtr(FloatPtr callback)
+        //public  void ToFloatPtr(FloatPtr callback)
         //{
         //    fixed (float* _ = p)
         //        callback(_ + pi);
         //}
 
-        public unsafe string ToString(int precision = 2)
+        public string ToString(int precision = 2)
         {
             var dimension = Dimension;
             fixed (float* _ = p)
@@ -1671,7 +1671,7 @@ namespace System.NumericsX
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct Polar3
+    public unsafe struct Polar3
     {
         public float radius, theta, phi;
 
@@ -1693,7 +1693,7 @@ namespace System.NumericsX
             this.phi = phi;
         }
 
-        public unsafe float this[int index]
+        public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get

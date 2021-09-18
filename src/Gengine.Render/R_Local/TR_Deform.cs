@@ -1,5 +1,6 @@
 using System.NumericsX;
 using System.Runtime.CompilerServices;
+using static Gengine.Render.Lib;
 using static System.NumericsX.OpenStack.OpenStack;
 using GlIndex = System.Int32;
 
@@ -10,8 +11,7 @@ namespace Gengine.Render
         // The ambientCache is on the stack, so we don't want to leave a reference to it that would try to be freed later.  Create the ambientCache immediately.
         static void R_FinishDeform(DrawSurf drawSurf, SrfTriangles newTri, DrawVert[] ac)
         {
-            if (newTri == null)
-                return;
+            if (newTri == null) return;
 
             // generate current normals, tangents, and bitangents We might want to support the possibility of deform functions generating
             // explicit normals, and we might also want to allow the cached deformInfo optimization for these.
@@ -22,9 +22,8 @@ namespace Gengine.Render
                 R_DeriveTangents(newTri, false);
                 newTri.verts = null;
             }
-
-            newTri.ambientCache = VertexCacheX.AllocFrameTemp(ac, newTri.numVerts * DrawVert.SizeOf, false);
-            newTri.indexCache = VertexCacheX.AllocFrameTemp(newTri.indexes, newTri.numIndexes * sizeof(GlIndex), true);
+            fixed (void* ac_ = ac) newTri.ambientCache = VertexCacheX.AllocFrameTemp(ac, newTri.numVerts * DrawVert.SizeOf, false);
+            fixed (void* newTri_indexes_ = newTri.indexes) newTri.indexCache = VertexCacheX.AllocFrameTemp(newTri_indexes_, newTri.numIndexes * sizeof(GlIndex), true);
 
             drawSurf.geoFrontEnd = newTri;
             drawSurf.ambientCache = newTri.ambientCache;
@@ -44,22 +43,13 @@ namespace Gengine.Render
 
             tri = surf.geoFrontEnd;
 
-            if ((tri.numVerts & 3) != 0)
-            {
-                common.Warning("R_AutospriteDeform: shader had odd vertex count");
-                return;
-            }
-            if (tri.numIndexes != (tri.numVerts >> 2) * 6)
-            {
-                common.Warning("R_AutospriteDeform: autosprite had odd index count");
-                return;
-            }
+            if ((tri.numVerts & 3) != 0) { common.Warning("R_AutospriteDeform: shader had odd vertex count"); return; }
+            if (tri.numIndexes != (tri.numVerts >> 2) * 6) { common.Warning("R_AutospriteDeform: autosprite had odd index count"); return; }
 
             R_GlobalVectorToLocal(surf.space.modelMatrix, tr.viewDef.renderView.viewaxis[1], out var leftDir);
             R_GlobalVectorToLocal(surf.space.modelMatrix, tr.viewDef.renderView.viewaxis[2], out var upDir);
 
-            if (tr.viewDef.isMirror)
-                leftDir = Vector3.origin - leftDir;
+            if (tr.viewDef.isMirror)                leftDir = Vector3.origin - leftDir;
 
             // this srfTriangles_t and all its indexes and caches are in frame memory, and will be automatically disposed of
             newTri = R_ClearedFrameAlloc<SrfTriangles>();
@@ -67,7 +57,7 @@ namespace Gengine.Render
             newTri.numIndexes = tri.numIndexes;
             newTri.indexes = R_FrameAllocMany<GlIndex>(newTri.numIndexes);
 
-            var ac = stackalloc DrawVert[newTri.numVerts];
+            var ac = Platform.alloca16(stackalloc DrawVert[newTri.numVerts]);
             var vt = tri.verts;
             for (i = 0; i < tri.numVerts; i += 4)
             {
@@ -77,7 +67,7 @@ namespace Gengine.Render
                 mid.z = 0.25f * (vt[i + 0].xyz.z + vt[i + 1].xyz.z + vt[i + 2].xyz.z + vt[i + 3].xyz.z);
 
                 delta = vt[i + 0].xyz - mid;
-                radius = delta.Length * 0.707f;        // / sqrt(2)
+                radius = delta.Length * 0.707f; // / sqrt(2)
 
                 left = leftDir * radius;
                 up = upDir * radius;
@@ -106,7 +96,7 @@ namespace Gengine.Render
         // will pivot a rectangular quad along the center of its long axis
         // Note that a geometric tube with even quite a few sides tube will almost certainly render much faster than this, so this should only be for faked volumetric tubes.
         // Make sure this is used with twosided translucent shaders, because the exact side order may not be correct.
-        static (int x, int y)[] edgeVerts = {
+        static (int x, int y)[] R_TubeDeform_edgeVerts = {
             (0, 1),
             (1, 2),
             (2, 0),
@@ -123,10 +113,8 @@ namespace Gengine.Render
 
             tri = surf.geoFrontEnd;
 
-            if ((tri.numVerts & 3) != 0)
-                common.Error("R_AutospriteDeform: shader had odd vertex count");
-            if (tri.numIndexes != (tri.numVerts >> 2) * 6)
-                common.Error("R_AutospriteDeform: autosprite had odd index count");
+            if ((tri.numVerts & 3) != 0)                common.Error("R_AutospriteDeform: shader had odd vertex count");
+            if (tri.numIndexes != (tri.numVerts >> 2) * 6)                common.Error("R_AutospriteDeform: autosprite had odd index count");
 
             // we need the view direction to project the minor axis of the tube as the view changes
             R_GlobalPointToLocal(surf.space.modelMatrix, tr.viewDef.renderView.vieworg, out var localView);

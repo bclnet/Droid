@@ -107,10 +107,9 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe float GetTimeForLength(float length, float epsilon = 0.1f)
 		{
-			if (length <= 0f)
-				return times[0];
+			if (length <= 0f) return times[0];
 
-			var accumLength = stackalloc float[values.Count];
+			var accumLength = stackalloc float[values.Count]; accumLength = (float*)_alloca16(accumLength);
 			var totalLength = 0f;
 			int index;
 			for (index = 0; index < values.Count - 1; index++)
@@ -169,7 +168,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe void SetConstantSpeed(float totalTime)
 		{
-			var length = stackalloc float[values.Count];
+			var length = stackalloc float[values.Count]; length = (float*)_alloca16(length);
 			var totalLength = 0f;
 			int i; for (i = 0; i < values.Count - 1; i++)
 			{
@@ -276,8 +275,8 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		protected unsafe float RombergIntegral(float t0, float t1, int order)
 		{
-			var temp0 = stackalloc float[order];
-			var temp1 = stackalloc float[order];
+			var temp0 = stackalloc float[order]; temp0 = (float*)_alloca16(temp0);
+			var temp1 = stackalloc float[order]; temp1 = (float*)_alloca16(temp1);
 
 			var delta = t1 - t0;
 			temp0[0] = 0.5f * delta * (GetSpeed(t0) + GetSpeed(t1));
@@ -317,7 +316,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentValue(float time)
 		{
-			var bvals = stackalloc float[values.Count];
+			var bvals = stackalloc float[values.Count]; bvals = (float*)_alloca16(bvals);
 
 			Basis(values.Count, time, bvals);
 			var v = bvals[0] * values[0];
@@ -334,7 +333,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentFirstDerivative(float time)
 		{
-			var bvals = stackalloc float[values.Count];
+			var bvals = stackalloc float[values.Count]; bvals = (float*)_alloca16(bvals);
 
 			BasisFirstDerivative(values.Count, time, bvals);
 			var v = bvals[0] * values[0];
@@ -351,7 +350,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentSecondDerivative(float time)
 		{
-			var bvals = stackalloc float[values.Count];
+			var bvals = stackalloc float[values.Count]; bvals = (float*)_alloca16(bvals);
 
 			BasisSecondDerivative(values.Count, time, bvals);
 			var v = bvals[0] * values[0];
@@ -372,7 +371,7 @@
 			if (d <= 0)
 				return;
 
-			var c = stackalloc float[d + 1];
+			var c = stackalloc float[d + 1]; c = (float*)_alloca16(c);
 			var s = (float)(t - times[0]) / (times[^1] - times[0]);
 			var o = 1f - s;
 			var ps = s;
@@ -771,12 +770,12 @@
 		{
 			int i; float inv;
 
-			var d0 = stackalloc float[values.Count - 1];
-			var d1 = stackalloc float[values.Count - 1];
-			var alpha = stackalloc <#=type#>[values.Count - 1];
-			var beta = stackalloc float[values.Count];
-			var gamma = stackalloc float[values.Count - 1];
-			var delta = stackalloc <#=type#>[values.Count];
+			var d0 = stackalloc float[values.Count - 1]; d0 = (float*)_alloca16(d0);
+			var d1 = stackalloc float[values.Count - 1]; d1 = (float*)_alloca16(d1);
+			var alpha = stackalloc <#=type#>[values.Count - 1]; alpha = (<#=type#>*)_alloca16(alpha);
+			var beta = stackalloc float[values.Count]; beta = (float*)_alloca16(beta);
+			var gamma = stackalloc float[values.Count - 1]; gamma = (float*)_alloca16(gamma);
+			var delta = stackalloc <#=type#>[values.Count]; delta = (<#=type#>*)_alloca16(delta);
 
 			for (i = 0; i < values.Count - 1; i++)
 				d0[i] = times[i + 1] - times[i];
@@ -825,12 +824,12 @@
 		{
 			int i; float inv;
 
-			var d0 = stackalloc float[values.Count - 1];
-			var d1 = stackalloc float[values.Count - 1];
-			var alpha = stackalloc <#=type#>[values.Count - 1];
-			var beta = stackalloc float[values.Count];
-			var gamma = stackalloc float[values.Count - 1];
-			var delta = stackalloc <#=type#>[values.Count];
+			var d0 = stackalloc float[values.Count - 1]; d0 = (float*)_alloca16(d0);
+			var d1 = stackalloc float[values.Count - 1]; d1 = (float*)_alloca16(d1);
+			var alpha = stackalloc <#=type#>[values.Count - 1]; alpha = (<#=type#>*)_alloca16(alpha);
+			var beta = stackalloc float[values.Count]; beta = (float*)_alloca16(beta);
+			var gamma = stackalloc float[values.Count - 1]; gamma = (float*)_alloca16(gamma);
+			var delta = stackalloc <#=type#>[values.Count]; delta = (<#=type#>*)_alloca16(delta);
 
 			for (i = 0; i < values.Count - 1; i++)
 				d0[i] = times[i + 1] - times[i];
@@ -887,7 +886,7 @@
 		{
 			int i, j; float c0, c1; MatrixX mat = new(); VectorX x = new();
 
-			var d0 = stackalloc float[values.Count - 1];
+			var d0 = stackalloc float[values.Count - 1]; d0 = (float*)_alloca16(d0);
 			x.SetData(values.Count, VectorX.VECX_ALLOCA(values.Count));
 			mat.SetData(values.Count, values.Count, MatrixX.MATX_ALLOCA(values.Count * values.Count));
 
@@ -929,7 +928,7 @@
 			{
 				for (j = 0; j < values.Count; j++)
 					x[j] = c[j][i];
-				mat.LU_Solve(x, x, null);
+				mat.LU_Solve(ref x, x, null);
 				for (j = 0; j < values.Count; j++)
 					c.Ptr()[j][i] = x[j];
 			}
@@ -953,8 +952,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentValue(float time)
 		{
-			if (times.Count == 1)
-				return values[0];
+			if (times.Count == 1) return values[0];
 
 			var bvals = stackalloc float[4];
 			var clampedTime = ClampedTime(time);
@@ -977,8 +975,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentFirstDerivative(float time)
 		{
-			if (times.Count == 1)
-				return values[0] - values[0];
+			if (times.Count == 1) return values[0] - values[0];
 
 			var bvals = stackalloc float[4];
 			var clampedTime = ClampedTime(time);
@@ -1002,8 +999,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentSecondDerivative(float time)
 		{
-			if (times.Count == 1)
-				return values[0] - values[0];
+			if (times.Count == 1) return values[0] - values[0];
 
 			var bvals = stackalloc float[4];
 			var clampedTime = ClampedTime(time);
@@ -1137,8 +1133,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentValue(float time)
 		{
-			if (times.Count == 1)
-				return values[0];
+			if (times.Count == 1) return values[0];
 
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
@@ -1160,8 +1155,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentFirstDerivative(float time)
 		{
-			if (times.Count == 1)
-				return values[0] - values[0];
+			if (times.Count == 1) return values[0] - values[0];
 
 			var bvals = stackalloc float[4];
 			var clampedTime = ClampedTime(time);
@@ -1184,8 +1178,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentSecondDerivative(float time)
 		{
-			if (times.Count == 1)
-				return values[0] - values[0];
+			if (times.Count == 1) return values[0] - values[0];
 
 			var bvals = stackalloc float[4];
 			var clampedTime = ClampedTime(time);
@@ -1305,8 +1298,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public override <#=type#> GetCurrentValue(float time)
 		{
-			if (times.Count == 1)
-				return values[0];
+			if (times.Count == 1) return values[0];
 
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
@@ -1327,8 +1319,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public override <#=type#> GetCurrentFirstDerivative(float time)
 		{
-			if (times.Count == 1)
-				return values[0];
+			if (times.Count == 1) return values[0];
 
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
@@ -1349,8 +1340,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public override <#=type#> GetCurrentSecondDerivative(float time)
 		{
-			if (times.Count == 1)
-				return values[0];
+			if (times.Count == 1) return values[0];
 
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
@@ -1374,8 +1364,8 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		protected float Basis(int index, int order, float t)
 		{
-			if (order <= 1)
-				return TimeForIndex(index) < t && t <= TimeForIndex(index + 1) ? 1f : 0f;
+			if (order <= 1) return TimeForIndex(index) < t && t <= TimeForIndex(index + 1) ? 1f : 0f;
+
 			var sum = 0f;
 			var d1 = TimeForIndex(index + order - 1) - TimeForIndex(index);
 			if (d1 != 0f)
@@ -1426,8 +1416,8 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentValue(float time)
 		{
-			if (times.Count == 1)
-				return values[0];
+			if (times.Count == 1) return values[0];
+
 			var bvals = stackalloc float[4];
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
@@ -1449,8 +1439,8 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentFirstDerivative(float time)
 		{
-			if (times.Count == 1)
-				return values[0] - values[0];
+			if (times.Count == 1) return values[0] - values[0];
+
 			var bvals = stackalloc float[4];
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
@@ -1473,8 +1463,8 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentSecondDerivative(float time)
 		{
-			if (times.Count == 1)
-				return values[0] - values[0];
+			if (times.Count == 1) return values[0] - values[0];
+
 			var bvals = stackalloc float[4];
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
@@ -1550,9 +1540,9 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentValue(float time)
 		{
-			if (times.Count == 1)
-				return values[0];
-			var bvals = stackalloc float[order];
+			if (times.Count == 1) return values[0];
+
+			var bvals = stackalloc float[order]; bvals = (float*)_alloca16(bvals);
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
 			Basis(i - 1, order, clampedTime, bvals);
@@ -1572,9 +1562,9 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentFirstDerivative(float time)
 		{
-			if (times.Count == 1)
-				return values[0] - values[0];
-			var bvals = stackalloc float[order];
+			if (times.Count == 1) return values[0] - values[0];
+
+			var bvals = stackalloc float[order]; bvals = (float*)_alloca16(bvals);
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
 			BasisFirstDerivative(i - 1, order, clampedTime, bvals);
@@ -1594,9 +1584,9 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentSecondDerivative(float time)
 		{
-			if (times.Count == 1)
-				return values[0] - values[0];
-			var bvals = stackalloc float[order];
+			if (times.Count == 1) return values[0] - values[0];
+
+			var bvals = stackalloc float[order]; bvals = (float*)_alloca16(bvals);
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
 			BasisSecondDerivative(i - 1, order, clampedTime, bvals);
@@ -1730,10 +1720,9 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentValue(float time)
 		{
-			if (times.Count == 1)
-				return values[0];
+			if (times.Count == 1) return values[0];
 
-			var bvals = stackalloc float[order];
+			var bvals = stackalloc float[order]; bvals = (float*)_alloca16(bvals);
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
 			Basis(i - 1, order, clampedTime, bvals);
@@ -1757,11 +1746,10 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentFirstDerivative(float time)
 		{
-			if (times.Count == 1)
-				return values[0];
+			if (times.Count == 1) return values[0];
 
-			var bvals = stackalloc float[order];
-			var d1vals = stackalloc float[order];
+			var bvals = stackalloc float[order]; bvals = (float*)_alloca16(bvals);
+			var d1vals = stackalloc float[order]; d1vals = (float*)_alloca16(d1vals);
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
 			Basis(i - 1, order, clampedTime, bvals);
@@ -1791,12 +1779,11 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override <#=type#> GetCurrentSecondDerivative(float time)
 		{
-			if (times.Count == 1)
-				return values[0];
+			if (times.Count == 1) return values[0];
 
-			var bvals = stackalloc float[order];
-			var d1vals = stackalloc float[order];
-			var d2vals = stackalloc float[order];
+			var bvals = stackalloc float[order]; bvals = (float*)_alloca16(bvals);
+			var d1vals = stackalloc float[order]; d1vals = (float*)_alloca16(d1vals);
+			var d2vals = stackalloc float[order]; d2vals = (float*)_alloca16(d2vals);
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
 			Basis(i - 1, order, clampedTime, bvals);
