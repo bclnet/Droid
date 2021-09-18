@@ -1,9 +1,10 @@
-using Droid.Core;
-using Droid.UI;
+using Gengine.UI;
 using System;
-using static Droid.Core.Lib;
+using System.NumericsX;
+using System.NumericsX.OpenStack;
+using static System.NumericsX.OpenStack.OpenStack;
 
-namespace Droid.Render
+namespace Gengine.Render
 {
     partial class TRX
     {
@@ -32,9 +33,9 @@ namespace Droid.Render
             // determine the world S and T vectors from the first drawSurf triangle
             a = tri.verts[tri.indexes[0]]; b = tri.verts[tri.indexes[1]]; c = tri.verts[tri.indexes[2]];
 
-            MathX.VectorSubtract(ref b.xyz, ref a.xyz, d0);
+            MathX.VectorSubtract(b.xyz, a.xyz, d0);
             d0[3] = b.st.x - a.st.x; d0[4] = b.st.y - a.st.y;
-            MathX.VectorSubtract(ref c.xyz, ref a.xyz, d1);
+            MathX.VectorSubtract(c.xyz, a.xyz, d1);
             d1[3] = c.st.x - a.st.x; d1[4] = c.st.y - a.st.y;
 
             area = d0[3] * d1[4] - d0[4] * d1[3];
@@ -61,8 +62,8 @@ namespace Droid.Render
             axis[2].x = plane[0]; axis[2].y = plane[1]; axis[2].z = plane[2];
 
             // take point 0 and project the vectors to the texture origin
-            MathX.VectorMA(ref a.xyz, boundsOrg[0] - a.st.x, ref axis[0], ref origin);
-            MathX.VectorMA(ref origin, boundsOrg[1] - a.st.y, ref axis[1], ref origin);
+            MathX.VectorMA(a.xyz, boundsOrg[0] - a.st.x, axis[0], out origin);
+            MathX.VectorMA(origin, boundsOrg[1] - a.st.y, axis[1], out origin);
         }
 
         // Create a texture space on the given surface and call the GUI generator to create quads for it.

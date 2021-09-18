@@ -1,7 +1,7 @@
 #define USE_INVA // this shouldn't change anything, but previously renderbumped models seem to need it
 #define DERIVE_UNSMOOTHED_BITANGENT // instead of using the texture T vector, cross the normal and S vector for an orthogonal axis
 
-namespace Droid.Render
+namespace Gengine.Render
 {
 	partial class TRX
 	{

@@ -1,12 +1,14 @@
 #define USE_TRI_DATA_ALLOCATOR
-using Droid.Core;
-using Droid.UI;
+using Gengine.Framework;
 using System;
 using System.Collections.Generic;
+using System.NumericsX;
+using System.NumericsX.OpenStack;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static System.NumericsX.OpenStack.OpenStack;
 
-namespace Droid.Render
+namespace Gengine.Render
 {
     public static partial class TRX
     {
@@ -278,6 +280,7 @@ namespace Droid.Render
         // Can also be treated as a float[48]
         [FieldOffset(0)] public fixed float viewMatrix[48];
     }
+
     public class ViewEntity
     {
         public ViewEntity next;

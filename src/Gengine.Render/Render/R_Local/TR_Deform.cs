@@ -1,10 +1,9 @@
-using Droid.Core;
+using System.NumericsX;
 using System.Runtime.CompilerServices;
-using static Droid.Core.Lib;
-using static Droid.G;
+using static System.NumericsX.OpenStack.OpenStack;
 using GlIndex = System.Int32;
 
-namespace Droid.Render
+namespace Gengine.Render
 {
     unsafe partial class TRX
     {

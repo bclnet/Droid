@@ -1,8 +1,7 @@
-using Droid.Core;
 using System;
-using static Droid.Core.Lib;
+using static System.NumericsX.OpenStack.OpenStack;
 
-namespace Droid.Render
+namespace Gengine.Render
 {
     partial class TRX
     {

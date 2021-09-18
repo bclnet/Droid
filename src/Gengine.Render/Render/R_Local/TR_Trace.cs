@@ -1,9 +1,8 @@
 #define TEST_TRACE
+using System.NumericsX;
+using static System.NumericsX.OpenStack.OpenStack;
 
-using Droid.Core;
-using static Droid.Core.Lib;
-
-namespace Droid.Render
+namespace Gengine.Render
 {
     partial class TRX
     {
@@ -38,7 +37,7 @@ namespace Droid.Render
 
             // catagorize each point against the four planes
             var cullBits = stackalloc byte[tri.numVerts];
-            SIMDProcessor.TracePointCull(cullBits, totalOr, radius, planes, tri.verts, tri.numVerts);
+            ISimd._.TracePointCull(cullBits, totalOr, radius, planes, tri.verts, tri.numVerts);
 
             // if we don't have points on both sides of both the ray planes, no intersection
             if (((totalOr ^ (totalOr >> 4)) & 3) != 0)

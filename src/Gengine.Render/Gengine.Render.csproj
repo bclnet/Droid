@@ -13,12 +13,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Render\R_Local\**" />
-    <EmbeddedResource Remove="Render\R_Local\**" />
-    <None Remove="Render\R_Local\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Remove="Render\M_Local\ModelDecal.cs" />
     <Compile Remove="Render\M_Local\ModelOverlay.cs" />
     <Compile Remove="Render\M_Local\Model_local.cs" />

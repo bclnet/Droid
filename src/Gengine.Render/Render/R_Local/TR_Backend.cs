@@ -1,10 +1,8 @@
-using Droid.Sys;
 using System.Linq;
 using WaveEngine.Bindings.OpenGLES;
-using static Droid.Core.Lib;
-using static Droid.Render.QGL;
+using static Gengine.Render.QGL;
 
-namespace Droid.Render
+namespace Gengine.Render
 {
     partial class TRX
     {
