@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.NumericsX;
+using System.NumericsX.OpenStack;
 using System.Runtime.InteropServices;
 using static System.NumericsX.OpenStack.OpenStack;
 
@@ -131,48 +132,37 @@ namespace Gengine.Render
 
         public void ParseMesh(Lexer parser, int numJoints, JointMat[] joints)
         {
-            idToken token;
-            idToken name;
+            Token token;
+            Token name;
             int num;
             int count;
             int jointnum;
-            idStr shaderName;
+            string shaderName;
             int i, j;
-            idList<int> tris;
-            idList<int> firstWeightForVertex;
-            idList<int> numWeightsForVertex;
+            List<int> tris;
+            List<int> firstWeightForVertex;
+            List<int> numWeightsForVertex;
             int maxweight;
-            idList<vertexWeight_t> tempWeights;
+            List<VertexWeight> tempWeights;
 
             parser.ExpectTokenString("{");
 
-            //
             // parse name
-            //
             if (parser.CheckTokenString("name"))
-            {
-                parser.ReadToken(&name);
-            }
+                parser.ReadToken(out name);
 
-            //
             // parse shader
-            //
             parser.ExpectTokenString("shader");
 
-            parser.ReadToken(&token);
+            parser.ReadToken(out token);
             shaderName = token;
 
             shader = declManager.FindMaterial(shaderName);
 
-            //
             // parse texture coordinates
-            //
             parser.ExpectTokenString("numverts");
             count = parser.ParseInt();
-            if (count < 0)
-            {
-                parser.Error("Invalid size: %s", token.c_str());
-            }
+            if (count < 0) parser.Error($"Invalid size: {token}");
 
             texCoords.SetNum(count);
             firstWeightForVertex.SetNum(count);
@@ -180,7 +170,7 @@ namespace Gengine.Render
 
             numWeights = 0;
             maxweight = 0;
-            for (i = 0; i < texCoords.Num(); i++)
+            for (i = 0; i < texCoords.Count; i++)
             {
                 parser.ExpectTokenString("vert");
                 parser.ParseInt();

@@ -30,6 +30,18 @@ namespace System.NumericsX.OpenStack
         // use a different major for each game
         public const int ASYNC_PROTOCOL_MAJOR = 1;
 
+        // Savegame Version
+        // Update when you can no longer maintain compatibility with previous savegames
+        // NOTE: a seperate core savegame version and game savegame version could be useful
+        // 16: Doom v1.1
+        // 17: Doom v1.2 / D3XP. Can still read old v16 with defaults for new data
+        // 18: Doom3Quest v1.0
+        public const int SAVEGAME_VERSION = 18;
+
+        // <= Doom v1.1: 1. no DS_VERSION token ( default )
+        // Doom v1.2: 2
+        public const int RENDERDEMO_VERSION = 2;
+
         #region BUILD DEFINES
 
         public const int ASYNC_PROTOCOL_MINOR = 42;

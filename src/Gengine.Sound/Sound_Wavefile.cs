@@ -19,7 +19,7 @@ namespace Gengine.Sound
         DateTime mfileTime;
 
         bool mbIsReadingFromMemory;
-        short[] mpbData;
+        byte[] mpbData;
         int mpbDataCur;
         int mulDataSize;
 
@@ -30,7 +30,7 @@ namespace Gengine.Sound
         // Then call Read() as needed.  Calling the destructor or Close() will close the file.
         public WaveFile()
         {
-            mpwfx.memset();
+            mpwfx = default;
             mhmmio = null;
             mdwSize = 0;
             mseekBase = 0;
@@ -48,16 +48,17 @@ namespace Gengine.Sound
             if (mbIsReadingFromMemory && mpbData != null)
                 mpbData = null;
 
-            mpwfx.memset();
+            mpwfx = default;
         }
 
         // Opens a wave file for reading
-        public int Open(string strFileName, Action<WaveformatEx> pwfx = null)
+        public int Open(string strFileName, out WaveformatEx pwfx)
         {
+            pwfx = default;
             mbIsReadingFromMemory = false;
 
             mpbData = null;
-            mpbDataCur = mpbData;
+            mpbDataCur = 0;
 
             if (strFileName == null)
                 return -1;
@@ -67,9 +68,9 @@ namespace Gengine.Sound
             // note: used to only check for .wav when making a build
             name = PathX.SetFileExtension(name, ".ogg");
             if (fileSystem.ReadFile(name, out var _) != -1)
-                return OpenOGG(name, pwfx);
+                return OpenOGG(name, out pwfx);
 
-            mpwfx.memset();
+            mpwfx = default;
 
             mhmmio = fileSystem.OpenFileRead(strFileName);
             if (mhmmio == null) { mdwSize = 0; return -1; }
@@ -84,19 +85,19 @@ namespace Gengine.Sound
 
             if (mck.cksize != 0xffffffff)
             {
-                pwfx?.Invoke(mpwfx.Format);
+                pwfx = mpwfx.Format;
                 return 0;
             }
             return -1;
         }
 
         // copy data to idWaveFile member variable from memory
-        public int OpenFromMemory(short[] pbData, int ulDataSize, WaveformatExtensible pwfx)
+        public int OpenFromMemory(byte[] pbData, int ulDataSize, WaveformatExtensible pwfx)
         {
             mpwfx = pwfx;
             mulDataSize = ulDataSize;
             mpbData = pbData;
-            mpbDataCur = mpbData;
+            mpbDataCur = 0;
             mdwSize = ulDataSize / sizeof(short);
             mMemSize = ulDataSize;
             mbIsReadingFromMemory = true;
@@ -110,9 +111,9 @@ namespace Gengine.Sound
             Mminfo ckIn;           // chunk info. for general use.
             PcmWaveFormat pcmWaveFormat;  // Temp PCM structure to load in.
 
-            mpwfx.memset();
-
-            mhmmio.Read((byte*)&mckRiff, 12);
+            mpwfx = default;
+            fixed (void* mckRiff_ = &mckRiff)
+                mhmmio.Read((byte*)mckRiff_, 12);
             Debug.Assert(!isOgg);
             mckRiff.ckid = LittleInt(mckRiff.ckid);
             mckRiff.cksize = LittleUInt(mckRiff.cksize);
@@ -151,7 +152,7 @@ namespace Gengine.Sound
             pcmWaveFormat.wBitsPerSample = LittleShort(pcmWaveFormat.wBitsPerSample);
 
             // Copy the bytes from the pcm structure to the waveformatex_t structure
-            mpwfx = pcmWaveFormat;
+            mpwfx.memcpy(ref pcmWaveFormat);
 
             // Allocate the waveformatex_t, but if its not pcm format, read the next word, and thats how many extra bytes to allocate.
             if (pcmWaveFormat.wf.wFormatTag == WAVE_FORMAT_TAG.PCM)
@@ -183,7 +184,7 @@ namespace Gengine.Sound
         public unsafe int ResetFile()
         {
             if (mbIsReadingFromMemory)
-                mpbDataCur = mpbData;
+                mpbDataCur = 0;
             else
             {
                 if (mhmmio == null)
@@ -221,10 +222,11 @@ namespace Gengine.Sound
             if (ogg != null) return ReadOGG(pBuffer, dwSizeToRead, pdwSizeRead);
             else if (mbIsReadingFromMemory)
             {
-                if (mpbDataCur == null) return -1;
-                if ((byte*)(mpbDataCur + dwSizeToRead) > (byte*)(mpbData + mulDataSize))
-                    dwSizeToRead = mulDataSize - (int)(mpbDataCur - mpbData);
-                ISimd.Memcpy(pBuffer, mpbDataCur, dwSizeToRead);
+                if (mpbDataCur == 0) return -1;
+                if (mpbDataCur + dwSizeToRead > mulDataSize)
+                    dwSizeToRead = mulDataSize - mpbDataCur;
+                fixed (void* mpbDataCur_ = &mpbData[mpbDataCur])
+                    ISimd._.Memcpy(pBuffer, mpbDataCur_, dwSizeToRead);
                 mpbDataCur += dwSizeToRead;
 
                 pdwSizeRead?.Invoke(dwSizeToRead);
@@ -232,8 +234,7 @@ namespace Gengine.Sound
             }
             else
             {
-                if (mhmmio == null) return -1;
-                if (pBuffer == null) return -1;
+                if (mhmmio == null || pBuffer == null) return -1;
 
                 dwSizeToRead = mhmmio.Read(pBuffer, dwSizeToRead);
                 // this is hit by ogg code, which does it's own byte swapping internally
@@ -247,7 +248,7 @@ namespace Gengine.Sound
         public int Seek(int offset)
         {
             if (ogg != null) common.FatalError("WaveFile::Seek: cannot seek on an OGG file\n");
-            else if (mbIsReadingFromMemory) mpbDataCur = mpbData + offset;
+            else if (mbIsReadingFromMemory) mpbDataCur = offset;
             else
             {
                 if (mhmmio == null) return -1;

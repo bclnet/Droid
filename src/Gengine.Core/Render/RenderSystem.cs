@@ -106,7 +106,7 @@ namespace Gengine.Render
         public static void LightProjectionMatrix(Vector3 origin, Plane rearPlane, Vector4[] mat) => throw new NotImplementedException();
 
         // used by the view shot taker
-        public static void ScreenshotFilename(out int lastNumber, string base_, string fileName) => throw new NotImplementedException();
+        public static void ScreenshotFilename(ref int lastNumber, string base_, out string fileName) => throw new NotImplementedException();
 
         public static CVar r_useLightPortalFlow = new("r_useLightPortalFlow", "1", CVAR.RENDERER | CVAR.BOOL, "use a more precise area reference determination");
         public static CVar r_multiSamples = new("r_multiSamples", "0", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.INTEGER, "number of antialiasing samples");

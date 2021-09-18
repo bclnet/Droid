@@ -1,4 +1,4 @@
-using Gengine.Core;
+using Gengine.Framework;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
@@ -20,7 +20,7 @@ namespace Gengine.UI
 
     public class MarkerWindow : Window
     {
-        LogStats[] loggedStats = new LogStats[LogStats.MAX_LOGGED_STATS];
+        LogStats[] loggedStats = new LogStats[ISession.MAX_LOGGED_STATS];
         List<MarkerData> markerTimes = new();
         string statData;
         int numStats;

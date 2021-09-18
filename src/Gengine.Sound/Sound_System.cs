@@ -65,7 +65,7 @@ namespace Gengine.Sound
         public const int fourcc_riff = 'R' | 'I' << 8 | 'F' << 16 | 'F' << 24;
 
         public const int SOUND_MAX_CHANNELS = 8;
-        public const int SOUND_DECODER_FREE_DELAY = 1000 * ISimd.MIXBUFFER_SAMPLES / Usercmd.USERCMD_MSEC;       // four seconds
+        public const int SOUND_DECODER_FREE_DELAY = 1000 * ISimd.MIXBUFFER_SAMPLES / IUsercmd.USERCMD_MSEC;       // four seconds
         public const int PRIMARYFREQ = 44100;          // samples per second
         public const float SND_EPSILON = 1f / 32768f;  // if volume is below this, it will always multiply to zero
         public const int ROOM_SLICES_IN_BUFFER = 10;
@@ -345,7 +345,7 @@ namespace Gengine.Sound
         // called from async sound thread when com_asyncSound == 2
         // DG: using this for the "traditional" sound updates that only happen about every 100ms(and lead to delays between 1 and 110ms between
         // starting a sound in gamecode and it being played), for people who like that..
-        public virtual int AsyncUpdate(int time)
+        public unsafe virtual int AsyncUpdate(int time)
         {
             if (!isInitialized || shutdown)
                 return 0;
@@ -388,7 +388,8 @@ namespace Gengine.Sound
 
             // let the active sound world mix all the channels in unless muted or avi demo recording
             if (!muted && currentSoundWorld != null && currentSoundWorld.fpa[0] == null)
-                currentSoundWorld.MixLoop(newSoundTime, numSpeakers, finalMixBuffer);
+                fixed (float* finalMixBuffer_ = finalMixBuffer)
+                    currentSoundWorld.MixLoop(newSoundTime, numSpeakers, finalMixBuffer_);
 
             // disable audio hardware caching (this updates ALL settings since last alcSuspendContext)
             ALC.ProcessContext(openalContext);
@@ -404,7 +405,7 @@ namespace Gengine.Sound
         // DG: using this now for 60Hz sound updates called from async sound thread when com_asyncSound is 3 or 1
         // also called from main thread if com_asyncSound == 0 (those were the default values used in dhewm3 on unix-likes (except mac) or rest)
         // with this, once every async tic new sounds are started and existing ones updated, instead of once every ~100ms.
-        public virtual int AsyncUpdateWrite(int time)
+        public unsafe virtual int AsyncUpdateWrite(int time)
         {
             if (!isInitialized || shutdown)
                 return 0;
@@ -417,7 +418,8 @@ namespace Gengine.Sound
 
             // let the active sound world mix all the channels in unless muted or avi demo recording
             if (!muted && currentSoundWorld != null && currentSoundWorld.fpa[0] == null)
-                currentSoundWorld.MixLoop(sampleTime, numSpeakers, finalMixBuffer);
+                fixed (float* finalMixBuffer_ = finalMixBuffer)
+                    currentSoundWorld.MixLoop(sampleTime, numSpeakers, finalMixBuffer_);
 
             // disable audio hardware caching (this updates ALL settings since last alcSuspendContext)
             ALC.ProcessContext(openalContext);

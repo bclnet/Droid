@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.NumericsX;
+using System.NumericsX.OpenStack;
 using System.Runtime.InteropServices;
 using static System.NumericsX.OpenStack.OpenStack;
 
@@ -159,14 +160,12 @@ namespace Gengine.Render
                 ASE_GetToken(false);
 
                 // remove the quotes
-                char* s = strstr(ase.token + 1, "\"");
-                if (s)
-                    *s = 0;
+                var s = ase.token.IndexOf("\"", 1);
+                if (s != -1) ase.token = ase.token.Remove(s);
                 var matname = ase.token + 1;
 
                 // convert the 3DSMax material pathname to a qpath
-                matname = matname.BackSlashesToSlashes();
-                var qpath = fileSystem.OSPathToRelativePath(matname);
+                var qpath = fileSystem.OSPathToRelativePath(PathX.BackSlashesToSlashes(matname));
                 ase.currentMaterial.name = qpath;
             }
             else if (token == "*UVW_U_OFFSET")
@@ -279,13 +278,13 @@ namespace Gengine.Render
 
                 // we are flipping the order here to change the front/back facing from 3DS to our standard (clockwise facing out)
                 ASE_GetToken(false);    // skip label
-                ASE_GetToken(false); pMesh.faces[ase.currentFace].vertexNum[0] = float.Parse(ase.token);
+                ASE_GetToken(false); pMesh.faces[ase.currentFace].vertexNum[0] = (int)floatX.Parse(ase.token);
 
                 ASE_GetToken(false);    // skip label
-                ASE_GetToken(false); pMesh.faces[ase.currentFace].vertexNum[2] = float.Parse(ase.token);
+                ASE_GetToken(false); pMesh.faces[ase.currentFace].vertexNum[2] = (int)floatX.Parse(ase.token);
 
                 ASE_GetToken(false);    // skip label
-                ASE_GetToken(false); pMesh.faces[ase.currentFace].vertexNum[1] = float.Parse(ase.token);
+                ASE_GetToken(false); pMesh.faces[ase.currentFace].vertexNum[1] = (int)floatX.Parse(ase.token);
 
                 ASE_GetToken(true);
 

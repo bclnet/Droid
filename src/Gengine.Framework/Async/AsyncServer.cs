@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.NumericsX;
-using System.NumericsX.Core;
-using System.NumericsX.Sys;
+using System.NumericsX.OpenStack;
+using System.NumericsX.OpenStack.System;
 using static Gengine.Framework.Async.MsgChannel;
+using static Gengine.Framework.Lib;
 using static Gengine.Lib;
-using static System.NumericsX.Lib;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Framework.Async
 {
@@ -139,7 +141,7 @@ namespace Gengine.Framework.Async
 
         Challenge[] challenges = new Challenge[MAX_CHALLENGES]; // to prevent invalid IPs from connecting
         ServerClient[] clients = new ServerClient[Config.MAX_ASYNC_CLIENTS];   // clients
-        Usercmd[,] userCmds = new Usercmd[Config.MAX_USERCMD_BACKUP, Config.MAX_ASYNC_CLIENTS];
+        Usercmd[][] userCmds = Enumerable.Repeat(new Usercmd[Config.MAX_ASYNC_CLIENTS], Config.MAX_USERCMD_BACKUP).ToArray();
 
         int gameInitId;                 // game initialization identification
         int gameFrame;                  // local game frame
@@ -396,7 +398,7 @@ namespace Gengine.Framework.Async
             if (localClientNum >= 0) BeginLocalClient();
             else game.SetLocalClient(-1);
 
-            if (sessLocal.mapSpawnData.serverInfo.GetInt("si_pure"))
+            if (sessLocal.mapSpawnData.serverInfo.GetInt("si_pure") != 0)
             {
                 // lock down the pak list
                 fileSystem.UpdatePureServerChecksums();
@@ -605,7 +607,7 @@ namespace Gengine.Framework.Async
 
             // clear the user commands
             for (var i = 0; i < Config.MAX_USERCMD_BACKUP; i++)
-                userCmds[i][clientNum].memset();
+                userCmds[i][clientNum] = default;
 
             // let the game know a player connected
             game.ServerClientConnect(clientNum, client.guid);
@@ -796,11 +798,7 @@ namespace Gengine.Framework.Async
         public void UpdateUI(int clientNum)
         {
             var info = game.GetUserInfo(clientNum);
-            if (!info)
-            {
-                common.Warning("AsyncServer::UpdateUI: no info from game\n");
-                return;
-            }
+            if (info != null) { common.Warning("AsyncServer::UpdateUI: no info from game\n"); return; }
 
             SendUserInfoBroadcast(clientNum, info, true);
         }
@@ -942,7 +940,7 @@ namespace Gengine.Framework.Async
         bool SendSnapshotToClient(int clientNum)
         {
             int i, j, index, numUsercmds;
-            Usercmd last;
+            Usercmd? last;
             byte[] clientInPVS = new byte[Config.MAX_ASYNC_CLIENTS >> 3];
 
             var client = clients[clientNum];
@@ -1008,8 +1006,7 @@ namespace Gengine.Framework.Async
 
         void ProcessUnreliableClientMessage(int clientNum, BitMsg msg)
         {
-            int i, acknowledgeSequence, clientGameInitId, clientGameFrame, numUsercmds, index;
-            Usercmd last;
+            int i, acknowledgeSequence, clientGameInitId, clientGameFrame, numUsercmds, index; Usercmd? last;
 
             var client = clients[clientNum];
 
@@ -1020,7 +1017,7 @@ namespace Gengine.Framework.Async
             clientGameInitId = msg.ReadInt();
 
             // while loading a map the client may send empty messages to keep the connection alive
-            if (clientGameInitId == GAME_INIT_ID_MAP_LOAD)
+            if (clientGameInitId == Config.GAME_INIT_ID_MAP_LOAD)
             {
                 if (AsyncNetwork.verbose.Integer != 0)
                     common.Printf($"ignore unreliable msg from client {clientNum}, gameInitId == ID_MAP_LOAD\n");
@@ -1105,7 +1102,7 @@ namespace Gengine.Framework.Async
                         for (last = null, i = clientGameFrame - numUsercmds + 1; i <= clientGameFrame; i++)
                         {
                             index = i & (Config.MAX_USERCMD_BACKUP - 1);
-                            AsyncNetwork.ReadUserCmdDelta(msg, userCmds[index][clientNum], last);
+                            AsyncNetwork.ReadUserCmdDelta(msg, ref userCmds[index][clientNum], last);
                             userCmds[index][clientNum].gameFrame = i;
                             userCmds[index][clientNum].duplicateCount = 0;
                             if (AsyncNetwork.UsercmdInputChanged(userCmds[(i - 1) & (Config.MAX_USERCMD_BACKUP - 1)][clientNum], userCmds[index][clientNum]))
@@ -1115,8 +1112,8 @@ namespace Gengine.Framework.Async
 
                         if (last != null)
                         {
-                            client.gameFrame = last.gameFrame;
-                            client.gameTime = last.gameTime;
+                            client.gameFrame = last.Value.gameFrame;
+                            client.gameTime = last.Value.gameTime;
                         }
 
                         if (AsyncNetwork.verbose.Integer == 2)
@@ -1215,29 +1212,29 @@ namespace Gengine.Framework.Async
                     // return if something is wrong. break if we have found a valid auth
                     if (string.IsNullOrEmpty(challenges[i].guid))
                     {
-                        common.DPrintf($"auth: client {SysW.NetAdrToString(challenges[i].address)} has no guid yet\n");
+                        common.DPrintf($"auth: client {challenges[i].address} has no guid yet\n");
                         return;
                     }
                     if (challenges[i].guid == client_guid)
                     {
-                        common.DPrintf($"auth: client {SysW.NetAdrToString(challenges[i].address)} {challenges[i].guid} not matched, auth server says guid {client_guid}\n");
+                        common.DPrintf($"auth: client {challenges[i].address} {challenges[i].guid} not matched, auth server says guid {client_guid}\n");
                         return;
                     }
-                    if (!SysW.CompareNetAdrBase(client_from, challenges[i].address))
+                    if (client_from != challenges[i].address)
                         // let auth work when server and master don't see the same IP
-                        common.DPrintf($"auth: matched guid '{client_guid}' for != IPs {SysW.NetAdrToString(client_from)} and {SysW.NetAdrToString(challenges[i].address)}\n");
+                        common.DPrintf($"auth: matched guid '{client_guid}' for != IPs {client_from} and {challenges[i].address}\n");
                     break;
                 }
             }
             if (i >= MAX_CHALLENGES)
             {
-                common.DPrintf("auth: failed client lookup %s %s\n", SysW.NetAdrToString(client_from), client_guid);
+                common.DPrintf($"auth: failed client lookup {client_from} {client_guid}\n");
                 return;
             }
 
             if (challenges[i].authState != AuthState.CDK_WAIT)
             {
-                common.DWarning($"auth: challenge 0x{challenges[i].challenge:x} {SysW.NetAdrToString(challenges[i].address)} authState {challenges[i].authState} != CDK_WAIT");
+                common.DWarning($"auth: challenge 0x{challenges[i].challenge:x} {challenges[i].address} authState {challenges[i].authState} != CDK_WAIT");
                 return;
             }
 
@@ -1245,7 +1242,7 @@ namespace Gengine.Framework.Async
             if (reply == AuthReply.AUTH_OK)
             {
                 challenges[i].authState = AuthState.CDK_OK;
-                common.Printf($"client {SysW.NetAdrToString(client_from)} {client_guid} is authed\n");
+                common.Printf($"client {client_from} {client_guid} is authed\n");
             }
             else
             {
@@ -1254,7 +1251,7 @@ namespace Gengine.Framework.Async
                     : replyPrintMsg;
                 // maybe localize it
                 lmsg = common.LanguageDictGetString(lmsg);
-                common.DPrintf($"auth: client {SysW.NetAdrToString(client_from)} {client_guid} - {authReplyStr[(int)reply]} {lmsg}\n");
+                common.DPrintf($"auth: client {client_from} {client_guid} - {authReplyStr[(int)reply]} {lmsg}\n");
                 challenges[i].authReply = reply;
                 challenges[i].authReplyMsg = replyMsg;
                 challenges[i].authReplyPrint = replyPrintMsg;
@@ -1273,7 +1270,7 @@ namespace Gengine.Framework.Async
             // see if we already have a challenge for this ip
             for (i = 0; i < MAX_CHALLENGES; i++)
             {
-                if (!challenges[i].connected && SysW.CompareNetAdrBase(from, challenges[i].address) && clientId == challenges[i].clientId)
+                if (!challenges[i].connected && from == challenges[i].address && clientId == challenges[i].clientId)
                     break;
                 if (challenges[i].time < oldestTime)
                 {
@@ -1300,7 +1297,7 @@ namespace Gengine.Framework.Async
             }
             challenges[i].pingTime = serverTime;
 
-            common.Printf($"sending challenge 0x{challenges[i].challenge:x} to {SysW.NetAdrToString(from)}\n");
+            common.Printf($"sending challenge 0x{challenges[i].challenge:x} to {from}\n");
 
             outMsg.InitW(msgBuf);
             outMsg.WriteShort(CONNECTIONLESS_MESSAGE_ID);
@@ -1337,8 +1334,8 @@ namespace Gengine.Framework.Async
                 }
             }
 #else
-            if (!SysW.IsLANAddress(from))
-                common.Printf($"Build Does not have CD Key Enforcement enabled. Client {SysW.NetAdrToString(from)} is not a LAN address, but will be accepted\n");
+            if (!from.IsLANAddress)
+                common.Printf($"Build Does not have CD Key Enforcement enabled. Client {from} is not a LAN address, but will be accepted\n");
             challenges[i].authState = AuthState.CDK_OK;
 #endif
         }
@@ -1356,7 +1353,7 @@ namespace Gengine.Framework.Async
                 common.Warning("pure server has no pak files referenced");
                 return false;
             }
-            common.DPrintf($"client {SysW.NetAdrToString(to)}: sending pure pak list\n");
+            common.DPrintf($"client {to}: sending pure pak list\n");
 
             // send our list of required paks
             msg.InitW(msgBuf);
@@ -1411,11 +1408,11 @@ namespace Gengine.Framework.Async
                 var client = clients[i];
                 if (client.clientState == ServerClientState.SCS_FREE)
                     continue;
-                if (SysW.CompareNetAdrBase(from, client.channel.RemoteAddress) && (clientId == client.clientId || from.port == client.channel.RemoteAddress.port))
+                if (from == client.channel.RemoteAddress && (clientId == client.clientId || from.port == client.channel.RemoteAddress.port))
                 {
                     if (serverTime - client.lastConnectTime < MIN_RECONNECT_TIME)
                     {
-                        common.Printf($"{SysW.NetAdrToString(from)}: reconnect rejected : too soon\n");
+                        common.Printf($"{from}: reconnect rejected : too soon\n");
                         return -1;
                     }
                     break;
@@ -1423,7 +1420,7 @@ namespace Gengine.Framework.Async
             }
 
             for (i = 0; i < MAX_CHALLENGES; i++)
-                if (SysW.CompareNetAdrBase(from, challenges[i].address) && from.port == challenges[i].address.port)
+                if (from == challenges[i].address && from.port == challenges[i].address.port)
                     if (challenge == challenges[i].challenge)
                         break;
             if (i == MAX_CHALLENGES)
@@ -1457,7 +1454,7 @@ namespace Gengine.Framework.Async
             clientRate = msg.ReadInt();
 
             // check the client data - only for non pure servers
-            if (!sessLocal.mapSpawnData.serverInfo.GetInt("si_pure") && clientDataChecksum != serverDataChecksum)
+            if (sessLocal.mapSpawnData.serverInfo.GetInt("si_pure") == 0 && clientDataChecksum != serverDataChecksum)
             {
                 PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04842");
                 return;
@@ -1474,21 +1471,21 @@ namespace Gengine.Framework.Async
                     SendPureServerMessage(from);
                     return;
                 case AuthState.CDK_ONLYLAN:
-                    common.DPrintf($"{SysW.NetAdrToString(from)}: not a lan client\n");
+                    common.DPrintf($"{from}: not a lan client\n");
                     PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04843");
                     return;
                 case AuthState.CDK_WAIT:
                     if (challenges[ichallenge].authReply == AuthReply.AUTH_NONE && Math.Min(serverTime - lastAuthTime, serverTime - challenges[ichallenge].time) > AUTHORIZE_TIMEOUT)
                     {
-                        common.DPrintf($"{SysW.NetAdrToString(from)}: Authorize server timed out\n");
+                        common.DPrintf($"{from}: Authorize server timed out\n");
                         break; // will continue with the connecting process
                     }
-                    var lmsg = challenges[ichallenge].authReplyMsg != AuthReplyMsg.AUTH_REPLY_PRINT
+                    var msg2 = challenges[ichallenge].authReplyMsg != AuthReplyMsg.AUTH_REPLY_PRINT
                         ? authReplyMsg[(int)challenges[ichallenge].authReplyMsg]
                         : challenges[ichallenge].authReplyPrint;
-                    lmsg = common.LanguageDictGetString(lmsg);
+                    var lmsg = common.LanguageDictGetString(msg2);
 
-                    common.DPrintf($"{SysW.NetAdrToString(from)}: {lmsg}\n");
+                    common.DPrintf($"{from}: {lmsg}\n");
 
                     if (challenges[ichallenge].authReplyMsg == AuthReplyMsg.AUTH_REPLY_UNKNOWN || challenges[ichallenge].authReplyMsg == AuthReplyMsg.AUTH_REPLY_WAITING)
                     {
@@ -1500,7 +1497,7 @@ namespace Gengine.Framework.Async
                         serverPort.SendPacket(from, outMsg2.DataW, outMsg2.Size);
                     }
 
-                    PrintOOB(from, (int)SERVER_PRINT.MISC, msg);
+                    PrintOOB(from, (int)SERVER_PRINT.MISC, msg2);
 
                     // update the guid in the challenges
                     challenges[ichallenge].guid = guid;
@@ -1517,7 +1514,7 @@ namespace Gengine.Framework.Async
                         outMsg.WriteInt(clientId);
                         outMsg.WriteString(guid);
                         // protocol 1.37 addition
-                        outMsg.WriteByte(fileSystem.RunningD3XP() ? 1 : 0);
+                        outMsg.WriteByte(fileSystem.RunningD3XP ? 1 : 0);
                         serverPort.SendPacket(AsyncNetwork.MasterAddress, outMsg.DataW, outMsg.Size);
                     }
                     return;
@@ -1537,24 +1534,24 @@ namespace Gengine.Framework.Async
             // game may be passworded, client banned by IP or GUID
             // if authState == CDK_PUREOK, the check was already performed once before entering pure checks. but meanwhile, the max players may have been reached
             msg.ReadString(out password);
-            var reply = game.ServerAllowClient(numClients, SysW.NetAdrToString(from), guid, password, out var reason);
-            if (reply != ALLOW_YES)
+            var reply = game.ServerAllowClient(numClients, from, guid, password, out var reason);
+            if (reply != AllowReply.ALLOW_YES)
             {
-                common.DPrintf($"game denied connection for {SysW.NetAdrToString(from)}\n");
+                common.DPrintf($"game denied connection for {from}\n");
 
                 // SERVER_PRINT_GAMEDENY passes the game opcode through. Don't use PrintOOB
                 outMsg.InitW(msgBuf);
                 outMsg.WriteShort(CONNECTIONLESS_MESSAGE_ID);
                 outMsg.WriteString("print");
                 outMsg.WriteInt((int)SERVER_PRINT.GAMEDENY);
-                outMsg.WriteInt(reply);
+                outMsg.WriteInt((int)reply);
                 outMsg.WriteString(reason);
                 serverPort.SendPacket(from, outMsg.DataW, outMsg.Size);
                 return;
             }
 
             // enter pure checks if necessary
-            if (sessLocal.mapSpawnData.serverInfo.GetInt("si_pure") && challenges[ichallenge].authState != AuthState.CDK_PUREOK)
+            if (sessLocal.mapSpawnData.serverInfo.GetInt("si_pure") != 0 && challenges[ichallenge].authState != AuthState.CDK_PUREOK)
                 if (SendPureServerMessage(from))
                 {
                     challenges[ichallenge].authState = AuthState.CDK_PUREWAIT;
@@ -1562,14 +1559,14 @@ namespace Gengine.Framework.Async
                 }
 
             // push back decl checksum here when running pure. just an additional safe check
-            if (sessLocal.mapSpawnData.serverInfo.GetInt("si_pure") && clientDataChecksum != serverDataChecksum)
+            if (sessLocal.mapSpawnData.serverInfo.GetInt("si_pure") != 0 && clientDataChecksum != serverDataChecksum)
             {
                 PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04844");
                 return;
             }
 
             ping = serverTime - challenges[ichallenge].pingTime;
-            common.Printf($"challenge from {SysW.NetAdrToString(from)} connecting with {ping} ping\n");
+            common.Printf($"challenge from {from} connecting with {ping} ping\n");
             challenges[ichallenge].connected = true;
 
             // find a slot for the client
@@ -1581,7 +1578,7 @@ namespace Gengine.Framework.Async
                     if (islot == 0)
                     {
                         // if this slot uses the same IP and port
-                        if (SysW.CompareNetAdrBase(from, client.channel.RemoteAddress) && (clientId == client.clientId || from.port == client.channel.RemoteAddress.port))
+                        if (from == client.channel.RemoteAddress && (clientId == client.clientId || from.port == client.channel.RemoteAddress.port))
                             break;
                     }
                     else if (islot == 1)
@@ -1589,7 +1586,7 @@ namespace Gengine.Framework.Async
                         // if this client is not connected and the slot uses the same IP
                         if (client.clientState >= ServerClientState.SCS_PUREWAIT)
                             continue;
-                        if (SysW.CompareNetAdrBase(from, client.channel.RemoteAddress))
+                        if (from == client.channel.RemoteAddress)
                             break;
                     }
                     else if (islot == 2)
@@ -1614,7 +1611,7 @@ namespace Gengine.Framework.Async
                 return;
             }
 
-            common.Printf($"sending connect response to {SysW.NetAdrToString(from)}\n");
+            common.Printf($"sending connect response to {from}\n");
 
             // send connect response message
             outMsg.InitW(msgBuf);
@@ -1651,7 +1648,7 @@ namespace Gengine.Framework.Async
                 // just to make sure a broken client doesn't crash us
                 if (numChecksums >= IVFileSystem.MAX_PURE_PAKS)
                 {
-                    common.Warning("MAX_PURE_PAKS ({IVFileSystem.MAX_PURE_PAKS}) exceeded in AsyncServer::ProcessPureMessage\n");
+                    common.Warning($"MAX_PURE_PAKS ({IVFileSystem.MAX_PURE_PAKS}) exceeded in AsyncServer::ProcessPureMessage\n");
                     reply = "#str_07144";
                     return false;
                 }
@@ -1665,14 +1662,14 @@ namespace Gengine.Framework.Async
             {
                 if (checksums[i] != serverChecksums[i])
                 {
-                    common.DPrintf($"client {(from != null ? SysW.NetAdrToString(from) : $"{clientNum}")}: pak missing (0x{serverChecksums[i]:x})\n");
+                    common.DPrintf($"client {(from != null ? from.ToString() : $"{clientNum}")}: pak missing (0x{serverChecksums[i]:x})\n");
                     reply = $"pak missing (0x{serverChecksums[i]:x})\n";
                     return false;
                 }
             }
             if (checksums[i] != 0)
             {
-                common.DPrintf($"client {(from != null ? SysW.NetAdrToString(from) : $"{clientNum}")}: extra pak file referenced (0x{checksums[i]:X})\n");
+                common.DPrintf($"client {(from != null ? from.ToString() : $"{clientNum}")}: extra pak file referenced (0x{checksums[i]:X})\n");
                 reply = $"extra pak file referenced (0x{checksums[i]:x})\n";
                 return false;
             }
@@ -1692,7 +1689,7 @@ namespace Gengine.Framework.Async
 
             if (challenges[iclient].authState != AuthState.CDK_PUREWAIT)
             {
-                common.DPrintf($"client {SysW.NetAdrToString(from)}: got pure message, not in CDK_PUREWAIT\n");
+                common.DPrintf($"client {from}: got pure message, not in CDK_PUREWAIT\n");
                 return;
             }
 
@@ -1702,7 +1699,7 @@ namespace Gengine.Framework.Async
                 return;
             }
 
-            common.DPrintf($"client {SysW.NetAdrToString(from)}: passed pure checks\n");
+            common.DPrintf($"client {from}: passed pure checks\n");
             challenges[iclient].authState = AuthState.CDK_PUREOK; // next connect message will get the client through completely
         }
 
@@ -1769,7 +1766,7 @@ namespace Gengine.Framework.Async
 
             msg.ReadString(out s);
 
-            common.Printf($"rcon from {SysW.NetAdrToString(from)}: {s}\n");
+            common.Printf($"rcon from {from}: {s}\n");
 
             rconAddress = from;
             noRconOutput = true;
@@ -1788,7 +1785,7 @@ namespace Gengine.Framework.Async
             if (!IsActive)
                 return;
 
-            common.DPrintf($"Sending info response to {SysW.NetAdrToString(from)}\n");
+            common.DPrintf($"Sending info response to {from}\n");
 
             var challenge = msg.ReadInt();
 
@@ -1824,7 +1821,7 @@ namespace Gengine.Framework.Async
         // see (client) "getInfo" . (server) "infoResponse" . (client)ProcessGetInfoMessage        
         public void PrintLocalServerInfo()
         {
-            common.Printf($"server '{sessLocal.mapSpawnData.serverInfo.GetString("si_name")}' IP = {SysW.NetAdrToString(serverPort.Adr)}\nprotocol {Config.ASYNC_PROTOCOL_MAJOR}.{Config.ASYNC_PROTOCOL_MINOR}\n");
+            common.Printf($"server '{sessLocal.mapSpawnData.serverInfo.GetString("si_name")}' IP = {serverPort.Adr}\nprotocol {Config.ASYNC_PROTOCOL_MAJOR}.{Config.ASYNC_PROTOCOL_MINOR}\n");
             sessLocal.mapSpawnData.serverInfo.Print();
             for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
@@ -1887,9 +1884,9 @@ namespace Gengine.Framework.Async
             // auth server
             if (string.Equals(s, "auth", StringComparison.OrdinalIgnoreCase))
             {
-                if (!SysW.CompareNetAdrBase(from, AsyncNetwork.MasterAddress))
+                if (from != AsyncNetwork.MasterAddress)
                 {
-                    common.Printf($"auth: bad source {SysW.NetAdrToString(from)}\n");
+                    common.Printf($"auth: bad source {from}\n");
                     return false;
                 }
                 if (AsyncNetwork.LANServer.Bool)
@@ -1911,7 +1908,7 @@ namespace Gengine.Framework.Async
 
             if (msg.RemaingData < 4)
             {
-                common.DPrintf($"{SysW.NetAdrToString(from)}: tiny packet\n");
+                common.DPrintf($"{from}: tiny packet\n");
                 return false;
             }
 
@@ -1925,7 +1922,7 @@ namespace Gengine.Framework.Async
                     continue;
 
                 // This does not compare the UDP port, because some address translating routers will change that at arbitrary times.
-                if (!SysW.CompareNetAdrBase(from, client.channel.RemoteAddress) || id != client.clientId)
+                if (from != client.channel.RemoteAddress || id != client.clientId)
                     continue;
 
                 // make sure it is a valid, in sequence packet
@@ -2058,7 +2055,7 @@ namespace Gengine.Framework.Async
                 do
                 {
                     // blocking read with game time residual timeout
-                    newPacket = serverPort.GetPacketBlocking(out var from, msgBuf, out var size, msgBuf.Length, Usercmd.USERCMD_MSEC - gameTimeResidual - 1);
+                    newPacket = serverPort.GetPacketBlocking(out var from, msgBuf, out var size, msgBuf.Length, IUsercmd.USERCMD_MSEC - gameTimeResidual - 1);
                     if (newPacket)
                     {
                         msg.InitW(msgBuf);
@@ -2071,7 +2068,7 @@ namespace Gengine.Framework.Async
                     msec = UpdateTime(100);
                     gameTimeResidual += msec;
                 } while (newPacket);
-            } while (gameTimeResidual < Usercmd.USERCMD_MSEC);
+            } while (gameTimeResidual < IUsercmd.USERCMD_MSEC);
 
             // send heart beat to master servers
             MasterHeartbeat();
@@ -2083,7 +2080,7 @@ namespace Gengine.Framework.Async
             {
                 AsyncNetwork.idleServer.Bool = !AsyncNetwork.idleServer.Bool;
                 // the need to propagate right away, only this
-                sessLocal.mapSpawnData.serverInfo.Set("si_idleServer", AsyncNetwork.idleServer.String);
+                sessLocal.mapSpawnData.serverInfo["si_idleServer"] = AsyncNetwork.idleServer.String;
                 game.SetServerInfo(sessLocal.mapSpawnData.serverInfo);
             }
 
@@ -2115,7 +2112,7 @@ namespace Gengine.Framework.Async
             }
 
             // advance the server game
-            while (gameTimeResidual >= Usercmd.USERCMD_MSEC)
+            while (gameTimeResidual >= IUsercmd.USERCMD_MSEC)
             {
                 // sample input for the local client
                 LocalClientInput();
@@ -2130,8 +2127,8 @@ namespace Gengine.Framework.Async
 
                 // update time
                 gameFrame++;
-                gameTime += Usercmd.USERCMD_MSEC;
-                gameTimeResidual -= Usercmd.USERCMD_MSEC;
+                gameTime += IUsercmd.USERCMD_MSEC;
+                gameTimeResidual -= IUsercmd.USERCMD_MSEC;
             }
 
             // duplicate usercmds so there is always at least one available to send with snapshots
@@ -2244,7 +2241,7 @@ namespace Gengine.Framework.Async
             for (var i = 0; i < Config.MAX_MASTER_SERVERS; i++)
                 if (AsyncNetwork.GetMasterAddress(i, out var adr))
                 {
-                    common.Printf($"Sending heartbeat to {SysW.NetAdrToString(adr)}\n");
+                    common.Printf($"Sending heartbeat to {adr}\n");
                     msg.InitW(msgBuf);
                     msg.WriteShort(CONNECTIONLESS_MESSAGE_ID);
                     msg.WriteString("heartbeat");
@@ -2308,7 +2305,7 @@ namespace Gengine.Framework.Async
 
             if (challenges[iclient].authState != AuthState.CDK_PUREWAIT)
             {
-                common.DPrintf($"client {SysW.NetAdrToString(from)}: got download request message, not in CDK_PUREWAIT\n");
+                common.DPrintf($"client {from}: got download request message, not in CDK_PUREWAIT\n");
                 return;
             }
 
@@ -2347,7 +2344,7 @@ namespace Gengine.Framework.Async
             outMsg.WriteShort(CONNECTIONLESS_MESSAGE_ID);
             outMsg.WriteString("downloadInfo");
             outMsg.WriteInt(dlRequest);
-            if (!game.DownloadRequest(SysW.NetAdrToString(from), challenges[iclient].guid, paklist, pakbuf))
+            if (!game.DownloadRequest(from.ToString(), challenges[iclient].guid, paklist, pakbuf))
             {
                 common.DPrintf("game: no downloads\n");
                 outMsg.WriteByte((byte)SERVER_DL.NONE);
@@ -2408,7 +2405,7 @@ namespace Gengine.Framework.Async
 
                     // keep last 5 bytes for an 'end of message' - SERVER_PAK_END and the totalDlSize long
                     if (outMsg.RemainingSpace - tmpMsg.Size > 5)
-                        outMsg.WriteData(tmpMsg.DataW, tmpMsg.Size);
+                        outMsg.WriteData(tmpMsg.DataW, 0, tmpMsg.Size);
                     else
                     {
                         outMsg.WriteByte((byte)SERVER_PAK.END);

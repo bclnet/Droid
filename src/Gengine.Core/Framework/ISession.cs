@@ -1,14 +1,13 @@
 using Gengine.Render;
 using Gengine.Sound;
+using Gengine.UI;
 using System.NumericsX.OpenStack;
 
-namespace Gengine.Core
+namespace Gengine.Framework
 {
     // needed by the gui system for the load game menu
     public struct LogStats
     {
-        public const int MAX_LOGGED_STATS = 60 * 120;       // log every half second
-
         public short health;
         public short heartRate;
         public short stamina;
@@ -31,14 +30,17 @@ namespace Gengine.Core
 
     public interface ISession
     {
+        public const int MAX_LOGGED_STATS = 60 * 120;       // log every half second
+
         // The render world and sound world used for this session.
         IRenderWorld rw { get; }
         ISoundWorld sw { get; }
-        //// The renderer and sound system will write changes to writeDemo.
-        //// Demos can be recorded and played at the same time when splicing.
-        //DemoFile readDemo;
-        //DemoFile writeDemo;
-        //int renderdemoVersion;
+
+        // The renderer and sound system will write changes to writeDemo.
+        // Demos can be recorded and played at the same time when splicing.
+        //VFileDemo readDemo { get; }
+        //VFileDemo writeDemo { get; }
+        //int renderdemoVersion { get; }
 
         // Called in an orderly fashion at system startup, so commands, cvars, files, etc are all available.
         void Init();
@@ -70,7 +72,7 @@ namespace Gengine.Core
         // Activates the main menu
         void StartMenu(bool playIntro = false);
 
-        void SetGUI(object gui, HandleGuiCommand handle);
+        void SetGUI(IUserInterface gui, HandleGuiCommand handle);
 
         // Updates gui and dispatched events to it
         void GuiFrameEvents();
@@ -80,7 +82,9 @@ namespace Gengine.Core
         // if MSG_CDKEY and want, returns the cd key or NULL if aborted
         // network tells wether one should still run the network loop in a wait dialog
         string MessageBox(MSG type, string message, string title = null, bool wait = false, string fire_yes = null, string fire_no = null, bool network = false);
+
         void StopBox();
+
         // monitor this download in a progress box to either abort or completion
         void DownloadProgressBox(BackgroundDownload bgl, string title, int progress_start = 0, int progress_end = 100);
 
@@ -92,6 +96,7 @@ namespace Gengine.Core
         // read and write the cd key data to files
         // doesn't perform any validity checks
         void ReadCDKey();
+
         void WriteCDKey();
 
         // returns NULL for if xp is true and xp key is not valid or not present
@@ -102,16 +107,17 @@ namespace Gengine.Core
 
         // verify the current set of keys for validity strict -> keys in state CDKEY_CHECKING state are not ok
         bool CDKeysAreValid(bool strict);
+
         // wipe the key on file if the network check finds it invalid
         void ClearCDKey(bool[] valid);
 
         // configure gui variables for mainmenu.gui and cd key state
         void SetCDKeyGuiVars();
 
-        bool WaitingForGameAuth();
+        bool WaitingForGameAuth { get; }
 
         // got reply from master about the keys. if !valid, auth_msg given
-        void CDKeysAuthReply(bool valid, string auth_msg);
+        void CDKeysAuthReply(bool valid, string authMsg);
 
         string CurrentMapName { get; }
 

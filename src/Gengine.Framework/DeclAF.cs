@@ -547,7 +547,7 @@ namespace Gengine.Framework
                 else if (string.Equals(token, "joint", StringComparison.OrdinalIgnoreCase)) { if (!src.ExpectTokenType(TT.STRING, 0, out token)) return false; body.jointName = token; hasJoint = true; }
                 else if (string.Equals(token, "mod", StringComparison.OrdinalIgnoreCase)) { if (!src.ExpectAnyToken(out token)) return false; body.jointMod = JointModFromString(token); }
                 else if (string.Equals(token, "density", StringComparison.OrdinalIgnoreCase)) body.density = src.ParseFloat();
-                else if (string.Equals(token, "inertiaScale", StringComparison.OrdinalIgnoreCase)) body.inertiaScale[0].ToFloatPtr(x => src.Parse1DMatrix(9, x));
+                else if (string.Equals(token, "inertiaScale", StringComparison.OrdinalIgnoreCase)) fixed (float* _ = &body.inertiaScale[0].x) src.Parse1DMatrix(9, _);
                 else if (string.Equals(token, "friction", StringComparison.OrdinalIgnoreCase))
                 {
                     body.linearFriction = src.ParseFloat(); src.ExpectTokenString(",");
@@ -830,7 +830,7 @@ namespace Gengine.Framework
         public override bool Parse(string text)
         {
             int i, j;
-            
+
             Lexer src = new();
             src.LoadMemory(text, FileName, LineNum);
             src.Flags = DeclBase.DECL_LEXER_FLAGS;

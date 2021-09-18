@@ -219,6 +219,48 @@ namespace Droid.Core
 
         const int MAX_CHAT_BUFFER = 127;
 
+        Vector3 viewangles;
+        int flags;
+        int impulse;
+
+        buttonState toggled_crouch;
+        buttonState toggled_run;
+        buttonState toggled_zoom;
+
+        int[] buttonState = new int[(int)UB_MAX_BUTTONS];
+        bool[] keyState = new bool[(int)K.K_LAST_KEY];
+
+        int inhibitCommands;    // true when in console or menu locally
+        int lastCommandTime;
+
+        bool initialized;
+
+        usercmd cmd;      // the current cmd being built
+        usercmd[] buffered = new usercmd[MAX_BUFFERED_USERCMD];
+
+        int continuousMouseX, continuousMouseY; // for gui event generatioin, never zerod
+        int mouseButton;                        // for gui event generatioin
+        bool mouseDown;
+
+        int mouseDx, mouseDy;   // added to by mouse events
+        int[] joystickAxis = new int[MAX_JOYSTICK_AXIS];    // set by joystick events
+
+        static CVar in_yawSpeed = new("in_yawspeed", "140", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "yaw change speed when holding down _left or _right button");
+        static CVar in_pitchSpeed = new("in_pitchspeed", "140", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "pitch change speed when holding down look _lookUp or _lookDown button");
+        static CVar in_angleSpeedKey = new("in_anglespeedkey", "1.5", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "angle change scale when holding down _speed button");
+        static CVar in_freeLook = new("in_freeLook", "1", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.BOOL, "look around with mouse (reverse _mlook button)");
+        static CVar in_alwaysRun = new("in_alwaysRun", "0", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.BOOL, "always run (reverse _speed button) - only in MP");
+        static CVar in_toggleRun = new("in_toggleRun", "0", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.BOOL, "pressing _speed button toggles run on/off - only in MP");
+        static CVar in_toggleCrouch = new("in_toggleCrouch", "1", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.BOOL, "pressing _movedown button toggles player crouching/standing");
+        static CVar in_toggleZoom = new("in_toggleZoom", "0", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.BOOL, "pressing _zoom button toggles zoom on/off");
+        static CVar sensitivity = new("sensitivity", "5", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "mouse view sensitivity");
+        static CVar m_pitch = new("m_pitch", "0.022", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "mouse pitch scale");
+        static CVar m_yaw = new("m_yaw", "0.022", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "mouse yaw scale");
+        static CVar m_strafeScale = new("m_strafeScale", "6.25", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "mouse strafe movement scale");
+        static CVar m_smooth = new("m_smooth", "1", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.INTEGER, "number of samples blended for mouse viewing", 1, 8, CmdSystem.ArgCompletion_Integer(1, 8));
+        static CVar m_strafeSmooth = new("m_strafeSmooth", "4", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.INTEGER, "number of samples blended for mouse moving", 1, 8, CmdSystem.ArgCompletion_Integer(1, 8));
+        static CVar m_showMouseRate = new("m_showMouseRate", "0", CVAR.SYSTEM | CVAR.BOOL, "shows mouse movement");
+
         public UsercmdGenLocal()
         {
             lastCommandTime = 0;
@@ -372,16 +414,12 @@ namespace Droid.Core
 
             int imp = Android_GetNextImpulse();
             if (imp)
-            {
                 if (!Inhibited)
-                {
                     if (imp >= (int)UB_IMPULSE0 && imp <= UB_IMPULSE61)
                     {
                         cmd.impulse = imp - UB_IMPULSE0;
                         cmd.flags ^= UCF_IMPULSE_SEQUENCE;
                     }
-                }
-            }
 
             // create the usercmd
             MakeCurrent();
@@ -532,10 +570,9 @@ namespace Droid.Core
         {
             float anglespeed;
 
-            if (toggled_run.on ^ (in_alwaysRun.Bool && AsyncNetwork.IsActive))
-                anglespeed = Math.M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.Float;
-            else
-                anglespeed = Math.M_MS2SEC * USERCMD_MSEC;
+            var anglespeed = toggled_run.on ^ (in_alwaysRun.Bool && AsyncNetwork.IsActive)
+                ? Math.M_MS2SEC* USERCMD_MSEC *in_angleSpeedKey.Float
+                : Math.M_MS2SEC* USERCMD_MSEC;
 
             if (!ButtonState(UB_STRAFE))
             {
@@ -773,47 +810,5 @@ namespace Droid.Core
                     buttonState[action] = 0;
             }
         }
-
-        Vector3 viewangles;
-        int flags;
-        int impulse;
-
-        buttonState toggled_crouch;
-        buttonState toggled_run;
-        buttonState toggled_zoom;
-
-        int[] buttonState = new int[(int)UB_MAX_BUTTONS];
-        bool[] keyState = new bool[(int)K.K_LAST_KEY];
-
-        int inhibitCommands;    // true when in console or menu locally
-        int lastCommandTime;
-
-        bool initialized;
-
-        usercmd cmd;      // the current cmd being built
-        usercmd[] buffered = new usercmd[MAX_BUFFERED_USERCMD];
-
-        int continuousMouseX, continuousMouseY; // for gui event generatioin, never zerod
-        int mouseButton;                        // for gui event generatioin
-        bool mouseDown;
-
-        int mouseDx, mouseDy;   // added to by mouse events
-        int[] joystickAxis = new int[MAX_JOYSTICK_AXIS];    // set by joystick events
-
-        static CVar in_yawSpeed = new("in_yawspeed", "140", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "yaw change speed when holding down _left or _right button");
-        static CVar in_pitchSpeed = new("in_pitchspeed", "140", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "pitch change speed when holding down look _lookUp or _lookDown button");
-        static CVar in_angleSpeedKey = new("in_anglespeedkey", "1.5", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "angle change scale when holding down _speed button");
-        static CVar in_freeLook = new("in_freeLook", "1", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.BOOL, "look around with mouse (reverse _mlook button)");
-        static CVar in_alwaysRun = new("in_alwaysRun", "0", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.BOOL, "always run (reverse _speed button) - only in MP");
-        static CVar in_toggleRun = new("in_toggleRun", "0", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.BOOL, "pressing _speed button toggles run on/off - only in MP");
-        static CVar in_toggleCrouch = new("in_toggleCrouch", "1", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.BOOL, "pressing _movedown button toggles player crouching/standing");
-        static CVar in_toggleZoom = new("in_toggleZoom", "0", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.BOOL, "pressing _zoom button toggles zoom on/off");
-        static CVar sensitivity = new("sensitivity", "5", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "mouse view sensitivity");
-        static CVar m_pitch = new("m_pitch", "0.022", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "mouse pitch scale");
-        static CVar m_yaw = new("m_yaw", "0.022", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "mouse yaw scale");
-        static CVar m_strafeScale = new("m_strafeScale", "6.25", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.FLOAT, "mouse strafe movement scale");
-        static CVar m_smooth = new("m_smooth", "1", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.INTEGER, "number of samples blended for mouse viewing", 1, 8, CmdSystem.ArgCompletion_Integer(1, 8));
-        static CVar m_strafeSmooth = new("m_strafeSmooth", "4", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.INTEGER, "number of samples blended for mouse moving", 1, 8, CmdSystem.ArgCompletion_Integer(1, 8));
-        static CVar m_showMouseRate = new("m_showMouseRate", "0", CVAR.SYSTEM | CVAR.BOOL, "shows mouse movement");
     }
 }

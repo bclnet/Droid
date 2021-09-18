@@ -1,5 +1,6 @@
 using Gengine.Render;
 using System;
+using System.Linq;
 using System.NumericsX;
 using System.NumericsX.OpenAL;
 using System.NumericsX.OpenStack;
@@ -72,6 +73,8 @@ namespace Gengine.Sound
 
     public class SlowChannel
     {
+        public int Id;
+
         bool active;
         SoundChannel chan;
 
@@ -195,6 +198,7 @@ namespace Gengine.Sound
 
     public class SoundChannel : IDisposable
     {
+        public int Id;
         public bool triggerState;
         public int trigger44kHzTime;       // hardware time sample the channel started
         public int triggerGame44kHzTime;   // game time sample time the channel started
@@ -895,23 +899,20 @@ namespace Gengine.Sound
         public bool hasShakes;
         public Vector3 spatializedOrigin;      // the virtual sound origin, either the real sound origin, or a point through a portal chain
         public float realDistance;             // in meters
-        public float distance;                 // in meters, this may be the straight-line distance, or it may go through a chain of portals.  If there
-                                               // is not an open-portal path, distance will be > maxDistance
+        public float distance;                 // in meters, this may be the straight-line distance, or it may go through a chain of portals.  If there is not an open-portal path, distance will be > maxDistance
 
         // a single soundEmitter can have many channels playing from the same point
-        public SoundChannel[] channels = new SoundChannel[SoundSystemLocal.SOUND_MAX_CHANNELS];
-
-        public SlowChannel[] slowChannels = new SlowChannel[SoundSystemLocal.SOUND_MAX_CHANNELS];
+        public SoundChannel[] channels = Enumerable.Range(0, SoundSystemLocal.SOUND_MAX_CHANNELS).Select(id => new SoundChannel { Id = id }).ToArray();
+        public SlowChannel[] slowChannels = Enumerable.Range(0, SoundSystemLocal.SOUND_MAX_CHANNELS).Select(id => new SlowChannel { Id = id }).ToArray();
 
         public SlowChannel GetSlowChannel(SoundChannel chan)
-            => slowChannels[chan - channels];
+            => slowChannels[chan.Id];
+
         public void SetSlowChannel(SoundChannel chan, SlowChannel slow)
-            => slowChannels[chan - channels] = slow;
+            => slowChannels[chan.Id] = slow;
+
         public void ResetSlowChannel(SoundChannel chan)
-        {
-            var index = chan - channels;
-            slowChannels[index].Reset();
-        }
+            => slowChannels[chan.Id].Reset();
 
         // this is just used for feedback to the game or rendering system: flashing lights and screen shakes.  Because the material expression
         // evaluation doesn't do common subexpression removal, we cache the last generated value

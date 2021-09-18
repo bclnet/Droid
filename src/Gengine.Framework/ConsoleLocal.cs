@@ -322,7 +322,7 @@ namespace Gengine.Framework
         void SetDisplayFraction(float frac)
         {
             finalFrac = frac;
-            fracTime = C.com_frameTime;
+            fracTime = com_frameTime;
         }
 
         /// <summary>
@@ -332,7 +332,7 @@ namespace Gengine.Framework
         {
             if (con_speed.Float <= 0.1f)
             {
-                fracTime = C.com_frameTime;
+                fracTime = com_frameTime;
                 displayFrac = finalFrac;
                 return;
             }
@@ -340,17 +340,17 @@ namespace Gengine.Framework
             // scroll towards the destination height
             if (finalFrac < displayFrac)
             {
-                displayFrac -= con_speed.Float * (C.com_frameTime - fracTime) * 0.001f;
+                displayFrac -= con_speed.Float * (com_frameTime - fracTime) * 0.001f;
                 if (finalFrac > displayFrac)
                     displayFrac = finalFrac;
-                fracTime = C.com_frameTime;
+                fracTime = com_frameTime;
             }
             else if (finalFrac > displayFrac)
             {
-                displayFrac += con_speed.Float * (C.com_frameTime - fracTime) * 0.001f;
+                displayFrac += con_speed.Float * (com_frameTime - fracTime) * 0.001f;
                 if (finalFrac < displayFrac)
                     displayFrac = finalFrac;
-                fracTime = C.com_frameTime;
+                fracTime = com_frameTime;
             }
         }
 
@@ -430,7 +430,7 @@ namespace Gengine.Framework
         {
             // mark time for transparent overlay
             if (current >= 0)
-                times[current % NUM_CON_TIMES] = C.com_frameTime;
+                times[current % NUM_CON_TIMES] = com_frameTime;
 
             x = 0;
             if (display == current)
@@ -511,7 +511,7 @@ namespace Gengine.Framework
 
             // mark time for transparent overlay
             if (current >= 0)
-                times[current % NUM_CON_TIMES] = C.com_frameTime;
+                times[current % NUM_CON_TIMES] = com_frameTime;
         }
 
         #endregion
@@ -568,7 +568,7 @@ namespace Gengine.Framework
                 time = times[i % NUM_CON_TIMES];
                 if (time == 0)
                     continue;
-                time = C.com_frameTime - time;
+                time = com_frameTime - time;
                 if (time > con_notifyTime.Float * 1000)
                     continue;
                 text_p = text.AsSpan((i % TOTAL_LINES) * LINE_WIDTH);

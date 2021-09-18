@@ -9,24 +9,16 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DefineConstants>TRACE;ID_DEDICATED_</DefineConstants>
+    <DefineConstants>TRACE;ID_DEDICATED_;ID_CONSOLE_LOCK;ID_ENFORCE_KEY</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Framework\Async\AsyncClient.cs" />
-    <Compile Remove="Framework\Async\AsyncNetwork.cs" />
-    <Compile Remove="Framework\Async\AsyncServer.cs" />
-    <Compile Remove="Framework\Async\NetworkSystem.cs" />
-    <Compile Remove="Framework\Async\ServerScan.cs" />
-    <Compile Remove="Framework\UsercmdGenLocal.cs" />
+    <Compile Remove="UsercmdGenLocal.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Framework\UsercmdGenLocal.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Gengine.FrameworkConsole\Gengine.FrameworkConsole.csproj" />
+    <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
+    <ProjectReference Include="..\Gengine.Sound\Gengine.Sound.csproj" />
   </ItemGroup>
 
   <ItemGroup>

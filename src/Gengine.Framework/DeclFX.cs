@@ -210,7 +210,7 @@ namespace Gengine.Framework
                     v.y = src.ParseFloat(); src.ExpectTokenString(",");
                     v.z = src.ParseFloat();
                     v.Normalize();
-                    FXAction.axis = v.ToMatrix3x3();
+                    FXAction.axis = v.ToMat3();
                     FXAction.explicitAxis = true;
                     continue;
                 }

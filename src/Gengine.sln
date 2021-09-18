@@ -9,13 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX", "System.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.Core", "Gengine.Core\Gengine.Core.csproj", "{ECD6D3D7-3893-493B-A6C7-8E87FD011DCF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.Framework", "Gengine.Framework\Gengine.Framework.csproj", "{08F08A85-42DF-4744-AB80-6E13FC99FB08}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.FrameworkConsole", "Gengine.FrameworkConsole\Gengine.FrameworkConsole.csproj", "{A93667AD-46EC-4937-92AE-99707A8A1972}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.FrameworkDeclare", "Gengine.FrameworkDeclare\Gengine.FrameworkDeclare.csproj", "{E1DFA2E3-57D0-425C-AF8A-40F04E3F163B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.FrameworkSession", "Gengine.FrameworkSession\Gengine.FrameworkSession.csproj", "{16B2E783-0159-4C85-85AA-05523F9178FC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.Framework", "Gengine.Framework\Gengine.Framework.csproj", "{E1DFA2E3-57D0-425C-AF8A-40F04E3F163B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.Sound", "Gengine.Sound\Gengine.Sound.csproj", "{BC8872C7-6187-48D0-B5B9-B8FBF2633777}"
 EndProject
@@ -51,22 +45,10 @@ Global
 		{ECD6D3D7-3893-493B-A6C7-8E87FD011DCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ECD6D3D7-3893-493B-A6C7-8E87FD011DCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ECD6D3D7-3893-493B-A6C7-8E87FD011DCF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{08F08A85-42DF-4744-AB80-6E13FC99FB08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{08F08A85-42DF-4744-AB80-6E13FC99FB08}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{08F08A85-42DF-4744-AB80-6E13FC99FB08}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{08F08A85-42DF-4744-AB80-6E13FC99FB08}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A93667AD-46EC-4937-92AE-99707A8A1972}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A93667AD-46EC-4937-92AE-99707A8A1972}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A93667AD-46EC-4937-92AE-99707A8A1972}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A93667AD-46EC-4937-92AE-99707A8A1972}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E1DFA2E3-57D0-425C-AF8A-40F04E3F163B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E1DFA2E3-57D0-425C-AF8A-40F04E3F163B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E1DFA2E3-57D0-425C-AF8A-40F04E3F163B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E1DFA2E3-57D0-425C-AF8A-40F04E3F163B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{16B2E783-0159-4C85-85AA-05523F9178FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{16B2E783-0159-4C85-85AA-05523F9178FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{16B2E783-0159-4C85-85AA-05523F9178FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{16B2E783-0159-4C85-85AA-05523F9178FC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BC8872C7-6187-48D0-B5B9-B8FBF2633777}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BC8872C7-6187-48D0-B5B9-B8FBF2633777}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BC8872C7-6187-48D0-B5B9-B8FBF2633777}.Release|Any CPU.ActiveCfg = Release|Any CPU

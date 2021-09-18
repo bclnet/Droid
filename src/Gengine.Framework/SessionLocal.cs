@@ -1,55 +1,50 @@
-using System;
-using System.Collections.Generic;
-using Gengine.Library;
-using Gengine.Library.Core;
-using Gengine.Library.Sys;
+using Gengine.Framework.Async;
 using Gengine.Render;
 using Gengine.Sound;
 using Gengine.UI;
-using static Gengine.Library.Lib;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.NumericsX;
+using System.NumericsX.OpenStack;
+using System.NumericsX.OpenStack.System;
+using System.Text;
 using static Gengine.Lib;
+using static System.NumericsX.OpenStack.Key;
+using static System.NumericsX.OpenStack.OpenStack;
+using static System.NumericsX.Platform;
+
+// IsConnectedToServer();
+// IsGameLoaded();
+// IsGuiActive();
+// IsPlayingRenderDemo();
+
+// if connected to a server
+//     if handshaking
+//     if map loading
+//     if in game
+// else if a game loaded
+//     if in load game menu
+//     if main menu up
+// else if playing render demo
+// else
+//     if error dialog
+//     full console
 
 namespace Gengine.Framework
 {
-    /*
- IsConnectedToServer();
- IsGameLoaded();
- IsGuiActive();
- IsPlayingRenderDemo();
-
- if connected to a server
-     if handshaking
-     if map loading
-     if in game
- else if a game loaded
-     if in load game menu
-     if main menu up
- else if playing render demo
- else
-     if error dialog
-     full console
- */
-
     public struct LogCmd
     {
         public Usercmd cmd;
         public int consistencyHash;
     }
 
-    //struct fileTIME_T
-    //{
-    //    int index;
-    //    ID_TIME_T timeStamp;
-
-    //    operator int() const { return timeStamp; }
-    //}
-
     public class MapSpawnData
     {
-        public Dictionary<string, object> serverInfo;
-        public Dictionary<string, object> syncedCVars;
+        public Dictionary<string, string> serverInfo;
+        public Dictionary<string, string> syncedCVars;
         public Dictionary<string, string>[] userInfo = new Dictionary<string, string>[Config.MAX_ASYNC_CLIENTS];
-        public Dictionary<string, object>[] persistentPlayerInfo = new Dictionary<string, object>[Config.MAX_ASYNC_CLIENTS];
+        public Dictionary<string, string>[] persistentPlayerInfo = new Dictionary<string, string>[Config.MAX_ASYNC_CLIENTS];
         public Usercmd[] mapSpawnUsercmd = new Usercmd[Config.MAX_ASYNC_CLIENTS];     // needed for tracking delta angles
     }
 
@@ -62,13 +57,16 @@ namespace Gengine.Framework
 
     public partial class SessionLocal : ISession
     {
+        static void CheckOpenALDeviceAndRecoverIfNeeded() { }
+
         const int USERCMD_PER_DEMO_FRAME = 2;
         const int CONNECT_TRANSMIT_TIME = 1000;
         const int MAX_LOGGED_USERCMDS = 60 * 60 * 60;   // one hour of single player, 15 minutes of four player
 
         // The render world and sound world used for this session.
-        IRenderWorld rw;
-        ISoundWorld sw;
+        IRenderWorld rw; IRenderWorld ISession.rw => rw;
+        ISoundWorld sw; ISoundWorld ISession.sw => sw;
+
         // The renderer and sound system will write changes to writeDemo. Demos can be recorded and played at the same time when splicing.
         VFileDemo readDemo;
         VFileDemo writeDemo;
@@ -174,20 +172,17 @@ namespace Gengine.Framework
             if (aviCaptureMode)
                 EndAVICapture();
 
+            // else the game freezes when showing the timedemo results
             if (timeDemo == TD.YES)
-                // else the game freezes when showing the timedemo results
                 timeDemo = TD.YES_THEN_QUIT;
 
             Stop();
 
-            if (rw != null)
-                rw = null;
+            if (rw != null) rw = null;
 
-            if (sw != null)
-                sw = null;
+            if (sw != null) sw = null;
 
-            if (menuSoundWorld != null)
-                menuSoundWorld = null;
+            if (menuSoundWorld != null) menuSoundWorld = null;
 
             mapSpawnData.serverInfo.Clear();
             mapSpawnData.syncedCVars.Clear();
@@ -234,25 +229,18 @@ namespace Gengine.Framework
 
         public void UpdateScreen(bool outOfSequence = true)
         {
-
 #if true //_WIN32
 
-            if (C.com_editors != 0)
-                if (!SysW.IsWindowVisible())
-                    return;
+            if (C.com_editors != 0 && !SysW.IsWindowVisible)
+                return;
 #endif
 
-            if (insideUpdateScreen)
-            {
-                return;
-                //		common.FatalError("idSessionLocal.UpdateScreen: recursively called" );
-            }
+            if (insideUpdateScreen) { return; } // common.FatalError("SessionLocal.UpdateScreen: recursively called");
 
             insideUpdateScreen = true;
 
             // if this is a long-operation update and we are in windowed mode, release the mouse capture back to the desktop
-            if (outOfSequence)
-                SysW.GrabMouseCursor(false);
+            if (outOfSequence) SysW.GrabMouseCursor(false);
 
             renderSystem.BeginFrame(renderSystem.ScreenWidth, renderSystem.ScreenHeight);
 
@@ -267,26 +255,22 @@ namespace Gengine.Framework
 
         public void PacifierUpdate()
         {
-            if (!insideExecuteMapChange)
-                return;
+            if (!insideExecuteMapChange) return;
 
             // never do pacifier screen updates while inside the drawing code, or we can have various recursive problems
-            if (insideUpdateScreen)
-                return;
+            if (insideUpdateScreen) return;
 
             var time = eventLoop.Milliseconds;
-
-            if (time - lastPacifierTime < 100)
-                return;
+            if (time - lastPacifierTime < 100) return;
             lastPacifierTime = time;
 
             if (guiLoading != null && bytesNeededForMapLoad != 0)
             {
-                float n = fileSystem.GetReadCount();
-                float pct = (n / bytesNeededForMapLoad);
-                // pct = idMath.ClampFloat( 0.0f, 100.0f, pct );
+                var n = (float)fileSystem.GetReadCount();
+                var pct = n / bytesNeededForMapLoad;
+                //pct = MathX.ClampFloat(0f, 100f, pct);
                 guiLoading.SetStateFloat("map_loading", pct);
-                guiLoading.StateChanged(C.com_frameTime);
+                guiLoading.StateChanged(com_frameTime);
             }
 
             SysW.GenerateEvents();
@@ -299,16 +283,14 @@ namespace Gengine.Framework
 
         public void Frame()
         {
-            if (C.com_asyncSound.Integer == 0)
-                soundSystem.AsyncUpdateWrite(SysW.Milliseconds);
+            if (C.com_asyncSound.Integer == 0) soundSystem.AsyncUpdateWrite(SysW.Milliseconds);
 
-            // DG: periodically check if sound device is still there and try to reset it if not (calling this from idSoundSystem.AsyncUpdate(), which runs in a separate thread
-            //  by default, causes a deadlock when calling idCommon.Warning())
+            // DG: periodically check if sound device is still there and try to reset it if not (calling this from SoundSystem.AsyncUpdate(), which runs in a separate thread
+            // by default, causes a deadlock when calling Common.Warning())
             CheckOpenALDeviceAndRecoverIfNeeded();
 
             // Editors that completely take over the game
-            if (C.com_editorActive && ((C.com_editors & (int)(EDITOR.RADIANT | EDITOR.GUI)) != 0))
-                return;
+            if (C.com_editorActive && (C.com_editors & EDITOR.RADIANT | EDITOR.GUI) != 0) return;
 
             // if the console is down, we don't need to hold the mouse cursor
             SysW.GrabMouseCursor(console.Active || !C.com_editorActive);
@@ -318,7 +300,7 @@ namespace Gengine.Framework
             {
                 var name = $"demos/{aviDemoShortName}/{aviDemoShortName}_{aviTicStart:05}.tga";
 
-                var ratio = 30.0f / (1000.0f / Usercmd.USERCMD_MSEC / com_aviDemoTics.Integer);
+                var ratio = 30f / (1000f / IUsercmd.USERCMD_MSEC / com_aviDemoTics.Integer);
                 aviDemoFrameCount += ratio;
                 if (aviTicStart + 1 != (int)aviDemoFrameCount)
                 {
@@ -340,16 +322,14 @@ namespace Gengine.Framework
             }
 
             // at startup, we may be backwards
-            if (latchedTicNumber > com_ticNumber)
-                latchedTicNumber = com_ticNumber;
+            if (latchedTicNumber > com_ticNumber) latchedTicNumber = com_ticNumber;
 
             // se how many tics we should have before continuing
-            int minTic = latchedTicNumber + 1;
-            if (com_minTics.Integer > 1)
-                minTic = lastGameTic + com_minTics.Integer;
+            var minTic = latchedTicNumber + 1;
+            if (com_minTics.Integer > 1) minTic = lastGameTic + com_minTics.Integer;
 
             if (readDemo != null)
-                minTic = !timeDemo && numDemoFrames != 1
+                minTic = timeDemo == 0 && numDemoFrames != 1
                     ? lastDemoTic + USERCMD_PER_DEMO_FRAME
                     : latchedTicNumber; // timedemos and demoshots will run as fast as they can, other demos will not run more than 30 hz
             else if (writeDemo != null)
@@ -362,65 +342,44 @@ namespace Gengine.Framework
             while (true)
             {
                 latchedTicNumber = com_ticNumber;
-                if (latchedTicNumber >= minTic)
-                    break;
-                SysW.WaitForEvent(TRIGGER_EVENT.ONE);
+                if (latchedTicNumber >= minTic) break;
+                ISystem.WaitForEvent(TRIGGER_EVENT.EVENT_ONE);
             }
 
             if (authEmitTimeout != 0)
-            {
                 // waiting for a game auth
                 if (SysW.Milliseconds > authEmitTimeout)
                 {
                     // expired with no reply
                     // means that if a firewall is blocking the master, we will let through
                     common.DPrintf("no reply from auth\n");
-                    if (authWaitBox)
-                    {
-                        // close the wait box
-                        StopBox();
-                        authWaitBox = false;
-                    }
-                    if (cdkey_state == CDKEY.CHECKING)
-                        cdkey_state = CDKEY.OK;
-                    if (xpkey_state == CDKEY.CHECKING)
-                        xpkey_state = CDKEY.OK;
+                    // close the wait box
+                    if (authWaitBox) { StopBox(); authWaitBox = false; }
+                    if (cdkey_state == CDKEY.CHECKING) cdkey_state = CDKEY.OK;
+                    if (xpkey_state == CDKEY.CHECKING) xpkey_state = CDKEY.OK;
                     // maintain this empty as it's set by auth denials
-                    authMsg = string.Empty;
+                    authMsg = "";
                     authEmitTimeout = 0;
                     SetCDKeyGuiVars();
                 }
-            }
 
             // send frame and mouse events to active guis
             GuiFrameEvents();
 
             // advance demos
-            if (readDemo != null)
-            {
-                AdvanceRenderDemo(false);
-                return;
-            }
+            if (readDemo != null) { AdvanceRenderDemo(false); return; }
 
             //------------ single player game tics --------------
 
-            if (!mapSpawned || guiActive != null)
-                if (!C.com_asyncInput.Bool)
-                    // early exit, won't do RunGameTic .. but still need to update mouse position for GUIs
-                    usercmdGen.GetDirectUsercmd();
+            // early exit, won't do RunGameTic .. but still need to update mouse position for GUIs
+            if ((!mapSpawned || guiActive != null) && !C.com_asyncInput.Bool) usercmdGen.GetDirectUsercmd();
 
-            if (!mapSpawned)
-                return;
+            if (!mapSpawned) return;
 
-            if (guiActive != null)
-            {
-                lastGameTic = latchedTicNumber;
-                return;
-            }
+            if (guiActive != null) { lastGameTic = latchedTicNumber; return; }
 
             // in message box / GUIFrame, idSessionLocal.Frame is used for GUI interactivity but we early exit to avoid running game frames
-            if (AsyncNetwork.IsActive)
-                return;
+            if (AsyncNetwork.IsActive) return;
 
             // check for user info changes
             if ((cvarSystem.GetModifiedFlags() & CVAR.USERINFO) != 0)
@@ -436,43 +395,34 @@ namespace Gengine.Framework
             // don't let a long onDemand sound load unsync everything
             if (timeHitch != 0)
             {
-                var skip = timeHitch / Usercmd.USERCMD_MSEC;
+                var skip = timeHitch / IUsercmd.USERCMD_MSEC;
                 lastGameTic += skip;
                 numCmdsToRun -= skip;
                 timeHitch = 0;
             }
 
             // don't get too far behind after a hitch
-            if (numCmdsToRun > 10)
-                lastGameTic = latchedTicNumber - 10;
+            if (numCmdsToRun > 10) lastGameTic = latchedTicNumber - 10;
 
             // never use more than USERCMD_PER_DEMO_FRAME, which makes it go into slow motion when recording
             if (writeDemo != null)
             {
                 var fixedTic = USERCMD_PER_DEMO_FRAME;
                 // we should have waited long enough
-                if (numCmdsToRun < fixedTic)
-                    common.Error("SessionLocal.Frame: numCmdsToRun < fixedTic");
+                if (numCmdsToRun < fixedTic) common.Error("SessionLocal.Frame: numCmdsToRun < fixedTic");
                 // we may need to dump older commands
                 lastGameTic = latchedTicNumber - fixedTic;
             }
-            else if (com_fixedTic.Integer > 0)
-                // this may cause commands run in a previous frame to be run again if we are going at above the real time rate
-                lastGameTic = latchedTicNumber - com_fixedTic.Integer;
-            else if (aviCaptureMode)
-                lastGameTic = latchedTicNumber - com_aviDemoTics.Integer;
+            // this may cause commands run in a previous frame to be run again if we are going at above the real time rate
+            else if (com_fixedTic.Integer > 0) lastGameTic = latchedTicNumber - com_fixedTic.Integer;
+            else if (aviCaptureMode) lastGameTic = latchedTicNumber - com_aviDemoTics.Integer;
 
             // force only one game frame update this frame.  the game code requests this after skipping cinematics so we come back immediately after the cinematic is done instead of a few frames later which can
             // cause sounds played right after the cinematic to not play.
-            if (syncNextGameFrame)
-            {
-                lastGameTic = latchedTicNumber - 1;
-                syncNextGameFrame = false;
-            }
+            if (syncNextGameFrame) { lastGameTic = latchedTicNumber - 1; syncNextGameFrame = false; }
 
             // create client commands, which will be sent directly to the game
-            //if (com_showTics.GetBool())
-            //    common.Printf(" Tics to run: %i ", latchedTicNumber - lastGameTic);
+            //if (com_showTics.Bool) common.Printf($" Tics to run: {latchedTicNumber - lastGameTic} ");
 
             var gameTicsToRun = latchedTicNumber - lastGameTic;
 
@@ -486,22 +436,21 @@ namespace Gengine.Framework
             // The solution is to just skip these extra tics, however if we skip all extra tics and only process
             // one per frame then if the fps drop due to a lot of action, the whole game slows down, which isn't desriable.
             // Therefore we only want to skip isolated instances of a single extra tic if we are maintaining almost max frame rate
-            var fps = calcFPS();
+            var fps = CalcFPS();
             var skipTics = false;
             if (com_skipTics.Bool && gameTicsToRun > 1)
             {
                 var refresh = renderSystem.Refresh;
 
-                //Skip extra tics if we are maintaining 95% of the intended refresh rate
+                // Skip extra tics if we are maintaining 95% of the intended refresh rate
                 skipTics = (fps >= (refresh * 0.95F));
             }
 
             for (var i = 0; i < gameTicsToRun; i++)
             {
                 RunGameTic();
-                if (!mapSpawned)
-                    // exited game play
-                    break;
+                // exited game play
+                if (!mapSpawned) break;
 
                 if (syncNextGameFrame || skipTics)
                 {
@@ -522,108 +471,79 @@ namespace Gengine.Framework
         {
             // hitting escape anywhere brings up the menu
             // DG: but shift-escape should bring up console instead so ignore that
-            if (guiActive == null && ev.evType == SE.KEY && ev.evValue2 == 1 && ev.evValue == K_ESCAPE && !KeyInput.IsDown(K_SHIFT))
+            if (guiActive == null && ev.evType == SE.KEY && ev.evValue2 == 1 && ev.evValue == (int)K_ESCAPE && !KeyInput.IsDown(K_SHIFT))
             {
                 console.Close();
-                if (game)
+                if (game != null)
                 {
                     IUserInterface gui = null;
-                    EscReply op;
-                    op = game.HandleESC(gui);
-                    if (op == ESC_IGNORE)
-                        return true;
-                    else if (op == ESC_GUI)
-                    {
-                        SetGUI(gui, null);
-                        return true;
-                    }
+                    var op = game.HandleESC(gui);
+                    if (op == EscReply.ESC_IGNORE) return true;
+                    else if (op == EscReply.ESC_GUI) { SetGUI(gui, null); return true; }
                 }
                 StartMenu();
                 return true;
             }
 
             // let the pull-down console take it if desired
-            if (console.ProcessEvent(ev, false))
-                return true;
+            if (console.ProcessEvent(ev, false)) return true;
 
             // if we are testing a GUI, send all events to it
             if (guiTest != null)
             {
                 // hitting escape exits the testgui
-                if (ev.evType == SE.KEY && ev.evValue2 == 1 && ev.evValue == K_ESCAPE)
-                {
-                    guiTest = null;
-                    return true;
-                }
+                if (ev.evType == SE.KEY && ev.evValue2 == 1 && ev.evValue == (int)K_ESCAPE) { guiTest = null; return true; }
 
-                ProcessEvent_cmd = guiTest.HandleEvent(ev, C.com_frameTime);
-                if (!string.IsNullOrEmpty(ProcessEvent_cmd))
-                    common.Printf($"testGui event returned: '{ProcessEvent_cmd}'\n");
+                ProcessEvent_cmd = guiTest.HandleEvent(ev, com_frameTime);
+                if (!string.IsNullOrEmpty(ProcessEvent_cmd)) common.Printf($"testGui event returned: '{ProcessEvent_cmd}'\n");
                 return true;
             }
 
             // menus / etc
-            if (guiActive != null)
-            {
-                MenuEvent(ev);
-                return true;
-            }
+            if (guiActive != null) { MenuEvent(ev); return true; }
 
             // if we aren't in a game, force the console to take it
-            if (!mapSpawned)
-            {
-                console.ProcessEvent(ev, true);
-                return true;
-            }
+            if (!mapSpawned) { console.ProcessEvent(ev, true); return true; }
 
             // in game, exec bindings for all key downs
-            if (ev.evType == SE_KEY && ev.evValue2 == 1)
-            {
-                KeyInput.ExecKeyBinding(ev.evValue);
-                return true;
-            }
+            if (ev.evType == SE.KEY && ev.evValue2 == 1) { KeyInput.ExecKeyBinding(ev.evValue); return true; }
 
             return false;
         }
 
-        public void StartMenu(bool playIntro = false) { }
-        public void ExitMenu() { }
-        public void GuiFrameEvents() { }
-        public void SetGUI(IUserInterface gui, HandleGuiCommand handle) { }
-
-        public string MessageBox(msgBoxType type, string message, string title = null, bool wait = false, string fire_yes = null, string fire_no = null, bool network = false) { }
-        public void StopBox() { }
-        public void DownloadProgressBox(BackgroundDownload bgl, string title, int progress_start = 0, int progress_end = 100) { }
         public void SetPlayingSoundWorld()
-        {
-            soundSystem.SetPlayingSoundWorld(guiActive && (guiActive == guiMainMenu || guiActive == guiIntro || guiActive == guiLoading || (guiActive == guiMsg && !mapSpawned))
+            => soundSystem.PlayingSoundWorld = guiActive != null && (guiActive == guiMainMenu || guiActive == guiIntro || guiActive == guiLoading || (guiActive == guiMsg && !mapSpawned))
                 ? menuSoundWorld
-                : sw);
-        }
+                : sw;
 
         /// <summary>
         /// this is used by the sound system when an OnDemand sound is loaded, so the game action doesn't advance and get things out of sync
         /// </summary>
         /// <param name="msec">The msec.</param>
-        public void TimeHitch(int msec) => timeHitch += msec;
+        public void TimeHitch(int msec)
+            => timeHitch += msec;
 
-        public int GetSaveGameVersion() => savegameVersion;
+        public int SaveGameVersion
+            => savegameVersion;
 
-        public string GetCurrentMapName() => currentMapName;
+        public string CurrentMapName
+            => currentMapName;
 
         //=====================================
 
-        public int GetLocalClientNum()
+        public int LocalClientNum
         {
-            if (AsyncNetwork.client.IsActive)
-                return AsyncNetwork.client.GetLocalClientNum();
-            else if (AsyncNetwork.server.IsActive)
+            get
             {
-                if (AsyncNetwork.serverDedicated.Integer == 0) return 0;
-                else if (AsyncNetwork.server.IsClientInGame(AsyncNetwork.serverDrawClient.Integer)) return AsyncNetwork.serverDrawClient.Integer;
-                else return -1;
+                if (AsyncNetwork.client.IsActive) return AsyncNetwork.client.LocalClientNum;
+                else if (AsyncNetwork.server.IsActive)
+                {
+                    if (AsyncNetwork.serverDedicated.Integer == 0) return 0;
+                    else if (AsyncNetwork.server.IsClientInGame(AsyncNetwork.serverDrawClient.Integer)) return AsyncNetwork.serverDrawClient.Integer;
+                    else return -1;
+                }
+                else return 0;
             }
-            else return 0;
         }
 
         /// <summary>
@@ -632,7 +552,7 @@ namespace Gengine.Framework
         /// <param name="mapName">Name of the map.</param>
         public void MoveToNewMap(string mapName)
         {
-            mapSpawnData.serverInfo.Set("si_map", mapName);
+            mapSpawnData.serverInfo["si_map"] = mapName;
 
             ExecuteMapChange();
 
@@ -640,12 +560,9 @@ namespace Gengine.Framework
             {
                 // Autosave at the beginning of the level
 
-                // DG: set an explicit savename to avoid problems with autosave names
-                //     (they were translated which caused problems like all alpha labs parts
-                //      getting the same filename in spanish, probably because the strings contained
-                //      dots and everything behind them was cut off as "file extension".. see #305)
-                var saveFileName = "Autosave_";
-                saveFileName += mapName;
+                // DG: set an explicit savename to avoid problems with autosave names (they were translated which caused problems like all alpha labs parts
+                // getting the same filename in spanish, probably because the strings contained dots and everything behind them was cut off as "file extension".. see #305)
+                var saveFileName = $"Autosave_{mapName}";
                 SaveGame(GetAutoSaveName(mapName), true, saveFileName);
             }
 
@@ -663,31 +580,17 @@ namespace Gengine.Framework
             // strict check. don't let a game start without a definitive answer
             if (!CDKeysAreValid(true))
             {
-                var prompt = true;
-                if (MaybeWaitOnCDKey())
-                {
-                    // check again, maybe we just needed more time
-                    if (CDKeysAreValid(true))
-                        // can continue directly
-                        prompt = false;
-                }
+                // check again, maybe we just needed more time. can continue directly
+                var prompt = !MaybeWaitOnCDKey() || !CDKeysAreValid(true);
                 if (prompt)
                 {
-                    cmdSystem.BufferCommandText(CMD_EXEC_NOW, "promptKey force");
+                    cmdSystem.BufferCommandText(CMD_EXEC.NOW, "promptKey force");
                     cmdSystem.ExecuteCommandBuffer();
                 }
             }
 #endif
-            if (AsyncNetwork.server.IsActive)
-            {
-                common.Printf("Server running, use si_map / serverMapRestart\n");
-                return;
-            }
-            if (AsyncNetwork.client.IsActive)
-            {
-                common.Printf("Client running, disconnect from server first\n");
-                return;
-            }
+            if (AsyncNetwork.server.IsActive) { common.Printf("Server running, use si_map / serverMapRestart\n"); return; }
+            if (AsyncNetwork.client.IsActive) { common.Printf("Client running, disconnect from server first\n"); return; }
 
             // clear the userInfo so the player starts out with the defaults
             mapSpawnData.userInfo[0].Clear();
@@ -696,11 +599,10 @@ namespace Gengine.Framework
 
             mapSpawnData.serverInfo.Clear();
             mapSpawnData.serverInfo = cvarSystem.MoveCVarsToDict(CVAR.SERVERINFO);
-            mapSpawnData.serverInfo.Set("si_gameType", "singleplayer");
+            mapSpawnData.serverInfo["si_gameType"] = "singleplayer";
 
             // set the devmap key so any play testing items will be given at spawn time to set approximately the right weapons and ammo
-            if (devmap)
-                mapSpawnData.serverInfo.Set("devmap", "1");
+            if (devmap) mapSpawnData.serverInfo["devmap"] = "1";
 
             mapSpawnData.syncedCVars.Clear();
             mapSpawnData.syncedCVars = cvarSystem.MoveCVarsToDict(CVAR.NETWORKSYNC);
@@ -708,9 +610,11 @@ namespace Gengine.Framework
             MoveToNewMap(mapName);
 #endif
         }
+
         public void PlayIntroGui() { }
 
         public void LoadSession(string name) { }
+
         public void SaveSession(string name) { }
 
         // called by Draw when the scene to scene wipe is still running
@@ -721,16 +625,14 @@ namespace Gengine.Framework
         {
             var latchedTic = com_ticNumber;
 
-            if (wipeStartTic >= wipeStopTic)
-                return;
-
-            if (!wipeHold && latchedTic >= wipeStopTic)
-                return;
+            if (wipeStartTic >= wipeStopTic) return;
+            if (!wipeHold && latchedTic >= wipeStopTic) return;
 
             var fade = (float)(latchedTic - wipeStartTic) / (wipeStopTic - wipeStartTic);
             renderSystem.SetColor4(1, 1, 1, fade);
             renderSystem.DrawStretchPic(0, 0, 640, 480, 0, 0, 1, 1, wipeMaterial);
         }
+
         /// <summary>
         /// Draws and captures the current state, then starts a wipe with that image
         /// </summary>
@@ -748,29 +650,26 @@ namespace Gengine.Framework
             renderSystem.CaptureRenderToImage("_scratch");
             renderSystem.UnCrop();
 
-            wipeMaterial = declManager.FindMaterial(wipeMaterial, false);
+            wipeMaterial = declManager.FindMaterial(materialName, false);
 
             wipeStartTic = com_ticNumber;
-            wipeStopTic = wipeStartTic + 1000.0f / USERCMD_MSEC * com_wipeSeconds.Float;
+            wipeStopTic = (int)(wipeStartTic + 1000f / IUsercmd.USERCMD_MSEC * com_wipeSeconds.Float);
             wipeHold = hold;
         }
+
         public void CompleteWipe()
         {
-            if (com_ticNumber == 0)
-            {
-                // if the async thread hasn't started, we would hang here
-                wipeStopTic = 0;
-                UpdateScreen(true);
-                return;
-            }
+            // if the async thread hasn't started, we would hang here
+            if (com_ticNumber == 0) { wipeStopTic = 0; UpdateScreen(true); return; }
             while (com_ticNumber < wipeStopTic)
             {
 #if ID_CONSOLE_LOCK
-		        emptyDrawCount = 0;
+                emptyDrawCount = 0;
 #endif
                 UpdateScreen(true);
             }
         }
+
         public void ClearWipe()
         {
             wipeHold = false;
@@ -780,8 +679,7 @@ namespace Gengine.Framework
 
         public void ShowLoadingGui()
         {
-            if (com_ticNumber == 0)
-                return;
+            if (com_ticNumber == 0) return;
             console.Close();
 
             // introduced in D3XP code. don't think it actually fixes anything, but doesn't hurt either
@@ -791,15 +689,15 @@ namespace Gengine.Framework
             var force = 10;
             while (SysW.Milliseconds < stop || force-- > 0)
             {
-                com_frameTime = com_ticNumber * USERCMD_MSEC;
+                com_frameTime = com_ticNumber * IUsercmd.USERCMD_MSEC;
                 session.Frame();
                 session.UpdateScreen(false);
             }
 #else
-            var stop = com_ticNumber + 1000.0f / USERCMD_MSEC * 1.0f;
+            var stop = com_ticNumber + 1000f / IUsercmd.USERCMD_MSEC * 1f;
             while (com_ticNumber < stop)
             {
-                com_frameTime = com_ticNumber * USERCMD_MSEC;
+                com_frameTime = com_ticNumber * IUsercmd.USERCMD_MSEC;
                 session.Frame();
                 session.UpdateScreen(false);
             }
@@ -810,41 +708,36 @@ namespace Gengine.Framework
         /// Turns a bad file name into a good one or your money back
         /// </summary>
         /// <param name="saveFileName">Name of the save file.</param>
-        public void ScrubSaveGameFileName(string saveFileName)
+        public void ScrubSaveGameFileName(ref string saveFileName)
         {
-            int i;
-            string inFileName;
+            var inFileName = PathX.StripFileExtension(stringX.RemoveColors(saveFileName));
 
-            inFileName = saveFileName;
-            inFileName.RemoveColors();
-            inFileName.StripFileExtension();
-
-            saveFileName = string.Empty;
+            saveFileName = "";
 
             var len = inFileName.Length;
-            for (i = 0; i < len; i++)
+            for (var i = 0; i < len; i++)
             {
-                if (strchr("',.~!@#$%^&*()[]{}<>\\|/=?+;:-\'\"", inFileName[i])) saveFileName += '_'; // random junk
+                if ("',.~!@#$%^&*()[]{}<>\\|/=?+;:-\'\"".IndexOf(inFileName[i]) != 0) saveFileName += '_'; // random junk
                 else if (inFileName[i] >= 128) saveFileName += '_'; // high ascii chars
                 else if (inFileName[i] == ' ') saveFileName += '_';
                 else saveFileName += inFileName[i];
             }
         }
+
         public string GetAutoSaveName(string mapName)
         {
-            var mapDecl = declManager.FindType(DECL_MAPDEF, mapName, false);
+            var mapDecl = declManager.FindType(DECL.MAPDEF, mapName, false);
             var mapDef = (DeclEntityDef)mapDecl;
-            if (mapDef)
-                mapName = common.GetLanguageDict().GetString(mapDef.dict.GetString("name", mapName));
+            if (mapDef != null) mapName = common.LanguageDictGetString(mapDef.dict.GetString("name", mapName));
             // Fixme: Localization
             return $"^3AutoSave:^0 {mapName}";
         }
+
         public string GetSaveMapName(string mapName)
         {
-            var mapDecl = declManager.FindType(DECL_MAPDEF, mapName, false);
+            var mapDecl = declManager.FindType(DECL.MAPDEF, mapName, false);
             var mapDef = (DeclEntityDef)mapDecl;
-            if (mapDef != null)
-                mapName = common.LanguageDictGetString(mapDef.dict.GetString("name", mapName));
+            if (mapDef != null) mapName = common.LanguageDictGetString(mapDef.dict.GetString("name", mapName));
             // Fixme: Localization
             return mapName;
         }
@@ -855,33 +748,24 @@ namespace Gengine.Framework
             common.Printf("Dedicated servers cannot load games.\n");
             return false;
 #else
-            int i; string in_, loadFile, saveMap, gamename;
+            int i; string in_, loadFile, saveMap, gamename = null;
 
-            if (IsMultiplayer)
-            {
-                common.Printf("Can't load during net play.\n");
-                return false;
-            }
+            if (IsMultiplayer) { common.Printf("Can't load during net play.\n"); return false; }
 
             //Hide the dialog box if it is up.
             StopBox();
 
             loadFile = saveName;
-            ScrubSaveGameFileName(loadFile);
-            loadFile.SetFileExtension(".save");
+            ScrubSaveGameFileName(ref loadFile);
+            loadFile = PathX.SetFileExtension(loadFile, ".save");
 
-            in_ = "savegames/";
-            in_ += loadFile;
+            in_ = $"savegames/{loadFile}";
 
             // Open savegame file. only allow loads from the game directory because we don't want a base game to load
             var game = cvarSystem.GetCVarString("fs_game");
             savegameFile = fileSystem.OpenFileRead(in_, true, game.Length != 0 ? game : null);
 
-            if (savegameFile == null)
-            {
-                common.Warning($"Couldn't open savegame file {in_}");
-                return false;
-            }
+            if (savegameFile == null) { common.Warning($"Couldn't open savegame file {in_}"); return false; }
 
             loadingSaveGame = true;
 
@@ -889,7 +773,7 @@ namespace Gengine.Framework
             // Game Name / Version / Map Name / Persistant Player Info
 
             // game
-            savegameFile.ReadString(gamename);
+            savegameFile.ReadString(out gamename);
 
             // if this isn't a savegame for the correct game, abort loadgame
             if (!(gamename == GAME_NAME || gamename == "DOOM 3"))
@@ -903,17 +787,16 @@ namespace Gengine.Framework
             }
 
             // version
-            savegameFile.ReadInt(savegameVersion);
+            savegameFile.ReadInt(out savegameVersion);
 
             // map
-            savegameFile.ReadString(saveMap);
+            savegameFile.ReadString(out saveMap);
 
             // persistent player info
             for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                mapSpawnData.persistentPlayerInfo[i].ReadFromFileHandle(savegameFile);
+                savegameFile.ReadDictionary(mapSpawnData.persistentPlayerInfo[i]);
 
-            // check the version, if it doesn't match, cancel the loadgame, but still load the map with the persistant playerInfo from the header
-            // so that the player doesn't lose too much progress.
+            // check the version, if it doesn't match, cancel the loadgame, but still load the map with the persistant playerInfo from the header so that the player doesn't lose too much progress.
             if (savegameVersion <= 17)
             {   // handle savegame v16 in v17
                 common.Warning("Savegame Version Too Early: aborting loadgame and starting level with persistent data");
@@ -930,9 +813,9 @@ namespace Gengine.Framework
                 mapSpawnData.serverInfo.Clear();
 
                 mapSpawnData.serverInfo = cvarSystem.MoveCVarsToDict(CVAR.SERVERINFO);
-                mapSpawnData.serverInfo.Set("si_gameType", "singleplayer");
+                mapSpawnData.serverInfo["si_gameType"] = "singleplayer";
 
-                mapSpawnData.serverInfo.Set("si_map", saveMap);
+                mapSpawnData.serverInfo["si_map"] = saveMap;
 
                 mapSpawnData.syncedCVars.Clear();
                 mapSpawnData.syncedCVars = cvarSystem.MoveCVarsToDict(CVAR.NETWORKSYNC);
@@ -956,6 +839,7 @@ namespace Gengine.Framework
             return true;
 #endif
         }
+
         // DG: added saveFileName so we can set a sensible filename for autosaves (see comment in MoveToNewMap())
         public bool SaveGame(string saveName, bool autosave = false, string saveFileName = null)
         {
@@ -966,63 +850,29 @@ namespace Gengine.Framework
             int i;
             string previewFile, descriptionFile, mapName;
             // DG: support setting an explicit savename to avoid problems with autosave names
-            var gameFile = saveFileName != null ? saveFileName : saveName;
+            var gameFile = saveFileName ?? saveName;
 
-            if (!mapSpawned)
-            {
-                common.Printf("Not playing a game.\n");
-                return false;
-            }
+            if (!mapSpawned) { common.Printf("Not playing a game.\n"); return false; }
+            if (IsMultiplayer) { common.Printf("Can't save during net play.\n"); return false; }
+            if (game.GetPersistentPlayerInfo(0).GetInt("health") <= 0) { MessageBox(MSG.OK, common.LanguageDictGetString("#str_04311"), common.LanguageDictGetString("#str_04312"), true); common.Printf("You must be alive to save the game\n"); return false; }
+            if (SysW.GetDriveFreeSpace(cvarSystem.GetCVarString("fs_savepath")) < 25) { MessageBox(MSG.OK, common.LanguageDictGetString("#str_04313"), common.LanguageDictGetString("#str_04314"), true); common.Printf("Not enough drive space to save the game\n"); return false; }
 
-            if (IsMultiplayer)
-            {
-                common.Printf("Can't save during net play.\n");
-                return false;
-            }
-
-            if (game.GetPersistentPlayerInfo(0).GetInt("health") <= 0)
-            {
-                MessageBox(MSG_OK, common.LanguageDictGetString("#str_04311"), common.LanguageDictGetString("#str_04312"), true);
-                common.Printf("You must be alive to save the game\n");
-                return false;
-            }
-
-            if (SysW.GetDriveFreeSpace(cvarSystem.GetCVarString("fs_savepath")) < 25)
-            {
-                MessageBox(MSG_OK, common.LanguageDictGetString("#str_04313"), common.LanguageDictGetString("#str_04314"), true);
-                common.Printf("Not enough drive space to save the game\n");
-                return false;
-            }
-
-            var pauseWorld = soundSystem.GetPlayingSoundWorld();
-            if (pauseWorld != null)
-            {
-                pauseWorld.Pause();
-                soundSystem.SetPlayingSoundWorld(null);
-            }
+            var pauseWorld = soundSystem.PlayingSoundWorld;
+            if (pauseWorld != null) { pauseWorld.Pause(); soundSystem.PlayingSoundWorld = null; }
 
             // setup up filenames and paths
-            ScrubSaveGameFileName(gameFile);
+            ScrubSaveGameFileName(ref gameFile);
 
-            gameFile = "savegames/" + gameFile;
-            gameFile.SetFileExtension(".save");
-
-            previewFile = gameFile;
-            previewFile.SetFileExtension(".tga");
-
-            descriptionFile = gameFile;
-            descriptionFile.SetFileExtension(".txt");
+            gameFile = PathX.SetFileExtension($"savegames/{gameFile}", ".save");
+            previewFile = PathX.SetFileExtension(gameFile, ".tga");
+            descriptionFile = PathX.SetFileExtension(gameFile, ".txt");
 
             // Open savegame file
             var fileOut = fileSystem.OpenFileWrite(gameFile);
             if (fileOut == null)
             {
                 common.Warning($"Failed to open save file '{gameFile}'\n");
-                if (pauseWorld != null)
-                {
-                    soundSystem.SetPlayingSoundWorld(pauseWorld);
-                    pauseWorld.UnPause();
-                }
+                if (pauseWorld != null) { soundSystem.PlayingSoundWorld = pauseWorld; pauseWorld.UnPause(); }
                 return false;
             }
 
@@ -1030,11 +880,11 @@ namespace Gengine.Framework
             // Game Name / Version / Map Name / Persistant Player Info
 
             // game
-            var gamename = Config.GAME_NAME;
+            var gamename = OpenStack.GAME_NAME;
             fileOut.WriteString(gamename);
 
             // version
-            fileOut.WriteInt(SAVEGAME_VERSION);
+            fileOut.WriteInt(Config.SAVEGAME_VERSION);
 
             // map
             mapName = mapSpawnData.serverInfo.GetString("si_map");
@@ -1044,7 +894,7 @@ namespace Gengine.Framework
             for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
                 mapSpawnData.persistentPlayerInfo[i] = game.GetPersistentPlayerInfo(i);
-                mapSpawnData.persistentPlayerInfo[i].WriteToFileHandle(fileOut);
+                fileOut.WriteDictionary(mapSpawnData.persistentPlayerInfo[i]);
             }
 
             // let the game save its state
@@ -1062,74 +912,54 @@ namespace Gengine.Framework
                 renderSystem.UnCrop();
             }
 
-            // Write description, which is just a text file with
-            // the unclean save name on line 1, map name on line 2, screenshot on line 3
+            // Write description, which is just a text file with the unclean save name on line 1, map name on line 2, screenshot on line 3
             var fileDesc = fileSystem.OpenFileWrite(descriptionFile);
             if (fileDesc == null)
             {
                 common.Warning($"Failed to open description file '{descriptionFile}'\n");
-                if (pauseWorld != null)
-                {
-                    soundSystem.SetPlayingSoundWorld(pauseWorld);
-                    pauseWorld.UnPause();
-                }
+                if (pauseWorld != null) { soundSystem.PlayingSoundWorld = pauseWorld; pauseWorld.UnPause(); }
                 return false;
             }
 
-            var description = saveName;
-            description.Replace("\\", "\\\\");
-            description.Replace("\"", "\\\"");
+            var description = saveName.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
-            var mapDef = (DeclEntityDef)declManager.FindType(DECL_MAPDEF, mapName, false);
-            if (mapDef != null)
-                mapName = common.LanguageDictGetString(mapDef.dict.GetString("name", mapName));
+            var mapDef = (DeclEntityDef)declManager.FindType(DECL.MAPDEF, mapName, false);
+            if (mapDef != null) mapName = common.LanguageDictGetString(mapDef.dict.GetString("name", mapName));
 
             fileDesc.Printf($"\"{description}\"\n");
             fileDesc.Printf($"\"{mapName}\"\n");
 
-            if (autosave)
-            {
-                var sshot = mapSpawnData.serverInfo.GetString("si_map");
-                sshot.StripPath();
-                sshot.StripFileExtension();
-                fileDesc.Printf($"\"guis/assets/autosave/{sshot}\"\n");
-            }
-            else
-                fileDesc.Printf("\"\"\n");
+            if (autosave) { var sshot = PathX.StripFileExtension(PathX.StripPath(mapSpawnData.serverInfo.GetString("si_map"))); fileDesc.Printf($"\"guis/assets/autosave/{sshot}\"\n"); }
+            else fileDesc.Printf("\"\"\n");
 
             fileSystem.CloseFile(fileDesc);
 
             if (pauseWorld != null)
             {
-                soundSystem.SetPlayingSoundWorld(pauseWorld);
+                soundSystem.PlayingSoundWorld = pauseWorld;
                 pauseWorld.UnPause();
             }
 
             syncNextGameFrame = true;
-
             return true;
 #endif
         }
 
-        public string GetAuthMsg() => authMsg;
-
         //=====================================
 
-        public static CVar com_showAngles = new("com_showAngles", "0", CVAR.SYSTEM | CVAR.BOOL, string.Empty);
-        public static CVar com_showTics = new("com_showTics", "1", CVAR.SYSTEM | CVAR.BOOL, string.Empty);
+        public static CVar com_showAngles = new("com_showAngles", "0", CVAR.SYSTEM | CVAR.BOOL, "");
+        public static CVar com_showTics = new("com_showTics", "1", CVAR.SYSTEM | CVAR.BOOL, "");
         public static CVar com_skipTics = new("com_skipTics", "1", CVAR.SYSTEM | CVAR.BOOL | CVAR.ARCHIVE, "Skip all missed tics and only use one tick per frame, unless in a low fps situation, then process all tics");
-        public static CVar com_minTics = new("com_minTics", "1", CVAR.SYSTEM, string.Empty);
-        public static CVar com_fixedTic = new("com_fixedTic", "0", CVAR.SYSTEM | CVAR.INTEGER | CVAR.ARCHIVE, string.Empty, -1, 10);
-        public static CVar com_showDemo = new("com_showDemo", "0", CVAR.SYSTEM | CVAR.BOOL, string.Empty);
-        public static CVar com_skipGameDraw = new("com_skipGameDraw", "0", CVAR.SYSTEM | CVAR.BOOL, string.Empty);
-        public static CVar com_aviDemoWidth = new("com_aviDemoWidth", "256", CVAR.SYSTEM, string.Empty);
-        public static CVar com_aviDemoHeight = new("com_aviDemoHeight", "256", CVAR.SYSTEM, string.Empty);
-        public static CVar com_aviDemoSamples = new("com_aviDemoSamples", "16", CVAR.SYSTEM, string.Empty);
-        public static CVar com_aviDemoTics = new("com_aviDemoTics", "2", CVAR.SYSTEM | CVAR.INTEGER, string.Empty, 1, 60);
-        public static CVar com_wipeSeconds = new("com_wipeSeconds", "1", CVAR.SYSTEM, string.Empty);
-        public static CVar com_guid = new("com_guid", "", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.ROM, string.Empty);
-
-        public static CVar gui_configServerRate;
+        public static CVar com_minTics = new("com_minTics", "1", CVAR.SYSTEM, "");
+        public static CVar com_fixedTic = new("com_fixedTic", "0", CVAR.SYSTEM | CVAR.INTEGER | CVAR.ARCHIVE, "", -1, 10);
+        public static CVar com_showDemo = new("com_showDemo", "0", CVAR.SYSTEM | CVAR.BOOL, "");
+        public static CVar com_skipGameDraw = new("com_skipGameDraw", "0", CVAR.SYSTEM | CVAR.BOOL, "");
+        public static CVar com_aviDemoWidth = new("com_aviDemoWidth", "256", CVAR.SYSTEM, "");
+        public static CVar com_aviDemoHeight = new("com_aviDemoHeight", "256", CVAR.SYSTEM, "");
+        public static CVar com_aviDemoSamples = new("com_aviDemoSamples", "16", CVAR.SYSTEM, "");
+        public static CVar com_aviDemoTics = new("com_aviDemoTics", "2", CVAR.SYSTEM | CVAR.INTEGER, "", 1, 60);
+        public static CVar com_wipeSeconds = new("com_wipeSeconds", "1", CVAR.SYSTEM, "");
+        public static CVar com_guid = new("com_guid", "", CVAR.SYSTEM | CVAR.ARCHIVE | CVAR.ROM, "");
 
         public int timeHitch;
 
@@ -1153,7 +983,7 @@ namespace Gengine.Framework
         public int logIndex;
         public LogCmd[] loggedUsercmds = new LogCmd[MAX_LOGGED_USERCMDS];
         public int statIndex;
-        public LogStats[] loggedStats = new LogStats[MAX_LOGGED_STATS];
+        public LogStats[] loggedStats = new LogStats[ISession.MAX_LOGGED_STATS];
         public int lastSaveIndex;
         // each game tic, numClients usercmds will be added, until full
 
@@ -1176,7 +1006,7 @@ namespace Gengine.Framework
         public float aviDemoFrameCount;
         public int aviTicStart;
 
-        public TimeDemo timeDemo;
+        public TD timeDemo;
         public int timeDemoStartTime;
         public int numDemoFrames;      // for timeDemo and demoShot
         public int demoTimeOffset;
@@ -1214,10 +1044,17 @@ namespace Gengine.Framework
         public bool wipeHold;
 
 #if ID_CONSOLE_LOCK
-        int emptyDrawCount;				// watchdog to force the main menu to restart
+        int emptyDrawCount;             // watchdog to force the main menu to restart
 #endif
 
+        // DG: true if running the Demo version of Doom3 (for FT_IsDemo, see Common.h)
+        public bool IsDemoVersion
+            => demoversion;
+
+        bool demoversion; // DG: true if running the Demo version of Doom3, for FT_IsDemo (see Common.h)
+
         //=====================================
+
         public void Clear()
         {
             insideUpdateScreen = false;
@@ -1227,10 +1064,10 @@ namespace Gengine.Framework
             savegameFile = null;
             savegameVersion = 0;
 
-            currentMapName = string.Empty;
-            aviDemoShortName = string.Empty;
-            msgFireBack[0] = string.Empty;
-            msgFireBack[1] = string.Empty;
+            currentMapName = "";
+            aviDemoShortName = "";
+            msgFireBack[0] = "";
+            msgFireBack[1] = "";
 
             timeHitch = 0;
 
@@ -1267,41 +1104,43 @@ namespace Gengine.Framework
             authEmitTimeout = 0;
             authWaitBox = false;
 
-            authMsg = string.Empty;
+            authMsg = "";
         }
 
-        const int ANGLE_GRAPH_HEIGHT = 128;
-        const int ANGLE_GRAPH_STRETCH = 3;
+
+
         /// <summary>
         /// Graphs yaw angle for testing smoothness
         /// </summary>
         public void DrawCmdGraph()
         {
-            if (!com_showAngles.Bool)
-                return;
-            renderSystem.SetColor4(0.1f, 0.1f, 0.1f, 1.0f);
-            renderSystem.DrawStretchPic(0, 480 - ANGLE_GRAPH_HEIGHT, MAX_BUFFERED_USERCMD * ANGLE_GRAPH_STRETCH, ANGLE_GRAPH_HEIGHT, 0, 0, 1, 1, whiteMaterial);
-            renderSystem.SetColor4(0.9f, 0.9f, 0.9f, 1.0f);
-            for (var i = 0; i < MAX_BUFFERED_USERCMD - 4; i++)
+            const int ANGLE_GRAPH_HEIGHT = 128;
+            const int ANGLE_GRAPH_STRETCH = 3;
+
+            if (!com_showAngles.Bool) return;
+            renderSystem.SetColor4(0.1f, 0.1f, 0.1f, 1f);
+            renderSystem.DrawStretchPic(0, 480 - ANGLE_GRAPH_HEIGHT, IUsercmd.MAX_BUFFERED_USERCMD * ANGLE_GRAPH_STRETCH, ANGLE_GRAPH_HEIGHT, 0, 0, 1, 1, whiteMaterial);
+            renderSystem.SetColor4(0.9f, 0.9f, 0.9f, 1f);
+            for (var i = 0; i < IUsercmd.MAX_BUFFERED_USERCMD - 4; i++)
             {
-                var cmd = usercmdGen.TicCmd(latchedTicNumber - (MAX_BUFFERED_USERCMD - 4) + i);
-                var h = cmd.angles[1];
+                var cmd = usercmdGen.TicCmd(latchedTicNumber - (IUsercmd.MAX_BUFFERED_USERCMD - 4) + i);
+                var h = cmd.angles1;
                 h >>= 8;
                 h &= (ANGLE_GRAPH_HEIGHT - 1);
                 renderSystem.DrawStretchPic(i * ANGLE_GRAPH_STRETCH, 480 - h, 1, h, 0, 0, 1, 1, whiteMaterial);
             }
         }
+
         public void Draw()
         {
             var fullConsole = false;
 
-            setupScreenLayer();
+            SetupScreenLayer();
 
             if (insideExecuteMapChange)
             {
                 guiLoading?.Redraw(com_frameTime);
-                if (guiActive == guiMsg)
-                    guiMsg.Redraw(com_frameTime);
+                if (guiActive == guiMsg) guiMsg.Redraw(com_frameTime);
             }
             else if (guiTest != null)
             {
@@ -1311,16 +1150,12 @@ namespace Gengine.Framework
                 renderSystem.DrawStretchPic(0, 0, 640, 480, 0, 0, 1, 1, declManager.FindMaterial("_white"));
                 guiTest.Redraw(com_frameTime);
             }
-            else if (guiActive && guiActive.State.Get("gameDraw", "0") == "0")
+            else if (guiActive != null && guiActive.State.Get("gameDraw", "0") == "0")
             {
                 // draw the frozen gui in the background
-                if (guiActive == guiMsg && guiMsgRestore)
-                    guiMsgRestore.Redraw(com_frameTime);
-
+                if (guiActive == guiMsg && guiMsgRestore != null) guiMsgRestore.Redraw(com_frameTime);
                 // draw the menus full screen
-                if (guiActive == guiTakeNotes && !com_skipGameDraw.Bool)
-                    game.Draw(GetLocalClientNum());
-
+                if (guiActive == guiTakeNotes && !com_skipGameDraw.Bool) game.Draw(LocalClientNum);
                 guiActive.Redraw(com_frameTime);
             }
             else if (readDemo != null)
@@ -1330,15 +1165,15 @@ namespace Gengine.Framework
             }
             else if (mapSpawned)
             {
-                bool gameDraw = false;
+                var gameDraw = false;
                 // normal drawing for both single and multi player
-                if (!com_skipGameDraw.Bool && GetLocalClientNum() >= 0)
+                if (!com_skipGameDraw.Bool && LocalClientNum >= 0)
                 {
                     // draw the game view
-                    var start = SysW.Milliseconds();
-                    gameDraw = game.Draw(GetLocalClientNum());
-                    var end = SysW.Milliseconds();
-                    time_gameDraw += end - start; // note time used for com_speeds
+                    var start = SysW.Milliseconds;
+                    gameDraw = game.Draw(LocalClientNum);
+                    var end = SysW.Milliseconds;
+                    C.time_gameDraw += end - start; // note time used for com_speeds
                 }
                 if (!gameDraw)
                 {
@@ -1347,14 +1182,12 @@ namespace Gengine.Framework
                 }
 
                 // save off the 2D drawing from the game
-                if (writeDemo != null)
-                    renderSystem.WriteDemoPics();
+                if (writeDemo != null) renderSystem.WriteDemoPics();
             }
             else
             {
 #if ID_CONSOLE_LOCK
-                if (com_allowConsole.Bool)
-                    console.Draw(true);
+                if (C.com_allowConsole.Bool) console.Draw(true);
                 else
                 {
                     emptyDrawCount++;
@@ -1362,12 +1195,12 @@ namespace Gengine.Framework
                     {
                         // it's best if you can avoid triggering the watchgod by doing the right thing somewhere else
                         Debug.Assert(false);
-                        common.Warning("idSession: triggering mainmenu watchdog");
+                        common.Warning("Session: triggering mainmenu watchdog");
                         emptyDrawCount = 0;
                         StartMenu();
                     }
                     renderSystem.SetColor4(0, 0, 0, 1);
-                    renderSystem.DrawStretchPic(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 1, 1, declManager.FindMaterial("_white"));
+                    renderSystem.DrawStretchPic(0, 0, R.SCREEN_WIDTH, R.SCREEN_HEIGHT, 0, 0, 1, 1, declManager.FindMaterial("_white"));
                 }
 #else
                 // draw the console full screen - this should only ever happen in developer builds
@@ -1392,8 +1225,7 @@ namespace Gengine.Framework
             DrawCmdGraph();
 
             // draw the half console / notify console on top of everything
-            if (!fullConsole)
-                console.Draw(false);
+            if (!fullConsole) console.Draw(false);
         }
 
         /// <summary>
@@ -1402,33 +1234,18 @@ namespace Gengine.Framework
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="save">if set to <c>true</c> [save].</param>
-        public void WriteCmdDemo(string name, bool save = false)
+        public unsafe void WriteCmdDemo(string name, bool save = false)
         {
-            if (string.IsNullOrEmpty(name))
-            {
-                common.Printf("SessionLocal.WriteCmdDemo: no name specified\n");
-                return;
-            }
+            if (string.IsNullOrEmpty(name)) { common.Printf("SessionLocal.WriteCmdDemo: no name specified\n"); return; }
 
-            string statsName;
-            if (save)
-            {
-                statsName = name;
-                statsName.StripFileExtension();
-                statsName.DefaultFileExtension(".stats");
-            }
+            var statsName = save ? PathX.DefaultFileExtension(PathX.StripFileExtension(name), ".stats") : null;
 
             common.Printf($"writing save data to {name}\n");
 
             var cmdDemoFile = fileSystem.OpenFileWrite(name);
-            if (cmdDemoFile == null)
-            {
-                common.Printf($"Couldn't open for writing {name}\n");
-                return;
-            }
+            if (cmdDemoFile == null) { common.Printf($"Couldn't open for writing {name}\n"); return; }
 
-            if (save)
-                cmdDemoFile.Write(logIndex, sizeof(logIndex));
+            if (save) cmdDemoFile.WriteInt(logIndex);
 
             SaveCmdDemoToFile(cmdDemoFile);
 
@@ -1437,28 +1254,24 @@ namespace Gengine.Framework
                 var statsFile = fileSystem.OpenFileWrite(statsName);
                 if (statsFile != null)
                 {
-                    statsFile.Write(statIndex, sizeof(statIndex));
-                    statsFile.Write(loggedStats, numClients * statIndex * sizeof(loggedStats[0]));
+                    statsFile.WriteInt(statIndex);
+                    fixed (LogStats* loggedStats_ = loggedStats)
+                        statsFile.Write((byte*)loggedStats_, numClients * statIndex * sizeof(LogStats));
                     fileSystem.CloseFile(statsFile);
                 }
             }
 
             fileSystem.CloseFile(cmdDemoFile);
         }
+
         public void StartPlayingCmdDemo(string demoName)
-        {// exit any current game
+        {   // exit any current game
             Stop();
 
-            var fullDemoName = "demos/";
-            fullDemoName += demoName;
-            fullDemoName.DefaultFileExtension(".cdemo");
+            var fullDemoName = PathX.DefaultFileExtension($"demos/{demoName}", ".cdemo");
             cmdDemoFile = fileSystem.OpenFileRead(fullDemoName);
 
-            if (cmdDemoFile == null)
-            {
-                common.Printf($"Couldn't open {fullDemoName}\n");
-                return;
-            }
+            if (cmdDemoFile == null) { common.Printf($"Couldn't open {fullDemoName}\n"); return; }
 
             guiLoading = uiManager.FindGui("guis/map/loading.gui", true, false, true);
             //cmdDemoFile.Read(loadGameTime, sizeof(loadGameTime));
@@ -1476,21 +1289,22 @@ namespace Gengine.Framework
             // run one frame to get the view angles correct
             RunGameTic();
         }
+
         public void TimeCmdDemo(string demoName)
         {
             StartPlayingCmdDemo(demoName);
             ClearWipe();
             UpdateScreen();
 
-            int startTime = SysW.Milliseconds;
-            int count = 0;
+            var startTime = SysW.Milliseconds;
+            var count = 0;
             int minuteStart, minuteEnd;
             float sec;
 
             // run all the frames in sequence
             minuteStart = startTime;
 
-            while (cmdDemoFile)
+            while (cmdDemoFile != null)
             {
                 RunGameTic();
                 count++;
@@ -1498,7 +1312,7 @@ namespace Gengine.Framework
                 if (count / 3600 != (count - 1) / 3600)
                 {
                     minuteEnd = SysW.Milliseconds;
-                    sec = (minuteEnd - minuteStart) / 1000.0;
+                    sec = (float)((minuteEnd - minuteStart) / 1000.0);
                     minuteStart = minuteEnd;
                     common.Printf($"minute {count / 3600} took {sec:3.1} seconds\n");
                     UpdateScreen();
@@ -1506,99 +1320,84 @@ namespace Gengine.Framework
             }
 
             var endTime = SysW.Milliseconds;
-            sec = (endTime - startTime) / 1000.0;
+            sec = (float)((endTime - startTime) / 1000.0);
             common.Printf($"{count / 60} seconds of game, replayed in {sec:5.1} seconds\n");
         }
-        public void SaveCmdDemoToFile(VFile file)
+
+        public unsafe void SaveCmdDemoToFile(VFile file)
         {
-            mapSpawnData.serverInfo.WriteToFileHandle(file);
-
-            for (int i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-            {
-                mapSpawnData.userInfo[i].WriteToFileHandle(file);
-                mapSpawnData.persistentPlayerInfo[i].WriteToFileHandle(file);
-            }
-
-            file.Write(&mapSpawnData.mapSpawnUsercmd, sizeof(mapSpawnData.mapSpawnUsercmd));
-
-            if (numClients < 1)
-                numClients = 1;
-            file.Write(loggedUsercmds, numClients * logIndex * sizeof(loggedUsercmds[0]));
-        }
-        public void LoadCmdDemoFromFile(File file)
-        {
-            mapSpawnData.serverInfo.ReadFromFileHandle(file);
+            file.WriteDictionary(mapSpawnData.serverInfo);
 
             for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
-                mapSpawnData.userInfo[i].ReadFromFileHandle(file);
-                mapSpawnData.persistentPlayerInfo[i].ReadFromFileHandle(file);
-            }
-            file.Read(&mapSpawnData.mapSpawnUsercmd, sizeof(mapSpawnData.mapSpawnUsercmd));
-        }
-        public void StartRecordingRenderDemo(string name)
-        {
-            if (writeDemo != null)
-            {
-                // allow it to act like a toggle
-                StopRecordingRenderDemo();
-                return;
+                file.WriteDictionary(mapSpawnData.userInfo[i]);
+                file.WriteDictionary(mapSpawnData.persistentPlayerInfo[i]);
             }
 
-            if (string.IsNullOrEmpty(name))
+            fixed (void* mapSpawnUsercmd_ = mapSpawnData.mapSpawnUsercmd)
+                file.Write((byte*)mapSpawnUsercmd_, sizeof(Usercmd));
+
+            if (numClients < 1) numClients = 1;
+            fixed (void* loggedUsercmds_ = loggedUsercmds)
+                file.Write((byte*)loggedUsercmds_, numClients * logIndex * sizeof(LogCmd));
+        }
+
+        public unsafe void LoadCmdDemoFromFile(VFile file)
+        {
+            file.ReadDictionary(mapSpawnData.serverInfo);
+
+            for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
-                common.Printf("SessionLocal.StartRecordingRenderDemo: no name specified\n");
-                return;
+                file.ReadDictionary(mapSpawnData.userInfo[i]);
+                file.ReadDictionary(mapSpawnData.persistentPlayerInfo[i]);
             }
+
+            fixed (Usercmd* mapSpawnUsercmd_ = mapSpawnData.mapSpawnUsercmd)
+                file.Read((byte*)mapSpawnUsercmd_, sizeof(Usercmd));
+        }
+
+        public void StartRecordingRenderDemo(string name)
+        {
+            // allow it to act like a toggle
+            if (writeDemo != null) { StopRecordingRenderDemo(); return; }
+
+            if (string.IsNullOrEmpty(name)) { common.Printf("SessionLocal.StartRecordingRenderDemo: no name specified\n"); return; }
 
             console.Close();
 
             writeDemo = new VFileDemo();
-            if (!writeDemo.OpenForWriting(name))
-            {
-                commonPrintf($"error opening {name}\n");
-                //delete writeDemo;
-                writeDemo = null;
-                return;
-            }
+            if (!writeDemo.OpenForWriting(name)) { common.Printf($"error opening {name}\n"); writeDemo = null; return; }
 
             common.Printf($"recording to {writeDemo.Name}\n");
 
-            writeDemo.WriteInt(DS_VERSION);
-            writeDemo.WriteInt(RENDERDEMO_VERSION);
+            writeDemo.WriteInt((int)VFileDemo.DS.VERSION);
+            writeDemo.WriteInt(Config.RENDERDEMO_VERSION);
 
             // if we are in a map already, dump the current state
             sw.StartWritingDemo(writeDemo);
             rw.StartWritingDemo(writeDemo);
         }
+
         public void StopRecordingRenderDemo()
         {
-            if (writeDemo == null)
-            {
-                common.Printf("SessionLocal.StopRecordingRenderDemo: not recording\n");
-                return;
-            }
+            if (writeDemo == null) { common.Printf("SessionLocal.StopRecordingRenderDemo: not recording\n"); return; }
             sw.StopWritingDemo();
             rw.StopWritingDemo();
 
             writeDemo.Close();
             common.Printf("stopped recording {writeDemo.GetName()}.\n");
-            //delete writeDemo;
             writeDemo = null;
         }
+
         public void StartPlayingRenderDemo(string name)
         {
-            if (string.IsNullOrEmpty(name))
-            {
-                common.Printf("SessionLocal.StartPlayingRenderDemo: no name specified\n");
-                return;
-            }
+            if (string.IsNullOrEmpty(name)) { common.Printf("SessionLocal.StartPlayingRenderDemo: no name specified\n"); return; }
 
             // make sure localSound / GUI intro music shuts up
             sw.StopAllSounds();
-            sw.PlayShaderDirectly(string.Empty, 0);
+            sw.PlayShaderDirectly("", 0);
             menuSoundWorld.StopAllSounds();
-            menuSoundWorld.PlayShaderDirectly(string.Empty, 0);
+            menuSoundWorld.PlayShaderDirectly("", 0);
 
             // exit any current game
             Stop();
@@ -1610,7 +1409,7 @@ namespace Gengine.Framework
             guiLoading = uiManager.FindGui("guis/map/loading.gui", true, false, true);
             guiLoading.SetStateString("demo", common.LanguageDictGetString("#str_02087"));
             readDemo = new VFileDemo();
-            name.DefaultFileExtension(".demo");
+            name = PathX.DefaultFileExtension(name, ".demo");
             if (!readDemo.OpenForReading(name))
             {
                 common.Printf($"couldn't open {name}\n");
@@ -1637,16 +1436,13 @@ namespace Gengine.Framework
             lastDemoTic = -1;
             timeDemoStartTime = SysW.Milliseconds;
         }
+
         /// <summary>
         /// Reports timeDemo numbers and finishes any avi recording
         /// </summary>
         public void StopPlayingRenderDemo()
         {
-            if (readDemo == null)
-            {
-                timeDemo = TD.NO;
-                return;
-            }
+            if (readDemo == null) { timeDemo = TD.NO; return; }
 
             // Record the stop time before doing anything that could be time consuming
             var timeDemoStopTime = SysW.Milliseconds;
@@ -1656,12 +1452,12 @@ namespace Gengine.Framework
             readDemo.Close();
 
             sw.StopAllSounds();
-            soundSystem.SetPlayingSoundWorld(menuSoundWorld);
+            soundSystem.PlayingSoundWorld = menuSoundWorld;
 
             common.Printf($"stopped playing {readDemo.Name}.\n");
             readDemo = null;
 
-            if (timeDemo)
+            if (timeDemo != 0)
             {
                 // report the stats
                 var demoSeconds = (timeDemoStopTime - timeDemoStartTime) * 0.001f;
@@ -1669,31 +1465,23 @@ namespace Gengine.Framework
                 var message = $"{numDemoFrames} frames rendered in {demoSeconds:3.1} seconds = {demoFPS:3.1} fps\n";
 
                 common.Printf(message);
-                if (timeDemo == TD.YES_THEN_QUIT)
-                    cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "quit\n");
-                else
-                {
-                    soundSystem.SetMute(true);
-                    MessageBox(MSG_OK, message, "Time Demo Results", true);
-                    soundSystem.SetMute(false);
-                }
+                if (timeDemo == TD.YES_THEN_QUIT) cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "quit\n");
+                else { soundSystem.SetMute(true); MessageBox(MSG.OK, message, "Time Demo Results", true); soundSystem.SetMute(false); }
                 timeDemo = TD.NO;
             }
         }
-        public void CompressDemoFile(string scheme, string name)
+
+        public unsafe void CompressDemoFile(string scheme, string name)
         {
-            var fullDemoName = $"demos/{name}";
-            fullDemoName.DefaultFileExtension(".demo");
-            var compressedName = fullDemoName;
-            compressedName.StripFileExtension();
-            compressedName.Append("_compressed.demo");
+            var fullDemoName = PathX.DefaultFileExtension($"demos/{name}", ".demo");
+            var compressedName = $"{PathX.StripFileExtension(fullDemoName)}_compressed.demo";
 
             var savedCompression = cvarSystem.GetCVarInteger("com_compressDemos");
             var savedPreload = cvarSystem.GetCVarBool("com_preloadDemos");
             cvarSystem.SetCVarBool("com_preloadDemos", false);
-            cvarSystem.SetCVarInteger("com_compressDemos", atoi(scheme));
+            cvarSystem.SetCVarInteger("com_compressDemos", intX.Parse(scheme));
 
-            VFileDemo demoread, demowrite;
+            VFileDemo demoread = new(), demowrite = new();
             if (!demoread.OpenForReading(fullDemoName))
             {
                 common.Printf($"Could not open {fullDemoName} for reading\n");
@@ -1710,10 +1498,10 @@ namespace Gengine.Framework
             common.SetRefreshOnPrint(true);
             common.Printf($"Compressing {fullDemoName} to {compressedName}...\n");
 
-            static const int bufferSize = 65535;
-            char buffer[bufferSize];
+            const int bufferSize = 65535;
+            byte* buffer = stackalloc byte[bufferSize];
             int bytesRead;
-            while (0 != (bytesRead = demoread.Read(buffer, bufferSize)))
+            while ((bytesRead = demoread.Read(buffer, bufferSize)) != 0)
             {
                 demowrite.Write(buffer, bytesRead);
                 common.Printf(".");
@@ -1728,19 +1516,20 @@ namespace Gengine.Framework
             common.Printf("Done\n");
             common.SetRefreshOnPrint(false);
         }
+
         public void TimeRenderDemo(string name, bool twice = false)
         {
             // no sound in time demos
             soundSystem.SetMute(true);
 
-            StartPlayingRenderDemo(demo);
+            StartPlayingRenderDemo(name);
 
-            if (twice && readDemo)
+            if (twice && readDemo != null)
             {
                 // cycle through once to precache everything
                 guiLoading.SetStateString("demo", common.LanguageDictGetString("#str_04852"));
                 guiLoading.StateChanged(com_frameTime);
-                while (readDemo)
+                while (readDemo != null)
                 {
                     insideExecuteMapChange = true;
                     UpdateScreen();
@@ -1748,68 +1537,64 @@ namespace Gengine.Framework
                     AdvanceRenderDemo(true);
                 }
                 guiLoading.SetStateString("demo", "");
-                StartPlayingRenderDemo(demo);
+                StartPlayingRenderDemo(name);
             }
 
-            if (!readDemo)
-                return;
-
+            if (readDemo == null) return;
             timeDemo = TD.YES;
         }
+
         public void AVIRenderDemo(string name)
         {
             StartPlayingRenderDemo(name);
-            if (!readDemo)
-                return;
+            if (readDemo == null) return;
 
             BeginAVICapture(name);
 
             // I don't understand why I need to do this twice, something strange with the nvidia swapbuffers?
             UpdateScreen();
         }
+
         public void AVICmdDemo(string name)
         {
             StartPlayingCmdDemo(name);
 
             BeginAVICapture(name);
         }
+
         /// <summary>
         /// Start AVI recording the current game session
         /// </summary>
         /// <param name="name">The name.</param>
         public void AVIGame(string name)
         {
-            if (aviCaptureMode)
-            {
-                EndAVICapture();
-                return;
-            }
+            if (aviCaptureMode) { EndAVICapture(); return; }
 
-            if (!mapSpawned)
-                common.Printf("No map spawned.\n");
+            if (!mapSpawned) common.Printf("No map spawned.\n");
 
             if (string.IsNullOrEmpty(name))
             {
                 name = FindUnusedFileName("demos/game%03i.game");
 
                 // write a one byte stub .game file just so the FindUnusedFileName works,
-                fileSystem.WriteFile(name, name, 1);
+                fileSystem.WriteFile(name, Encoding.ASCII.GetBytes(name), 1);
             }
 
             BeginAVICapture(name);
         }
+
         public void BeginAVICapture(string name)
         {
-            name.ExtractFileBase(aviDemoShortName);
+            name = PathX.ExtractFileBase(name, aviDemoShortName);
             aviCaptureMode = true;
             aviDemoFrameCount = 0;
             aviTicStart = 0;
             sw.AVIOpen($"demos/{aviDemoShortName}/", aviDemoShortName);
         }
+
         public void EndAVICapture()
         {
-            if (!aviCaptureMode)
-                return;
+            if (!aviCaptureMode) return;
 
             sw.AVIClose();
 
@@ -1818,7 +1603,7 @@ namespace Gengine.Framework
             f.Printf($"INPUT_DIR demos/{aviDemoShortName}\n");
             f.Printf($"FILENAME demos/{aviDemoShortName}/{aviDemoShortName}.RoQ\n");
             f.Printf("\nINPUT\n");
-            f.Printf($"{aviDemoShortName}*.tga [00000-{(int)(aviDemoFrameCount - 1):05}]\n");
+            f.Printf($"{aviDemoShortName}_*.tga [00000-{(int)(aviDemoFrameCount - 1),05}]\n");
             f.Printf("END_INPUT\n");
 
             common.Printf($"captured {(int)aviDemoFrameCount} frames for {aviDemoShortName}.\n");
@@ -1828,89 +1613,72 @@ namespace Gengine.Framework
 
         public void AdvanceRenderDemo(bool singleFrameOnly)
         {
-            if (lastDemoTic == -1)
-                lastDemoTic = latchedTicNumber - 1;
+            if (lastDemoTic == -1) lastDemoTic = latchedTicNumber - 1;
 
             var skipFrames = 0;
 
-            if (!aviCaptureMode && !timeDemo && !singleFrameOnly)
+            if (!aviCaptureMode && timeDemo == 0 && !singleFrameOnly)
             {
                 skipFrames = ((latchedTicNumber - lastDemoTic) / USERCMD_PER_DEMO_FRAME) - 1;
                 // never skip too many frames, just let it go into slightly slow motion
-                if (skipFrames > 4)
-                    skipFrames = 4;
+                if (skipFrames > 4) skipFrames = 4;
                 lastDemoTic = latchedTicNumber - latchedTicNumber % USERCMD_PER_DEMO_FRAME;
             }
-            else
-                // always advance a single frame with avidemo and timedemo
-                lastDemoTic = latchedTicNumber;
+            // always advance a single frame with avidemo and timedemo
+            else lastDemoTic = latchedTicNumber;
 
             while (skipFrames > -1)
             {
-                var ds = DS_FINISHED;
+                var ds = VFileDemo.DS.FINISHED;
 
-                readDemo.ReadInt(ds);
-                if (ds == DS_FINISHED)
+                readDemo.ReadInt(out var z); ds = (VFileDemo.DS)z;
+                if (ds == VFileDemo.DS.FINISHED)
                 {
-                    if (numDemoFrames != 1)
-                    {
-                        // if the demo has a single frame (a demoShot), continuously replay the renderView that has already been read
-                        Stop();
-                        StartMenu();
-                    }
+                    // if the demo has a single frame (a demoShot), continuously replay the renderView that has already been read
+                    if (numDemoFrames != 1) { Stop(); StartMenu(); }
                     break;
                 }
-                if (ds == DS_RENDER)
+                if (ds == VFileDemo.DS.RENDER)
                 {
-                    if (rw.ProcessDemoCommand(readDemo, &currentDemoRenderView, &demoTimeOffset))
-                    {
-                        // a view is ready to render
-                        skipFrames--;
-                        numDemoFrames++;
-                    }
+                    // a view is ready to render
+                    if (rw.ProcessDemoCommand(readDemo, currentDemoRenderView, out demoTimeOffset)) { skipFrames--; numDemoFrames++; }
                     continue;
                 }
-                if (ds == DS_SOUND)
+                if (ds == VFileDemo.DS.SOUND)
                 {
                     sw.ProcessDemoCommand(readDemo);
                     continue;
                 }
                 // appears in v1.2, with savegame format 17
-                if (ds == DS_VERSION)
+                if (ds == VFileDemo.DS.VERSION)
                 {
-                    readDemo.ReadInt(renderdemoVersion);
+                    readDemo.ReadInt(out renderdemoVersion);
                     common.Printf($"reading a v{renderdemoVersion} render demo\n");
                     // set the savegameVersion to current for render demo paths that share the savegame paths
-                    savegameVersion = SAVEGAME_VERSION;
+                    savegameVersion = Config.SAVEGAME_VERSION;
                     continue;
                 }
                 common.Error("Bad render demo token");
             }
 
-            if (com_showDemo.Bool)
-                common.Printf($"frame:{numDemoFrames} DemoTic:{lastDemoTic} latched:{latchedTicNumber} skip:{skipFrames}\n");
+            if (com_showDemo.Bool) common.Printf($"frame:{numDemoFrames} DemoTic:{lastDemoTic} latched:{latchedTicNumber} skip:{skipFrames}\n");
         }
+
         public unsafe void RunGameTic()
         {
-            LogCmd logCmd;
-            Usercmd cmd;
+            LogCmd logCmd = default; Usercmd cmd = default;
 
             // if we are doing a command demo, read or write from the file
             if (cmdDemoFile != null)
             {
-                if (cmdDemoFile.Read(&logCmd, sizeof(LogCmd))==null)
+                LogCmd* logCmd_ = &logCmd;
+                if (cmdDemoFile.Read((byte*)logCmd_, sizeof(LogCmd)) == 0)
                 {
                     common.Printf("Command demo completed at logIndex %i\n", logIndex);
                     fileSystem.CloseFile(cmdDemoFile);
                     cmdDemoFile = null;
-                    if (aviCaptureMode)
-                    {
-                        EndAVICapture();
-                        Shutdown();
-                    }
-                    // we fall out of the demo to normal commands
-                    // the impulse and chat character toggles may not be correct, and the view
-                    // angle will definitely be wrong
+                    if (aviCaptureMode) { EndAVICapture(); Shutdown(); }
+                    // we fall out of the demo to normal commands the impulse and chat character toggles may not be correct, and the view angle will definitely be wrong
                 }
                 else
                 {
@@ -1932,24 +1700,14 @@ namespace Gengine.Framework
 
             // run the game logic every player move
             var start = SysW.Milliseconds;
-            var ret = game.RunFrame(out cmd);
-
-            for (var h = 0; h < 2; h++)
-                common.Vibrate(h, ret.vibrationLow[h], ret.vibrationHigh[h]);
-
+            var ret = game.RunFrame(new[] { cmd });
+            common.Vibrate(0, ret.vibrationLow0, ret.vibrationHigh0);
+            common.Vibrate(1, ret.vibrationLow1, ret.vibrationHigh1);
             var end = SysW.Milliseconds;
             C.time_gameFrame += end - start;  // note time used for com_speeds
 
             // check for constency failure from a recorded command
-            if (cmdDemoFile!=null)
-            {
-                if (ret.consistencyHash != logCmd.consistencyHash)
-                {
-                    common.Printf($"Consistency failure on logIndex {logIndex}\n");
-                    Stop();
-                    return;
-                }
-            }
+            if (cmdDemoFile != null && ret.consistencyHash != logCmd.consistencyHash) { common.Printf($"Consistency failure on logIndex {logIndex}\n"); Stop(); return; }
 
             // save the cmd for cmdDemo archiving
             if (logIndex < MAX_LOGGED_USERCMDS)
@@ -1957,12 +1715,12 @@ namespace Gengine.Framework
                 loggedUsercmds[logIndex].cmd = cmd;
                 // save the consistencyHash for demo playback verification
                 loggedUsercmds[logIndex].consistencyHash = ret.consistencyHash;
-                if (logIndex % 30 == 0 && statIndex < MAX_LOGGED_STATS)
+                if (logIndex % 30 == 0 && statIndex < ISession.MAX_LOGGED_STATS)
                 {
-                    loggedStats[statIndex].health = ret.health;
-                    loggedStats[statIndex].heartRate = ret.heartRate;
-                    loggedStats[statIndex].stamina = ret.stamina;
-                    loggedStats[statIndex].combat = ret.combat;
+                    loggedStats[statIndex].health = (short)ret.health;
+                    loggedStats[statIndex].heartRate = (short)ret.heartRate;
+                    loggedStats[statIndex].stamina = (short)ret.stamina;
+                    loggedStats[statIndex].combat = (short)ret.combat;
                     statIndex++;
                 }
                 logIndex++;
@@ -1970,12 +1728,10 @@ namespace Gengine.Framework
 
             syncNextGameFrame = ret.syncNextGameFrame;
 
-            if (ret.sessionCommand[0])
+            if (!string.IsNullOrEmpty(ret.sessionCommand))
             {
                 CmdArgs args = new();
-
                 args.TokenizeString(ret.sessionCommand, false);
-
                 if (string.Equals(args[0], "map", StringComparison.OrdinalIgnoreCase))
                 {
                     // get current player states
@@ -1987,29 +1743,19 @@ namespace Gengine.Framework
                     // go to the next map
                     MoveToNewMap(args[1]);
                 }
-                else if (string.Equals(args[0], "devmap", StringComparison.OrdinalIgnoreCase))
-                {
-                    mapSpawnData.serverInfo["devmap"] = "1";
-                    MoveToNewMap(args[1]);
-                }
-                else if (string.Equals(args[0], "died", StringComparison.OrdinalIgnoreCase))
-                {
-                    // restart on the same map
-                    UnloadMap();
-                    SetGUI(guiRestartMenu, null);
-                }
-                else if (string.Equals(args[0], "disconnect", StringComparison.OrdinalIgnoreCase))
-                    cmdSystem.BufferCommandText(CMD_EXEC.INSERT, "stoprecording ; disconnect");
+                else if (string.Equals(args[0], "devmap", StringComparison.OrdinalIgnoreCase)) { mapSpawnData.serverInfo["devmap"] = "1"; MoveToNewMap(args[1]); }
+                // restart on the same map
+                else if (string.Equals(args[0], "died", StringComparison.OrdinalIgnoreCase)) { UnloadMap(); SetGUI(guiRestartMenu, null); }
+                else if (string.Equals(args[0], "disconnect", StringComparison.OrdinalIgnoreCase)) cmdSystem.BufferCommandText(CMD_EXEC.INSERT, "stoprecording ; disconnect");
             }
         }
 
         public void FinishCmdLoad() { }
+
         public void LoadLoadingGui(string mapName)
         {
             // load / program a gui to stay up on the screen while loading
-            var stripped = mapName;
-            stripped.StripFileExtension();
-            stripped.StripPath();
+            var stripped = PathX.StripPath(PathX.StripFileExtension(mapName));
 
             var guiMap = $"guis/map/{stripped}.gui";
             // give the gamecode a chance to override
@@ -2018,7 +1764,7 @@ namespace Gengine.Framework
             guiLoading = uiManager.CheckGui(guiMap)
                 ? uiManager.FindGui(guiMap, true, false, true)
                 : uiManager.FindGui("guis/map/loading.gui", true, false, true);
-            guiLoading.SetStateFloat("map_loading", 0.0f);
+            guiLoading.SetStateFloat("map_loading", 0f);
         }
 
         /// <summary>
@@ -2043,31 +1789,29 @@ namespace Gengine.Framework
             var mapDecl = declManager.FindType(DECL.MAPDEF, mapName, false);
             var mapDef = (DeclEntityDef)mapDecl;
             return mapDef != null
-                ? mapDef.dict.GetInt($"size{3}")
+                ? mapDef.dict.GetInt($"size3")
                 : 400 * 1024 * 1024;
         }
+
         public void SetBytesNeededForMapLoad(string mapName, int bytesNeeded)
         {
             var mapDecl = declManager.FindType(DECL.MAPDEF, mapName, false);
             var mapDef = (DeclEntityDef)mapDecl;
 
-            if (C.com_updateLoadSize.Bool && mapDef)
+            if (C.com_updateLoadSize.Bool && mapDef != null)
             {
                 // we assume that if com_updateLoadSize is true then the file is writable
 
-                mapDef.dict.SetInt($"size{0}", bytesNeeded);
+                mapDef.dict.SetInt($"size0", bytesNeeded);
 
                 var declText = "\nmapDef ";
-                declText += mapDef.GetName();
+                declText += mapDef.Name;
                 declText += " {\n";
-                for (var i = 0; i < mapDef.dict.GetNumKeyVals(); i++)
-                {
-                    var kv = mapDef.dict.GetKeyVal(i);
-                    if (kv && (kv.GetKey().Cmp("classname") != 0))
-                        declText += "\t\"" + kv.GetKey() + "\"\t\t\"" + kv.GetValue() + "\"\n";
-                }
+                foreach (var kv in mapDef.dict)
+                    if (kv.Key != "classname")
+                        declText += "\t\"{kv.Key}\"\t\t\"{kv.Value}\"\n";
                 declText += "}";
-                mapDef.SetText(declText);
+                mapDef.Text = declText;
                 mapDef.ReplaceSourceFileText();
             }
         }
@@ -2080,15 +1824,13 @@ namespace Gengine.Framework
         /// <param name="noFadeWipe">if set to <c>true</c> [no fade wipe].</param>
         public void ExecuteMapChange(bool noFadeWipe = false)
         {
-            int i;
-            bool reloadingSameMap;
+            int i; bool reloadingSameMap;
 
             // close console and remove any prints from the notify lines
             console.Close();
 
-            if (IsMultiplayer)
-                // make sure the mp GUI isn't up, or when players get back in the map, mpGame's menu and the gui will be out of sync.
-                SetGUI(null, null);
+            // make sure the mp GUI isn't up, or when players get back in the map, mpGame's menu and the gui will be out of sync.
+            if (IsMultiplayer) SetGUI(null, null);
 
             // mute sound
             soundSystem.SetMute(true);
@@ -2097,8 +1839,7 @@ namespace Gengine.Framework
             menuSoundWorld.ClearAllSoundEmitters();
 
             // unpause the game sound world. NOTE: we UnPause again later down. not sure this is needed
-            if (sw.IsPaused())
-                sw.UnPause();
+            if (sw.IsPaused) sw.UnPause();
 
             if (!noFadeWipe)
             {
@@ -2113,21 +1854,14 @@ namespace Gengine.Framework
             // extract the map name from serverinfo
             var mapString = mapSpawnData.serverInfo.Get("si_map");
 
-            var fullMapName = "maps/";
-            fullMapName += mapString;
-            fullMapName.StripFileExtension();
+            var fullMapName = PathX.StripFileExtension($"maps/{mapString}");
 
             // shut down the existing game if it is running
             UnloadMap();
 
             // don't do the deferred caching if we are reloading the same map
-            if (fullMapName == currentMapName)
-                reloadingSameMap = true;
-            else
-            {
-                reloadingSameMap = false;
-                currentMapName = fullMapName;
-            }
+            if (fullMapName == currentMapName) reloadingSameMap = true;
+            else { reloadingSameMap = false; currentMapName = fullMapName; }
 
             // note which media we are going to need to load
             if (!reloadingSameMap)
@@ -2165,8 +1899,7 @@ namespace Gengine.Framework
             SysW.GrabMouseCursor(false);
 
             // if net play, we get the number of clients during mapSpawnInfo processing
-            if (!AsyncNetwork.IsActive())
-                numClients = 1;
+            if (!AsyncNetwork.IsActive) numClients = 1;
 
             var start = SysW.Milliseconds;
 
@@ -2174,8 +1907,7 @@ namespace Gengine.Framework
             common.Printf($"Map: {mapString}\n");
 
             // let the renderSystem load all the geometry
-            if (!rw.InitFromMap(fullMapName))
-                common.Error($"couldn't load {fullMapName}");
+            if (!rw.InitFromMap(fullMapName)) common.Error($"couldn't load {fullMapName}");
 
             // for the synchronous networking we needed to roll the angles over from level to level, but now we can just clear everything
             usercmdGen.InitForNewMap();
@@ -2191,7 +1923,7 @@ namespace Gengine.Framework
             // load and spawn all other entities ( from a savegame possibly )
             if (loadingSaveGame && savegameFile != null)
             {
-                if (game.InitFromSaveGame(fullMapName + ".map", rw, sw, savegameFile) == false)
+                if (game.InitFromSaveGame($"{fullMapName}.map", rw, sw, savegameFile) == false)
                 {
                     // If the loadgame failed, restart the map with the player persistent data
                     loadingSaveGame = false;
@@ -2199,17 +1931,17 @@ namespace Gengine.Framework
                     savegameFile = null;
 
                     game.SetServerInfo(mapSpawnData.serverInfo);
-                    game.InitFromNewMap(fullMapName + ".map", rw, sw, AsyncNetwork.server.IsActive, AsyncNetwork.client.IsActive(), SysW.Milliseconds);
+                    game.InitFromNewMap($"{fullMapName}.map", rw, sw, AsyncNetwork.server.IsActive, AsyncNetwork.client.IsActive, SysW.Milliseconds);
                 }
             }
             else
             {
                 game.SetServerInfo(mapSpawnData.serverInfo);
-                game.InitFromNewMap(fullMapName + ".map", rw, sw, AsyncNetwork.server.IsActive, AsyncNetwork.client.IsActive, SysW.Milliseconds);
+                game.InitFromNewMap($"{fullMapName}.map", rw, sw, AsyncNetwork.server.IsActive, AsyncNetwork.client.IsActive, SysW.Milliseconds);
             }
 
+            // spawn players
             if (!AsyncNetwork.IsActive && !loadingSaveGame)
-                // spawn players
                 for (i = 0; i < numClients; i++)
                     game.SpawnPlayer(i);
 
@@ -2223,8 +1955,8 @@ namespace Gengine.Framework
             }
             uiManager.EndLevelLoad();
 
+            // run a few frames to allow everything to settle
             if (!AsyncNetwork.IsActive && !loadingSaveGame)
-                // run a few frames to allow everything to settle
                 for (i = 0; i < 10; i++)
                     game.RunFrame(mapSpawnData.mapSpawnUsercmd);
 
@@ -2239,12 +1971,11 @@ namespace Gengine.Framework
             if (guiLoading != null && bytesNeededForMapLoad != 0)
             {
                 var pct = guiLoading.State.GetFloat("map_loading");
-                if (pct < 0.0f)
-                    pct = 0.0f;
-                while (pct < 1.0f)
+                if (pct < 0f) pct = 0f;
+                while (pct < 1f)
                 {
                     guiLoading.SetStateFloat("map_loading", pct);
-                    guiLoading.StateChanged(C.com_frameTime);
+                    guiLoading.StateChanged(com_frameTime);
                     SysW.GenerateEvents();
                     UpdateScreen();
                     pct += 0.05f;
@@ -2273,12 +2004,10 @@ namespace Gengine.Framework
             SysW.SetPhysicalWorkMemory(-1, -1);
 
             // set the game sound world for playback
-            soundSystem.SetPlayingSoundWorld(sw);
+            soundSystem.PlayingSoundWorld = sw;
 
-            // when loading a save game the sound is paused
-            if (sw.IsPaused())
-                // unpause the game sound world
-                sw.UnPause();
+            // when loading a save game the sound is paused. unpause the game sound world
+            if (sw.IsPaused) sw.UnPause();
 
             // restart entity sound playback
             soundSystem.SetMute(false);
@@ -2287,6 +2016,7 @@ namespace Gengine.Framework
             mapSpawned = true;
             SysW.ClearEvents();
         }
+
         /// <summary>
         /// Performs cleanup that needs to happen between maps, or when a game is exited.
         /// Exits with mapSpawned = false
@@ -2298,37 +2028,11 @@ namespace Gengine.Framework
             // end the current map in the game
             game?.MapShutdown();
 
-            if (cmdDemoFile != null)
-            {
-                fileSystem.CloseFile(cmdDemoFile);
-                cmdDemoFile = null;
-            }
-
-            if (writeDemo != null)
-                StopRecordingRenderDemo();
+            if (cmdDemoFile != null) { fileSystem.CloseFile(cmdDemoFile); cmdDemoFile = null; }
+            if (writeDemo != null) StopRecordingRenderDemo();
 
             mapSpawned = false;
         }
-
-        //------------------
-        // Session_menu.cpp
-
-        public List<string> loadGameList = new List<string>();
-        public List<string> modsList = new List<string>();
-
-        public IUserInterface GetActiveMenu() { }
-
-        public void DispatchCommand(IUserInterface gui, string menuCommand, bool doIngame = true) { }
-        public void MenuEvent(SysEvent ev);
-        public bool HandleSaveGameMenuCommand(out CmdArgs args, out int icmd);
-        public void HandleInGameCommands(string menuCommand);
-        public void HandleMainMenuCommands(string menuCommand);
-        public void HandleChatMenuCommands(string menuCommand);
-        public void HandleIntroMenuCommands(string menuCommand);
-        public void HandleRestartMenuCommands(string menuCommand);
-        public void HandleMsgCommands(string menuCommand);
-        public void HandleNoteCommands(string menuCommand);
-        public void GetSaveGameList(out List<string> fileList, out List<DateTime> fileTimes);
 
 #if false
         readonly static string[] TakeNotes_people = {
@@ -2345,25 +2049,20 @@ namespace Gengine.Framework
 #endif
         public void TakeNotes(string p, bool extended = false)
         {
-            if (!mapSpawned)
-            {
-                common.Printf("No map loaded!\n");
-                return;
-            }
+            if (!mapSpawned) { common.Printf("No map loaded!\n"); return; }
 
             if (extended)
             {
                 guiTakeNotes = uiManager.FindGui("guis/takeNotes2.gui", true, false, true);
-                var numPeople = people.Length;
+                var numPeople = TakeNotes_people.Length;
 
                 var guiList_people = uiManager.AllocListGUI();
                 guiList_people.Config(guiTakeNotes, "person");
                 for (var i = 0; i < numPeople; i++)
-                    guiList_people.Push(people[i]);
+                    guiList_people.Push(TakeNotes_people[i]);
                 uiManager.FreeListGUI(guiList_people);
             }
-            else
-                guiTakeNotes = uiManager.FindGui("guis/takeNotes.gui", true, false, true);
+            else guiTakeNotes = uiManager.FindGui("guis/takeNotes.gui", true, false, true);
 
             SetGUI(guiTakeNotes, null);
             guiActive.SetStateString("note", "");
@@ -2371,19 +2070,6 @@ namespace Gengine.Framework
             guiActive.SetStateBool("extended", extended);
             guiActive.Activate(true, com_frameTime);
         }
-        public void UpdateMPLevelShot() { }
 
-        public void SetSaveGameGuiVars() { }
-        public void SetMainMenuGuiVars() { }
-        public void SetModsMenuGuiVars() { }
-        public void SetMainMenuSkin() { }
-        public void SetPbMenuGuiVars() { }
-
-        // DG: true if running the Demo version of Doom3 (for FT_IsDemo, see Common.h)
-        public bool IsDemoVersion => demoversion;
-
-        bool BoxDialogSanityCheck() { }
-
-        bool demoversion; // DG: true if running the Demo version of Doom3, for FT_IsDemo (see Common.h)
     }
 }

@@ -193,7 +193,7 @@ namespace Gengine.Sound
         void EndLevelLoad(string mapString);
 
         // direct mixing for OSes that support it
-        int AsyncMix(int soundTime, float[] mixBuffer);
+        unsafe int AsyncMix(int soundTime, float* mixBuffer);
 
         // prints memory info
         void PrintMemInfo(MemInfo mi);

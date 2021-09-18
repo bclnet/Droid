@@ -14,9 +14,14 @@ namespace System.NumericsX.OpenStack
         public static string BackSlashesToSlashes(string source)
             => source.Replace('\\', '/');
 
+        public static string DefaultFileExtension(string source, string extension)
+        {
+            throw new NotImplementedException();
+        }
+
         public static string StripFileExtension(string source)
         {
-            return source;
+            throw new NotImplementedException();
         }
 
         public static string SetFileExtension(string source, string extension)
@@ -25,7 +30,12 @@ namespace System.NumericsX.OpenStack
             return extension[0] != '.' ? $"{source}.{extension}" : $"{source}{extension}";
         }
 
-        public static string StripPath(string mapname)
+        public static string StripPath(string source)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static string ExtractFileBase(string source, string baseName)
         {
             throw new NotImplementedException();
         }
@@ -168,6 +178,38 @@ namespace System.NumericsX.OpenStack
             var digest = md5.ComputeHash(buffer);
             return digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
         }
+
+        #region Measue
+
+        public enum MEASURE
+        {
+            SIZE = 0,
+            BANDWIDTH
+        }
+
+        static string[,] MEASURE_Units =
+        {
+            { "B", "KB", "MB", "GB" },
+            { "B/s", "KB/s", "MB/s", "GB/s" }
+        };
+
+        public static int BestUnit(out string s, string format, float value, MEASURE measure)
+        {
+            var unit = 1;
+            while (unit <= 3 && (1 << (unit * 10) < value)) unit++;
+            unit--;
+            value /= 1 << (unit * 10);
+            s = $"{string.Format(format, value)} {MEASURE_Units[(int)measure, unit]}";
+            return unit;
+        }
+
+        public static void SetUnit(out string s, string format, float value, int unit, MEASURE measure)
+        {
+            value /= 1 << (unit * 10);
+            s = $"{string.Format(format, value)} {MEASURE_Units[(int)measure, unit]}";
+        }
+
+        #endregion
     }
 
     #endregion

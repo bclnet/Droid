@@ -1,4 +1,4 @@
-using System.NumericsX.Core;
+using System.NumericsX.OpenStack;
 
 namespace Gengine.Framework.Async
 {
@@ -79,6 +79,4 @@ namespace Gengine.Framework.Async
         public float ClientIncomingPacketLoss
             => AsyncNetwork.client.IsActive ? AsyncNetwork.client.IncomingPacketLoss : 0f;
     }
-
-    //extern idNetworkSystem *	networkSystem;
 }

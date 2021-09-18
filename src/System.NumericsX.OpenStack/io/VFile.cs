@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -17,6 +18,19 @@ namespace System.NumericsX.OpenStack
 
     public static unsafe class VFileExtensions
     {
+        public unsafe static string ReadZASCII(this VFile source)
+        {
+            int len; char* str = stackalloc char[MAX_STRING_CHARS];
+
+            for (len = 0; len < MAX_STRING_CHARS; len++)
+            {
+                source.Read((byte*)&str[len], 1);
+                if (str[len] == 0)
+                    break;
+            }
+            if (len == MAX_STRING_CHARS) Error("ReadZASCII: bad string");
+            return new string(str, 0, len);
+        }
         public static int ReadASCII(this VFile source, out string value, int length) => throw new NotImplementedException();
         public static int Read(this VFile source, out long value) { long val; var r = source.Read((byte*)&val, sizeof(long)); value = val; return r; }
         public static int Read(this VFile source, out ulong value) { ulong val; var r = source.Read((byte*)&val, sizeof(ulong)); value = val; return r; }
@@ -30,7 +44,26 @@ namespace System.NumericsX.OpenStack
         public static int Read<E>(this VFile source, out E value) where E : Enum => throw new NotImplementedException();
         public static int ReadT<T>(this VFile source, out T value) where T : struct => throw new NotImplementedException();
         public static int ReadTMany<T>(this VFile source, out T[] value, int count) where T : struct => throw new NotImplementedException();
+        public static void ReadDictionary(this VFile source, Dictionary<string, string> value)
+        {
+            value.Clear();
+            source.Read(out int count);
+            count = LittleInt(count);
+            for (var i = 0; i < count; i++)
+            {
+                var key = source.ReadZASCII();
+                var val = source.ReadZASCII();
+                value[key] = val;
+            }
+        }
 
+        public static void WriteZASCII(this VFile source, string value)
+        {
+            var len = value.Length;
+            if (len >= MAX_STRING_CHARS - 1) Error("WriteZASCII: bad string");
+            source.Write(Encoding.ASCII.GetBytes(value), len);
+            source.Write((byte)0);
+        }
         public static int WriteASCII(this VFile source, string value, int length) => source.Write(Encoding.ASCII.GetBytes(value), value.Length);
         public static int Write(this VFile source, long value) => source.Write((byte*)&value, sizeof(long));
         public static int Write(this VFile source, ulong value) => source.Write((byte*)&value, sizeof(ulong));
@@ -44,6 +77,16 @@ namespace System.NumericsX.OpenStack
         public static int Write<E>(this VFile source, E value) where E : Enum => throw new NotImplementedException();
         public static int WriteT<T>(this VFile source, T value) where T : struct => throw new NotImplementedException();
         public static int WriteTMany<T>(this VFile source, T[] value) where T : struct => throw new NotImplementedException();
+        public static void WriteDictionary(this VFile source, Dictionary<string, string> value)
+        {
+            var count = LittleInt(value.Count);
+            source.Write(count);
+            foreach (var kv in value)
+            {
+                source.WriteZASCII(kv.Key);
+                source.WriteZASCII(kv.Value);
+            }
+        }
     }
 
     public unsafe class VFile : IDisposable

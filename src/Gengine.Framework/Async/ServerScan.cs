@@ -2,11 +2,10 @@ using Gengine.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.NumericsX;
-using System.NumericsX.Core;
-using System.NumericsX.Sys;
-using static System.NumericsX.Lib;
+using System.NumericsX.OpenStack;
+using System.NumericsX.OpenStack.System;
 using static Gengine.Lib;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Framework.Async
 {
@@ -105,10 +104,7 @@ namespace Gengine.Framework.Async
         public ScanState State
         {
             get => scanState;
-            set
-            {
-                //void SetState(scan_state a);
-            }
+            set { } //void SetState(scan_state a);
         }
 
         public ServerScan()
@@ -168,7 +164,7 @@ namespace Gengine.Framework.Async
             if (scanState == ScanState.IDLE)
                 return false;
 
-            var serv = SysW.NetAdrToString(server.adr);
+            var serv = server.adr.ToString();
 
             if (server.challenge != challenge)
             {
@@ -218,9 +214,9 @@ namespace Gengine.Framework.Async
 
             // for now, don't maintain sorting when adding new info response servers
             _sortedServers.Add(index);
-            if (listGUI.IsConfigured() && !IsFiltered(server))
+            if (listGUI.IsConfigured && !IsFiltered(server))
                 GUIAdd(index, server);
-            if (listGUI.GetSelection(null, 0) == index)
+            if (listGUI.GetSelection(out _, 0) == index)
                 GUIUpdateSelected();
 
             return true;
@@ -233,7 +229,7 @@ namespace Gengine.Framework.Async
             incoming_lastTime = SysW.Milliseconds + INCOMING_TIMEOUT;
             var s = new InServer { id = id };
             // using IPs, not hosts
-            if (!SysW.StringToNetAdr(srv, out s.adr, false))
+            if (!Netadr.TryParse(srv, out s.adr, false))
             {
                 common.DPrintf($"ServerScan::AddServer: failed to parse server {srv}\n");
                 return;
@@ -299,7 +295,7 @@ namespace Gengine.Framework.Async
                 var serv = net_servers[cur_info].adr;
                 EmitGetInfo(serv);
                 net_servers[cur_info].time = SysW.Milliseconds;
-                net_info[SysW.NetAdrToString(serv)] = cur_info;
+                net_info[serv.ToString()] = cur_info;
                 cur_info++;
             }
         }
@@ -350,7 +346,7 @@ namespace Gengine.Framework.Async
                 var serv = net_servers[cur_info].adr;
                 EmitGetInfo(serv);
                 net_servers[cur_info].time = SysW.Milliseconds;
-                net_info[SysW.NetAdrToString(serv)] = cur_info;
+                net_info[serv.ToString()] = cur_info;
                 cur_info++;
             }
 
@@ -389,7 +385,7 @@ namespace Gengine.Framework.Async
         {
             if (gui == null)
                 return;
-            var i = listGUI.GetSelection(null, 0);
+            var i = listGUI.GetSelection(out _, 0);
             if (i == -1 || i >= Count)
             {
                 gui.SetStateString("server_name", "");
@@ -416,7 +412,7 @@ namespace Gengine.Framework.Async
                 fileSystem.FindMapScreenshot(this[i].serverInfo.Get("si_map"), out var screenshot);
                 gui.SetStateString("browser_levelshot", screenshot);
                 gui.SetStateString("server_gameType", this[i].serverInfo.Get("si_gameType"));
-                gui.SetStateString("server_IP", SysW.NetAdrToString(this[i].adr));
+                gui.SetStateString("server_IP", this[i].adr.ToString());
                 gui.SetStateString("server_passworded", this[i].serverInfo.Get("si_usePass", "0") != "0" ? "PASSWORD REQUIRED" : string.Empty);
             }
         }
@@ -508,7 +504,7 @@ namespace Gengine.Framework.Async
             }
 
             // autofilter D3XP games if the user does not has the XP installed
-            if (!fileSystem.HasD3XP() && string.Equals(server.serverInfo.Get("fs_game"), "d3xp", StringComparison.OrdinalIgnoreCase))
+            if (!fileSystem.HasD3XP && string.Equals(server.serverInfo.Get("fs_game"), "d3xp", StringComparison.OrdinalIgnoreCase))
                 return true;
 
             // filter based on the game doom or XP

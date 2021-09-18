@@ -118,7 +118,7 @@ namespace System.NumericsX.OpenStack
         // 'descriptions' contains a free form string to be used in the UI
         ModList ListMods();
         // Frees the given mod list
-        void FreeModList(ref ModList modList);
+        void FreeModList(ModList modList);
         // Lists files with the given extension in the given directory.
         // Directory should not have either a leading or trailing '/'
         // The returned files will not include any directories or '/' unless fullRelativePath is set.
@@ -208,9 +208,9 @@ namespace System.NumericsX.OpenStack
         void ClearDirCache();
 
         // is D3XP installed? even if not running it atm
-        bool HasD3XP();
+        bool HasD3XP { get; }
         // are we using D3XP content ( through a real d3xp run or through a double mod )
-        bool RunningD3XP();
+        bool RunningD3XP { get; }
 
         // don't use for large copies - allocates a single memory block for the copy
         void CopyFile(string fromOSPath, string toOSPath);
@@ -229,8 +229,8 @@ namespace System.NumericsX.OpenStack
 
         // get map/addon decls and take into account addon paks that are not on the search list
         // the decl 'name' is in the "path" entry of the dict
-        int GetNumMaps();
-        Dictionary<string, object> GetMapDecl(int i);
+        int NumMaps { get; }
+        Dictionary<string, string> GetMapDecl(int i);
         void FindMapScreenshot(string path, out string s);
         //void FindMapScreenshot(string path, byte[] buf, int len);
 

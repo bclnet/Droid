@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
 using System.NumericsX.OpenStack.System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using static Gengine.Sound.Lib;
 using static OggVorbis.Vorbis;
@@ -31,6 +32,7 @@ namespace Gengine.Sound
     }
 
     // OLD general waveform format structure (information common to all formats)
+    [StructLayout(LayoutKind.Sequential)]
     public struct Waveformat
     {
         public WAVE_FORMAT_TAG wFormatTag;        // format type
@@ -41,6 +43,7 @@ namespace Gengine.Sound
     }
 
     // specific waveform format structure for PCM data
+    [StructLayout(LayoutKind.Sequential)]
     public struct PcmWaveFormat
     {
         public Waveformat wf;
@@ -55,6 +58,7 @@ namespace Gengine.Sound
         [FieldOffset(0)] public short wReserved;                 // If neither applies, set to zero
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct WaveformatExtensible
     {
         //public static implicit operator WaveformatExtensible(WaveformatEx format)
@@ -65,7 +69,12 @@ namespace Gengine.Sound
         public WaveformatExtensibleSamples Samples;
         public int dwChannelMask;      // which channels are
         public int SubFormat; // present in stream 
-        internal void memset() => this = new WaveformatExtensible();
+
+        internal unsafe void memcpy(ref PcmWaveFormat pcmWaveFormat)
+        {
+            fixed (PcmWaveFormat* _ = &pcmWaveFormat)
+                this = *(WaveformatExtensible*)_;
+        }
     }
 
     // RIFF chunk information data structure
@@ -350,8 +359,6 @@ namespace Gengine.Sound
 
         public unsafe int DecodePCM(SoundSample sample, int sampleOffset44k, int sampleCount44k, float* dest)
         {
-            Memory<byte> first; int pos, size, readSamples;
-
             lastFormat = WAVE_FORMAT_TAG.PCM;
             lastSample = sample;
 
@@ -359,25 +366,16 @@ namespace Gengine.Sound
             var sampleOffset = sampleOffset44k >> shift;
             var sampleCount = sampleCount44k >> shift;
 
-            if (sample.nonCacheData == null)
-            {
-                Debug.Assert(false);  // this should never happen ( note: I've seen that happen with the main thread down in idGameLocal::MapClear clearing entities - TTimo )
-                failed = true;
-                return 0;
-            }
+            if (sample.nonCacheData == null) { Debug.Assert(false); failed = true; return 0; }  // this should never happen ( note: I've seen that happen with the main thread down in idGameLocal::MapClear clearing entities - TTimo )
+            if (!sample.FetchFromCache(sampleOffset * sizeof(short), out var first, out var pos, out var size, false)) { failed = true; return 0; }
 
-            if (!sample.FetchFromCache(sampleOffset * sizeof(short), out first, out pos, out size, false))
-            {
-                failed = true;
-                return 0;
-            }
-
-            readSamples = size - pos < sampleCount * sizeof(short) ? (size - pos) / sizeof(short) : sampleCount;
+            var readSamples = size - pos < sampleCount * sizeof(short) ? (size - pos) / sizeof(short) : sampleCount;
 
             // duplicate samples for 44kHz output
-            ISimd.UpSamplePCMTo44kHz(dest, (short*)(first + pos), readSamples, sample.objectInfo.nSamplesPerSec, sample.objectInfo.nChannels);
+            fixed (byte* _ = &first.v[first.o + pos])
+                ISimd._.UpSamplePCMTo44kHz(dest, (short*)_, readSamples, sample.objectInfo.nSamplesPerSec, sample.objectInfo.nChannels);
 
-            return (readSamples << shift);
+            return readSamples << shift;
         }
 
         public unsafe int DecodeOGG(SoundSample sample, int sampleOffset44k, int sampleCount44k, float* dest)
@@ -439,7 +437,7 @@ namespace Gengine.Sound
                 }
                 ret *= sample.objectInfo.nChannels;
 
-                ISimd.Processor.UpSampleOGGTo44kHz(dest + (readSamples << shift), samples, ret, sample.objectInfo.nSamplesPerSec, sample.objectInfo.nChannels);
+                ISimd._.UpSampleOGGTo44kHz(dest + (readSamples << shift), samples, ret, sample.objectInfo.nSamplesPerSec, sample.objectInfo.nChannels);
 
                 readSamples += ret;
                 totalSamples -= ret;

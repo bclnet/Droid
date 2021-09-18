@@ -1,3 +1,4 @@
+using Gengine.Framework;
 using Gengine.Render;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ namespace Gengine.UI
         IRenderWorld world;
         RenderEntity worldEntity;
         RenderLight rLight;
-        object modelAnim; //: MD5Anim
+        IMD5Anim modelAnim;
 
         Qhandle worldModelDef;
         Qhandle lightDef;

@@ -365,7 +365,7 @@ namespace System.NumericsX
         public unsafe void FromPoints(Vector3[] points, int numPoints)
         {
             fixed (Vector3* _ = points)
-                ISimd.Processor.MinMax(out b0, out b1, _, numPoints);
+                ISimd._.MinMax(out b0, out b1, _, numPoints);
         }
 
         // Most tight bounds for the translational movement of the given point.

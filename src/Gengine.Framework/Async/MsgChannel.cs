@@ -426,7 +426,7 @@ namespace Gengine.Framework.Async
             if (sequence <= incomingSequence)
             {
                 if (net_channelShowDrop.Bool || net_channelShowPackets.Bool)
-                    common.Printf($"{ISystem.NetAdrToString(remoteAddress)}: out of order packet {sequence} at {incomingSequence}\n");
+                    common.Printf($"{remoteAddress}: out of order packet {sequence} at {incomingSequence}\n");
                 return false;
             }
 
@@ -453,7 +453,7 @@ namespace Gengine.Framework.Async
                 if (fragStart != fragmentLength)
                 {
                     if (net_channelShowDrop.Bool || net_channelShowPackets.Bool)
-                        common.Printf($"{ISystem.NetAdrToString(remoteAddress)}: dropped a message fragment at seq {sequence}\n");
+                        common.Printf($"{remoteAddress}: dropped a message fragment at seq {sequence}\n");
                     // we can still keep the part that we have so far, so we don't need to clear fragmentLength
                     UpdatePacketLoss(time, 0, 1);
                     return false;
@@ -463,7 +463,7 @@ namespace Gengine.Framework.Async
                 if (fragLength < 0 || fragLength > msg.RemaingData || fragmentLength + fragLength > MAX_MESSAGE_SIZE)
                 {
                     if (net_channelShowDrop.Bool || net_channelShowPackets.Bool)
-                        common.Printf($"{ISystem.NetAdrToString(remoteAddress)}: illegal fragment length\n");
+                        common.Printf($"{remoteAddress}: illegal fragment length\n");
                     UpdatePacketLoss(time, 0, 1);
                     return false;
                 }
@@ -582,7 +582,7 @@ namespace Gengine.Framework.Async
             {
                 if (reliableMessageSize <= 0 || reliableMessageSize > o.Size - o.ReadCount)
                 {
-                    common.Printf($"{ISystem.NetAdrToString(remoteAddress)}: bad reliable message\n");
+                    common.Printf($"{remoteAddress}: bad reliable message\n");
                     return false;
                 }
                 reliableSequence = o.ReadInt();

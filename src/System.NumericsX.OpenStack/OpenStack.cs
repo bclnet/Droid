@@ -5,7 +5,8 @@ namespace System.NumericsX.OpenStack
     public static class OpenStack
     {
         public static string GAME_NAME = "GAME_NAME";
-        public static volatile int com_ticNumber;   //: sky (attach)		// 60 hz tics, incremented by async function
+        public static int com_frameTime;            //:sky (attach) time for the current frame in milliseconds
+        public static volatile int com_ticNumber;   //:sky (attach)		// 60 hz tics, incremented by async function
         public static Func<string, DateTime> Sys_FileTimeStamp => (path) => DateTime.MinValue;
         public static Func<string> Sys_GetClipboardData => () => null;
         public static Func<bool> Session_IsMultiplayer => () => false;
@@ -16,7 +17,7 @@ namespace System.NumericsX.OpenStack
         internal static CVarSystemLocal cvarSystemLocal = new(); public static ICVarSystem cvarSystem = cvarSystemLocal;
         internal static CmdSystemLocal cmdSystemLocal = new(); public static ICmdSystem cmdSystem = cmdSystemLocal;
         public static IVFileSystem fileSystem;
-        public static IUsercmdGen usercmdGen; //internal static CmdSystemLocal usercmdGenLocal = new(); public static IUsercmdGen usercmdGen = cmdSystemLocal;
+        public static IUsercmd usercmdGen; //internal static CmdSystemLocal usercmdGenLocal = new(); public static IUsercmdGen usercmdGen = cmdSystemLocal;
 
 #if FRUSTUM_DEBUG
         static readonly CVar r_showInteractionScissors_0 = new("r_showInteractionScissors", "0", CVAR.RENDERER | CVAR.INTEGER, "", 0, 2, CmdArgs.ArgCompletion_Integer(0, 2));

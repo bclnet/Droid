@@ -298,8 +298,8 @@ namespace Gengine.Sound
             if (timestamp == DateTime.MinValue) { common.Warning($"Couldn't load sound '{name}' using default"); MakeDefault(); return; }
 
             // load it
-            WaveFile fh = new(); WaveformatEx info = default;
-            if (fh.Open(name, x => info = x) == -1) { common.Warning($"Couldn't load sound '{name}' using default"); MakeDefault(); return; }
+            WaveFile fh = new();
+            if (fh.Open(name, out var info) == -1) { common.Warning($"Couldn't load sound '{name}' using default"); MakeDefault(); return; }
             if (info.nChannels != 1 && info.nChannels != 2) { common.Warning($"SoundSample: {name} has {info.nChannels} channels, using default"); fh.Close(); MakeDefault(); return; }
             if (info.wBitsPerSample != 16) { common.Warning($"SoundSample: {name} is {info.wBitsPerSample}bits, expected 16bits using default"); fh.Close(); MakeDefault(); return; }
             if (info.nSamplesPerSec != 44100 && info.nSamplesPerSec != 22050 && info.nSamplesPerSec != 11025) { common.Warning("SoundCache: {name} is {info.nSamplesPerSec}Hz, expected 11025, 22050 or 44100 Hz. Using default"); fh.Close(); MakeDefault(); return; }
@@ -309,7 +309,8 @@ namespace Gengine.Sound
             objectMemSize = fh.MemorySize;
 
             nonCacheData = SoundCache.soundCacheAllocator.Alloc(objectMemSize);
-            fh.Read(ref nonCacheData.Value[0], objectMemSize, out var _);
+            fixed (byte* nonCacheData_ = nonCacheData.Value)
+                fh.Read(nonCacheData_, objectMemSize, null);
 
             // optionally convert it to 22kHz to save memory
             CheckForDownSample();
@@ -452,19 +453,19 @@ namespace Gengine.Sound
         }
 
         // Returns true on success.
-        public bool FetchFromCache(int offset, out Memory<byte> output, out int position, out int size, bool allowIO)
+        public bool FetchFromCache(int offset, out (byte[] v, int o) output, out int position, out int size, bool allowIO)
         {
             offset = unchecked((int)(offset & 0xfffffffe));
 
             if (objectSize == 0 || offset < 0 || offset > objectSize * sizeof(short) || nonCacheData == null)
             {
-                output = null;
+                output = default;
                 position = 0;
                 size = 0;
                 return false;
             }
 
-            output = nonCacheData.Value.AsMemory(offset);
+            output = (nonCacheData.Value, offset);
             position = 0;
             size = objectSize * sizeof(short) - offset;
             if (size > SCACHE_SIZE) size = SCACHE_SIZE;

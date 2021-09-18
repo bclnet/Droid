@@ -1,3 +1,6 @@
+using System.Runtime.CompilerServices;
+using static System.NumericsX.Platform;
+
 namespace System.NumericsX.OpenStack
 {
     [Flags]
@@ -88,8 +91,60 @@ namespace System.NumericsX.OpenStack
             Array.Clear(ip, 0, 4);
             port = 0;
         }
+
+        public static bool TryParse(string s, out Netadr a, bool doDNSResolve)
+        {
+            a = default;
+            return true;
+        }
+
         public override string ToString()
-            => ISystem.NetAdrToString(this);
+            => type == NA.LOOPBACK ? port != 0 ? $"localhost:{port}" : "localhost"
+            : type == NA.IP ? $"{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}:{port}"
+            : string.Empty;
+
+        // Compares without the port
+        public bool Compare(in Netadr a)
+        {
+            if (type != a.type) return false;
+            if (type == NA.LOOPBACK) return true;
+            if (type == NA.IP) return ip[0] == a.ip[0] && ip[1] == a.ip[1] && ip[2] == a.ip[2] && ip[3] == a.ip[3];
+            Printf("Netadr.Compare: bad address type\n");
+            return false;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(in Netadr _, in Netadr a)
+            => _.Compare(a);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in Netadr _, in Netadr a)
+            => !_.Compare(a);
+        public static implicit operator string(Netadr t) => t.ToString();
+        public override bool Equals(object obj)
+            => obj is Netadr q && Compare(q);
+        public override int GetHashCode()
+            => base.GetHashCode();
+
+        public bool IsLANAddress
+        {
+            get
+            {
+#if ID_NOLANADDRESS
+                    Printf("Sys_IsLANAddress: ID_NOLANADDRESS\n");
+                    return false;
+#endif
+                if (type == NA.LOOPBACK) return true;
+                if (type != NA.IP) return false;
+                //if (num_interfaces != 0)
+                //{
+                //    var p_ip = (ulong)ip[0];
+                //    var ip = ntohl(p_ip);
+                //    for (var i = 0; i < num_interfaces; i++)
+                //        if ((netint[i].ip & netint[i].mask) == (ip & netint[i].mask))
+                //            return true;
+                //}
+                return false;
+            }
+        }
     }
 
     public class NetPort
@@ -169,7 +224,7 @@ namespace System.NumericsX.OpenStack
         // parses the port number, can also do DNS resolve if you ask for it.
         // NOTE: DNS resolve is a slow/blocking call, think before you use (could be exploited for server DoS)
         public static bool StringToNetAdr(string s, out Netadr a, bool doDNSResolve) => throw new NotImplementedException();
-        public static string NetAdrToString(Netadr a) => throw new NotImplementedException();
+        //public static string NetAdrToString(Netadr a) => throw new NotImplementedException();
         public static bool IsLANAddress(Netadr a) => throw new NotImplementedException();
         public static bool CompareNetAdrBase(Netadr a, Netadr b) => throw new NotImplementedException();
 

@@ -2933,7 +2933,7 @@ for (i = 0; i < c; i++)
 
         protected bool RunTimeEvents(int time)
         {
-            if (time - lastTimeRun < Usercmd.USERCMD_MSEC)
+            if (time - lastTimeRun < IUsercmd.USERCMD_MSEC)
                 //common.Printf("Skipping gui time events at %i\n", time);
                 return false;
 

@@ -127,7 +127,7 @@ namespace System.NumericsX.OpenStack
         /// <param name="buffer">The buffer.</param>
         /// <param name="buffersize">The buffersize.</param>
         /// <param name="flush">The flush.</param>
-        void BeginRedirect(Stream buffer, int buffersize, Action<string> flush);
+        void BeginRedirect(byte[] buffer, int buffersize, Action<string> flush);
 
         /// <summary>
         /// Stops redirection of console output.

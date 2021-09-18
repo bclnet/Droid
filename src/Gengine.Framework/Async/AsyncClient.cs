@@ -5,11 +5,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.NumericsX;
-using System.NumericsX.Core;
-using System.NumericsX.Sys;
+using System.NumericsX.OpenStack;
+using System.NumericsX.OpenStack.System;
 using static Gengine.Framework.Async.MsgChannel;
 using static Gengine.Lib;
-using static System.NumericsX.Lib;
+using static Gengine.Framework.Lib;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Framework.Async
 {
@@ -97,7 +98,7 @@ namespace Gengine.Framework.Async
         int gameTime;                   // local game time
         int gameTimeResidual;           // left over time from previous frame
 
-        Usercmd[,] userCmds = new Usercmd[Config.MAX_USERCMD_BACKUP, Config.MAX_ASYNC_CLIENTS];
+        Usercmd[][] userCmds = Enumerable.Repeat(new Usercmd[Config.MAX_USERCMD_BACKUP], Config.MAX_ASYNC_CLIENTS).ToArray();
 
         IUserInterface guiNetMenu;
 
@@ -152,7 +153,7 @@ namespace Gengine.Framework.Async
             snapshotGameFrame = 0;
             snapshotGameTime = 0;
             snapshotSequence = 0;
-            gameInitId = GAME_INIT_ID_INVALID;
+            gameInitId = Config.GAME_INIT_ID_INVALID;
             gameFrame = 0;
             gameTimeResidual = 0;
             gameTime = 0;
@@ -254,35 +255,35 @@ namespace Gengine.Framework.Async
             active = true;
 
             guiNetMenu = uiManager.FindGui("guis/netmenu.gui", true, false, true);
-            guiNetMenu.SetStateString("status", $"{common.LanguageDictGetString("#str_06749")}{SysW.NetAdrToString(adr)}");
+            guiNetMenu.SetStateString("status", $"{common.LanguageDictGetString("#str_06749")}{adr}");
             session.SetGUI(guiNetMenu, HandleGuiCommand);
         }
 
         public void ConnectToServer(string address)
         {
             Netadr adr;
-            if (StringX.IsNumeric(address))
+            if (stringX.IsNumeric(address))
             {
                 var serverNum = int.Parse(address);
                 if (serverNum < 0 || serverNum >= serverList.Count)
                 {
-                    session.MessageBox(MSG_OK, $"{common.LanguageDictGetString("#str_06733")}{serverNum}", common.LanguageDictGetString("#str_06735"), true);
+                    session.MessageBox(MSG.OK, $"{common.LanguageDictGetString("#str_06733")}{serverNum}", common.LanguageDictGetString("#str_06735"), true);
                     return;
                 }
                 adr = serverList[serverNum].adr;
             }
             else
             {
-                if (!SysW.StringToNetAdr(address, out adr, true))
+                if (!Netadr.TryParse(address, out adr, true))
                 {
-                    session.MessageBox(MSG_OK, $"{common.LanguageDictGetString("#str_06734")}{address}", common.LanguageDictGetString("#str_06735"), true);
+                    session.MessageBox(MSG.OK, $"{common.LanguageDictGetString("#str_06734")}{address}", common.LanguageDictGetString("#str_06735"), true);
                     return;
                 }
             }
             if (adr.port == 0)
                 adr.port = Config.PORT_SERVER;
 
-            common.Printf($"\"{address}\" resolved to {SysW.NetAdrToString(adr)}\n");
+            common.Printf($"\"{address}\" resolved to {adr}\n");
 
             ConnectToServer(adr);
         }
@@ -342,7 +343,7 @@ namespace Gengine.Framework.Async
 
             if (!string.IsNullOrEmpty(address))
             {
-                if (!SysW.StringToNetAdr(address, out adr, true))
+                if (!Netadr.TryParse(address, out adr, true))
                 {
                     common.Printf($"Couldn't get server address for \"{address}\"\n");
                     return;
@@ -420,7 +421,7 @@ namespace Gengine.Framework.Async
         public void ListServers()
         {
             for (var i = 0; i < serverList.Count; i++)
-                common.Printf($"{i:3}: {serverList[i].serverInfo["si_name"]} {serverList[i].ping}ms ({SysW.NetAdrToString(serverList[i].adr)})\n");
+                common.Printf($"{i:3}: {serverList[i].serverInfo["si_name"]} {serverList[i].ping}ms ({serverList[i].adr})\n");
         }
 
         public void ClearServers()
@@ -435,7 +436,7 @@ namespace Gengine.Framework.Async
 
             Netadr adr;
             if (active) adr = serverAddress;
-            else SysW.StringToNetAdr(AsyncNetwork.clientRemoteConsoleAddress.String, out adr, true);
+            else Netadr.TryParse(AsyncNetwork.clientRemoteConsoleAddress.String, out adr, true);
 
             if (adr.port == 0)
                 adr.port = Config.PORT_SERVER;
@@ -492,7 +493,7 @@ namespace Gengine.Framework.Async
 
             // duplicate previous user commands if no new commands are available for a client
             for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                AsyncNetwork.DuplicateUsercmd(userCmds[previousIndex, i], userCmds[currentIndex, i], frame, time);
+                AsyncNetwork.DuplicateUsercmd(userCmds[previousIndex][i], userCmds[currentIndex][i], frame, time);
         }
 
         void SendUserInfoToServer()
@@ -563,7 +564,7 @@ namespace Gengine.Framework.Async
 
         void SendUsercmdsToServer()
         {
-            int i, numUsercmds, index; Usercmd last;
+            int i, numUsercmds, index; Usercmd? last;
             BitMsg msg = new(); byte[] msgBuf = new byte[MAX_MESSAGE_SIZE];
 
             if (AsyncNetwork.verbose.Integer == 2)
@@ -571,9 +572,9 @@ namespace Gengine.Framework.Async
 
             // generate user command for this client
             index = gameFrame & (Config.MAX_USERCMD_BACKUP - 1);
-            userCmds[index, clientNum] = usercmdGen.GetDirectUsercmd();
-            userCmds[index, clientNum].gameFrame = gameFrame;
-            userCmds[index, clientNum].gameTime = gameTime;
+            userCmds[index][clientNum] = usercmdGen.GetDirectUsercmd();
+            userCmds[index][clientNum].gameFrame = gameFrame;
+            userCmds[index][clientNum].gameTime = gameTime;
 
             // send the user commands to the server
             msg.InitW(msgBuf);
@@ -591,8 +592,8 @@ namespace Gengine.Framework.Async
             for (last = null, i = gameFrame - numUsercmds + 1; i <= gameFrame; i++)
             {
                 index = i & (Config.MAX_USERCMD_BACKUP - 1);
-                AsyncNetwork.WriteUserCmdDelta(msg, userCmds[index, clientNum], last);
-                last = userCmds[index, clientNum];
+                AsyncNetwork.WriteUserCmdDelta(msg, userCmds[index][clientNum], last);
+                last = userCmds[index][clientNum];
             }
 
             channel.SendMessage(clientPort, clientTime, msg);
@@ -616,7 +617,7 @@ namespace Gengine.Framework.Async
 
         void ProcessUnreliableServerMessage(BitMsg msg)
         {
-            int i, j, index, numDuplicatedUsercmds, aheadOfServer, numUsercmds, delta, serverGameInitId, serverGameFrame, serverGameTime; Usercmd last;
+            int i, j, index, numDuplicatedUsercmds, aheadOfServer, numUsercmds, delta, serverGameInitId, serverGameFrame, serverGameTime; Usercmd? last;
 
             serverGameInitId = msg.ReadInt();
 
@@ -662,7 +663,7 @@ namespace Gengine.Framework.Async
                         {
                             guiNetMenu = uiManager.FindGui("guis/netmenu.gui", true, false, true);
                             session.SetGUI(guiNetMenu, HandleGuiCommand);
-                            session.MessageBox(MSG_ABORT, common.LanguageDictGetString("#str_04317"), common.LanguageDictGetString("#str_04318"), false, "pure_abort");
+                            session.MessageBox(MSG.ABORT, common.LanguageDictGetString("#str_04317"), common.LanguageDictGetString("#str_04318"), false, "pure_abort");
                         }
                         else
                         {
@@ -704,17 +705,17 @@ namespace Gengine.Framework.Async
                             for (j = 0; j < numUsercmds; j++)
                             {
                                 index = (snapshotGameFrame + j) & (Config.MAX_USERCMD_BACKUP - 1);
-                                AsyncNetwork.ReadUserCmdDelta(msg, userCmds[index, i], last);
-                                userCmds[index, i].gameFrame = snapshotGameFrame + j;
-                                userCmds[index, i].duplicateCount = 0;
-                                last = userCmds[index, i];
+                                AsyncNetwork.ReadUserCmdDelta(msg, ref userCmds[index][i], last);
+                                userCmds[index][i].gameFrame = snapshotGameFrame + j;
+                                userCmds[index][i].duplicateCount = 0;
+                                last = userCmds[index][i];
                             }
                             // clear all user commands after the ones just read from the snapshot
                             for (j = numUsercmds; j < Config.MAX_USERCMD_BACKUP; j++)
                             {
                                 index = (snapshotGameFrame + j) & (Config.MAX_USERCMD_BACKUP - 1);
-                                userCmds[index, i].gameFrame = 0;
-                                userCmds[index, i].gameTime = 0;
+                                userCmds[index][i].gameFrame = 0;
+                                userCmds[index][i].gameTime = 0;
                             }
                         }
 
@@ -723,7 +724,7 @@ namespace Gengine.Framework.Async
                         {
                             gameTimeResidual = 0;
                             clientState = ClientState.CS_INGAME;
-                            Debug.Assert(!sessLocal.GetActiveMenu());
+                            Debug.Assert(sessLocal.ActiveMenu == null);
                             if (AsyncNetwork.verbose.Integer != 0)
                                 common.Printf($"received first snapshot, gameInitId = {gameInitId}, gameFrame {snapshotGameFrame} gameTime {snapshotGameTime}\n");
                         }
@@ -874,7 +875,7 @@ namespace Gengine.Framework.Async
                             if (clientNum == this.clientNum)
                             {
                                 session.Stop();
-                                session.MessageBox(MSG_OK, s, common.LanguageDictGetString("#str_04319"), true);
+                                session.MessageBox(MSG.OK, s, common.LanguageDictGetString("#str_04319"), true);
                                 session.StartMenu();
                             }
                             else
@@ -946,7 +947,7 @@ namespace Gengine.Framework.Async
             if (string.Equals(cvarSystem.GetCVarString("fs_game_base"), serverGameBase, StringComparison.OrdinalIgnoreCase) || string.Equals(cvarSystem.GetCVarString("fs_game"), serverGame, StringComparison.OrdinalIgnoreCase))
             {
                 // bug #189 - if the server is running ROE and ROE is not locally installed, refuse to connect or we might crash
-                if (!fileSystem.HasD3XP() && (string.Equals(serverGameBase, "d3xp", StringComparison.OrdinalIgnoreCase) || string.Equals(serverGame, "d3xp", StringComparison.OrdinalIgnoreCase)))
+                if (!fileSystem.HasD3XP && (string.Equals(serverGameBase, "d3xp", StringComparison.OrdinalIgnoreCase) || string.Equals(serverGame, "d3xp", StringComparison.OrdinalIgnoreCase)))
                 {
                     common.Printf("The server is running Doom3: Resurrection of Evil expansion pack. RoE is not installed on this client. Aborting the connection..\n");
                     cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "disconnect\n");
@@ -960,7 +961,7 @@ namespace Gengine.Framework.Async
                 return;
             }
 
-            common.Printf($"received challenge response 0x{serverChallenge:x} from {SysW.NetAdrToString(from)}\n");
+            common.Printf($"received challenge response 0x{serverChallenge:x} from {from}\n");
 
             // start sending connect packets instead of challenge request packets
             clientState = ClientState.CS_CONNECTING;
@@ -986,14 +987,14 @@ namespace Gengine.Framework.Async
                 common.Printf("Connect response packet while not connecting.\n");
                 return;
             }
-            if (!SysW.CompareNetAdrBase(from, serverAddress))
+            if (from != serverAddress)
             {
                 common.Printf("Connect response from a different server.\n");
-                common.Printf($"{SysW.NetAdrToString(from)} should have been {SysW.NetAdrToString(serverAddress)}\n");
+                common.Printf($"{from} should have been {serverAddress}\n");
                 return;
             }
 
-            common.Printf($"received connect response from {SysW.NetAdrToString(from)}\n");
+            common.Printf($"received connect response from {from}\n");
 
             channel.Init(from, clientId);
             clientNum = msg.ReadInt();
@@ -1021,13 +1022,13 @@ namespace Gengine.Framework.Async
                 common.Printf("Disconnect packet while not connected.\n");
                 return;
             }
-            if (!SysW.CompareNetAdrBase(from, serverAddress))
+            if (from != serverAddress)
             {
                 common.Printf("Disconnect packet from unknown server.\n");
                 return;
             }
             session.Stop();
-            session.MessageBox(MSG_OK, common.LanguageDictGetString("#str_04320"), null, true);
+            session.MessageBox(MSG.OK, common.LanguageDictGetString("#str_04320"), null, true);
             session.StartMenu();
         }
 
@@ -1046,14 +1047,14 @@ namespace Gengine.Framework.Async
             protocol = msg.ReadInt();
             if (protocol != Config.ASYNC_PROTOCOL_VERSION)
             {
-                common.Printf($"server {SysW.NetAdrToString(serverInfo.adr)} ignored - protocol {protocol >> 16}.{protocol & 0xffff}, expected {Config.ASYNC_PROTOCOL_MAJOR}.{Config.ASYNC_PROTOCOL_MINOR}\n");
+                common.Printf($"server {serverInfo.adr} ignored - protocol {protocol >> 16}.{protocol & 0xffff}, expected {Config.ASYNC_PROTOCOL_MAJOR}.{Config.ASYNC_PROTOCOL_MINOR}\n");
                 return;
             }
             msg.ReadDeltaDict(serverInfo.serverInfo, null);
 
             if (verbose)
             {
-                common.Printf($"server IP = {SysW.NetAdrToString(serverInfo.adr)}\n");
+                common.Printf($"server IP = {serverInfo.adr}\n");
                 serverInfo.serverInfo.Print();
             }
             for (i = msg.ReadByte(); i < Config.MAX_ASYNC_CLIENTS; i = msg.ReadByte())
@@ -1067,23 +1068,23 @@ namespace Gengine.Framework.Async
             }
             index = serverList.InfoResponse(serverInfo) ? 1 : 0;
 
-            common.Printf($"{index}: server {SysW.NetAdrToString(serverInfo.adr)} - protocol {protocol >> 16}.{protocol & 0xffff} - {serverInfo.serverInfo["si_name"]}\n");
+            common.Printf($"{index}: server {serverInfo.adr} - protocol {protocol >> 16}.{protocol & 0xffff} - {serverInfo.serverInfo["si_name"]}\n");
         }
 
         void ProcessPrintMessage(Netadr from, BitMsg msg)
         {
             var opcode = (SERVER_PRINT)msg.ReadInt();
             var game_opcode = opcode == SERVER_PRINT.GAMEDENY
-                ? msg.ReadInt()
-                : ALLOW_YES;
+                ? (AllowReply)msg.ReadInt()
+                : AllowReply.ALLOW_YES;
             ReadLocalizedServerString(msg, out var s, Platform.MAX_STRING_CHARS);
             common.Printf("{s}\n");
             guiNetMenu.SetStateString("status", s);
             if (opcode == SERVER_PRINT.GAMEDENY)
             {
-                if (game_opcode == ALLOW_BADPASS)
+                if (game_opcode == AllowReply.ALLOW_BADPASS)
                 {
-                    var retpass = session.MessageBox(MSG_PROMPT, common.LanguageDictGetString("#str_04321"), s, true, "passprompt_ok");
+                    var retpass = session.MessageBox(MSG.PROMPT, common.LanguageDictGetString("#str_04321"), s, true, "passprompt_ok");
                     ClearPendingPackets();
                     guiNetMenu.SetStateString("status", common.LanguageDictGetString("#str_04322"));
                     if (retpass != null)
@@ -1094,9 +1095,9 @@ namespace Gengine.Framework.Async
                     else
                         cmdSystem.BufferCommandText(CMD_EXEC.NOW, "disconnect");
                 }
-                else if (game_opcode == ALLOW_NO)
+                else if (game_opcode == AllowReply.ALLOW_NO)
                 {
-                    session.MessageBox(MSG_OK, s, common.LanguageDictGetString("#str_04323"), true);
+                    session.MessageBox(MSG.OK, s, common.LanguageDictGetString("#str_04323"), true);
                     ClearPendingPackets();
                     cmdSystem.BufferCommandText(CMD_EXEC.NOW, "disconnect");
                 }
@@ -1108,9 +1109,9 @@ namespace Gengine.Framework.Async
 
         void ProcessServersListMessage(Netadr from, BitMsg msg)
         {
-            if (!SysW.CompareNetAdrBase(AsyncNetwork.MasterAddress, from))
+            if (AsyncNetwork.MasterAddress != from)
             {
-                common.DPrintf($"received a server list from {SysW.NetAdrToString(from)} - not a valid master\n");
+                common.DPrintf($"received a server list from {from} - not a valid master\n");
                 return;
             }
             while (msg.RemaingData != 0)
@@ -1124,7 +1125,7 @@ namespace Gengine.Framework.Async
         {
             string auth_msg = null;
 
-            if (clientState != ClientState.CS_CONNECTING && !session.WaitingForGameAuth())
+            if (clientState != ClientState.CS_CONNECTING && !session.WaitingForGameAuth)
             {
                 common.Printf("clientState != CS_CONNECTING, not waiting for game auth, authKey ignored\n");
                 return;
@@ -1172,7 +1173,7 @@ namespace Gengine.Framework.Async
                     while (true)
                     {
                         // here we use the auth status message
-                        var retkey = session.MessageBox(MSG_CDKEY, auth_msg, common.LanguageDictGetString("#str_04325"), true);
+                        var retkey = session.MessageBox(MSG.CDKEY, auth_msg, common.LanguageDictGetString("#str_04325"), true);
                         if (retkey != null)
                         {
                             if (session.CheckKey(retkey, true, valid))
@@ -1181,7 +1182,7 @@ namespace Gengine.Framework.Async
                             {
                                 // build a more precise message about the offline check failure
                                 AsyncNetwork.BuildInvalidKeyMsg(out auth_msg, valid);
-                                session.MessageBox(MSG_OK, auth_msg, common.LanguageDictGetString("#str_04327"), true);
+                                session.MessageBox(MSG.OK, auth_msg, common.LanguageDictGetString("#str_04327"), true);
                                 continue;
                             }
                         }
@@ -1263,14 +1264,14 @@ namespace Gengine.Framework.Async
                         if (AsyncNetwork.clientDownload.Integer == 0)
                         {
                             // never any downloads
-                            var message = $"{common.LanguageDictGetString("#str_07210")}{SysW.NetAdrToString(from)}";
+                            var message = $"{common.LanguageDictGetString("#str_07210")}{from}";
 
                             if (numMissingChecksums > 0)
                                 message += $"{common.LanguageDictGetString("#str_06751")}{numMissingChecksums}{checksums}";
 
                             common.Printf(message);
                             cmdSystem.BufferCommandText(CMD_EXEC.NOW, "disconnect");
-                            session.MessageBox(MSG_OK, message, common.LanguageDictGetString("#str_06735"), true);
+                            session.MessageBox(MSG.OK, message, common.LanguageDictGetString("#str_06735"), true);
                         }
                         else
                         {
@@ -1350,7 +1351,7 @@ namespace Gengine.Framework.Async
             }
 
             // from master server:
-            if (SysW.CompareNetAdrBase(from, AsyncNetwork.MasterAddress))
+            if (from == AsyncNetwork.MasterAddress)
             {
                 // server list
                 if (string.Equals(s, "servers", StringComparison.OrdinalIgnoreCase))
@@ -1373,9 +1374,9 @@ namespace Gengine.Framework.Async
             }
 
             // ignore if not from the current/last server
-            if (!SysW.CompareNetAdrBase(from, serverAddress) && (lastRconTime + 10000 < realTime || !SysW.CompareNetAdrBase(from, lastRconAddress)))
+            if (from != serverAddress && (lastRconTime + 10000 < realTime || from != lastRconAddress))
             {
-                common.DPrintf($"got message '{s}' from bad source: {SysW.NetAdrToString(from)}\n");
+                common.DPrintf($"got message '{s}' from bad source: {from}\n");
                 return;
             }
 
@@ -1424,12 +1425,12 @@ namespace Gengine.Framework.Async
                 // server telling us that he's expecting an auth mode connect, just in case we're trying to connect in LAN mode
                 if (AsyncNetwork.LANServer.Bool)
                 {
-                    common.Warning($"server {SysW.NetAdrToString(from)} requests master authorization for this client. Turning off LAN mode\n");
+                    common.Warning($"server {from} requests master authorization for this client. Turning off LAN mode\n");
                     AsyncNetwork.LANServer.Bool = false;
                 }
             }
 
-            common.DPrintf($"ignored message from {SysW.NetAdrToString(from)}: {s}\n");
+            common.DPrintf($"ignored message from {from}: {s}\n");
         }
 
         void ProcessMessage(Netadr from, BitMsg msg)
@@ -1448,14 +1449,14 @@ namespace Gengine.Framework.Async
 
             if (msg.RemaingData < 4)
             {
-                common.DPrintf($"{SysW.NetAdrToString(from)}: tiny packet\n");
+                common.DPrintf($"{from}: tiny packet\n");
                 return;
             }
 
             // is this a packet from the server
-            if (!SysW.CompareNetAdrBase(from, channel.RemoteAddress) || id != serverId)
+            if (from != channel.RemoteAddress || id != serverId)
             {
-                common.DPrintf($"{SysW.NetAdrToString(from)}: sequenced server packet without connection\n");
+                common.DPrintf($"{from}: sequenced server packet without connection\n");
                 return;
             }
 
@@ -1476,7 +1477,7 @@ namespace Gengine.Framework.Async
 
             if (clientState == ClientState.CS_CHALLENGING)
             {
-                common.Printf($"sending challenge to {SysW.NetAdrToString(serverAddress)}\n");
+                common.Printf($"sending challenge to {serverAddress}\n");
                 msg.InitW(msgBuf);
                 msg.WriteShort(CONNECTIONLESS_MESSAGE_ID);
                 msg.WriteString("challenge");
@@ -1485,7 +1486,7 @@ namespace Gengine.Framework.Async
             }
             else if (clientState == ClientState.CS_CONNECTING)
             {
-                common.Printf($"sending connect to {SysW.NetAdrToString(serverAddress)} with challenge 0x{serverChallenge:x}\n");
+                common.Printf($"sending connect to {serverAddress} with challenge 0x{serverChallenge:x}\n");
                 msg.InitW(msgBuf);
                 msg.WriteShort(CONNECTIONLESS_MESSAGE_ID);
                 msg.WriteString("connect");
@@ -1521,8 +1522,8 @@ namespace Gengine.Framework.Async
                     clientPort.SendPacket(AsyncNetwork.MasterAddress, msg.DataW, msg.Size);
                 }
 #else
-                if (!SysW.IsLANAddress(serverAddress))
-                    common.Printf($"Build Does not have CD Key Enforcement enabled. The Server ({SysW.NetAdrToString(serverAddress)}) is not within the lan addresses. Attemting to connect.\n");
+                if (!serverAddress.IsLANAddress)
+                    common.Printf($"Build Does not have CD Key Enforcement enabled. The Server ({serverAddress}) is not within the lan addresses. Attemting to connect.\n");
                 common.Printf("Not Testing key.\n");
 #endif
             }
@@ -1583,7 +1584,7 @@ namespace Gengine.Framework.Async
                 do
                 {
                     // blocking read with game time residual timeout
-                    newPacket = clientPort.GetPacketBlocking(out from, msgBuf, out size, msgBuf.Length, Usercmd.USERCMD_MSEC - (gameTimeResidual + clientPredictTime) - 1);
+                    newPacket = clientPort.GetPacketBlocking(out from, msgBuf, out size, msgBuf.Length, IUsercmd.USERCMD_MSEC - (gameTimeResidual + clientPredictTime) - 1);
                     if (newPacket)
                     {
                         msg.InitW(msgBuf);
@@ -1597,7 +1598,7 @@ namespace Gengine.Framework.Async
 
                 } while (newPacket);
 
-            } while (gameTimeResidual + clientPredictTime < Usercmd.USERCMD_MSEC);
+            } while (gameTimeResidual + clientPredictTime < IUsercmd.USERCMD_MSEC);
 
             // update server list
             serverList.RunFrame();
@@ -1605,7 +1606,7 @@ namespace Gengine.Framework.Async
             if (clientState == ClientState.CS_DISCONNECTED)
             {
                 usercmdGen.GetDirectUsercmd();
-                gameTimeResidual = Usercmd.USERCMD_MSEC - 1;
+                gameTimeResidual = IUsercmd.USERCMD_MSEC - 1;
                 clientPredictTime = 0;
                 return;
             }
@@ -1614,7 +1615,7 @@ namespace Gengine.Framework.Async
             {
                 clientState = ClientState.CS_DISCONNECTED;
                 Reconnect();
-                gameTimeResidual = Usercmd.USERCMD_MSEC - 1;
+                gameTimeResidual = IUsercmd.USERCMD_MSEC - 1;
                 clientPredictTime = 0;
                 return;
             }
@@ -1625,7 +1626,7 @@ namespace Gengine.Framework.Async
                 // also need to read mouse for the connecting guis
                 usercmdGen.GetDirectUsercmd();
                 SetupConnection();
-                gameTimeResidual = Usercmd.USERCMD_MSEC - 1;
+                gameTimeResidual = IUsercmd.USERCMD_MSEC - 1;
                 clientPredictTime = 0;
                 return;
             }
@@ -1650,19 +1651,19 @@ namespace Gengine.Framework.Async
                 cvarSystem.ClearModifiedFlags(CVAR.USERINFO);
             }
 
-            if (gameTimeResidual + clientPredictTime >= Usercmd.USERCMD_MSEC)
+            if (gameTimeResidual + clientPredictTime >= IUsercmd.USERCMD_MSEC)
                 lastFrameDelta = 0;
 
             // generate user commands for the predicted time
-            while (gameTimeResidual + clientPredictTime >= Usercmd.USERCMD_MSEC)
+            while (gameTimeResidual + clientPredictTime >= IUsercmd.USERCMD_MSEC)
             {
                 // send the user commands of this client to the server
                 SendUsercmdsToServer();
 
                 // update time
                 gameFrame++;
-                gameTime += Usercmd.USERCMD_MSEC;
-                gameTimeResidual -= Usercmd.USERCMD_MSEC;
+                gameTime += IUsercmd.USERCMD_MSEC;
+                gameTimeResidual -= IUsercmd.USERCMD_MSEC;
 
                 // run from the snapshot up to the local game frame
                 while (snapshotGameFrame < gameFrame)
@@ -1673,7 +1674,7 @@ namespace Gengine.Framework.Async
                     DuplicateUsercmds(snapshotGameFrame, snapshotGameTime);
 
                     // indicate the last prediction frame before a render
-                    bool lastPredictFrame = (snapshotGameFrame + 1 >= gameFrame && gameTimeResidual + clientPredictTime < Usercmd.USERCMD_MSEC);
+                    bool lastPredictFrame = (snapshotGameFrame + 1 >= gameFrame && gameTimeResidual + clientPredictTime < IUsercmd.USERCMD_MSEC);
 
                     // run client prediction
                     var ret = game.ClientPrediction(clientNum, userCmds[snapshotGameFrame & (Config.MAX_USERCMD_BACKUP - 1)], lastPredictFrame);
@@ -1681,7 +1682,7 @@ namespace Gengine.Framework.Async
                     AsyncNetwork.ExecuteSessionCommand(ret.sessionCommand);
 
                     snapshotGameFrame++;
-                    snapshotGameTime += Usercmd.USERCMD_MSEC;
+                    snapshotGameTime += IUsercmd.USERCMD_MSEC;
                 }
             }
         }
@@ -1747,7 +1748,7 @@ namespace Gengine.Framework.Async
                 updateState = ClientUpdateState.UPDATE_DONE;
                 if (showUpdateMessage)
                 {
-                    session.MessageBox(MSG_OK, common.LanguageDictGetString("#str_04839"), common.LanguageDictGetString("#str_04837"), true);
+                    session.MessageBox(MSG.OK, common.LanguageDictGetString("#str_04839"), common.LanguageDictGetString("#str_04837"), true);
                     showUpdateMessage = false;
                 }
                 common.DPrintf("No update available\n");
@@ -1757,11 +1758,11 @@ namespace Gengine.Framework.Async
                 // only enter these if the download slot is free
                 if (updateState == ClientUpdateState.UPDATE_READY)
                 {
-                    if (session.MessageBox(MSG_YESNO, updateMSG, common.LanguageDictGetString("#str_04330"), true, "yes")[0])
+                    if (session.MessageBox(MSG.YESNO, updateMSG, common.LanguageDictGetString("#str_04330"), true, "yes")[0] != 0)
                     {
                         if (!updateDirectDownload)
                         {
-                            sys.OpenURL(updateURL, true);
+                            system.OpenURL(updateURL, true);
                             updateState = ClientUpdateState.UPDATE_DONE;
                         }
                         else
@@ -1789,15 +1790,12 @@ namespace Gengine.Framework.Async
                                 SendVersionDLUpdate(1);
                                 var fullPath = f.FullPath;
                                 fileSystem.CloseFile(f);
-                                if (session.MessageBox(MSG_YESNO, common.LanguageDictGetString("#str_04331"), common.LanguageDictGetString("#str_04332"), true, "yes")[0])
+                                if (session.MessageBox(MSG.YESNO, common.LanguageDictGetString("#str_04331"), common.LanguageDictGetString("#str_04332"), true, "yes")[0] != 0)
                                 {
-                                    if (updateMime == DL_FILE.EXEC)
-                                        sys.StartProcess(fullPath, true);
-                                    else
-                                        sys.OpenURL($"file://{fullPath}", true);
+                                    if (updateMime == DL_FILE.EXEC) system.StartProcess(fullPath, true);
+                                    else system.OpenURL($"file://{fullPath}", true);
                                 }
-                                else
-                                    session.MessageBox(MSG_OK, $"{common.LanguageDictGetString("#str_04333")}{fullPath}", common.LanguageDictGetString("#str_04334"), true);
+                                else session.MessageBox(MSG.OK, $"{common.LanguageDictGetString("#str_04333")}{fullPath}", common.LanguageDictGetString("#str_04334"), true);
                             }
                             else
                             {
@@ -1807,8 +1805,8 @@ namespace Gengine.Framework.Async
                                 var name = f.Name;
                                 fileSystem.CloseFile(f);
                                 fileSystem.RemoveFile(name);
-                                session.MessageBox(MSG_OK, common.LanguageDictGetString("#str_04335"), common.LanguageDictGetString("#str_04336"), true);
-                                if (updateFallback.Length != 0) sys.OpenURL(updateFallback, true);
+                                session.MessageBox(MSG.OK, common.LanguageDictGetString("#str_04335"), common.LanguageDictGetString("#str_04336"), true);
+                                if (updateFallback.Length != 0) system.OpenURL(updateFallback, true);
                                 else common.Printf("no fallback URL\n");
                             }
                         }
@@ -1898,7 +1896,7 @@ namespace Gengine.Framework.Async
                             if (checksum == 0 || checksum != dlList[0].checksum)
                             {
                                 // "pak is corrupted ( checksum 0x%x, expected 0x%x )"
-                                session.MessageBox(MSG_OK, $"{common.LanguageDictGetString("#str_07214")}{checksum}{dlList[0].checksum}", "Download failed", true);
+                                session.MessageBox(MSG.OK, $"{common.LanguageDictGetString("#str_07214")}{checksum}{dlList[0].checksum}", "Download failed", true);
                                 fileSystem.RemoveFile(dlList[0].filename);
                                 dlList.Clear();
                                 return;
@@ -1912,7 +1910,7 @@ namespace Gengine.Framework.Async
                             if (backgroundDownload.url.dlerror[0] != 0)
                                 common.Warning($"curl error: {backgroundDownload.url.dlerror}");
                             // "The download failed or was cancelled". "Download failed"
-                            session.MessageBox(MSG_OK, common.LanguageDictGetString("#str_07215"), common.LanguageDictGetString("#str_07216"), true);
+                            session.MessageBox(MSG.OK, common.LanguageDictGetString("#str_07215"), common.LanguageDictGetString("#str_07216"), true);
                             dlList.Clear();
                             return;
                         }
@@ -1951,7 +1949,7 @@ namespace Gengine.Framework.Async
             if (lastPacketTime > 0 && (lastPacketTime + AsyncNetwork.clientServerTimeout.Integer * 1000 < clientTime))
             {
                 session.StopBox();
-                session.MessageBox(MSG_OK, common.LanguageDictGetString("#str_04328"), common.LanguageDictGetString("#str_04329"), true);
+                session.MessageBox(MSG.OK, common.LanguageDictGetString("#str_04328"), common.LanguageDictGetString("#str_04329"), true);
                 cmdSystem.BufferCommandText(CMD_EXEC.NOW, "disconnect");
                 return true;
             }
@@ -1984,8 +1982,8 @@ namespace Gengine.Framework.Async
                 msg.ReadString(out buf);
                 cmdSystem.BufferCommandText(CMD_EXEC.NOW, "disconnect");
                 // "You are missing required pak files to connect to this server.\nThe server gave a web page though:\n%s\nDo you want to go there now?". "Missing required files"
-                if (session.MessageBox(MSG_YESNO, $"{common.LanguageDictGetString("#str_07217")}{buf}", common.LanguageDictGetString("#str_07218"), true, "yes")[0])
-                    sys.OpenURL(buf, true);
+                if (session.MessageBox(MSG.YESNO, $"{common.LanguageDictGetString("#str_07217")}{buf}", common.LanguageDictGetString("#str_07218"), true, "yes")[0] != 0)
+                    system.OpenURL(buf, true);
             }
             else if (infoType == SERVER_DL.LIST)
             {
@@ -2038,13 +2036,13 @@ namespace Gengine.Framework.Async
                     common.Printf($"{(dlCount - dlList.Count)} files were ignored by the server\n");
                     gotAllFiles = false;
                 }
-                sizeStr.BestUnit("%.2f", totalDlSize, MEASURE_SIZE);
+                stringX.BestUnit(out sizeStr, "{0:.2}", totalDlSize, stringX.MEASURE.SIZE);
                 cmdSystem.BufferCommandText(CMD_EXEC.NOW, "disconnect");
                 if (totalDlSize == 0)
                 {
                     // was no downloadable stuff for us. "Can't connect to the pure server: no downloads offered". "Missing required files"
                     dlList.Clear();
-                    session.MessageBox(MSG_OK, common.LanguageDictGetString("#str_07219"), common.LanguageDictGetString("#str_07218"), true);
+                    session.MessageBox(MSG.OK, common.LanguageDictGetString("#str_07219"), common.LanguageDictGetString("#str_07218"), true);
                     return;
                 }
                 var asked = false;
@@ -2052,7 +2050,7 @@ namespace Gengine.Framework.Async
                 {
                     asked = true;
                     // "You need to download game code to connect to this server. Are you sure? You should only answer yes if you trust the server administrators.". "Missing game binaries"
-                    if (string.IsNullOrEmpty(session.MessageBox(MSG_YESNO, common.LanguageDictGetString("#str_07220"), common.LanguageDictGetString("#str_07221"), true, "yes")))
+                    if (string.IsNullOrEmpty(session.MessageBox(MSG.YESNO, common.LanguageDictGetString("#str_07220"), common.LanguageDictGetString("#str_07221"), true, "yes")))
                     {
                         dlList.Clear();
                         return;
@@ -2062,7 +2060,7 @@ namespace Gengine.Framework.Async
                 {
                     asked = true;
                     // "The server only offers to download some of the files required to connect ( %s ). Download anyway?". "Missing required files"
-                    if (string.IsNullOrEmpty(session.MessageBox(MSG_YESNO, $"{common.LanguageDictGetString("#str_07222")}{sizeStr}", common.LanguageDictGetString("#str_07218"), true, "yes")))
+                    if (string.IsNullOrEmpty(session.MessageBox(MSG.YESNO, $"{common.LanguageDictGetString("#str_07222")}{sizeStr}", common.LanguageDictGetString("#str_07218"), true, "yes")))
                     {
                         dlList.Clear();
                         return;
@@ -2071,7 +2069,7 @@ namespace Gengine.Framework.Async
                 if (!asked && AsyncNetwork.clientDownload.Integer == 1)
                 {
                     // "You need to download some files to connect to this server ( %s ), proceed?". "Missing required files"
-                    if (string.IsNullOrEmpty(session.MessageBox(MSG_YESNO, $"{common.LanguageDictGetString("#str_07224")}{sizeStr}", common.LanguageDictGetString("#str_07218"), true, "yes")))
+                    if (string.IsNullOrEmpty(session.MessageBox(MSG.YESNO, $"{common.LanguageDictGetString("#str_07224")}{sizeStr}", common.LanguageDictGetString("#str_07218"), true, "yes")))
                     {
                         dlList.Clear();
                         return;
@@ -2082,7 +2080,7 @@ namespace Gengine.Framework.Async
             {
                 cmdSystem.BufferCommandText(CMD_EXEC.NOW, "disconnect");
                 // "You are missing some files to connect to this server, and the server doesn't provide downloads.". "Missing required files"
-                session.MessageBox(MSG_OK, common.LanguageDictGetString("#str_07223"), common.LanguageDictGetString("#str_07218"), true);
+                session.MessageBox(MSG.OK, common.LanguageDictGetString("#str_07223"), common.LanguageDictGetString("#str_07218"), true);
             }
         }
 

@@ -1,12 +1,10 @@
+using System.Runtime.InteropServices;
+
 namespace System.NumericsX.OpenStack
 {
-    public class Usercmd
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Usercmd
     {
-        const int USERCMD_HZ			= 60;
-        public const int USERCMD_MSEC	= 1000 / USERCMD_HZ;
-
-        //static int USERCMD_MSEC() => (1000 / (renderSystem != null ? renderSystem.GetRefresh() : 60));
-
         // usercmd_t->button bits
         public const byte BUTTON_ATTACK = 1 << 0;
         public const byte BUTTON_RUN = 1 << 1;
@@ -74,30 +72,30 @@ namespace System.NumericsX.OpenStack
         public int gameFrame;                       // frame number
         public int gameTime;                        // game time
         public int duplicateCount;                  // duplication count for networking
-        public byte buttons;                       // buttons
-        public char forwardmove;                   // forward/backward movement
-        public char rightmove;                     // left/right movement
+        public byte buttons;                        // buttons
+        public char forwardmove;                    // forward/backward movement
+        public char rightmove;                      // left/right movement
         public char upmove;                         // up/down movement
-        public short[] angles = new short[3];       // view angles
+        public short angles0;                       // view angles
+        public short angles1;                       // view angles
+        public short angles2;                       // view angles
         public short mx;                            // mouse delta x
         public short my;                            // mouse delta y
         public sbyte impulse;                       // impulse command
         public byte flags;                          // additional flags
         public int sequence;                        // just for debugging
-        public void memset()
-        {
-        }
 
         /// <summary>
         /// on big endian systems, byte swap the shorts and ints
         /// </summary>
         public void ByteSwap()
         {
-            angles[0] = Platform.LittleShort(angles[0]);
-            angles[1] = Platform.LittleShort(angles[1]);
-            angles[2] = Platform.LittleShort(angles[2]);
+            angles0 = Platform.LittleShort(angles0);
+            angles1 = Platform.LittleShort(angles1);
+            angles2 = Platform.LittleShort(angles2);
             sequence = Platform.LittleInt(sequence);
         }
+
         public override bool Equals(object obj)
         {
             var rhs = (Usercmd)obj;
@@ -105,16 +103,16 @@ namespace System.NumericsX.OpenStack
                 forwardmove == rhs.forwardmove &&
                 rightmove == rhs.rightmove &&
                 upmove == rhs.upmove &&
-                angles[0] == rhs.angles[0] &&
-                angles[1] == rhs.angles[1] &&
-                angles[2] == rhs.angles[2] &&
+                angles0 == rhs.angles0 &&
+                angles1 == rhs.angles1 &&
+                angles2 == rhs.angles2 &&
                 impulse == rhs.impulse &&
                 flags == rhs.flags &&
                 mx == rhs.mx &&
                 my == rhs.my;
         }
-
-        public override int GetHashCode() => base.GetHashCode();
+        public override int GetHashCode()
+            => base.GetHashCode();
     }
 
     public enum INHIBIT
@@ -123,9 +121,12 @@ namespace System.NumericsX.OpenStack
         ASYNC
     }
 
-    public interface IUsercmdGen
+    public interface IUsercmd
     {
-        protected const int MAX_BUFFERED_USERCMD = 64;
+        const int USERCMD_HZ = 60;
+        public const int USERCMD_MSEC = 1000 / USERCMD_HZ;
+        //static int USERCMD_MSEC() => (1000 / (renderSystem != null ? renderSystem.GetRefresh() : 60));
+        public const int MAX_BUFFERED_USERCMD = 64;
 
         // Sets up all the cvars and console commands.
         void Init();
@@ -147,7 +148,7 @@ namespace System.NumericsX.OpenStack
         void InhibitUsercmd(INHIBIT subsystem, bool inhibit);
 
         // Returns a buffered command for the given game tic.
-        Usercmd TicCmd(int ticNumber);
+        ref Usercmd TicCmd(int ticNumber);
 
         // Called async at regular intervals.
         void UsercmdInterrupt();
@@ -156,7 +157,7 @@ namespace System.NumericsX.OpenStack
         int CommandStringUsercmdData(string cmdString);
 
         // Returns the number of user commands.
-        int GetNumUserCommands();
+        int NumUserCommand { get; }
 
         // Returns the name of a user command via index.
         string GetUserCommandName(int index);
@@ -171,6 +172,6 @@ namespace System.NumericsX.OpenStack
         int KeyState(int key);
 
         // Directly sample a usercmd.
-        Usercmd GetDirectUsercmd();
+        ref Usercmd GetDirectUsercmd();
     }
 }

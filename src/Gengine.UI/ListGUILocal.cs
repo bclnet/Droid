@@ -1,6 +1,6 @@
-using Gengine.Framework;
 using System.Collections.Generic;
 using System.NumericsX.OpenStack;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.UI
 {
@@ -25,7 +25,7 @@ namespace Gengine.UI
             for (i = Count; i < water; i++)
                 gui.SetStateString($"{name}_item_{i}", "");
             water = Count;
-            gui.StateChanged(C.com_frameTime);
+            gui.StateChanged(com_frameTime);
         }
 
         public void Config(IUserInterface gui, string name)

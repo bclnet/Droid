@@ -263,7 +263,7 @@ namespace System.NumericsX.OpenStack.System
 
         public static void ShowWindow(bool show)
             => NativeW.ShowWindow(hWnd, show ? ShowWindowCmdShow.SW_SHOW : ShowWindowCmdShow.SW_HIDE);
-        public static bool IsWindowVisible()
+        public static bool IsWindowVisible
             => NativeW.IsWindowVisible(hWnd);
         public static void ShowConsole(int visLevel, bool quitOnClose) => throw new NotImplementedException();
 

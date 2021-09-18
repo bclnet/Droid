@@ -115,7 +115,7 @@ namespace Gengine.UI
         }
 
         const float HandleEvent_virtualAspectRatio = (float)DeviceContext.VIRTUAL_WIDTH / (float)DeviceContext.VIRTUAL_HEIGHT; // 4:3
-        public string HandleEvent(SysEvent ev, int time, Action<bool> updateVisuals)
+        public string HandleEvent(in SysEvent ev, int time, Action<bool> updateVisuals)
         {
             this.time = time;
 

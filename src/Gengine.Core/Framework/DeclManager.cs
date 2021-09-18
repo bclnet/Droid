@@ -70,7 +70,7 @@ namespace Gengine.Framework
 
     public class Decl
     {
-        protected internal DeclBase base_;
+        public DeclBase base_;
 
         // Returns the name of the decl.
         public string Name => base_.Name;

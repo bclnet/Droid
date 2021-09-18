@@ -21,7 +21,7 @@ namespace Gengine.UI
         bool InitFromFile(string qpath, bool rebuild = true, bool cache = true);
 
         // handles an event, can return an action string, the caller interprets any return and acts accordingly
-        string HandleEvent(SysEvent e, int time, Action<bool> updateVisuals);
+        string HandleEvent(in SysEvent e, int time, Action<bool> updateVisuals = null);
 
         // handles a named event
         void HandleNamedEvent(string eventName);

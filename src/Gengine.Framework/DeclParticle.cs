@@ -888,7 +888,7 @@ namespace Gengine.Framework
                 bounds.AddBounds(stages[i].bounds);
             }
 
-            if (bounds.GetVolume() <= 0.1f)
+            if (bounds.Volume <= 0.1f)
                 bounds = new Bounds(Vector3.origin).Expand(8f);
 
             return true;

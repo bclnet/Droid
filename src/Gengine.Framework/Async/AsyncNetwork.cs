@@ -1,9 +1,8 @@
 using System;
-using System.NumericsX;
-using System.NumericsX.Core;
-using System.NumericsX.Sys;
-using static System.NumericsX.Lib;
+using System.NumericsX.OpenStack;
+using System.NumericsX.OpenStack.System;
 using static Gengine.Lib;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Framework.Async
 {
@@ -137,20 +136,20 @@ namespace Gengine.Framework.Async
             server.RunFrame();
         }
 
-        public static void WriteUserCmdDelta(BitMsg msg, Usercmd cmd, Usercmd base_)
+        public static void WriteUserCmdDelta(BitMsg msg, Usercmd cmd, Usercmd? base_)
         {
             if (base_ != null)
             {
-                msg.WriteDeltaIntCounter(base_.gameTime, cmd.gameTime);
-                msg.WriteDeltaByte(base_.buttons, cmd.buttons);
-                msg.WriteDeltaShort(base_.mx, cmd.mx);
-                msg.WriteDeltaShort(base_.my, cmd.my);
-                msg.WriteDeltaChar(base_.forwardmove, cmd.forwardmove);
-                msg.WriteDeltaChar(base_.rightmove, cmd.rightmove);
-                msg.WriteDeltaChar(base_.upmove, cmd.upmove);
-                msg.WriteDeltaShort(base_.angles[0], cmd.angles[0]);
-                msg.WriteDeltaShort(base_.angles[1], cmd.angles[1]);
-                msg.WriteDeltaShort(base_.angles[2], cmd.angles[2]);
+                msg.WriteDeltaIntCounter(base_.Value.gameTime, cmd.gameTime);
+                msg.WriteDeltaByte(base_.Value.buttons, cmd.buttons);
+                msg.WriteDeltaShort(base_.Value.mx, cmd.mx);
+                msg.WriteDeltaShort(base_.Value.my, cmd.my);
+                msg.WriteDeltaChar(base_.Value.forwardmove, cmd.forwardmove);
+                msg.WriteDeltaChar(base_.Value.rightmove, cmd.rightmove);
+                msg.WriteDeltaChar(base_.Value.upmove, cmd.upmove);
+                msg.WriteDeltaShort(base_.Value.angles0, cmd.angles0);
+                msg.WriteDeltaShort(base_.Value.angles1, cmd.angles1);
+                msg.WriteDeltaShort(base_.Value.angles2, cmd.angles2);
                 return;
             }
 
@@ -161,26 +160,26 @@ namespace Gengine.Framework.Async
             msg.WriteChar(cmd.forwardmove);
             msg.WriteChar(cmd.rightmove);
             msg.WriteChar(cmd.upmove);
-            msg.WriteShort(cmd.angles[0]);
-            msg.WriteShort(cmd.angles[1]);
-            msg.WriteShort(cmd.angles[2]);
+            msg.WriteShort(cmd.angles0);
+            msg.WriteShort(cmd.angles1);
+            msg.WriteShort(cmd.angles2);
         }
 
-        public static void ReadUserCmdDelta(BitMsg msg, Usercmd cmd, Usercmd base_)
+        public static void ReadUserCmdDelta(BitMsg msg, ref Usercmd cmd, Usercmd? base_)
         {
-            cmd.memset();
+            cmd = default;
             if (base_ != null)
             {
-                cmd.gameTime = msg.ReadDeltaIntCounter(base_.gameTime);
-                cmd.buttons = msg.ReadDeltaByte(base_.buttons);
-                cmd.mx = msg.ReadDeltaShort(base_.mx);
-                cmd.my = msg.ReadDeltaShort(base_.my);
-                cmd.forwardmove = msg.ReadDeltaChar(base_.forwardmove);
-                cmd.rightmove = msg.ReadDeltaChar(base_.rightmove);
-                cmd.upmove = msg.ReadDeltaChar(base_.upmove);
-                cmd.angles[0] = msg.ReadDeltaShort(base_.angles[0]);
-                cmd.angles[1] = msg.ReadDeltaShort(base_.angles[1]);
-                cmd.angles[2] = msg.ReadDeltaShort(base_.angles[2]);
+                cmd.gameTime = msg.ReadDeltaIntCounter(base_.Value.gameTime);
+                cmd.buttons = msg.ReadDeltaByte(base_.Value.buttons);
+                cmd.mx = msg.ReadDeltaShort(base_.Value.mx);
+                cmd.my = msg.ReadDeltaShort(base_.Value.my);
+                cmd.forwardmove = msg.ReadDeltaChar(base_.Value.forwardmove);
+                cmd.rightmove = msg.ReadDeltaChar(base_.Value.rightmove);
+                cmd.upmove = msg.ReadDeltaChar(base_.Value.upmove);
+                cmd.angles0 = msg.ReadDeltaShort(base_.Value.angles0);
+                cmd.angles1= msg.ReadDeltaShort(base_.Value.angles1);
+                cmd.angles2 = msg.ReadDeltaShort(base_.Value.angles2);
                 return;
             }
 
@@ -191,9 +190,9 @@ namespace Gengine.Framework.Async
             cmd.forwardmove = msg.ReadChar();
             cmd.rightmove = msg.ReadChar();
             cmd.upmove = msg.ReadChar();
-            cmd.angles[0] = msg.ReadShort();
-            cmd.angles[1] = msg.ReadShort();
-            cmd.angles[2] = msg.ReadShort();
+            cmd.angles0 = msg.ReadShort();
+            cmd.angles1 = msg.ReadShort();
+            cmd.angles2 = msg.ReadShort();
         }
 
         public static bool DuplicateUsercmd(Usercmd previousUserCmd, Usercmd currentUserCmd, int frame, int time)
@@ -208,7 +207,7 @@ namespace Gengine.Framework.Async
                 if (currentUserCmd.duplicateCount > Config.MAX_USERCMD_DUPLICATION)
                 {
                     //currentUserCmd.buttons = unchecked((byte)(currentUserCmd.buttons & ~Usercmd.BUTTON_ATTACK));
-                    currentUserCmd.buttons &= ~BUTTON_ATTACK;
+                    currentUserCmd.buttons &= unchecked((byte)~Usercmd.BUTTON_ATTACK);
                     if (Math.Abs(currentUserCmd.forwardmove) > 2) currentUserCmd.forwardmove >>= 1;
                     if (Math.Abs(currentUserCmd.rightmove) > 2) currentUserCmd.rightmove >>= 1;
                     if (Math.Abs(currentUserCmd.upmove) > 2) currentUserCmd.upmove >>= 1;
@@ -224,9 +223,9 @@ namespace Gengine.Framework.Async
                 previousUserCmd.forwardmove != currentUserCmd.forwardmove ||
                 previousUserCmd.rightmove != currentUserCmd.rightmove ||
                 previousUserCmd.upmove != currentUserCmd.upmove ||
-                previousUserCmd.angles[0] != currentUserCmd.angles[0] ||
-                previousUserCmd.angles[1] != currentUserCmd.angles[1] ||
-                previousUserCmd.angles[2] != currentUserCmd.angles[2];
+                previousUserCmd.angles0 != currentUserCmd.angles0 ||
+                previousUserCmd.angles1 != currentUserCmd.angles1 ||
+                previousUserCmd.angles2 != currentUserCmd.angles2;
 
         // returns true if the corresponding master is set to something (and could be resolved)
         public static bool GetMasterAddress(int index, out Netadr adr)
@@ -239,7 +238,7 @@ namespace Gengine.Framework.Async
             if (!masters[index].resolved || masters[index].var.IsModified)
             {
                 masters[index].var.ClearModified();
-                if (!SysW.StringToNetAdr(masters[index].var.String, out masters[index].address, true))
+                if (!Netadr.TryParse(masters[index].var.String, out masters[index].address, true))
                 {
                     common.Printf($"Failed to resolve master{index}: {masters[index].var.String}\n");
                     masters[index].address.memset();
@@ -271,7 +270,7 @@ namespace Gengine.Framework.Async
         public static void ExecuteSessionCommand(string sessCmd)
         {
             if (!string.IsNullOrEmpty(sessCmd) && string.Equals(sessCmd, "game_startmenu", StringComparison.OrdinalIgnoreCase))
-                session.SetGUI(game.StartMenu(), null);
+                session.SetGUI(game.StartMenu, null);
         }
 
         public static AsyncServer server = new();
@@ -315,7 +314,7 @@ namespace Gengine.Framework.Async
             msg = string.Empty;
             if (!valid[0])
                 msg += common.LanguageDictGetString("#str_07194");
-            if (fileSystem.HasD3XP() && !valid[1])
+            if (fileSystem.HasD3XP && !valid[1])
             {
                 if (msg.Length != 0)
                     msg += "\n";
@@ -413,7 +412,7 @@ namespace Gengine.Framework.Async
             }
 
             var clientId = args[1];
-            if (!StringX.IsNumeric(clientId))
+            if (!stringX.IsNumeric(clientId))
             {
                 common.Printf("usage: kick <client number>\n");
                 return;

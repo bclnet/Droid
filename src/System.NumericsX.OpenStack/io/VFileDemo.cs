@@ -31,7 +31,7 @@ namespace System.NumericsX.OpenStack
         static CVar com_preloadDemos = new("com_preloadDemos", "0", CVAR.SYSTEM | CVAR.BOOL | CVAR.ARCHIVE, "Load the whole demo in to RAM before running it");
         static readonly byte[] DEMO_MAGIC = Encoding.ASCII.GetBytes(GAME_NAME + " RDEMO");
 
-        VFileDemo()
+        public VFileDemo()
         {
             f = null;
             fLog = null;

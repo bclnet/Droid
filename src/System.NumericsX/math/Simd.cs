@@ -4,19 +4,24 @@ namespace System.NumericsX
 {
     public enum SPEAKER
     {
-    	LEFT = 0,
-    	RIGHT,
-    	CENTER,
-    	LFE,
-    	BACKLEFT,
-    	BACKRIGHT
+        LEFT = 0,
+        RIGHT,
+        CENTER,
+        LFE,
+        BACKLEFT,
+        BACKRIGHT
     }
 
     public unsafe interface ISimd
     {
+        public static float* Align16(float* value)
+            => (float*)((nint)((byte*)value + 15) & ~15);
+        public static byte* Align16(byte* value)
+            => (byte*)((nint)(value + 15) & ~15);
+
         public static ISimd processor = null;          // pointer to SIMD processor
         public static ISimd generic = new SIMD_Generic();                // pointer to generic SIMD implementation
-        public static ISimd Processor = null;
+        public static ISimd _ = null;
 
         public static void Init()
         {
@@ -50,10 +55,10 @@ namespace System.NumericsX
                 newProcessor = processor;
             }
 
-            if (newProcessor != Processor)
+            if (newProcessor != _)
             {
-                Processor = newProcessor;
-                Printf($"{module} using {Processor.Name} for SIMD processing\n");
+                _ = newProcessor;
+                Printf($"{module} using {_.Name} for SIMD processing\n");
             }
 
             //if ((cpuid & CPUID.SSE) != 0)
@@ -67,7 +72,7 @@ namespace System.NumericsX
         {
             generic = null;
             processor = null;
-            Processor = null;
+            _ = null;
         }
 
         public const int MIXBUFFER_SAMPLES = 4096;

@@ -234,7 +234,7 @@ namespace System.NumericsX
         {
             Vector3 mins, maxs;
             fixed (Vector3* pointsF = points)
-                ISimd.Processor.MinMax(out mins, out maxs, pointsF, numPoints);
+                ISimd._.MinMax(out mins, out maxs, pointsF, numPoints);
 
             var origin = (mins + maxs) * 0.5f;
 

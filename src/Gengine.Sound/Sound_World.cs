@@ -1415,13 +1415,13 @@ namespace Gengine.Sound
 
                     if (numSpeakers == 6)
                     {
-                        if (sample.objectInfo.nChannels == 1) ISimd.Processor.MixSoundSixSpeakerMono(finalMixBuffer, alignedInputSamples, ISimd.MIXBUFFER_SAMPLES, chan.lastV, ears);
-                        else ISimd.Processor.MixSoundSixSpeakerStereo(finalMixBuffer, alignedInputSamples, ISimd.MIXBUFFER_SAMPLES, chan.lastV, ears);
+                        if (sample.objectInfo.nChannels == 1) ISimd._.MixSoundSixSpeakerMono(finalMixBuffer, alignedInputSamples, ISimd.MIXBUFFER_SAMPLES, chan.lastV, ears);
+                        else ISimd._.MixSoundSixSpeakerStereo(finalMixBuffer, alignedInputSamples, ISimd.MIXBUFFER_SAMPLES, chan.lastV, ears);
                     }
                     else
                     {
-                        if (sample.objectInfo.nChannels == 1) ISimd.Processor.MixSoundTwoSpeakerMono(finalMixBuffer, alignedInputSamples, ISimd.MIXBUFFER_SAMPLES, chan.lastV, ears);
-                        else ISimd.Processor.MixSoundTwoSpeakerStereo(finalMixBuffer, alignedInputSamples, ISimd.MIXBUFFER_SAMPLES, chan.lastV, ears);
+                        if (sample.objectInfo.nChannels == 1) ISimd._.MixSoundTwoSpeakerMono(finalMixBuffer, alignedInputSamples, ISimd.MIXBUFFER_SAMPLES, chan.lastV, ears);
+                        else ISimd._.MixSoundTwoSpeakerStereo(finalMixBuffer, alignedInputSamples, ISimd.MIXBUFFER_SAMPLES, chan.lastV, ears);
                     }
 
                     for (j = 0; j < 6; j++)
@@ -1552,10 +1552,10 @@ namespace Gengine.Sound
 
             var numSpeakers = SoundSystemLocal.s_numberOfSpeakers.Integer;
 
-            var mix = new float[ISimd.MIXBUFFER_SAMPLES * 6 + 16];
-            var mix_p = (float*)(((byte*)mix + 15) & ~15);    // SIMD align
+            float* mix = stackalloc float[ISimd.MIXBUFFER_SAMPLES * 6 + 16];
+            var mix_p = ISimd.Align16(mix);
 
-            ISimd.Processor.Memset(mix_p, 0, ISimd.MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
+            ISimd._.Memset(mix_p, 0, ISimd.MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
 
             MixLoop(lastAVI44kHz, numSpeakers, mix_p);
 
@@ -1825,7 +1825,7 @@ namespace Gengine.Sound
                         // when the amplitudeData is present use that fill a dummy sourceBuffer this is to allow for amplitude based effect on hardware audio solutions
                         if (looping) offset %= size;
                         if (offset < size)
-                            fixed (byte* amplitudeDataB = amplitudeData)
+                            fixed (byte* amplitudeDataB = amplitudeData.Value)
                             {
                                 var amplitudeDataS = (short*)amplitudeDataB;
                                 for (j = 0; j < AMPLITUDE_SAMPLES; j++)
