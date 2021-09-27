@@ -723,9 +723,9 @@ namespace System.NumericsX
 
                 var numIslands = 0;
                 var numTris = indexes.Count / 3;
-                var islandNum = stackalloc int[numTris]; islandNum = (int*)_alloca16(islandNum);
+                var islandNum = stackalloc int[numTris + intX.ALLOC16]; islandNum = (int*)_alloca16(islandNum);
                 unchecked { Unsafe.InitBlock(islandNum, (byte)-1, (uint)numTris * sizeof(int)); }
-                var queue = stackalloc int[numTris]; queue = (int*)_alloca16(queue);
+                var queue = stackalloc int[numTris + intX.ALLOC16]; queue = (int*)_alloca16(queue);
 
                 for (i = 0; i < numTris; i++)
                 {
@@ -917,9 +917,9 @@ namespace System.NumericsX
             Span<int> index;
             var e = stackalloc SurfaceEdge[3];
 
-            var vertexEdges = stackalloc int[verts.Count]; vertexEdges = (int*)_alloca16(vertexEdges);
+            var vertexEdges = stackalloc int[verts.Count + intX.ALLOC16]; vertexEdges = (int*)_alloca16(vertexEdges);
             unchecked { Unsafe.InitBlock((void*)vertexEdges, (byte)-1, (uint)verts.Count * sizeof(int)); }
-            var edgeChain = stackalloc int[indexes.Count]; edgeChain = (int*)_alloca16(edgeChain);
+            var edgeChain = stackalloc int[indexes.Count + intX.ALLOC16]; edgeChain = (int*)_alloca16(edgeChain);
 
             edgeIndexes.SetNum(indexes.Count, true);
 

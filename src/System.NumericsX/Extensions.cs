@@ -1,10 +1,13 @@
 using System.Collections.Generic;
 using System.Reflection;
+using System.Security.Cryptography;
 
 namespace System.NumericsX
 {
     public static class intX
     {
+        public const int ALLOC16 = 4;
+
         public static int MulDiv(int number, int numerator, int denominator)
             => (int)(((long)number * numerator + (denominator >> 1)) / denominator);
 
@@ -14,8 +17,27 @@ namespace System.NumericsX
 
     public static class floatX
     {
+        public const int ALLOC16 = 4;
+
         public static float Parse(string s)
             => float.TryParse(s, out var z) ? z : 0f;
+    }
+
+    public static class boolX
+    {
+        public const int ALLOC16 = 15;
+    }
+
+    public static class byteX
+    {
+        public const int ALLOC16 = 15;
+
+        public static int MD5Checksum(byte[] buffer)
+        {
+            using var md5 = MD5.Create();
+            var digest = md5.ComputeHash(buffer);
+            return digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
+        }
     }
 
     public static class Extensions

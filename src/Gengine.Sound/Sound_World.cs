@@ -10,6 +10,7 @@ using System.NumericsX.OpenStack;
 using static Gengine.Lib;
 using static Gengine.Sound.Lib;
 using static System.NumericsX.OpenStack.OpenStack;
+using static System.NumericsX.Platform;
 
 namespace Gengine.Sound
 {
@@ -1552,19 +1553,18 @@ namespace Gengine.Sound
 
             var numSpeakers = SoundSystemLocal.s_numberOfSpeakers.Integer;
 
-            float* mix = stackalloc float[ISimd.MIXBUFFER_SAMPLES * 6 + 16];
-            var mix_p = ISimd.Align16(mix);
+            float* mix = stackalloc float[ISimd.MIXBUFFER_SAMPLES * 6 + 16]; mix = (float*)_alloca16(mix);
 
-            ISimd._.Memset(mix_p, 0, ISimd.MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
+            ISimd._.Memset(mix, 0, ISimd.MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
 
-            MixLoop(lastAVI44kHz, numSpeakers, mix_p);
+            MixLoop(lastAVI44kHz, numSpeakers, mix);
 
             var outD = stackalloc short[ISimd.MIXBUFFER_SAMPLES];
             for (var i = 0; i < numSpeakers; i++)
             {
                 for (var j = 0; j < ISimd.MIXBUFFER_SAMPLES; j++)
                 {
-                    var s = mix_p[j * numSpeakers + i];
+                    var s = mix[j * numSpeakers + i];
                     outD[j] = s < -32768f ? (short)-32768
                         : s > 32767f ? (short)32767
                         : (short)MathX.FtoiFast(s);

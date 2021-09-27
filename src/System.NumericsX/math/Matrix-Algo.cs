@@ -865,9 +865,9 @@ namespace System.NumericsX
             int i, j, k, r, c; float d, max;
             Debug.Assert(numRows == numColumns);
 
-            var columnIndex = stackalloc int[numRows]; columnIndex = (int*)_alloca16(columnIndex);
-            var rowIndex = stackalloc int[numRows]; rowIndex = (int*)_alloca16(rowIndex);
-            var pivot = stackalloc bool[numRows]; pivot = (bool*)_alloca16(pivot);
+            var columnIndex = stackalloc int[numRows + floatX.ALLOC16]; columnIndex = (int*)_alloca16(columnIndex);
+            var rowIndex = stackalloc int[numRows + floatX.ALLOC16]; rowIndex = (int*)_alloca16(rowIndex);
+            var pivot = stackalloc bool[numRows + boolX.ALLOC16]; pivot = (bool*)_alloca16(pivot);
 
             Unsafe.InitBlock(pivot, 0, (uint)numRows * sizeof(float));
 
@@ -1174,14 +1174,14 @@ namespace System.NumericsX
         /// <param name="alpha">The alpha.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public bool LU_UpdateRankOne(in VectorX v, in VectorX w, float alpha, int[] index)
+        public bool LU_UpdateRankOne(in VectorX v, in VectorX w, float alpha, int* index)
         {
             int i, j, max; double diag, beta, p0, p1, d;
             Debug.Assert(v.Size >= numColumns);
             Debug.Assert(w.Size >= numRows);
 
-            var y = stackalloc float[v.Size]; y = (float*)_alloca16(y);
-            var z = stackalloc float[w.Size]; z = (float*)_alloca16(z);
+            var y = stackalloc float[v.Size + floatX.ALLOC16]; y = (float*)_alloca16(y);
+            var z = stackalloc float[w.Size + floatX.ALLOC16]; z = (float*)_alloca16(z);
 
             if (index != null)
                 for (i = 0; i < numRows; i++)
@@ -1246,7 +1246,7 @@ namespace System.NumericsX
         /// <param name="r">The r.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public bool LU_UpdateRowColumn(in VectorX v, in VectorX w, int r, int[] index)
+        public bool LU_UpdateRowColumn(in VectorX v, in VectorX w, int r, int* index)
         {
             int i, j, min, max, rp; double diag, beta0, beta1, p0, p1, q0, q1, d;
             Debug.Assert(v.Size >= numColumns);
@@ -1254,10 +1254,10 @@ namespace System.NumericsX
             Debug.Assert(r >= 0 && r < numColumns && r < numRows);
             Debug.Assert(w[r] == 0f);
 
-            var y0 = stackalloc float[v.Size]; y0 = (float*)_alloca16(y0);
-            var z0 = stackalloc float[w.Size]; z0 = (float*)_alloca16(z0);
-            var y1 = stackalloc float[v.Size]; y1 = (float*)_alloca16(y1);
-            var z1 = stackalloc float[w.Size]; z1 = (float*)_alloca16(z1);
+            var y0 = stackalloc float[v.Size + floatX.ALLOC16]; y0 = (float*)_alloca16(y0);
+            var z0 = stackalloc float[w.Size + floatX.ALLOC16]; z0 = (float*)_alloca16(z0);
+            var y1 = stackalloc float[v.Size + floatX.ALLOC16]; y1 = (float*)_alloca16(y1);
+            var z1 = stackalloc float[w.Size + floatX.ALLOC16]; z1 = (float*)_alloca16(z1);
 
             if (index != null)
             {
@@ -1370,7 +1370,7 @@ namespace System.NumericsX
         /// <param name="w">The w.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public bool LU_UpdateIncrement(in VectorX v, in VectorX w, int[] index)
+        public bool LU_UpdateIncrement(in VectorX v, in VectorX w, int* index)
         {
             int i, j; float sum;
             Debug.Assert(numRows == numColumns);
@@ -1415,7 +1415,7 @@ namespace System.NumericsX
         /// <param name="r">The r.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public bool LU_UpdateDecrement(in VectorX v, in VectorX w, in VectorX u, int r, int[] index)
+        public bool LU_UpdateDecrement(in VectorX v, in VectorX w, in VectorX u, int r, int* index)
         {
             int i, p; VectorX v1 = new(), w1 = new();
             Debug.Assert(numRows == numColumns);
@@ -1503,7 +1503,7 @@ namespace System.NumericsX
         /// <param name="b">The b.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public void LU_Solve(ref VectorX x, in VectorX b, int[] index)
+        public void LU_Solve(ref VectorX x, in VectorX b, int* index)
         {
             int i, j; double sum;
             Debug.Assert(x.Size == numColumns && b.Size == numRows);
@@ -1533,7 +1533,7 @@ namespace System.NumericsX
         /// <param name="inv">The inv.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public void LU_Inverse(ref MatrixX inv, int[] index)
+        public void LU_Inverse(ref MatrixX inv, int* index)
         {
             int i, j; VectorX x = new(), b = new();
             Debug.Assert(numRows == numColumns);
@@ -1581,7 +1581,7 @@ namespace System.NumericsX
         /// <param name="m">The m.</param>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public void LU_MultiplyFactors(ref MatrixX m, int[] index)
+        public void LU_MultiplyFactors(ref MatrixX m, int* index)
         {
             int r, rp, i, j; double sum;
 
@@ -2447,7 +2447,7 @@ namespace System.NumericsX
             int i, j, k; double sum;
             Debug.Assert(numRows == numColumns);
 
-            var invSqrt = stackalloc float[numRows]; invSqrt = (float*)_alloca16(invSqrt);
+            var invSqrt = stackalloc float[numRows + floatX.ALLOC16]; invSqrt = (float*)_alloca16(invSqrt);
 
             for (i = 0; i < numRows; i++)
             {
@@ -2487,7 +2487,7 @@ namespace System.NumericsX
             Debug.Assert(v.Size >= numRows);
             Debug.Assert(offset >= 0 && offset < numRows);
 
-            var y = stackalloc float[v.Size]; y = (float*)_alloca16(y);
+            var y = stackalloc float[v.Size + floatX.ALLOC16]; y = (float*)_alloca16(y);
             fixed (float* _ = &v.p[v.pi]) Unsafe.CopyBlock(y, _, (uint)v.Size * sizeof(float));
 
             for (i = offset; i < numColumns; i++)
@@ -2559,7 +2559,7 @@ namespace System.NumericsX
             }
             else
             {
-                var original = stackalloc float[numColumns]; original = (float*)_alloca16(original);
+                var original = stackalloc float[numColumns + floatX.ALLOC16]; original = (float*)_alloca16(original);
 
                 // calculate original row/column of matrix
                 for (i = 0; i < numRows; i++)
@@ -2607,8 +2607,8 @@ namespace System.NumericsX
             double diag, invDiag, diagSqr, newDiag, newDiagSqr;
             double alpha1, alpha2, beta1, beta2, p1, p2, d;
 
-            var v1 = stackalloc float[numColumns]; v1 = (float*)_alloca16(v1);
-            var v2 = stackalloc float[numColumns]; v2 = (float*)_alloca16(v2);
+            var v1 = stackalloc float[numColumns + floatX.ALLOC16]; v1 = (float*)_alloca16(v1);
+            var v2 = stackalloc float[numColumns + floatX.ALLOC16]; v2 = (float*)_alloca16(v2);
 
             d = MathX.SQRT_1OVER2;
             v1[r] = (float)((0.5f * addSub[r] + 1f) * d);
@@ -2683,7 +2683,7 @@ namespace System.NumericsX
 
             ChangeSize(numRows + 1, numColumns + 1, false);
 
-            var x = stackalloc float[numRows]; x = (float*)_alloca16(x);
+            var x = stackalloc float[numRows + floatX.ALLOC16]; x = (float*)_alloca16(x);
 
             // solve for x in L * x = v
             for (i = 0; i < numRows - 1; i++)
@@ -2845,7 +2845,7 @@ namespace System.NumericsX
             int i, j, k; double d, sum;
             Debug.Assert(numRows == numColumns);
 
-            var v = stackalloc float[numRows]; v = (float*)_alloca16(v);
+            var v = stackalloc float[numRows + floatX.ALLOC16]; v = (float*)_alloca16(v);
 
             for (i = 0; i < numRows; i++)
             {
@@ -2890,7 +2890,7 @@ namespace System.NumericsX
             Debug.Assert(v.Size >= numRows);
             Debug.Assert(offset >= 0 && offset < numRows);
 
-            var y = stackalloc float[v.Size]; y = (float*)_alloca16(y);
+            var y = stackalloc float[v.Size + floatX.ALLOC16]; y = (float*)_alloca16(y);
             fixed (float* _ = &v.p[v.pi]) Unsafe.CopyBlock(y, _, (uint)v.Size * sizeof(float));
 
             for (i = offset; i < numColumns; i++)
@@ -2953,8 +2953,8 @@ namespace System.NumericsX
             }
             else
             {
-                var original = stackalloc float[numColumns]; original = (float*)_alloca16(original);
-                var y = stackalloc float[numColumns]; y = (float*)_alloca16(y);
+                var original = stackalloc float[numColumns + floatX.ALLOC16]; original = (float*)_alloca16(original);
+                var y = stackalloc float[numColumns + floatX.ALLOC16]; y = (float*)_alloca16(y);
 
                 // calculate original row/column of matrix
                 for (i = 0; i < r; i++)
@@ -3011,8 +3011,8 @@ namespace System.NumericsX
             // add row/column to the lower right sub matrix starting at (r, r)
             double d, diag, newDiag, p1, p2, alpha1, alpha2, beta1, beta2;
 
-            var v1 = stackalloc float[numColumns]; v1 = (float*)_alloca16(v1);
-            var v2 = stackalloc float[numColumns]; v2 = (float*)_alloca16(v2);
+            var v1 = stackalloc float[numColumns + floatX.ALLOC16]; v1 = (float*)_alloca16(v1);
+            var v2 = stackalloc float[numColumns + floatX.ALLOC16]; v2 = (float*)_alloca16(v2);
 
             d = MathX.SQRT_1OVER2;
             v1[r] = (float)((0.5f * addSub[r] + 1f) * d);
@@ -3085,7 +3085,7 @@ namespace System.NumericsX
 
             ChangeSize(numRows + 1, numColumns + 1, false);
 
-            var x = stackalloc float[numRows]; x = (float*)_alloca16(x);
+            var x = stackalloc float[numRows + floatX.ALLOC16]; x = (float*)_alloca16(x);
 
             // solve for x in L * x = v
             for (i = 0; i < numRows - 1; i++)
@@ -3239,7 +3239,7 @@ namespace System.NumericsX
         {
             int r, i, j; double sum;
 
-            var v = stackalloc float[numRows]; v = (float*)_alloca16(v);
+            var v = stackalloc float[numRows + floatX.ALLOC16]; v = (float*)_alloca16(v);
             m.SetSize(numRows, numColumns);
 
             for (r = 0; r < numRows; r++)

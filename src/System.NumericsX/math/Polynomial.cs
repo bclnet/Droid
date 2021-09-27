@@ -4,7 +4,7 @@ using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
-    public class Polynomial
+    public unsafe class Polynomial
     {
         int degree;
         int allocated;
@@ -282,8 +282,8 @@ namespace System.NumericsX
         {
             Polynomial n = new();
 
-            if (degree == 0)
-                return n;
+            if (degree == 0) return n;
+
             n.Resize(degree - 1, false);
             for (var i = 1; i <= degree; i++)
                 n.coefficient[i - 1] = i * coefficient[i];
@@ -295,8 +295,8 @@ namespace System.NumericsX
         {
             Polynomial n = new();
 
-            if (degree == 0)
-                return n;
+            if (degree == 0) return n;
+
             n.Resize(degree + 1, false);
             n.coefficient[0] = 0f;
             for (var i = 0; i <= degree; i++)
@@ -304,21 +304,19 @@ namespace System.NumericsX
             return n;
         }
 
-        public unsafe int GetRoots(out Complex[] roots)                          // get all roots
+        public int GetRoots(Complex* roots)                          // get all roots
         {
             int i, j; Complex x = new(), b, c;
 
-            var coef = stackalloc Complex[degree + 1];
+            var coef = stackalloc Complex[degree + 1 + Complex.ALLOC16]; coef = (Complex*)_alloca16(coef);
             for (i = 0; i <= degree; i++)
                 coef[i].Set(coefficient[i], 0f);
 
-            roots = new Complex[degree];
             for (i = degree - 1; i >= 0; i--)
             {
                 x.Zero();
                 Laguer(coef, i + 1, ref x);
-                if (MathX.Fabs(x.i) < 2f * EPSILON * MathX.Fabs(x.r))
-                    x.i = 0f;
+                if (MathX.Fabs(x.i) < 2f * EPSILON * MathX.Fabs(x.r)) x.i = 0f;
                 roots[i] = x;
                 b = coef[i + 1];
                 for (j = i; j >= 0; j--)
@@ -339,8 +337,7 @@ namespace System.NumericsX
                 x = roots[i];
                 for (j = i - 1; j >= 0; j--)
                 {
-                    if (roots[j].r <= x.r)
-                        break;
+                    if (roots[j].r <= x.r) break;
                     roots[j + 1] = roots[j];
                 }
                 roots[j + 1] = x;
@@ -348,20 +345,21 @@ namespace System.NumericsX
 
             return degree;
         }
-        public int GetRoots(out float[] roots)                             // get the real roots
+        public int GetRoots(float* roots)                             // get the real roots
         {
             switch (degree)
             {
                 case 0: roots = default; return 0;
-                case 1: return GetRoots1(coefficient[1], coefficient[0], out roots);
-                case 2: return GetRoots2(coefficient[2], coefficient[1], coefficient[0], out roots);
-                case 3: return GetRoots3(coefficient[3], coefficient[2], coefficient[1], coefficient[0], out roots);
-                case 4: return GetRoots4(coefficient[4], coefficient[3], coefficient[2], coefficient[1], coefficient[0], out roots);
+                case 1: return GetRoots1(coefficient[1], coefficient[0],  roots);
+                case 2: return GetRoots2(coefficient[2], coefficient[1], coefficient[0], roots);
+                case 3: return GetRoots3(coefficient[3], coefficient[2], coefficient[1], coefficient[0], roots);
+                case 4: return GetRoots4(coefficient[4], coefficient[3], coefficient[2], coefficient[1], coefficient[0], roots);
                 default:
                     // The Abel-Ruffini theorem states that there is no general solution in radicals to polynomial equations of degree five or higher.
                     // A polynomial equation can be solved by radicals if and only if its Galois group is a solvable group.
-                    GetRoots(out Complex[] complexRoots);
-                    roots = new float[degree];
+                    var complexRoots = stackalloc Complex[degree + Complex.ALLOC16]; complexRoots = (Complex*)_alloca16(complexRoots);
+                    GetRoots(complexRoots);
+
                     int i, num;
                     for (num = i = 0; i < degree; i++)
                         if (complexRoots[i].i == 0f)
@@ -374,19 +372,17 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetRoots1(float a, float b, out float[] roots)
+        public static int GetRoots1(float a, float b, float* roots)
         {
             Debug.Assert(a != 0f);
-            roots = new float[1];
             roots[0] = -b / a;
             return 1;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetRoots2(float a, float b, float c, out float[] roots)
+        public static int GetRoots2(float a, float b, float c, float* roots)
         {
             float inva, ds;
 
-            roots = new float[2];
             if (a != 1f)
             {
                 Debug.Assert(a != 0f);
@@ -395,8 +391,7 @@ namespace System.NumericsX
                 b *= inva;
             }
             ds = b * b - 4f * c;
-            if (ds < 0f)
-                return 0;
+            if (ds < 0f) return 0;
             else if (ds > 0f)
             {
                 ds = MathX.Sqrt(ds);
@@ -411,11 +406,10 @@ namespace System.NumericsX
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetRoots3(float a, float b, float c, float d, out float[] roots)
+        public static int GetRoots3(float a, float b, float c, float d, float* roots)
         {
             float inva, f, g, halfg, ofs, ds, dist, angle, cs, ss, t;
 
-            roots = new float[3];
             if (a != 1f)
             {
                 Debug.Assert(a != 0f);
@@ -446,15 +440,11 @@ namespace System.NumericsX
             {
                 ds = MathX.Sqrt(ds);
                 t = -halfg + ds;
-                if (t >= 0f)
-                    roots[0] = MathX.Pow(t, (1f / 3f));
-                else
-                    roots[0] = -MathX.Pow(-t, (1f / 3f));
+                if (t >= 0f) roots[0] = MathX.Pow(t, (1f / 3f));
+                else roots[0] = -MathX.Pow(-t, (1f / 3f));
                 t = -halfg - ds;
-                if (t >= 0f)
-                    roots[0] += MathX.Pow(t, (1f / 3f));
-                else
-                    roots[0] -= MathX.Pow(-t, (1f / 3f));
+                if (t >= 0f) roots[0] += MathX.Pow(t, (1f / 3f));
+                else roots[0] -= MathX.Pow(-t, (1f / 3f));
                 roots[0] -= ofs;
                 return 1;
             }
@@ -470,11 +460,11 @@ namespace System.NumericsX
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GetRoots4(float a, float b, float c, float d, float e, out float[] roots)
+        public static int GetRoots4(float a, float b, float c, float d, float e, float* roots)
         {
             int count; float inva, y, ds, r, s1, s2, t1, t2, tp, tm;
+            var roots3 = stackalloc float[3];
 
-            roots = new float[4];
             if (a != 1f)
             {
                 Debug.Assert(a != 0f);
@@ -487,12 +477,11 @@ namespace System.NumericsX
 
             count = 0;
 
-            GetRoots3(1f, -c, b * d - 4f * e, -b * b * e + 4f * c * e - d * d, out var roots3);
+            GetRoots3(1f, -c, b * d - 4f * e, -b * b * e + 4f * c * e - d * d, roots3);
             y = roots3[0];
             ds = 0.25f * b * b - c + y;
 
-            if (ds < 0f)
-                return 0;
+            if (ds < 0f) return 0;
             else if (ds > 0f)
             {
                 r = MathX.Sqrt(ds);
@@ -539,13 +528,6 @@ namespace System.NumericsX
             }
         }
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
-        //{
-        //    fixed (float* _ = this.coefficient)
-        //        return callback(_);
-        //}
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void Resize(int d, bool keep)
         {
@@ -562,14 +544,21 @@ namespace System.NumericsX
             degree = d;
         }
 
-        public unsafe string ToString(int precision = 2)
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //public T ToFloatPtr<T>(FloatPtr<T> callback)
+        //{
+        //    fixed (float* _ = this.coefficient)
+        //        return callback(_);
+        //}
+
+        public string ToString(int precision = 2)
         {
             fixed (float* _ = coefficient)
                 return FloatArrayToString(_, Dimension, precision);
         }
 
         static readonly float[] Laguer_frac = new[] { 0f, 0.5f, 0.25f, 0.75f, 0.13f, 0.38f, 0.62f, 0.88f, 1f };
-        unsafe int Laguer(Complex* coef, int degree, ref Complex r)
+        int Laguer(Complex* coef, int degree, ref Complex r)
         {
             const int MT = 10, MAX_ITERATIONS = MT * 8;
             int i, j;

@@ -9,6 +9,7 @@ namespace System.NumericsX
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct Vector2
     {
+        public const int ALLOC16 = 2;
         public static Vector2 origin = new(0f, 0f);
 
         public float x;
@@ -246,6 +247,7 @@ namespace System.NumericsX
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct Vector3
     {
+        public const int ALLOC16 = 2;
         public static Vector3 origin = new(0f, 0f, 0f);
 
         public float x;
@@ -798,6 +800,7 @@ namespace System.NumericsX
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct Vector4
     {
+        public const int ALLOC16 = 1;
         public static Vector4 origin = new(0f, 0f, 0f, 0f);
 
         public float x;
@@ -987,6 +990,7 @@ namespace System.NumericsX
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct Vector5
     {
+        public const int ALLOC16 = 1;
         public static Vector5 origin = new(0f, 0f, 0f, 0f, 0f);
 
         public float x;
@@ -1067,6 +1071,7 @@ namespace System.NumericsX
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct Vector6
     {
+        public const int ALLOC16 = 1;
         public static Vector6 origin = new(0f, 0f, 0f, 0f, 0f, 0f);
         public static Vector6 infinity = new(MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY, MathX.INFINITY);
 
@@ -1265,7 +1270,7 @@ namespace System.NumericsX
         const int VECX_MAX_TEMP = 1024;
         [MethodImpl(MethodImplOptions.AggressiveInlining)] static int VECX_QUAD(int x) => ((x + 3) & ~3) * sizeof(float);
         [MethodImpl(MethodImplOptions.AggressiveInlining)] void VECX_CLEAREND() { var s = size; while (s < ((s + 3) & ~3)) p[pi + s++] = 0f; }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] internal static float[] VECX_ALLOCA(int n) => new float[VECX_QUAD(n)];
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] internal static float[] VECX_ALLOCA(int n) => new float[VECX_QUAD(n)]; //:_alloca16
 
         internal float[] p;                       // memory the vector is stored
         internal int pi;

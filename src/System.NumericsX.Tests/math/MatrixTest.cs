@@ -16,8 +16,8 @@ namespace System.NumericsX
             original.Random(size, size, 0);
             original *= original.Transpose();
 
-            var index1 = stackalloc int[size + 1]; index1 = (int*)_alloca16(index1);
-            var index2 = stackalloc int[size + 1]; index2 = (int*)_alloca16(index2);
+            var index1 = stackalloc int[size + 1 + intX.ALLOC16]; index1 = (int*)_alloca16(index1);
+            var index2 = stackalloc int[size + 1 + intX.ALLOC16]; index2 = (int*)_alloca16(index2);
 
             //  MatrixX::LowerTriangularInverse
 

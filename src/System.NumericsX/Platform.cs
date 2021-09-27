@@ -11,9 +11,9 @@ namespace System.NumericsX
 
     public unsafe static class Platform
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float* _align16(float* value) => (float*)((nint)((byte*)value + 15) & ~15);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static byte* _align16(byte* value) => (byte*)((nint)(value + 15) & ~15);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void* _alloca16(void* value) => (byte*)value; // ((nint)((byte*)value + 15) & ~15);
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)] public static float* _align16(float* value) => (float*)((nint)((byte*)value + 15) & ~15);
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)] public static byte* _align16(byte* value) => (byte*)((nint)(value + 15) & ~15);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void* _alloca16(void* value) => (void*)((nint)((byte*)value + 15) & ~15);
 
         // maxs
         public const int MAX_STRING_CHARS = 1024;

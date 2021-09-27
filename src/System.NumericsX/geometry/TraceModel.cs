@@ -907,7 +907,7 @@ namespace System.NumericsX
 
         public unsafe void SetupPolygon(in Winding w)
         {
-            var verts = stackalloc Vector3[w.NumPoints]; verts = (Vector3*)_alloca16(verts);
+            var verts = stackalloc Vector3[w.NumPoints + Vector3.ALLOC16]; verts = (Vector3*)_alloca16(verts);
             for (var i = 0; i < w.NumPoints; i++)
                 verts[i] = w[i].ToVec3();
             SetupPolygon(verts, w.NumPoints);

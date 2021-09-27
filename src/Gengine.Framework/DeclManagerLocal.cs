@@ -102,7 +102,7 @@ namespace Gengine.Framework
             // Set text possibly with compression.
             set
             {
-                checksum = stringX.MD5Checksum(value);
+                checksum = byteX.MD5Checksum(Encoding.ASCII.GetBytes(value));
 #if GET_HUFFMAN_FREQUENCIES
                 unchecked
                 {
@@ -145,7 +145,7 @@ namespace Gengine.Framework
                 if (file.Length != sourceFile.fileSize || file.Timestamp != sourceFile.timestamp) { common.Warning($"The file {FileName} has been modified outside of the engine."); return false; }
                 file.Read(buffer, oldFileLength);
                 fileSystem.CloseFile(file);
-                if (stringX.MD5Checksum(buffer) != sourceFile.checksum) { common.Warning($"The file {FileName} has been modified outside of the engine."); return false; }
+                if (byteX.MD5Checksum(buffer) != sourceFile.checksum) { common.Warning($"The file {FileName} has been modified outside of the engine."); return false; }
             }
 
             // insert new text
@@ -161,7 +161,7 @@ namespace Gengine.Framework
 
             // set new file size, checksum and timestamp
             sourceFile.fileSize = newFileLength;
-            sourceFile.checksum = stringX.MD5Checksum(buffer);
+            sourceFile.checksum = byteX.MD5Checksum(buffer);
             fileSystem.ReadFile(FileName, out _, out sourceFile.timestamp);
 
             // move all decls in the same file
@@ -598,7 +598,7 @@ namespace Gengine.Framework
 
             src.Flags = DeclBase.DECL_LEXER_FLAGS;
 
-            checksum = stringX.MD5Checksum(buffer);
+            checksum = byteX.MD5Checksum(buffer);
 
             fileSize = length;
 
@@ -961,7 +961,7 @@ namespace Gengine.Framework
 
                 Platform.LittleRevBytes(checksumDataB, sizeof(int), total * 2);
             }
-            return stringX.MD5Checksum(checksumData);
+            return byteX.MD5Checksum(checksumData);
         }
 
         public virtual int NumDeclTypes

@@ -2631,21 +2631,21 @@ namespace System.NumericsX
     public unsafe partial struct MatrixX
     {
         const int MATX_MAX_TEMP = 1024;
-        static int MATX_QUAD(int x) => ((x) + 3) & ~3;
-        void MATX_CLEAREND() { int s = numRows * numColumns; while (s < ((s + 3) & ~3)) { mat[s++] = 0f; } }
-        internal static float[] MATX_ALLOCA(int n) => new float[MATX_QUAD(n)];
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] static int MATX_QUAD(int x) => ((x) + 3) & ~3;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] void MATX_CLEAREND() { int s = numRows * numColumns; while (s < ((s + 3) & ~3)) { mat[s++] = 0f; } }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] internal static float[] MATX_ALLOCA(int n) => new float[MATX_QUAD(n)]; //:_alloc16
 
         public const float INVERSE_EPSILON = 1e-14F;
         public const float EPSILON = 1e-6F;
 
-        static float[] temp; // = new float[MATX_MAX_TEMP + 4];   // used to store intermediate results
-                             // static float[] tempPtr = temp; //(float*)(((intptr_t)idMatX::temp + 15) & ~15);              // pointer to 16 byte aligned temporary memory
-        static int tempIndex = 0;                   // index into memory pool, wraps around
-
-        internal float[] mat;               // memory the matrix is stored
         int numRows;               // number of rows
         int numColumns;           // number of columns
         int alloced;              // floats allocated, if -1 then mat points to data set with SetData
+        internal float[] mat;               // memory the matrix is stored
+
+        static float[] temp; // = new float[MATX_MAX_TEMP + 4];   // used to store intermediate results
+                             // static float[] tempPtr = temp; //(float*)(((intptr_t)idMatX::temp + 15) & ~15);              // pointer to 16 byte aligned temporary memory
+        static int tempIndex = 0;                   // index into memory pool, wraps around
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public MatrixX(in MatrixX a)
@@ -3011,7 +3011,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public MatrixX SwapRows(int r1, int r2)                                     // swap rows
         {
-            var ptr = stackalloc float[numColumns];
+            var ptr = stackalloc float[numColumns + floatX.ALLOC16]; ptr = (float*)_alloca16(ptr);
             fixed (float* mat = this.mat)
             {
                 Unsafe.CopyBlock(ptr, mat + r1 * numColumns, (uint)numColumns * sizeof(float));
@@ -3951,7 +3951,7 @@ namespace System.NumericsX
 
         float DeterminantGeneric()
         {
-            var index = stackalloc int[numRows]; index = (int*)_alloca16(index);
+            var index = stackalloc int[numRows + floatX.ALLOC16]; index = (int*)_alloca16(index);
             var tmp = new MatrixX();
             tmp.SetData(numRows, numColumns, MATX_ALLOCA(numRows * numColumns));
             tmp = this;
@@ -3964,7 +3964,7 @@ namespace System.NumericsX
 
         bool InverseSelfGeneric()
         {
-            var index = stackalloc int[numRows]; index = (int*)_alloca16(index);
+            var index = stackalloc int[numRows + floatX.ALLOC16]; index = (int*)_alloca16(index);
             var tmp = new MatrixX();
             tmp.SetData(numRows, numColumns, MATX_ALLOCA(numRows * numColumns));
             tmp = this;

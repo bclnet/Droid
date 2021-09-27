@@ -166,19 +166,6 @@ namespace System.NumericsX.OpenStack
             return true;
         }
 
-        public static int MD5Checksum(string s)
-        {
-            using var md5 = MD5.Create();
-            var digest = md5.ComputeHash(Encoding.ASCII.GetBytes(s));
-            return digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
-        }
-        public static int MD5Checksum(byte[] buffer)
-        {
-            using var md5 = MD5.Create();
-            var digest = md5.ComputeHash(buffer);
-            return digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
-        }
-
         #region Measue
 
         public enum MEASURE

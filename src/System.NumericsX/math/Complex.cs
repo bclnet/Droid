@@ -7,6 +7,7 @@ namespace System.NumericsX
     [StructLayout(LayoutKind.Sequential)]
     public struct Complex
     {
+        public static int ALLOC16 = 2;
         public static Complex origin = new(0f, 0f);
         public float r;     // real part
         public float i;      // imaginary part

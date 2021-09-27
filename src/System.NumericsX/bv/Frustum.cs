@@ -319,8 +319,8 @@ namespace System.NumericsX
 
         public unsafe bool CullWinding(in Winding winding)
         {
-            var localPoints = stackalloc Vector3[winding.NumPoints]; localPoints = (Vector3*)_alloca16(localPoints);
-            var pointCull = stackalloc int[winding.NumPoints]; pointCull = (int*)_alloca16(pointCull);
+            var localPoints = stackalloc Vector3[winding.NumPoints + Vector3.ALLOC16]; localPoints = (Vector3*)_alloca16(localPoints);
+            var pointCull = stackalloc int[winding.NumPoints + intX.ALLOC16]; pointCull = (int*)_alloca16(pointCull);
 
             var transpose = axis.Transpose();
             for (var i = 0; i < winding.NumPoints; i++)
@@ -548,8 +548,8 @@ namespace System.NumericsX
         public unsafe bool IntersectsWinding(in Winding winding)
         {
             int i, j;
-            var localPoints = stackalloc Vector3[winding.NumPoints]; localPoints = (Vector3*)_alloca16(localPoints);
-            var pointCull = stackalloc int[winding.NumPoints]; pointCull = (int*)_alloca16(pointCull);
+            var localPoints = stackalloc Vector3[winding.NumPoints + Vector3.ALLOC16]; localPoints = (Vector3*)_alloca16(localPoints);
+            var pointCull = stackalloc int[winding.NumPoints + intX.ALLOC16]; pointCull = (int*)_alloca16(pointCull);
 
             var transpose = axis.Transpose();
             for (i = 0; i < winding.NumPoints; i++)
@@ -1811,14 +1811,14 @@ namespace System.NumericsX
             projectionBounds.Clear();
 
             // transform the winding points into the space of this frustum
-            var localPoints = stackalloc Vector3[winding.NumPoints]; localPoints = (Vector3*)_alloca16(localPoints);
+            var localPoints = stackalloc Vector3[winding.NumPoints + Vector3.ALLOC16]; localPoints = (Vector3*)_alloca16(localPoints);
             var transpose = axis.Transpose();
             for (i = 0; i < winding.NumPoints; i++)
                 localPoints[i] = (winding[i].ToVec3() - origin) * transpose;
 
             // test the winding edges
             int culled = -1, outside = 0;
-            var pointCull = stackalloc int[winding.NumPoints]; pointCull = (int*)_alloca16(pointCull);
+            var pointCull = stackalloc int[winding.NumPoints + intX.ALLOC16]; pointCull = (int*)_alloca16(pointCull);
             for (i = 0; i < winding.NumPoints; i += 2)
             {
                 p1 = i;
