@@ -1,6 +1,10 @@
+//:ref https://docs.microsoft.com/en-us/cpp/intrinsics/x86-intrinsics-list?view=msvc-160
+//:ref https://docs.microsoft.com/en-us/cpp/intrinsics/x64-amd64-intrinsics-list?view=msvc-160
+
 #ifndef __MATH_SIMD_H__
 #define __MATH_SIMD_H__
 
+#define EXTERN extern "C"
 #ifdef _WIN32
 #define VPCALL __fastcall
 #else

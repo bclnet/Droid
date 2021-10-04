@@ -1,8 +1,8 @@
-#if defined(_MSC_VER) && defined(_M_IX86)
+#if defined(_MSC_VER) && defined(_M_X64)
 #include "system/Platform.h"
 #include "Simd_3DNow.h"
 
-const char* VPCALL SIMD_3DNow_GetName(void) {
+const char* SIMD_3DNow_GetName(void) {
 	return "MMX & 3DNow!";
 }
 

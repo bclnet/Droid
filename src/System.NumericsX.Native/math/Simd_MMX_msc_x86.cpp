@@ -4,7 +4,7 @@
 
 #define EMMS_INSTRUCTION __asm emms
 
-const char* SIMD_MMX_GetName(void) {
+const char* VPCALL SIMD_MMX_GetName(void) {
 	return "MMX";
 }
 
@@ -16,8 +16,8 @@ static void MMX_Memcpy8B(void* dest, const void* src, const int count) {
 		shr		ecx, 3			// 8 bytes per iteration
 
 		loop1:
-		movq	mm1, 0[ESI]	// Read in source data
-			movntq	0[EDI], mm1		// Non-temporal stores
+		movq	mm1, 0[esi]	// Read in source data
+			movntq	0[edi], mm1		// Non-temporal stores
 
 			add		esi, 8
 			add		edi, 8
@@ -37,26 +37,26 @@ static void MMX_Memcpy64B(void* dest, const void* src, const int count) {
 		shr		ecx, 6		// 64 bytes per iteration
 
 		loop1:
-		prefetchnta 64[ESI]	// Prefetch next loop, non-temporal
-			prefetchnta 96[ESI]
+		prefetchnta 64[esi]	// Prefetch next loop, non-temporal
+			prefetchnta 96[esi]
 
-			movq mm1, 0[ESI]	// Read in source data
-			movq mm2, 8[ESI]
-			movq mm3, 16[ESI]
-			movq mm4, 24[ESI]
-			movq mm5, 32[ESI]
-			movq mm6, 40[ESI]
-			movq mm7, 48[ESI]
-			movq mm0, 56[ESI]
+			movq mm1, 0[esi]	// Read in source data
+			movq mm2, 8[esi]
+			movq mm3, 16[esi]
+			movq mm4, 24[esi]
+			movq mm5, 32[esi]
+			movq mm6, 40[esi]
+			movq mm7, 48[esi]
+			movq mm0, 56[esi]
 
-			movntq  0[EDI], mm1	// Non-temporal stores
-			movntq  8[EDI], mm2
-			movntq 16[EDI], mm3
-			movntq 24[EDI], mm4
-			movntq 32[EDI], mm5
-			movntq 40[EDI], mm6
-			movntq 48[EDI], mm7
-			movntq 56[EDI], mm0
+			movntq  0[edi], mm1	// Non-temporal stores
+			movntq  8[edi], mm2
+			movntq 16[edi], mm3
+			movntq 24[edi], mm4
+			movntq 32[edi], mm5
+			movntq 40[edi], mm6
+			movntq 48[edi], mm7
+			movntq 56[edi], mm0
 
 			add		esi, 64
 			add		edi, 64
@@ -82,26 +82,26 @@ static void MMX_Memcpy2kB(void* dest, const void* src, const int count) {
 			mov		ecx, 32
 
 			loopMemToL1 :
-			prefetchnta 64[ESI] // Prefetch next loop, non-temporal
-			prefetchnta 96[ESI]
+			prefetchnta 64[esi] // Prefetch next loop, non-temporal
+			prefetchnta 96[esi]
 
-			movq mm1, 0[ESI]	// Read in source data
-			movq mm2, 8[ESI]
-			movq mm3, 16[ESI]
-			movq mm4, 24[ESI]
-			movq mm5, 32[ESI]
-			movq mm6, 40[ESI]
-			movq mm7, 48[ESI]
-			movq mm0, 56[ESI]
+			movq mm1, 0[esi]	// Read in source data
+			movq mm2, 8[esi]
+			movq mm3, 16[esi]
+			movq mm4, 24[esi]
+			movq mm5, 32[esi]
+			movq mm6, 40[esi]
+			movq mm7, 48[esi]
+			movq mm0, 56[esi]
 
-			movq  0[EDI], mm1	// Store into L1
-			movq  8[EDI], mm2
-			movq 16[EDI], mm3
-			movq 24[EDI], mm4
-			movq 32[EDI], mm5
-			movq 40[EDI], mm6
-			movq 48[EDI], mm7
-			movq 56[EDI], mm0
+			movq  0[edi], mm1	// Store into L1
+			movq  8[edi], mm2
+			movq 16[edi], mm3
+			movq 24[edi], mm4
+			movq 32[edi], mm5
+			movq 40[edi], mm6
+			movq 48[edi], mm7
+			movq 56[edi], mm0
 			add		esi, 64
 			add		edi, 64
 			dec		ecx
@@ -113,23 +113,23 @@ static void MMX_Memcpy2kB(void* dest, const void* src, const int count) {
 			mov		ecx, 32
 
 			loopL1ToMem:
-		movq mm1, 0[ESI]	// Read in source data from L1
-			movq mm2, 8[ESI]
-			movq mm3, 16[ESI]
-			movq mm4, 24[ESI]
-			movq mm5, 32[ESI]
-			movq mm6, 40[ESI]
-			movq mm7, 48[ESI]
-			movq mm0, 56[ESI]
+		movq mm1, 0[esi]	// Read in source data from L1
+			movq mm2, 8[esi]
+			movq mm3, 16[esi]
+			movq mm4, 24[esi]
+			movq mm5, 32[esi]
+			movq mm6, 40[esi]
+			movq mm7, 48[esi]
+			movq mm0, 56[esi]
 
-			movntq 0[EDI], mm1	// Non-temporal stores
-			movntq 8[EDI], mm2
-			movntq 16[EDI], mm3
-			movntq 24[EDI], mm4
-			movntq 32[EDI], mm5
-			movntq 40[EDI], mm6
-			movntq 48[EDI], mm7
-			movntq 56[EDI], mm0
+			movntq 0[edi], mm1	// Non-temporal stores
+			movntq 8[edi], mm2
+			movntq 16[edi], mm3
+			movntq 24[edi], mm4
+			movntq 32[edi], mm5
+			movntq 40[edi], mm6
+			movntq 48[edi], mm7
+			movntq 56[edi], mm0
 
 			add		esi, 64
 			add		edi, 64
@@ -231,14 +231,14 @@ void VPCALL SIMD_MMX_Memset(void* dest0, const int val, const int count0) {
 			movq mm7, mm1
 			movq mm0, mm1
 			loop1 :
-			movntq  0[EDI], mm1		// Non-temporal stores
-				movntq  8[EDI], mm2
-				movntq 16[EDI], mm3
-				movntq 24[EDI], mm4
-				movntq 32[EDI], mm5
-				movntq 40[EDI], mm6
-				movntq 48[EDI], mm7
-				movntq 56[EDI], mm0
+			movntq  0[edi], mm1		// Non-temporal stores
+				movntq  8[edi], mm2
+				movntq 16[edi], mm3
+				movntq 24[edi], mm4
+				movntq 32[edi], mm5
+				movntq 40[edi], mm6
+				movntq 48[edi], mm7
+				movntq 56[edi], mm0
 
 				add edi, 64
 				dec ecx
@@ -255,7 +255,7 @@ void VPCALL SIMD_MMX_Memset(void* dest0, const int val, const int count0) {
 			shr ecx, 3				// 8 bytes per iteration
 			movq mm1, dat			// Read in source data
 			loop2 :
-			movntq  0[EDI], mm1		// Non-temporal stores
+			movntq  0[edi], mm1		// Non-temporal stores
 
 				add edi, 8
 				dec ecx

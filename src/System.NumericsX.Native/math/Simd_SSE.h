@@ -8,7 +8,8 @@ const char* VPCALL SIMD_SSE_GetName(void) const;
 void VPCALL SIMD_SSE_Dot(float* dst, const Plane& constant, const DrawVert* src, const int count);
 void VPCALL SIMD_SSE_MinMax(Vector3& min, Vector3& max, const DrawVert* src, const int* indexes, const int count);
 void VPCALL SIMD_SSE_Dot(float* dst, const Vector3& constant, const Plane* src, const int count);
-#elif defined(_MSC_VER) && defined(_M_IX86)
+
+#elif defined(_MSC_VER)
 const char* VPCALL SIMD_SSE_GetName(void);
 
 void VPCALL SIMD_SSE_Add(float* dst, const float constant, const float* src, const int count);
@@ -99,6 +100,7 @@ void VPCALL SIMD_SSE_MixSoundTwoSpeakerStereo(float* mixBuffer, const float* sam
 void VPCALL SIMD_SSE_MixSoundSixSpeakerMono(float* mixBuffer, const float* samples, const int numSamples, const float lastV[6], const float currentV[6]);
 void VPCALL SIMD_SSE_MixSoundSixSpeakerStereo(float* mixBuffer, const float* samples, const int numSamples, const float lastV[6], const float currentV[6]);
 void VPCALL SIMD_SSE_MixedSoundToSamples(short* samples, const float* mixBuffer, const int numSamples);
+
 #endif
 
 #endif
