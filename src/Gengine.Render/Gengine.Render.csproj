@@ -16,7 +16,6 @@
     <Compile Remove="M_Local\ModelDecal.cs" />
     <Compile Remove="M_Local\ModelOverlay.cs" />
     <Compile Remove="M_Local\Model_local.cs" />
-    <Compile Remove="M_Local\Model_lwo.cs" />
   </ItemGroup>
 
   <ItemGroup>

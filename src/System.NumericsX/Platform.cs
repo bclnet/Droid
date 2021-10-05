@@ -9,7 +9,7 @@ namespace System.NumericsX
     public unsafe delegate T FloatPtr<T>(float* ptr);
     public unsafe delegate void FloatPtr(float* ptr);
 
-    public unsafe static class Platform
+    public unsafe static partial class Platform
     {
         //[MethodImpl(MethodImplOptions.AggressiveInlining)] public static float* _align16(float* value) => (float*)((nint)((byte*)value + 15) & ~15);
         //[MethodImpl(MethodImplOptions.AggressiveInlining)] public static byte* _align16(byte* value) => (byte*)((nint)(value + 15) & ~15);
@@ -27,7 +27,7 @@ namespace System.NumericsX
         public static Action<string> Warning = x => Console.WriteLine(x);
         public static Action<string> Error = x => { Console.WriteLine(x); Debug.Assert(false); };
         public static Action<string> FatalError = x => { Console.WriteLine(x); throw new Exception(x); };
-        public static Action<string> Printf = x => Console.WriteLine(x);
+        public static Action<string> Printf = x => Console.Write(x);
         public static Func<string, string> LanguageDictGetString = x => x;
 
         internal static void RotateVector(ref Vector3 v, Vector3 origin, float a, float c, float s)

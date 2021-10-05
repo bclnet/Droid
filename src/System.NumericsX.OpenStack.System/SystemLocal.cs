@@ -18,15 +18,6 @@ namespace System.NumericsX.OpenStack.System
         public uint Milliseconds
             => (uint)SysW.Milliseconds;
 
-        public CPUID ProcessorId
-            => SysW.ProcessorId;
-
-        public void FPU_SetFTZ(bool enable)
-            => SysW.FPU_SetFTZ(enable);
-
-        public void FPU_SetDAZ(bool enable)
-            => SysW.FPU_SetDAZ(enable);
-
         public unsafe bool LockMemory(void* ptr, int bytes)
             => SysW.LockMemory(ptr, bytes);
 

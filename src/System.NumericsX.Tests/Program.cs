@@ -8,12 +8,12 @@ namespace System.NumericsX
             MathX.Init();
 
             // test idMatX
-            MatrixTest.Test();
+            //MatrixTest.Test();
 
             // test idPolynomial
             //Polynomial.Test();
 
-            //SimdTest.Test_f(null);
+            SimdTest.Test_f(null);
         }
     }
 }

@@ -97,42 +97,30 @@ namespace Gengine.Render
 
         static bool ASE_GetToken(bool restOfLine)
         {
-            int i = 0;
+            var i = 0;
 
-            if (ase.buffer == null)
-                return false;
-
-            if (ase.curpos == ase.len)
-                return false;
+            if (ase.buffer == null) return false;
+            if (ase.curpos == ase.len) return false;
 
             // skip over crap
-            while (ase.curpos < ase.len && ase.buffer[ase.curpos] <= 32)
-                ase.curpos++;
-
+            while (ase.curpos < ase.len && ase.buffer[ase.curpos] <= 32) ase.curpos++;
             while (ase.curpos < ase.len)
             {
                 ase.tokenBuf[i] = (char)ase.buffer[ase.curpos];
-
                 ase.curpos++;
                 i++;
-
-                if ((CharIsTokenDelimiter(ase.tokenBuf[i - 1]) && !restOfLine) || (ase.tokenBuf[i - 1] == '\n') || (ase.tokenBuf[i - 1] == '\r'))
-                {
-                    ase.tokenBuf[i - 1] = '\x0';
-                    break;
-                }
+                if ((CharIsTokenDelimiter(ase.tokenBuf[i - 1]) && !restOfLine) || (ase.tokenBuf[i - 1] == '\n') || (ase.tokenBuf[i - 1] == '\r')) { ase.tokenBuf[i - 1] = '\x0'; break; }
             }
 
             ase.tokenBuf[i] = '\x0';
-            ase.token = new string(ase.tokenBuf);
+            ase.token = new string(ase.tokenBuf, 0, i);
 
             return true;
         }
 
         static void ASE_ParseBracedBlock(Action<string> parser)
         {
-            int indent = 0;
-
+            var indent = 0;
             while (ASE_GetToken(false))
                 if (ase.token == "{") indent++;
                 else if (ase.token == "}") { --indent; if (indent == 0) break; else if (indent < 0) common.Error("Unexpected '}'"); }
@@ -141,8 +129,7 @@ namespace Gengine.Render
 
         static void ASE_SkipEnclosingBraces()
         {
-            int indent = 0;
-
+            var indent = 0;
             while (ASE_GetToken(false))
                 if (ase.token == "{") indent++;
                 else if (ase.token == "}") { indent--; if (indent == 0) break; else if (indent < 0) common.Error("Unexpected '}'"); }
@@ -168,54 +155,26 @@ namespace Gengine.Render
                 var qpath = fileSystem.OSPathToRelativePath(PathX.BackSlashesToSlashes(matname));
                 ase.currentMaterial.name = qpath;
             }
-            else if (token == "*UVW_U_OFFSET")
-            {
-                material = ase.model.materials[^1];
-                ASE_GetToken(false); material.uOffset = float.Parse(ase.token);
-            }
-            else if (token == "*UVW_V_OFFSET")
-            {
-                material = ase.model.materials[^1];
-                ASE_GetToken(false); material.vOffset = float.Parse(ase.token);
-            }
-            else if (token == "*UVW_U_TILING")
-            {
-                material = ase.model.materials[^1];
-                ASE_GetToken(false); material.uTiling = float.Parse(ase.token);
-            }
-            else if (token == "*UVW_V_TILING")
-            {
-                material = ase.model.materials[^1];
-                ASE_GetToken(false); material.vTiling = float.Parse(ase.token);
-            }
-            else if (token == "*UVW_ANGLE")
-            {
-                material = ase.model.materials[^1];
-                ASE_GetToken(false); material.angle = float.Parse(ase.token);
-            }
+            else if (token == "*UVW_U_OFFSET") { material = ase.model.materials[^1]; ASE_GetToken(false); material.uOffset = float.Parse(ase.token); }
+            else if (token == "*UVW_V_OFFSET") { material = ase.model.materials[^1]; ASE_GetToken(false); material.vOffset = float.Parse(ase.token); }
+            else if (token == "*UVW_U_TILING") { material = ase.model.materials[^1]; ASE_GetToken(false); material.uTiling = float.Parse(ase.token); }
+            else if (token == "*UVW_V_TILING") { material = ase.model.materials[^1]; ASE_GetToken(false); material.vTiling = float.Parse(ase.token); }
+            else if (token == "*UVW_ANGLE") { material = ase.model.materials[^1]; ASE_GetToken(false); material.angle = float.Parse(ase.token); }
         }
 
         static void ASE_KeyMATERIAL(string token)
         {
-            if (token == "*MAP_DIFFUSE")
-                ASE_ParseBracedBlock(ASE_KeyMAP_DIFFUSE);
+            if (token == "*MAP_DIFFUSE") ASE_ParseBracedBlock(ASE_KeyMAP_DIFFUSE);
         }
 
         static void ASE_KeyMATERIAL_LIST(string token)
         {
-            if (token == "*MATERIAL_COUNT")
-            {
-                ASE_GetToken(false); VERBOSE($"..num materials: {ase.token}\n");
-            }
+            if (token == "*MATERIAL_COUNT") { ASE_GetToken(false); VERBOSE($"..num materials: {ase.token}\n"); }
             else if (token == "*MATERIAL")
             {
                 VERBOSE($"..material {ase.model.materials.Count}\n");
 
-                ase.currentMaterial = new AseMaterial
-                {
-                    uTiling = 1,
-                    vTiling = 1,
-                };
+                ase.currentMaterial = new AseMaterial { uTiling = 1, vTiling = 1 };
                 ase.model.materials.Add(ase.currentMaterial);
 
                 ASE_ParseBracedBlock(ASE_KeyMATERIAL);
@@ -262,8 +221,7 @@ namespace Gengine.Render
                 ASE_GetToken(false); pMesh.vertexes[ase.currentVertex].z = float.Parse(ase.token);
 
                 ase.currentVertex++;
-                if (ase.currentVertex > pMesh.numVertexes)
-                    common.Error("ase.currentVertex >= pMesh.numVertexes");
+                if (ase.currentVertex > pMesh.numVertexes) common.Error("ase.currentVertex >= pMesh.numVertexes");
             }
             else common.Error($"Unknown token '{token}' while parsing MESH_VERTEX_LIST");
         }
@@ -294,8 +252,7 @@ namespace Gengine.Render
                 //    p += "*MESH_MTLID".Length + 1;
                 //    mtlID = int.Parse(p);
                 //}
-                //else
-                //    common.Error("No *MESH_MTLID found for face!");
+                //else common.Error("No *MESH_MTLID found for face!");
 
                 ase.currentFace++;
             }
@@ -400,11 +357,8 @@ namespace Gengine.Render
             {
                 ASE_GetToken(false); var num = int.Parse(ase.token);
 
-                if (num >= pMesh.numFaces || num < 0)
-                    common.Error($"MESH_NORMALS face index out of range: {num}");
-
-                if (num != ase.currentFace)
-                    common.Error("MESH_NORMALS face index != currentFace");
+                if (num >= pMesh.numFaces || num < 0) common.Error($"MESH_NORMALS face index out of range: {num}");
+                if (num != ase.currentFace) common.Error("MESH_NORMALS face index != currentFace");
 
                 ASE_GetToken(false); n.x = float.Parse(ase.token);
                 ASE_GetToken(false); n.y = float.Parse(ase.token);
@@ -422,8 +376,7 @@ namespace Gengine.Render
             {
                 ASE_GetToken(false); var num = int.Parse(ase.token);
 
-                if (num >= pMesh.numVertexes || num < 0)
-                    common.Error($"MESH_NORMALS vertex index out of range: {num}");
+                if (num >= pMesh.numVertexes || num < 0) common.Error($"MESH_NORMALS vertex index out of range: {num}");
 
                 f = pMesh.faces[ase.currentFace - 1];
 
@@ -432,8 +385,7 @@ namespace Gengine.Render
                     if (num == f.vertexNum[v])
                         break;
 
-                if (v == 3)
-                    common.Error("MESH_NORMALS vertex index doesn't match face");
+                if (v == 3) common.Error("MESH_NORMALS vertex index doesn't match face");
 
                 ASE_GetToken(false); n.x = float.Parse(ase.token);
                 ASE_GetToken(false); n.y = float.Parse(ase.token);
@@ -451,108 +403,26 @@ namespace Gengine.Render
         {
             var pMesh = ASE_GetCurrentMesh();
 
-            if (token == "*TIMEVALUE")
-            {
-                ASE_GetToken(false); pMesh.timeValue = int.Parse(ase.token);
-                VERBOSE($".....timevalue: {pMesh.timeValue}\n");
-            }
-            else if (token == "*MESH_NUMVERTEX")
-            {
-                ASE_GetToken(false); pMesh.numVertexes = int.Parse(ase.token);
-                VERBOSE($".....num vertexes: {pMesh.numVertexes}\n");
-            }
-            else if (token == "*MESH_NUMTVERTEX")
-            {
-                ASE_GetToken(false); pMesh.numTVertexes = int.Parse(ase.token);
-                VERBOSE($".....num tvertexes: {pMesh.numTVertexes}\n");
-            }
-            else if (token == "*MESH_NUMCVERTEX")
-            {
-                ASE_GetToken(false); pMesh.numCVertexes = int.Parse(ase.token);
-                VERBOSE($".....num cvertexes: {pMesh.numCVertexes}\n");
-            }
-            else if (token == "*MESH_NUMFACES")
-            {
-                ASE_GetToken(false); pMesh.numFaces = int.Parse(ase.token);
-                VERBOSE($".....num faces: {pMesh.numFaces}\n");
-            }
-            else if (token == "*MESH_NUMTVFACES")
-            {
-                ASE_GetToken(false); pMesh.numTVFaces = int.Parse(ase.token);
-                VERBOSE($".....num tvfaces: {pMesh.numTVFaces}\n");
-                if (pMesh.numTVFaces != pMesh.numFaces)
-                    common.Error("MESH_NUMTVFACES != MESH_NUMFACES");
-            }
-            else if (token == "*MESH_NUMCVFACES")
-            {
-                ASE_GetToken(false); pMesh.numCVFaces = int.Parse(ase.token);
-                VERBOSE($".....num cvfaces: {pMesh.numCVFaces}\n");
-                if (pMesh.numTVFaces != pMesh.numFaces)
-                    common.Error("MESH_NUMCVFACES != MESH_NUMFACES");
-            }
-            else if (token == "*MESH_VERTEX_LIST")
-            {
-                ase.currentVertex = 0;
-                pMesh.vertexes = new Vector3[pMesh.numVertexes];
-                VERBOSE(".....parsing MESH_VERTEX_LIST\n");
-                ASE_ParseBracedBlock(ASE_KeyMESH_VERTEX_LIST);
-            }
-            else if (token == "*MESH_TVERTLIST")
-            {
-                ase.currentVertex = 0;
-                pMesh.tvertexes = new Vector2[pMesh.numTVertexes];
-                VERBOSE(".....parsing MESH_TVERTLIST\n");
-                ASE_ParseBracedBlock(ASE_KeyMESH_TVERTLIST);
-            }
-            else if (token == "*MESH_CVERTLIST")
-            {
-                ase.currentVertex = 0;
-                pMesh.cvertexes = new Vector3[pMesh.numCVertexes];
-                VERBOSE(".....parsing MESH_CVERTLIST\n");
-                ASE_ParseBracedBlock(ASE_KeyMESH_CVERTLIST);
-            }
-            else if (token == "*MESH_FACE_LIST")
-            {
-                ase.currentFace = 0;
-                pMesh.faces = new AseFace[pMesh.numFaces];
-                VERBOSE(".....parsing MESH_FACE_LIST\n");
-                ASE_ParseBracedBlock(ASE_KeyMESH_FACE_LIST);
-            }
-            else if (token == "*MESH_TFACELIST")
-            {
-                if (pMesh.faces == null)
-                    common.Error("*MESH_TFACELIST before *MESH_FACE_LIST");
-                ase.currentFace = 0;
-                VERBOSE(".....parsing MESH_TFACE_LIST\n");
-                ASE_ParseBracedBlock(ASE_KeyTFACE_LIST);
-            }
-            else if (token == "*MESH_CFACELIST")
-            {
-                if (pMesh.faces == null)
-                    common.Error("*MESH_CFACELIST before *MESH_FACE_LIST");
-                ase.currentFace = 0;
-                VERBOSE(".....parsing MESH_CFACE_LIST\n");
-                ASE_ParseBracedBlock(ASE_KeyCFACE_LIST);
-            }
-            else if (token == "*MESH_NORMALS")
-            {
-                if (pMesh.faces == null)
-                    common.Warning("*MESH_NORMALS before *MESH_FACE_LIST");
-                ase.currentFace = 0;
-                VERBOSE(".....parsing MESH_NORMALS\n");
-                ASE_ParseBracedBlock(ASE_KeyMESH_NORMALS);
-            }
+            if (token == "*TIMEVALUE") { ASE_GetToken(false); pMesh.timeValue = int.Parse(ase.token); VERBOSE($".....timevalue: {pMesh.timeValue}\n"); }
+            else if (token == "*MESH_NUMVERTEX") { ASE_GetToken(false); pMesh.numVertexes = int.Parse(ase.token); VERBOSE($".....num vertexes: {pMesh.numVertexes}\n"); }
+            else if (token == "*MESH_NUMTVERTEX") { ASE_GetToken(false); pMesh.numTVertexes = int.Parse(ase.token); VERBOSE($".....num tvertexes: {pMesh.numTVertexes}\n"); }
+            else if (token == "*MESH_NUMCVERTEX") { ASE_GetToken(false); pMesh.numCVertexes = int.Parse(ase.token); VERBOSE($".....num cvertexes: {pMesh.numCVertexes}\n"); }
+            else if (token == "*MESH_NUMFACES") { ASE_GetToken(false); pMesh.numFaces = int.Parse(ase.token); VERBOSE($".....num faces: {pMesh.numFaces}\n"); }
+            else if (token == "*MESH_NUMTVFACES") { ASE_GetToken(false); pMesh.numTVFaces = int.Parse(ase.token); VERBOSE($".....num tvfaces: {pMesh.numTVFaces}\n"); if (pMesh.numTVFaces != pMesh.numFaces) common.Error("MESH_NUMTVFACES != MESH_NUMFACES"); }
+            else if (token == "*MESH_NUMCVFACES") { ASE_GetToken(false); pMesh.numCVFaces = int.Parse(ase.token); VERBOSE($".....num cvfaces: {pMesh.numCVFaces}\n"); if (pMesh.numTVFaces != pMesh.numFaces) common.Error("MESH_NUMCVFACES != MESH_NUMFACES"); }
+            else if (token == "*MESH_VERTEX_LIST") { ase.currentVertex = 0; pMesh.vertexes = new Vector3[pMesh.numVertexes]; VERBOSE(".....parsing MESH_VERTEX_LIST\n"); ASE_ParseBracedBlock(ASE_KeyMESH_VERTEX_LIST); }
+            else if (token == "*MESH_TVERTLIST") { ase.currentVertex = 0; pMesh.tvertexes = new Vector2[pMesh.numTVertexes]; VERBOSE(".....parsing MESH_TVERTLIST\n"); ASE_ParseBracedBlock(ASE_KeyMESH_TVERTLIST); }
+            else if (token == "*MESH_CVERTLIST") { ase.currentVertex = 0; pMesh.cvertexes = new Vector3[pMesh.numCVertexes]; VERBOSE(".....parsing MESH_CVERTLIST\n"); ASE_ParseBracedBlock(ASE_KeyMESH_CVERTLIST); }
+            else if (token == "*MESH_FACE_LIST") { ase.currentFace = 0; pMesh.faces = new AseFace[pMesh.numFaces]; VERBOSE(".....parsing MESH_FACE_LIST\n"); ASE_ParseBracedBlock(ASE_KeyMESH_FACE_LIST); }
+            else if (token == "*MESH_TFACELIST") { if (pMesh.faces == null) common.Error("*MESH_TFACELIST before *MESH_FACE_LIST"); ase.currentFace = 0; VERBOSE(".....parsing MESH_TFACE_LIST\n"); ASE_ParseBracedBlock(ASE_KeyTFACE_LIST); }
+            else if (token == "*MESH_CFACELIST") { if (pMesh.faces == null) common.Error("*MESH_CFACELIST before *MESH_FACE_LIST"); ase.currentFace = 0; VERBOSE(".....parsing MESH_CFACE_LIST\n"); ASE_ParseBracedBlock(ASE_KeyCFACE_LIST); }
+            else if (token == "*MESH_NORMALS") { if (pMesh.faces == null) common.Warning("*MESH_NORMALS before *MESH_FACE_LIST"); ase.currentFace = 0; VERBOSE(".....parsing MESH_NORMALS\n"); ASE_ParseBracedBlock(ASE_KeyMESH_NORMALS); }
         }
 
         static void ASE_KeyMESH_ANIMATION(string token)
         {
             // loads a single animation frame
-            if (token == "*MESH")
-            {
-                VERBOSE("...found MESH\n");
-                ase.currentObject.frames.Add(ase.currentMesh = new AseMesh());
-                ASE_ParseBracedBlock(ASE_KeyMESH);
-            }
+            if (token == "*MESH") { VERBOSE("...found MESH\n"); ase.currentObject.frames.Add(ase.currentMesh = new AseMesh()); ASE_ParseBracedBlock(ASE_KeyMESH); }
             else common.Error($"Unknown token '{token}' while parsing MESH_ANIMATION");
         }
 
@@ -560,42 +430,18 @@ namespace Gengine.Render
         {
             var obj = ase.currentObject;
 
-            if (token == "*NODE_NAME")
-            {
-                ASE_GetToken(true); obj.name = ase.token;
-                VERBOSE($" {ase.token}\n");
-            }
-            else if (token == "*NODE_PARENT")
-            {
-                ASE_SkipRestOfLine();
-            }
+            if (token == "*NODE_NAME") { ASE_GetToken(true); obj.name = ase.token; VERBOSE($" {ase.token}\n"); }
+            else if (token == "*NODE_PARENT") { ASE_SkipRestOfLine(); }
             // ignore unused data blocks
-            else if (token == "*NODE_TM" || token == "*TM_ANIMATION")
-            {
-                ASE_ParseBracedBlock(ASE_KeyNODE_TM);
-            }
+            else if (token == "*NODE_TM" || token == "*TM_ANIMATION") { ASE_ParseBracedBlock(ASE_KeyNODE_TM); }
             // ignore regular meshes that aren't part of animation
-            else if (token == "*MESH")
-            {
-                ase.currentMesh = ase.currentObject.mesh;
-                ASE_ParseBracedBlock(ASE_KeyMESH);
-            }
+            else if (token == "*MESH") { ase.currentMesh = ase.currentObject.mesh; ASE_ParseBracedBlock(ASE_KeyMESH); }
             // according to spec these are obsolete
-            else if (token == "*MATERIAL_REF")
-            {
-                ASE_GetToken(false); obj.materialRef = int.Parse(ase.token);
-            }
+            else if (token == "*MATERIAL_REF") { ASE_GetToken(false); obj.materialRef = int.Parse(ase.token); }
             // loads a sequence of animation frames
-            else if (token == "*MESH_ANIMATION")
-            {
-                VERBOSE("..found MESH_ANIMATION\n");
-                ASE_ParseBracedBlock(ASE_KeyMESH_ANIMATION);
-            }
+            else if (token == "*MESH_ANIMATION") { VERBOSE("..found MESH_ANIMATION\n"); ASE_ParseBracedBlock(ASE_KeyMESH_ANIMATION); }
             // skip unused info
-            else if (token == "*PROP_MOTIONBLUR" || token == "*PROP_CASTSHADOW" || token == "*PROP_RECVSHADOW")
-            {
-                ASE_SkipRestOfLine();
-            }
+            else if (token == "*PROP_MOTIONBLUR" || token == "*PROP_CASTSHADOW" || token == "*PROP_RECVSHADOW") { ASE_SkipRestOfLine(); }
         }
 
         static void ASE_ParseGeomObject()
@@ -610,10 +456,7 @@ namespace Gengine.Render
 
         static void ASE_KeyGROUP(string token)
         {
-            if (token == "*GEOMOBJECT")
-            {
-                ASE_ParseGeomObject();
-            }
+            if (token == "*GEOMOBJECT") { ASE_ParseGeomObject(); }
         }
 
         public static AseModel ASE_Parse(byte[] buffer, bool verbose)
@@ -634,40 +477,14 @@ namespace Gengine.Render
 
             while (ASE_GetToken(false))
             {
-                if (ase.token == "*3DSMAX_ASCIIEXPORT" || ase.token == "*COMMENT")
-                {
-                    ASE_SkipRestOfLine();
-                }
-                else if (ase.token == "*SCENE")
-                {
-                    ASE_SkipEnclosingBraces();
-                }
-                else if (ase.token == "*GROUP")
-                {
-                    ASE_GetToken(false);        // group name
-                    ASE_ParseBracedBlock(ASE_KeyGROUP);
-                }
-                else if (ase.token == "*SHAPEOBJECT")
-                {
-                    ASE_SkipEnclosingBraces();
-                }
-                else if (ase.token == "*CAMERAOBJECT")
-                {
-                    ASE_SkipEnclosingBraces();
-                }
-                else if (ase.token == "*MATERIAL_LIST")
-                {
-                    VERBOSE("MATERIAL_LIST\n");
-                    ASE_ParseBracedBlock(ASE_KeyMATERIAL_LIST);
-                }
-                else if (ase.token == "*GEOMOBJECT")
-                {
-                    ASE_ParseGeomObject();
-                }
-                else if (!string.IsNullOrEmpty(ase.token))
-                {
-                    common.Printf($"Unknown token '{ase.token}'\n");
-                }
+                if (ase.token == "*3DSMAX_ASCIIEXPORT" || ase.token == "*COMMENT") { ASE_SkipRestOfLine(); }
+                else if (ase.token == "*SCENE") { ASE_SkipEnclosingBraces(); }
+                else if (ase.token == "*GROUP") { ASE_GetToken(false); ASE_ParseBracedBlock(ASE_KeyGROUP); } // group name
+                else if (ase.token == "*SHAPEOBJECT") { ASE_SkipEnclosingBraces(); }
+                else if (ase.token == "*CAMERAOBJECT") { ASE_SkipEnclosingBraces(); }
+                else if (ase.token == "*MATERIAL_LIST") { VERBOSE("MATERIAL_LIST\n"); ASE_ParseBracedBlock(ASE_KeyMATERIAL_LIST); }
+                else if (ase.token == "*GEOMOBJECT") { ASE_ParseGeomObject(); }
+                else if (!string.IsNullOrEmpty(ase.token)) { common.Printf($"Unknown token '{ase.token}'\n"); }
             }
 
             return ase.model;
@@ -679,8 +496,7 @@ namespace Gengine.Render
         public static AseModel ASE_Load(string fileName)
         {
             fileSystem.ReadFile(fileName, out var buf, out var timeStamp);
-            if (buf == null)
-                return null;
+            if (buf == null) return null;
 
             var ase = ModelXAse.ASE_Parse(buf, false);
             ase.timeStamp = timeStamp;
@@ -691,8 +507,7 @@ namespace Gengine.Render
 
         public static void ASE_Free(AseModel ase)
         {
-            if (ase == null)
-                return;
+            if (ase == null) return;
             ase.objects.Clear();
             ase.materials.Clear();
         }

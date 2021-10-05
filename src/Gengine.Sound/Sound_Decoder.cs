@@ -373,7 +373,7 @@ namespace Gengine.Sound
 
             // duplicate samples for 44kHz output
             fixed (byte* _ = &first.v[first.o + pos])
-                ISimd._.UpSamplePCMTo44kHz(dest, (short*)_, readSamples, sample.objectInfo.nSamplesPerSec, sample.objectInfo.nChannels);
+                Simd.UpSamplePCMTo44kHz(dest, (short*)_, readSamples, sample.objectInfo.nSamplesPerSec, sample.objectInfo.nChannels);
 
             return readSamples << shift;
         }
@@ -437,7 +437,7 @@ namespace Gengine.Sound
                 }
                 ret *= sample.objectInfo.nChannels;
 
-                ISimd._.UpSampleOGGTo44kHz(dest + (readSamples << shift), samples, ret, sample.objectInfo.nSamplesPerSec, sample.objectInfo.nChannels);
+                Simd.UpSampleOGGTo44kHz(dest + (readSamples << shift), samples, ret, sample.objectInfo.nSamplesPerSec, sample.objectInfo.nChannels);
 
                 readSamples += ret;
                 totalSamples -= ret;

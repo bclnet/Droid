@@ -92,15 +92,15 @@ typedef enum {
 } CPUID;
 
 // returns a selection of the CPUID_* flags
-extern int Cpu_GetProcessorId(void);
+extern int GetProcessorId(void);
 
 // sets the FPU precision
-extern void Cpu_FPU_SetPrecision();
+extern void FPU_SetPrecision();
 
 // sets Flush-To-Zero mode
-extern void Cpu_FPU_SetFTZ(bool enable);
+extern void FPU_SetFTZ(bool enable);
 
 // sets Denormals-Are-Zero mode
-extern void Cpu_FPU_SetDAZ(bool enable);
+extern void FPU_SetDAZ(bool enable);
 
 #endif

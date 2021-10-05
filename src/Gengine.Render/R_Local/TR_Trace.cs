@@ -1,5 +1,6 @@
 #define TEST_TRACE
 using System.NumericsX;
+using System.Timers;
 using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Render
@@ -18,7 +19,7 @@ namespace Gengine.Render
             float radiusSqr;
 
 #if TEST_TRACE
-            Timer trace_timer;
+            Timer trace_timer = new();
             trace_timer.Start();
 #endif
 
@@ -37,7 +38,7 @@ namespace Gengine.Render
 
             // catagorize each point against the four planes
             var cullBits = stackalloc byte[tri.numVerts];
-            ISimd._.TracePointCull(cullBits, totalOr, radius, planes, tri.verts, tri.numVerts);
+            Simd.TracePointCull(cullBits, totalOr, radius, planes, tri.verts, tri.numVerts);
 
             // if we don't have points on both sides of both the ray planes, no intersection
             if (((totalOr ^ (totalOr >> 4)) & 3) != 0)

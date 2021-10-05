@@ -226,7 +226,7 @@ namespace Gengine.Sound
                 if (mpbDataCur + dwSizeToRead > mulDataSize)
                     dwSizeToRead = mulDataSize - mpbDataCur;
                 fixed (void* mpbDataCur_ = &mpbData[mpbDataCur])
-                    ISimd._.Memcpy(pBuffer, mpbDataCur_, dwSizeToRead);
+                    Simd.Memcpy(pBuffer, mpbDataCur_, dwSizeToRead);
                 mpbDataCur += dwSizeToRead;
 
                 pdwSizeRead?.Invoke(dwSizeToRead);

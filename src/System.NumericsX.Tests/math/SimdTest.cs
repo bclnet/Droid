@@ -3,6 +3,8 @@ using static System.NumericsX.Platform;
 using static System.NumericsX.OpenStack.OpenStack;
 using System.Runtime.CompilerServices;
 using System.Linq;
+using p_generic = System.NumericsX.SimdGeneric;
+using p_simd = System.NumericsX.Simd;
 
 namespace System.NumericsX
 {
@@ -13,8 +15,6 @@ namespace System.NumericsX
 
         const long RANDOM_SEED = 1013904223L;    //((int)idLib::sys->GetClockTicks())
 
-        static ISimd p_simd;
-        static ISimd p_generic;
         static TimeSpan baseClocks = default;
 
         static void StartRecordTime(out DateTime start)
@@ -32,8 +32,7 @@ namespace System.NumericsX
         static void PrintClocks(string s, int count, TimeSpan clocks, TimeSpan otherClocks = default)
         {
             Printf(s);
-            for (var i = stringX.LengthWithoutColors(s); i < 48; i++)
-                Printf(" ");
+            Printf(new string(' ', Math.Max(0, 48 - stringX.LengthWithoutColors(s))));
             clocks -= baseClocks;
             if (otherClocks != default && clocks != default)
             {
@@ -104,7 +103,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.Add(fdst0, fsrc0, fsrc1, COUNT);
+                p_generic.Addv(fdst0, fsrc0, fsrc1, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -114,7 +113,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.Add(fdst1, fsrc0, fsrc1, COUNT);
+                p_simd.Addv(fdst1, fsrc0, fsrc1, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -174,7 +173,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.Sub(fdst0, fsrc0, fsrc1, COUNT);
+                p_generic.Subv(fdst0, fsrc0, fsrc1, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -184,7 +183,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.Sub(fdst1, fsrc0, fsrc1, COUNT);
+                p_simd.Subv(fdst1, fsrc0, fsrc1, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -244,7 +243,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.Mul(fdst0, fsrc0, fsrc1, COUNT);
+                p_generic.Mulv(fdst0, fsrc0, fsrc1, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -254,7 +253,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.Mul(fdst1, fsrc0, fsrc1, COUNT);
+                p_simd.Mulv(fdst1, fsrc0, fsrc1, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -315,7 +314,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.Div(fdst0, fsrc0, fsrc1, COUNT);
+                p_generic.Divv(fdst0, fsrc0, fsrc1, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -325,7 +324,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.Div(fdst1, fsrc0, fsrc1, COUNT);
+                p_simd.Divv(fdst1, fsrc0, fsrc1, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -471,7 +470,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.Dot(fdst0, v3constant, v3src0, COUNT);
+                p_generic.Dotcv(fdst0, v3constant, v3src0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -481,7 +480,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.Dot(fdst1, v3constant, v3src0, COUNT);
+                p_simd.Dotcv(fdst1, v3constant, v3src0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -496,7 +495,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.Dot(fdst0, v3constant, v4src0, COUNT);
+                p_generic.Dotcp(fdst0, v3constant, v4src0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -506,7 +505,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.Dot(fdst1, v3constant, v4src0, COUNT);
+                p_simd.Dotcp(fdst1, v3constant, v4src0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -522,7 +521,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.Dot(fdst0, v3constant, drawVerts, COUNT);
+                p_generic.Dotcd(fdst0, v3constant, drawVerts, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -532,7 +531,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.Dot(fdst1, v3constant, drawVerts, COUNT);
+                p_simd.Dotcd(fdst1, v3constant, drawVerts, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -547,7 +546,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.Dot(fdst0, v4constant, v3src0, COUNT);
+                p_generic.Dotpv(fdst0, v4constant, v3src0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -557,7 +556,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.Dot(fdst1, v4constant, v3src0, COUNT);
+                p_simd.Dotpv(fdst1, v4constant, v3src0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -572,7 +571,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.Dot(fdst0, v4constant, v4src0, COUNT);
+                p_generic.Dotpp(fdst0, v4constant, v4src0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -582,7 +581,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.Dot(fdst1, v4constant, v4src0, COUNT);
+                p_simd.Dotpp(fdst1, v4constant, v4src0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -597,7 +596,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.Dot(fdst0, v4constant, drawVerts, COUNT);
+                p_generic.Dotpd(fdst0, v4constant, drawVerts, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -607,7 +606,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.Dot(fdst1, v4constant, drawVerts, COUNT);
+                p_simd.Dotpd(fdst1, v4constant, drawVerts, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -622,7 +621,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.Dot(fdst0, v3src0, v3src1, COUNT);
+                p_generic.Dotvv(fdst0, v3src0, v3src1, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -632,7 +631,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.Dot(fdst1, v3src0, v3src1, COUNT);
+                p_simd.Dotvv(fdst1, v3src0, v3src1, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -652,7 +651,7 @@ namespace System.NumericsX
                 for (i = 0; i < NUMTESTS; i++)
                 {
                     StartRecordTime(out start);
-                    p_generic.Dot(out dot1, fsrc0, fsrc1, j);
+                    p_generic.Dotff(out dot1, fsrc0, fsrc1, j);
                     StopRecordTime(out end);
                     GetBest(start, end, ref bestClocksGeneric);
                 }
@@ -662,7 +661,7 @@ namespace System.NumericsX
                 for (i = 0; i < NUMTESTS; i++)
                 {
                     StartRecordTime(out start);
-                    p_simd.Dot(out dot2, fsrc0, fsrc1, j);
+                    p_simd.Dotff(out dot2, fsrc0, fsrc1, j);
                     StopRecordTime(out end);
                     GetBest(start, end, ref bestClocksSIMD);
                 }
@@ -716,7 +715,7 @@ namespace System.NumericsX
             {
                 Unsafe.InitBlock(bytedst, 0, (uint)COUNT);
                 StartRecordTime(out start);
-                p_generic.CmpGT(bytedst, 2, fsrc0, 0f, COUNT);
+                p_generic.CmpGTb(bytedst, 2, fsrc0, 0f, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -727,7 +726,7 @@ namespace System.NumericsX
             {
                 Unsafe.InitBlock(bytedst2, 0, (uint)COUNT);
                 StartRecordTime(out start);
-                p_simd.CmpGT(bytedst2, 2, fsrc0, 0f, COUNT);
+                p_simd.CmpGTb(bytedst2, 2, fsrc0, 0f, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -770,7 +769,7 @@ namespace System.NumericsX
             {
                 Unsafe.InitBlock(bytedst, 0, (uint)COUNT);
                 StartRecordTime(out start);
-                p_generic.CmpGE(bytedst, 2, fsrc0, 0f, COUNT);
+                p_generic.CmpGEb(bytedst, 2, fsrc0, 0f, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -781,7 +780,7 @@ namespace System.NumericsX
             {
                 Unsafe.InitBlock(bytedst2, 0, (uint)COUNT);
                 StartRecordTime(out start);
-                p_simd.CmpGE(bytedst2, 2, fsrc0, 0f, COUNT);
+                p_simd.CmpGEb(bytedst2, 2, fsrc0, 0f, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -824,7 +823,7 @@ namespace System.NumericsX
             {
                 Unsafe.InitBlock(bytedst, 0, (uint)COUNT);
                 StartRecordTime(out start);
-                p_generic.CmpLT(bytedst, 2, fsrc0, 0f, COUNT);
+                p_generic.CmpLTb(bytedst, 2, fsrc0, 0f, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -835,7 +834,7 @@ namespace System.NumericsX
             {
                 Unsafe.InitBlock(bytedst2, 0, (uint)COUNT);
                 StartRecordTime(out start);
-                p_simd.CmpLT(bytedst2, 2, fsrc0, 0f, COUNT);
+                p_simd.CmpLTb(bytedst2, 2, fsrc0, 0f, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -878,7 +877,7 @@ namespace System.NumericsX
             {
                 Unsafe.InitBlock(bytedst, 0, COUNT);
                 StartRecordTime(out start);
-                p_generic.CmpLE(bytedst, 2, fsrc0, 0f, COUNT);
+                p_generic.CmpLEb(bytedst, 2, fsrc0, 0f, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -889,7 +888,7 @@ namespace System.NumericsX
             {
                 Unsafe.InitBlock(bytedst2, 0, COUNT);
                 StartRecordTime(out start);
-                p_simd.CmpLE(bytedst2, 2, fsrc0, 0f, COUNT);
+                p_simd.CmpLEb(bytedst2, 2, fsrc0, 0f, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -935,7 +934,7 @@ namespace System.NumericsX
             {
                 min = MathX.INFINITY; max = -MathX.INFINITY;
                 StartRecordTime(out start);
-                p_generic.MinMax(out min, out max, fsrc0, COUNT);
+                p_generic.MinMaxf(out min, out max, fsrc0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -945,7 +944,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.MinMax(out min2, out max2, fsrc0, COUNT);
+                p_simd.MinMaxf(out min2, out max2, fsrc0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -957,7 +956,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.MinMax(out v2min, out v2max, v2src0, COUNT);
+                p_generic.MinMax2(out v2min, out v2max, v2src0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -967,7 +966,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.MinMax(out v2min2, out v2max2, v2src0, COUNT);
+                p_simd.MinMax2(out v2min2, out v2max2, v2src0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -979,7 +978,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.MinMax(out vmin, out vmax, v3src0, COUNT);
+                p_generic.MinMax3(out vmin, out vmax, v3src0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -989,7 +988,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.MinMax(out vmin2, out vmax2, v3src0, COUNT);
+                p_simd.MinMax3(out vmin2, out vmax2, v3src0, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -1001,7 +1000,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.MinMax(out vmin, out vmax, drawVerts, COUNT);
+                p_generic.MinMaxd(out vmin, out vmax, drawVerts, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -1011,7 +1010,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.MinMax(out vmin2, out vmax2, drawVerts, COUNT);
+                p_simd.MinMaxd(out vmin2, out vmax2, drawVerts, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -1023,7 +1022,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.MinMax(out vmin, out vmax, drawVerts, indexes, COUNT);
+                p_generic.MinMaxdi(out vmin, out vmax, drawVerts, indexes, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -1033,7 +1032,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.MinMax(out vmin2, out vmax2, drawVerts, indexes, COUNT);
+                p_simd.MinMaxdi(out vmin2, out vmax2, drawVerts, indexes, COUNT);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -2489,7 +2488,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.DeriveTriPlanes(planes1, drawVerts1, COUNT, indexes, COUNT * 3);
+                p_generic.DeriveTriPlanesi(planes1, drawVerts1, COUNT, indexes, COUNT * 3);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -2499,7 +2498,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.DeriveTriPlanes(planes2, drawVerts2, COUNT, indexes, COUNT * 3);
+                p_simd.DeriveTriPlanesi(planes2, drawVerts2, COUNT, indexes, COUNT * 3);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -2543,7 +2542,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_generic.DeriveTangents(planes1, drawVerts1, COUNT, indexes, COUNT * 3);
+                p_generic.DeriveTangentsi(planes1, drawVerts1, COUNT, indexes, COUNT * 3);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
@@ -2553,7 +2552,7 @@ namespace System.NumericsX
             for (i = 0; i < NUMTESTS; i++)
             {
                 StartRecordTime(out start);
-                p_simd.DeriveTangents(planes2, drawVerts2, COUNT, indexes, COUNT * 3);
+                p_simd.DeriveTangentsi(planes2, drawVerts2, COUNT, indexes, COUNT * 3);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
@@ -2936,18 +2935,18 @@ namespace System.NumericsX
         {
             int i;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
-            var pcm = stackalloc short[ISimd.MIXBUFFER_SAMPLES * 2];
-            var ogg0 = stackalloc float[ISimd.MIXBUFFER_SAMPLES * 2];
-            var ogg1 = stackalloc float[ISimd.MIXBUFFER_SAMPLES * 2];
-            var samples1 = stackalloc float[ISimd.MIXBUFFER_SAMPLES * 2];
-            var samples2 = stackalloc float[ISimd.MIXBUFFER_SAMPLES * 2];
+            var pcm = stackalloc short[Simd.MIXBUFFER_SAMPLES * 2];
+            var ogg0 = stackalloc float[Simd.MIXBUFFER_SAMPLES * 2];
+            var ogg1 = stackalloc float[Simd.MIXBUFFER_SAMPLES * 2];
+            var samples1 = stackalloc float[Simd.MIXBUFFER_SAMPLES * 2];
+            var samples2 = stackalloc float[Simd.MIXBUFFER_SAMPLES * 2];
             var ogg = stackalloc float*[2];
             int kHz, numSpeakers;
             string result;
 
             var srnd = new RandomX(RANDOM_SEED);
 
-            for (i = 0; i < ISimd.MIXBUFFER_SAMPLES * 2; i++)
+            for (i = 0; i < Simd.MIXBUFFER_SAMPLES * 2; i++)
             {
                 pcm[i] = (short)(srnd.RandomInt(1 << 16) - (1 << 15));
                 ogg0[i] = srnd.RandomFloat();
@@ -2965,26 +2964,26 @@ namespace System.NumericsX
                     for (i = 0; i < NUMTESTS; i++)
                     {
                         StartRecordTime(out start);
-                        p_generic.UpSamplePCMTo44kHz(samples1, pcm, ISimd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, kHz, numSpeakers);
+                        p_generic.UpSamplePCMTo44kHz(samples1, pcm, Simd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, kHz, numSpeakers);
                         StopRecordTime(out end);
                         GetBest(start, end, ref bestClocksGeneric);
                     }
-                    PrintClocks($"generic.UpSamplePCMTo44kHz({kHz}, {numSpeakers})", ISimd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksGeneric);
+                    PrintClocks($"generic.UpSamplePCMTo44kHz({kHz}, {numSpeakers})", Simd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksGeneric);
 
                     bestClocksSIMD = default;
                     for (i = 0; i < NUMTESTS; i++)
                     {
                         StartRecordTime(out start);
-                        p_simd.UpSamplePCMTo44kHz(samples2, pcm, ISimd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, kHz, numSpeakers);
+                        p_simd.UpSamplePCMTo44kHz(samples2, pcm, Simd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, kHz, numSpeakers);
                         StopRecordTime(out end);
                         GetBest(start, end, ref bestClocksSIMD);
                     }
 
-                    for (i = 0; i < ISimd.MIXBUFFER_SAMPLES * numSpeakers; i++)
+                    for (i = 0; i < Simd.MIXBUFFER_SAMPLES * numSpeakers; i++)
                         if (MathX.Fabs(samples1[i] - samples2[i]) > SOUND_UPSAMPLE_EPSILON)
                             break;
-                    result = i >= ISimd.MIXBUFFER_SAMPLES * numSpeakers ? "ok" : $"{S_COLOR_RED}X";
-                    PrintClocks($"   simd.UpSamplePCMTo44kHz({kHz}, {numSpeakers}) {result}", ISimd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksSIMD, bestClocksGeneric);
+                    result = i >= Simd.MIXBUFFER_SAMPLES * numSpeakers ? "ok" : $"{S_COLOR_RED}X";
+                    PrintClocks($"   simd.UpSamplePCMTo44kHz({kHz}, {numSpeakers}) {result}", Simd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksSIMD, bestClocksGeneric);
                 }
             }
 
@@ -2996,26 +2995,26 @@ namespace System.NumericsX
                     for (i = 0; i < NUMTESTS; i++)
                     {
                         StartRecordTime(out start);
-                        p_generic.UpSampleOGGTo44kHz(samples1, ogg, ISimd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, kHz, numSpeakers);
+                        p_generic.UpSampleOGGTo44kHz(samples1, ogg, Simd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, kHz, numSpeakers);
                         StopRecordTime(out end);
                         GetBest(start, end, ref bestClocksGeneric);
                     }
-                    PrintClocks($"generic.UpSampleOGGTo44kHz({kHz}, {numSpeakers})", ISimd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksGeneric);
+                    PrintClocks($"generic.UpSampleOGGTo44kHz({kHz}, {numSpeakers})", Simd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksGeneric);
 
                     bestClocksSIMD = default;
                     for (i = 0; i < NUMTESTS; i++)
                     {
                         StartRecordTime(out start);
-                        p_simd.UpSampleOGGTo44kHz(samples2, ogg, ISimd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, kHz, numSpeakers);
+                        p_simd.UpSampleOGGTo44kHz(samples2, ogg, Simd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, kHz, numSpeakers);
                         StopRecordTime(out end);
                         GetBest(start, end, ref bestClocksSIMD);
                     }
 
-                    for (i = 0; i < ISimd.MIXBUFFER_SAMPLES * numSpeakers; i++)
+                    for (i = 0; i < Simd.MIXBUFFER_SAMPLES * numSpeakers; i++)
                         if (MathX.Fabs(samples1[i] - samples2[i]) > SOUND_UPSAMPLE_EPSILON)
                             break;
-                    result = i >= ISimd.MIXBUFFER_SAMPLES ? "ok" : $"{S_COLOR_RED}X";
-                    PrintClocks($"   simd.UpSampleOGGTo44kHz({kHz}, {numSpeakers}) {result}", ISimd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksSIMD, bestClocksGeneric);
+                    result = i >= Simd.MIXBUFFER_SAMPLES ? "ok" : $"{S_COLOR_RED}X";
+                    PrintClocks($"   simd.UpSampleOGGTo44kHz({kHz}, {numSpeakers}) {result}", Simd.MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksSIMD, bestClocksGeneric);
                 }
             }
         }
@@ -3025,12 +3024,12 @@ namespace System.NumericsX
         {
             int i, j;
             DateTime start, end; TimeSpan bestClocksGeneric, bestClocksSIMD;
-            var origMixBuffer = stackalloc float[ISimd.MIXBUFFER_SAMPLES * 6];
-            var mixBuffer1 = stackalloc float[ISimd.MIXBUFFER_SAMPLES * 6];
-            var mixBuffer2 = stackalloc float[ISimd.MIXBUFFER_SAMPLES * 6];
-            var samples = stackalloc float[ISimd.MIXBUFFER_SAMPLES * 6];
-            var outSamples1 = stackalloc short[ISimd.MIXBUFFER_SAMPLES * 6];
-            var outSamples2 = stackalloc short[ISimd.MIXBUFFER_SAMPLES * 6];
+            var origMixBuffer = stackalloc float[Simd.MIXBUFFER_SAMPLES * 6];
+            var mixBuffer1 = stackalloc float[Simd.MIXBUFFER_SAMPLES * 6];
+            var mixBuffer2 = stackalloc float[Simd.MIXBUFFER_SAMPLES * 6];
+            var samples = stackalloc float[Simd.MIXBUFFER_SAMPLES * 6];
+            var outSamples1 = stackalloc short[Simd.MIXBUFFER_SAMPLES * 6];
+            var outSamples2 = stackalloc short[Simd.MIXBUFFER_SAMPLES * 6];
             var lastV = new float[6];
             var currentV = new float[6];
             string result;
@@ -3042,7 +3041,7 @@ namespace System.NumericsX
                 currentV[i] = srnd.CRandomFloat();
             }
 
-            for (i = 0; i < ISimd.MIXBUFFER_SAMPLES * 6; i++)
+            for (i = 0; i < Simd.MIXBUFFER_SAMPLES * 6; i++)
             {
                 origMixBuffer[i] = srnd.CRandomFloat();
                 samples[i] = srnd.RandomInt((1 << 16)) - (1 << 15);
@@ -3051,151 +3050,151 @@ namespace System.NumericsX
             bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
-                for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
+                for (j = 0; j < Simd.MIXBUFFER_SAMPLES * 6; j++)
                     mixBuffer1[j] = origMixBuffer[j];
                 StartRecordTime(out start);
-                p_generic.MixSoundTwoSpeakerMono(mixBuffer1, samples, ISimd.MIXBUFFER_SAMPLES, lastV, currentV);
+                p_generic.MixSoundTwoSpeakerMono(mixBuffer1, samples, Simd.MIXBUFFER_SAMPLES, lastV, currentV);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
-            PrintClocks("generic.MixSoundTwoSpeakerMono()", ISimd.MIXBUFFER_SAMPLES, bestClocksGeneric);
+            PrintClocks("generic.MixSoundTwoSpeakerMono()", Simd.MIXBUFFER_SAMPLES, bestClocksGeneric);
 
             bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
-                for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
+                for (j = 0; j < Simd.MIXBUFFER_SAMPLES * 6; j++)
                     mixBuffer2[j] = origMixBuffer[j];
                 StartRecordTime(out start);
-                p_simd.MixSoundTwoSpeakerMono(mixBuffer2, samples, ISimd.MIXBUFFER_SAMPLES, lastV, currentV);
+                p_simd.MixSoundTwoSpeakerMono(mixBuffer2, samples, Simd.MIXBUFFER_SAMPLES, lastV, currentV);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
 
-            for (i = 0; i < ISimd.MIXBUFFER_SAMPLES * 6; i++)
+            for (i = 0; i < Simd.MIXBUFFER_SAMPLES * 6; i++)
                 if (MathX.Fabs(mixBuffer1[i] - mixBuffer2[i]) > SOUND_MIX_EPSILON)
                     break;
-            result = i >= ISimd.MIXBUFFER_SAMPLES * 6 ? "ok" : $"{S_COLOR_RED}X";
-            PrintClocks($"   simd.MixSoundTwoSpeakerMono() {result}", ISimd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
+            result = i >= Simd.MIXBUFFER_SAMPLES * 6 ? "ok" : $"{S_COLOR_RED}X";
+            PrintClocks($"   simd.MixSoundTwoSpeakerMono() {result}", Simd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
 
             bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
-                for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
+                for (j = 0; j < Simd.MIXBUFFER_SAMPLES * 6; j++)
                     mixBuffer1[j] = origMixBuffer[j];
                 StartRecordTime(out start);
-                p_generic.MixSoundTwoSpeakerStereo(mixBuffer1, samples, ISimd.MIXBUFFER_SAMPLES, lastV, currentV);
+                p_generic.MixSoundTwoSpeakerStereo(mixBuffer1, samples, Simd.MIXBUFFER_SAMPLES, lastV, currentV);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
-            PrintClocks("generic.MixSoundTwoSpeakerStereo()", ISimd.MIXBUFFER_SAMPLES, bestClocksGeneric);
+            PrintClocks("generic.MixSoundTwoSpeakerStereo()", Simd.MIXBUFFER_SAMPLES, bestClocksGeneric);
 
 
             bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
-                for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
+                for (j = 0; j < Simd.MIXBUFFER_SAMPLES * 6; j++)
                     mixBuffer2[j] = origMixBuffer[j];
                 StartRecordTime(out start);
-                p_simd.MixSoundTwoSpeakerStereo(mixBuffer2, samples, ISimd.MIXBUFFER_SAMPLES, lastV, currentV);
+                p_simd.MixSoundTwoSpeakerStereo(mixBuffer2, samples, Simd.MIXBUFFER_SAMPLES, lastV, currentV);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
 
-            for (i = 0; i < ISimd.MIXBUFFER_SAMPLES * 6; i++)
+            for (i = 0; i < Simd.MIXBUFFER_SAMPLES * 6; i++)
                 if (MathX.Fabs(mixBuffer1[i] - mixBuffer2[i]) > SOUND_MIX_EPSILON)
                     break;
-            result = i >= ISimd.MIXBUFFER_SAMPLES * 6 ? "ok" : $"{S_COLOR_RED}X";
-            PrintClocks($"   simd.MixSoundTwoSpeakerStereo() {result}", ISimd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
+            result = i >= Simd.MIXBUFFER_SAMPLES * 6 ? "ok" : $"{S_COLOR_RED}X";
+            PrintClocks($"   simd.MixSoundTwoSpeakerStereo() {result}", Simd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
 
             bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
-                for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
+                for (j = 0; j < Simd.MIXBUFFER_SAMPLES * 6; j++)
                     mixBuffer1[j] = origMixBuffer[j];
                 StartRecordTime(out start);
-                p_generic.MixSoundSixSpeakerMono(mixBuffer1, samples, ISimd.MIXBUFFER_SAMPLES, lastV, currentV);
+                p_generic.MixSoundSixSpeakerMono(mixBuffer1, samples, Simd.MIXBUFFER_SAMPLES, lastV, currentV);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
-            PrintClocks("generic.MixSoundSixSpeakerMono()", ISimd.MIXBUFFER_SAMPLES, bestClocksGeneric);
+            PrintClocks("generic.MixSoundSixSpeakerMono()", Simd.MIXBUFFER_SAMPLES, bestClocksGeneric);
 
             bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
-                for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
+                for (j = 0; j < Simd.MIXBUFFER_SAMPLES * 6; j++)
                     mixBuffer2[j] = origMixBuffer[j];
                 StartRecordTime(out start);
-                p_simd.MixSoundSixSpeakerMono(mixBuffer2, samples, ISimd.MIXBUFFER_SAMPLES, lastV, currentV);
+                p_simd.MixSoundSixSpeakerMono(mixBuffer2, samples, Simd.MIXBUFFER_SAMPLES, lastV, currentV);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
 
-            for (i = 0; i < ISimd.MIXBUFFER_SAMPLES * 6; i++)
+            for (i = 0; i < Simd.MIXBUFFER_SAMPLES * 6; i++)
                 if (MathX.Fabs(mixBuffer1[i] - mixBuffer2[i]) > SOUND_MIX_EPSILON)
                     break;
-            result = i >= ISimd.MIXBUFFER_SAMPLES * 6 ? "ok" : $"{S_COLOR_RED}X";
-            PrintClocks($"   simd.MixSoundSixSpeakerMono() {result}", ISimd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
+            result = i >= Simd.MIXBUFFER_SAMPLES * 6 ? "ok" : $"{S_COLOR_RED}X";
+            PrintClocks($"   simd.MixSoundSixSpeakerMono() {result}", Simd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
 
             bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
-                for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
+                for (j = 0; j < Simd.MIXBUFFER_SAMPLES * 6; j++)
                     mixBuffer1[j] = origMixBuffer[j];
                 StartRecordTime(out start);
-                p_generic.MixSoundSixSpeakerStereo(mixBuffer1, samples, ISimd.MIXBUFFER_SAMPLES, lastV, currentV);
+                p_generic.MixSoundSixSpeakerStereo(mixBuffer1, samples, Simd.MIXBUFFER_SAMPLES, lastV, currentV);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
-            PrintClocks("generic.MixSoundSixSpeakerStereo()", ISimd.MIXBUFFER_SAMPLES, bestClocksGeneric);
+            PrintClocks("generic.MixSoundSixSpeakerStereo()", Simd.MIXBUFFER_SAMPLES, bestClocksGeneric);
 
             bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
-                for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
+                for (j = 0; j < Simd.MIXBUFFER_SAMPLES * 6; j++)
                     mixBuffer2[j] = origMixBuffer[j];
                 StartRecordTime(out start);
-                p_simd.MixSoundSixSpeakerStereo(mixBuffer2, samples, ISimd.MIXBUFFER_SAMPLES, lastV, currentV);
+                p_simd.MixSoundSixSpeakerStereo(mixBuffer2, samples, Simd.MIXBUFFER_SAMPLES, lastV, currentV);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
 
-            for (i = 0; i < ISimd.MIXBUFFER_SAMPLES * 6; i++)
+            for (i = 0; i < Simd.MIXBUFFER_SAMPLES * 6; i++)
                 if (MathX.Fabs(mixBuffer1[i] - mixBuffer2[i]) > SOUND_MIX_EPSILON)
                     break;
-            result = i >= ISimd.MIXBUFFER_SAMPLES * 6 ? "ok" : $"{S_COLOR_RED}X";
-            PrintClocks($"   simd.MixSoundSixSpeakerStereo() {result}", ISimd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
+            result = i >= Simd.MIXBUFFER_SAMPLES * 6 ? "ok" : $"{S_COLOR_RED}X";
+            PrintClocks($"   simd.MixSoundSixSpeakerStereo() {result}", Simd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
 
-            for (i = 0; i < ISimd.MIXBUFFER_SAMPLES * 6; i++)
+            for (i = 0; i < Simd.MIXBUFFER_SAMPLES * 6; i++)
                 origMixBuffer[i] = srnd.RandomInt((1 << 17)) - (1 << 16);
 
             bestClocksGeneric = default;
             for (i = 0; i < NUMTESTS; i++)
             {
-                for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
+                for (j = 0; j < Simd.MIXBUFFER_SAMPLES * 6; j++)
                     mixBuffer1[j] = origMixBuffer[j];
                 StartRecordTime(out start);
-                p_generic.MixedSoundToSamples(outSamples1, mixBuffer1, ISimd.MIXBUFFER_SAMPLES * 6);
+                p_generic.MixedSoundToSamples(outSamples1, mixBuffer1, Simd.MIXBUFFER_SAMPLES * 6);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksGeneric);
             }
-            PrintClocks("generic.MixedSoundToSamples()", ISimd.MIXBUFFER_SAMPLES, bestClocksGeneric);
+            PrintClocks("generic.MixedSoundToSamples()", Simd.MIXBUFFER_SAMPLES, bestClocksGeneric);
 
             bestClocksSIMD = default;
             for (i = 0; i < NUMTESTS; i++)
             {
-                for (j = 0; j < ISimd.MIXBUFFER_SAMPLES * 6; j++)
+                for (j = 0; j < Simd.MIXBUFFER_SAMPLES * 6; j++)
                     mixBuffer2[j] = origMixBuffer[j];
                 StartRecordTime(out start);
-                p_simd.MixedSoundToSamples(outSamples2, mixBuffer2, ISimd.MIXBUFFER_SAMPLES * 6);
+                p_simd.MixedSoundToSamples(outSamples2, mixBuffer2, Simd.MIXBUFFER_SAMPLES * 6);
                 StopRecordTime(out end);
                 GetBest(start, end, ref bestClocksSIMD);
             }
 
-            for (i = 0; i < ISimd.MIXBUFFER_SAMPLES * 6; i++)
+            for (i = 0; i < Simd.MIXBUFFER_SAMPLES * 6; i++)
                 if (outSamples1[i] != outSamples2[i])
                     break;
-            result = i >= ISimd.MIXBUFFER_SAMPLES * 6 ? "ok" : $"{S_COLOR_RED}X";
-            PrintClocks($"   simd.MixedSoundToSamples() {result}", ISimd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
+            result = i >= Simd.MIXBUFFER_SAMPLES * 6 ? "ok" : $"{S_COLOR_RED}X";
+            PrintClocks($"   simd.MixedSoundToSamples() {result}", Simd.MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric);
         }
 
         static void TestMath()
@@ -3677,71 +3676,67 @@ namespace System.NumericsX
         internal static void Test_f(CmdArgs args)
         {
 #if _WIN32
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+            SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 #endif
-            p_simd = ISimd.processor;
-            p_generic = ISimd.generic;
-
-            p_simd = ISimd.generic;
-#if false
+#if true
             if (!string.IsNullOrEmpty(args[1]))
             {
-                var cpuid = sys.GetProcessorId();
+                var cpuid = Platform.GetProcessorId();
                 var argString = args.Args().Replace(" ", "");
 
                 if (string.Equals(argString, "MMX", StringComparison.OrdinalIgnoreCase))
                 {
-                    if ((cpuid & CPUID_MMX) == 0)
+                    if ((cpuid & CPUID.MMX) == 0)
                     {
                         Printf("CPU does not support MMX\n");
                         return;
                     }
-                    p_simd = new SIMD_MMX();
+                    SimdMMX.Activate();
                 }
                 else if (string.Equals(argString, "3DNow", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!(cpuid & CPUID_MMX) || !(cpuid & CPUID_3DNOW))
+                    if ((cpuid & CPUID.MMX) == 0 || (cpuid & CPUID._3DNOW) == 0)
                     {
                         Printf("CPU does not support MMX & 3DNow\n");
                         return;
                     }
-                    p_simd = new SIMD_3DNow();
+                    Simd3DNow.Activate();
                 }
                 else if (string.Equals(argString, "SSE", StringComparison.OrdinalIgnoreCase))
                 {
-                    if ((cpuid & CPUID_MMX) == 0 || (cpuid & CPUID_SSE) == 0)
+                    if ((cpuid & CPUID.MMX) == 0 || (cpuid & CPUID.SSE) == 0)
                     {
                         Printf("CPU does not support MMX & SSE\n");
                         return;
                     }
-                    p_simd = new SIMD_SSE();
+                    SimdSSE.Activate();
                 }
                 else if (string.Equals(argString, "SSE2", StringComparison.OrdinalIgnoreCase))
                 {
-                    if ((cpuid & CPUID_MMX) == 0 || (cpuid & CPUID_SSE) == 0 || (cpuid & CPUID_SSE2) == 0)
+                    if ((cpuid & CPUID.MMX) == 0 || (cpuid & CPUID.SSE) == 0 || (cpuid & CPUID.SSE2) == 0)
                     {
                         Printf("CPU does not support MMX & SSE & SSE2\n");
                         return;
                     }
-                    p_simd = new SIMD_SSE2();
+                    SimdSSE2.Activate();
                 }
                 else if (string.Equals(argString, "SSE3", StringComparison.OrdinalIgnoreCase))
                 {
-                    if ((cpuid & CPUID_MMX) == 0 || (cpuid & CPUID_SSE) == 0 || (cpuid & CPUID_SSE2) == 0 || (cpuid & CPUID_SSE3) == 0)
+                    if ((cpuid & CPUID.MMX) == 0 || (cpuid & CPUID.SSE) == 0 || (cpuid & CPUID.SSE2) == 0 || (cpuid & CPUID.SSE3) == 0)
                     {
                         Printf("CPU does not support MMX & SSE & SSE2 & SSE3\n");
                         return;
                     }
-                    p_simd = new idSIMD_SSE3();
+                    SimdSSE3.Activate();
                 }
                 else if (string.Equals(argString, "AltiVec", StringComparison.OrdinalIgnoreCase))
                 {
-                    if ((cpuid & CPUID_ALTIVEC) == 0)
+                    if ((cpuid & CPUID.ALTIVEC) == 0)
                     {
                         Printf("CPU does not support AltiVec\n");
                         return;
                     }
-                    p_simd = new SIMD_AltiVec();
+                    SimdAltiVec.Activate();
                 }
                 else
                 {
@@ -3806,9 +3801,6 @@ namespace System.NumericsX
             TestSoundMixing();
 
             SetRefreshOnPrint(false);
-
-            p_simd = null;
-            p_generic = null;
 
 #if _WIN32
             SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);

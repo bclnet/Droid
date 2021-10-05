@@ -14,27 +14,27 @@
 #define NO_CPUID
 #endif
 #elif defined(_MSC_VER)
-#if !defined(_M_IX86)
-#define NO_CPUID
-#endif
+//#if !defined(_M_IX86)
+//#define NO_CPUID
+//#endif
 #else
 #error unsupported compiler
 #endif
 
 #ifdef NO_CPUID
-void Platform_FPU_SetDAZ(bool enable) {}
+void FPU_SetDAZ(bool enable) {}
 
-void Cpu_FPU_SetFTZ(bool enable) {}
+void FPU_SetFTZ(bool enable) {}
 #else
 
 #if defined(__GNUC__)
 static inline void CPUid(int index, int* a, int* b, int* c, int* d) {
 #if __x86_64__
-#	define REG_b "rbx"
-#	define REG_S "rsi"
+#define REG_b "rbx"
+#define REG_S "rsi"
 #elif __i386__
-#	define REG_b "ebx"
-#	define REG_S "esi"
+#define REG_b "ebx"
+#define REG_S "esi"
 #endif
 	* a = *b = *c = *d = 0;
 
@@ -42,18 +42,15 @@ static inline void CPUid(int index, int* a, int* b, int* c, int* d) {
 		("mov %%" REG_b ", %%" REG_S "\n\t"
 			"cpuid\n\t"
 			"xchg %%" REG_b ", %%" REG_S
-			:	"=a" (*a), "=S" (*b),
+			:"=a" (*a), "=S" (*b),
 			"=c" (*c), "=d" (*d)
-			: "0" (index));
+			:"0" (index));
 }
 #elif defined(_MSC_VER)
 #include <intrin.h>
 static inline void CPUid(int index, int* a, int* b, int* c, int* d) {
 	int info[4] = { };
-
-	// VS2005 and up
 	__cpuid(info, index);
-
 	*a = info[0];
 	*b = info[1];
 	*c = info[2];
@@ -112,17 +109,17 @@ static void EnableMXCSRFlag(int flag, bool enable, const char* name) {
 	STREFLOP_LDMXCSR(sse_mode);
 }
 
-void Cpu_FPU_SetDAZ(bool enable) {
+void FPU_SetDAZ(bool enable) {
 	if (!HasDAZ()) { Printf("this CPU doesn't support Denormals-Are-Zero\n"); return; }
 	EnableMXCSRFlag(MXCSR_DAZ, enable, "Denormals-Are-Zero");
 }
 
-void Cpu_FPU_SetFTZ(bool enable) {
+void FPU_SetFTZ(bool enable) {
 	EnableMXCSRFlag(MXCSR_FTZ, enable, "Flush-To-Zero");
 }
 #endif
 
-int Cpu_GetProcessorId(void) {
+int GetProcessorId(void) {
 	int flags = CPUID_GENERIC;
 	if (CPU_HasMMX()) flags |= CPUID_MMX;
 	if (CPU_Has3DNow())		flags |= CPUID_3DNOW;
@@ -136,7 +133,7 @@ int Cpu_GetProcessorId(void) {
 	return flags;
 }
 
-void Cpu_FPU_SetPrecision() {
+void FPU_SetPrecision() {
 #if defined(_MSC_VER) && defined(_M_IX86)
 	_controlfp(_PC_64, _MCW_PC);
 #endif

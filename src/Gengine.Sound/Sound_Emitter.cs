@@ -96,8 +96,8 @@ namespace Gengine.Sound
 
             var sw = (SoundWorldLocal)soundSystemLocal.PlayingSoundWorld;
 
-            var in_ = stackalloc float[ISimd.MIXBUFFER_SAMPLES + 3]; var src = in_ + 2;
-            var out_ = stackalloc float[ISimd.MIXBUFFER_SAMPLES + 3]; var spline = out_ + 2;
+            var in_ = stackalloc float[Simd.MIXBUFFER_SAMPLES + 3]; var src = in_ + 2;
+            var out_ = stackalloc float[Simd.MIXBUFFER_SAMPLES + 3]; var spline = out_ + 2;
 
             var slowmoSpeed = sw != null ? sw.slowmoSpeed : 1f;
             var neededSamples = (int)(sampleCount44k * slowmoSpeed + 4);
@@ -461,8 +461,8 @@ namespace Gengine.Sound
 
             // this is the sample time it will be first mixed
             var start44kHz = soundWorld.fpa[0] != null
-                ? soundWorld.lastAVI44kHz + ISimd.MIXBUFFER_SAMPLES // if we are recording an AVI demo, don't use hardware time
-                : soundSystemLocal.Current44kHzTime + ISimd.MIXBUFFER_SAMPLES;
+                ? soundWorld.lastAVI44kHz + Simd.MIXBUFFER_SAMPLES // if we are recording an AVI demo, don't use hardware time
+                : soundSystemLocal.Current44kHzTime + Simd.MIXBUFFER_SAMPLES;
 
             // pick which sound to play from the shader
             if (shader2.numEntries == 0)
@@ -546,7 +546,7 @@ namespace Gengine.Sound
                 session.TimeHitch(end - start);
                 // recalculate start44kHz, because loading may have taken a fair amount of time
                 if (soundWorld.fpa[0] == null)
-                    start44kHz = soundSystemLocal.Current44kHzTime + ISimd.MIXBUFFER_SAMPLES;
+                    start44kHz = soundSystemLocal.Current44kHzTime + Simd.MIXBUFFER_SAMPLES;
             }
 
             if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf($"'{chan.leadinSample.name}'\n");
@@ -684,8 +684,8 @@ namespace Gengine.Sound
 
             var start44kHz = soundWorld.fpa[0] != null
                 // if we are recording an AVI demo, don't use hardware time
-                ? soundWorld.lastAVI44kHz + ISimd.MIXBUFFER_SAMPLES
-                : soundSystemLocal.Current44kHzTime + ISimd.MIXBUFFER_SAMPLES;
+                ? soundWorld.lastAVI44kHz + Simd.MIXBUFFER_SAMPLES
+                : soundSystemLocal.Current44kHzTime + Simd.MIXBUFFER_SAMPLES;
 
             var length44kHz = soundSystemLocal.MillisecondsToSamples((int)(over * 1000));
 

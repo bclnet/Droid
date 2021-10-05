@@ -5,7 +5,7 @@
 #include <intrin.h>
 #ifndef _WIN64
 #define __MMX__
-#define __3dNOW__
+#define __3DNOW__
 #endif
 #define __SSE__
 #define __SSE2__
@@ -21,7 +21,7 @@
 #ifdef __MMX__
 #include <mmintrin.h>
 #endif
-#ifdef __3dNOW__
+#ifdef __3DNOW__
 #include <mm3dnow.h>
 #endif
 #ifdef __SSE__

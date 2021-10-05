@@ -4,16 +4,18 @@ using System.Runtime.CompilerServices;
 
 namespace System.NumericsX
 {
-    public unsafe class SIMD_Generic : ISimd
+    public unsafe static class SimdGeneric
     {
+        public static void Activate() { }
+
         const byte True = 1;
         const byte False = 0;
 
-        public int cpuid { get; set; }
-        public string Name => "generic code";
+        public static int CpuId => 0;
+        public static string Name => "generic code";
 
         // dst[i] = constant + src[i];
-        public void Add(float* dst, float constant, float* src, int count)
+        public static void Add(float* dst, float constant, float* src, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -25,7 +27,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] = src[_IX] + constant; }
         }
         // dst[i] = src0[i] + src1[i];
-        public void Add(float* dst, float* src0, float* src1, int count)
+        public static void Addv(float* dst, float* src0, float* src1, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -37,7 +39,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] = src0[_IX] + src1[_IX]; }
         }
         // dst[i] = constant - src[i];
-        public void Sub(float* dst, float constant, float* src, int count)
+        public static void Sub(float* dst, float constant, float* src, int count)
         {
             var c = constant; //: double
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
@@ -50,7 +52,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] = c - src[_IX]; }
         }
         // dst[i] = src0[i] - src1[i];
-        public void Sub(float* dst, float* src0, float* src1, int count)
+        public static void Subv(float* dst, float* src0, float* src1, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -62,7 +64,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] = src0[_IX] - src1[_IX]; }
         }
         // dst[i] = constant * src[i];
-        public void Mul(float* dst, float constant, float* src, int count)
+        public static void Mul(float* dst, float constant, float* src, int count)
         {
             var c = constant; //: double
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
@@ -75,7 +77,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] = c * src[_IX]; }
         }
         // dst[i] = src0[i] * src1[i];
-        public void Mul(float* dst, float* src0, float* src1, int count)
+        public static void Mulv(float* dst, float* src0, float* src1, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -87,7 +89,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] = src0[_IX] * src1[_IX]; }
         }
         // dst[i] = constant / src[i];
-        public void Div(float* dst, float constant, float* src, int count)
+        public static void Div(float* dst, float constant, float* src, int count)
         {
             var c = constant; //: double
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
@@ -100,7 +102,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] = c / src[_IX]; }
         }
         // dst[i] = src0[i] / src1[i];
-        public void Div(float* dst, float* src0, float* src1, int count)
+        public static void Divv(float* dst, float* src0, float* src1, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -112,7 +114,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] = src0[_IX] / src1[_IX]; }
         }
         // dst[i] += constant * src[i];
-        public void MulAdd(float* dst, float constant, float* src, int count)
+        public static void MulAdd(float* dst, float constant, float* src, int count)
         {
             var c = constant; //: double
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
@@ -125,7 +127,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] += c * src[_IX]; }
         }
         // dst[i] += src0[i] * src1[i];
-        public void MulAdd(float* dst, float* src0, float* src1, int count)
+        public static void MulAddv(float* dst, float* src0, float* src1, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -137,7 +139,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] += src0[_IX] * src1[_IX]; }
         }
         // dst[i] -= constant * src[i];
-        public void MulSub(float* dst, float constant, float* src, int count)
+        public static void MulSub(float* dst, float constant, float* src, int count)
         {
             var c = constant; //: double
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
@@ -150,7 +152,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] -= c * src[_IX]; }
         }
         // dst[i] -= src0[i] * src1[i];
-        public void MulSub(float* dst, float* src0, float* src1, int count)
+        public static void MulSubv(float* dst, float* src0, float* src1, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -163,7 +165,7 @@ namespace System.NumericsX
         }
 
         // dst[i] = constant * src[i];
-        public void Dot(float* dst, Vector3 constant, Vector3* src, int count)
+        public static void Dotcv(float* dst, Vector3 constant, Vector3* src, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
@@ -171,7 +173,7 @@ namespace System.NumericsX
             }
         }
         // dst[i] = constant * src[i].Normal() + src[i][3];
-        public void Dot(float* dst, Vector3 constant, Plane* src, int count)
+        public static void Dotcp(float* dst, Vector3 constant, Plane* src, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
@@ -179,7 +181,7 @@ namespace System.NumericsX
             }
         }
         // dst[i] = constant * src[i].xyz;
-        public void Dot(float* dst, Vector3 constant, Span<DrawVert> src, int count)
+        public static void Dotcd(float* dst, Vector3 constant, Span<DrawVert> src, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
@@ -187,7 +189,7 @@ namespace System.NumericsX
             }
         }
         // dst[i] = constant.Normal() * src[i] + constant[3];
-        public void Dot(float* dst, Plane constant, Vector3* src, int count)
+        public static void Dotpv(float* dst, Plane constant, Vector3* src, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
@@ -195,7 +197,7 @@ namespace System.NumericsX
             }
         }
         // dst[i] = constant.Normal() * src[i].Normal() + constant[3] * src[i][3];
-        public void Dot(float* dst, Plane constant, Plane* src, int count)
+        public static void Dotpp(float* dst, Plane constant, Plane* src, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
@@ -203,7 +205,7 @@ namespace System.NumericsX
             }
         }
         // dst[i] = constant.Normal() * src[i].xyz + constant[3];
-        public void Dot(float* dst, Plane constant, Span<DrawVert> src, int count)
+        public static void Dotpd(float* dst, Plane constant, Span<DrawVert> src, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
@@ -211,7 +213,7 @@ namespace System.NumericsX
             }
         }
         // dst[i] = src0[i] * src1[i];
-        public void Dot(float* dst, Vector3* src0, Vector3* src1, int count)
+        public static void Dotvv(float* dst, Vector3* src0, Vector3* src1, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
@@ -219,7 +221,7 @@ namespace System.NumericsX
             }
         }
         // dot = src1[0] * src2[0] + src1[1] * src2[1] + src1[2] * src2[2] + ...
-        public void Dot(out float dot, float* src1, float* src2, int count)
+        public static void Dotff(out float dot, float* src1, float* src2, int count)
         {
             switch (count)
             {
@@ -269,7 +271,7 @@ namespace System.NumericsX
         }
 
         // dst[i] = src0[i] > constant;
-        public void CmpGT(byte* dst, float* src0, float constant, int count)
+        public static void CmpGT(byte* dst, float* src0, float constant, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -280,8 +282,8 @@ namespace System.NumericsX
             }
             for (; _IX < count; _IX++) { dst[_IX] = src0[_IX] > constant ? True : False; }
         }
-        // dst[i] |= ( src0[i] > constant ) << bitNum;
-        public void CmpGT(byte* dst, byte bitNum, float* src0, float constant, int count)
+        // dst[i] |= (src0[i] > constant) << bitNum;
+        public static void CmpGTb(byte* dst, byte bitNum, float* src0, float constant, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -293,7 +295,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] |= (byte)((src0[_IX] > constant ? 1 : 0) << bitNum); }
         }
         // dst[i] = src0[i] >= constant;
-        public void CmpGE(byte* dst, float* src0, float constant, int count)
+        public static void CmpGE(byte* dst, float* src0, float constant, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -304,8 +306,8 @@ namespace System.NumericsX
             }
             for (; _IX < count; _IX++) { dst[_IX] = src0[_IX] >= constant ? True : False; }
         }
-        // dst[i] |= ( src0[i] >= constant ) << bitNum;
-        public void CmpGE(byte* dst, byte bitNum, float* src0, float constant, int count)
+        // dst[i] |= (src0[i] >= constant) << bitNum;
+        public static void CmpGEb(byte* dst, byte bitNum, float* src0, float constant, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -317,7 +319,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] |= (byte)((src0[_IX] >= constant ? True : False) << bitNum); }
         }
         // dst[i] = src0[i] < constant;
-        public void CmpLT(byte* dst, float* src0, float constant, int count)
+        public static void CmpLT(byte* dst, float* src0, float constant, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -328,8 +330,8 @@ namespace System.NumericsX
             }
             for (; _IX < count; _IX++) { dst[_IX] = src0[_IX] < constant ? True : False; }
         }
-        // dst[i] |= ( src0[i] < constant ) << bitNum;
-        public void CmpLT(byte* dst, byte bitNum, float* src0, float constant, int count)
+        // dst[i] |= (src0[i] < constant) << bitNum;
+        public static void CmpLTb(byte* dst, byte bitNum, float* src0, float constant, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -341,7 +343,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] |= (byte)((src0[_IX] < constant ? True : False) << bitNum); }
         }
         // dst[i] = src0[i] <= constant;
-        public void CmpLE(byte* dst, float* src0, float constant, int count)
+        public static void CmpLE(byte* dst, float* src0, float constant, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -352,8 +354,8 @@ namespace System.NumericsX
             }
             for (; _IX < count; _IX++) { dst[_IX] = src0[_IX] <= constant ? True : False; }
         }
-        // dst[i] |= ( src0[i] <= constant ) << bitNum;
-        public void CmpLE(byte* dst, byte bitNum, float* src0, float constant, int count)
+        // dst[i] |= (src0[i] <= constant) << bitNum;
+        public static void CmpLEb(byte* dst, byte bitNum, float* src0, float constant, int count)
         {
             int _IX, _NM = (int)(count & 0xfffffffc); for (_IX = 0; _IX < _NM; _IX += 4)
             {
@@ -365,7 +367,7 @@ namespace System.NumericsX
             for (; _IX < count; _IX++) { dst[_IX] |= (byte)((src0[_IX] <= constant ? True : False) << bitNum); }
         }
 
-        public void MinMax(out float min, out float max, float* src, int count)
+        public static void MinMaxf(out float min, out float max, float* src, int count)
         {
             min = MathX.INFINITY; max = -MathX.INFINITY;
             int _IX; for (_IX = 0; _IX < count; _IX++)
@@ -374,7 +376,7 @@ namespace System.NumericsX
                 if (src[_IX] > max) { max = src[_IX]; }
             }
         }
-        public void MinMax(out Vector2 min, out Vector2 max, Vector2* src, int count)
+        public static void MinMax2(out Vector2 min, out Vector2 max, Vector2* src, int count)
         {
             min.x = min.y = MathX.INFINITY; max.x = max.y = -MathX.INFINITY;
             int _IX; for (_IX = 0; _IX < count; _IX++)
@@ -386,7 +388,7 @@ namespace System.NumericsX
                 if (v.y > max.y) { max.y = v.y; }
             }
         }
-        public void MinMax(out Vector3 min, out Vector3 max, Vector3* src, int count)
+        public static void MinMax3(out Vector3 min, out Vector3 max, Vector3* src, int count)
         {
             min.x = min.y = min.z = MathX.INFINITY; max.x = max.y = max.z = -MathX.INFINITY;
             int _IX; for (_IX = 0; _IX < count; _IX++)
@@ -400,7 +402,7 @@ namespace System.NumericsX
                 if (v.z > max.z) { max.z = v.z; }
             }
         }
-        public void MinMax(out Vector3 min, out Vector3 max, Span<DrawVert> src, int count)
+        public static void MinMaxd(out Vector3 min, out Vector3 max, Span<DrawVert> src, int count)
         {
             min.x = min.y = min.z = MathX.INFINITY; max.x = max.y = max.z = -MathX.INFINITY;
             int _IX; for (_IX = 0; _IX < count; _IX++)
@@ -414,7 +416,7 @@ namespace System.NumericsX
                 if (v.z > max.z) { max.z = v.z; }
             }
         }
-        public void MinMax(out Vector3 min, out Vector3 max, Span<DrawVert> src, int* indexes, int count)
+        public static void MinMaxdi(out Vector3 min, out Vector3 max, Span<DrawVert> src, int* indexes, int count)
         {
             min.x = min.y = min.z = MathX.INFINITY; max.x = max.y = max.z = -MathX.INFINITY;
             int _IX; for (_IX = 0; _IX < count; _IX++)
@@ -428,7 +430,7 @@ namespace System.NumericsX
                 if (v.z > max.z) { max.z = v.z; }
             }
         }
-        public void MinMax(out Vector3 min, out Vector3 max, Span<DrawVert> src, short* indexes, int count)
+        public static void MinMaxds(out Vector3 min, out Vector3 max, Span<DrawVert> src, short* indexes, int count)
         {
             min.x = min.y = min.z = MathX.INFINITY; max.x = max.y = max.z = -MathX.INFINITY;
             int _IX; for (_IX = 0; _IX < count; _IX++)
@@ -443,21 +445,21 @@ namespace System.NumericsX
             }
         }
 
-        public void Clamp(float* dst, float* src, float min, float max, int count)
+        public static void Clamp(float* dst, float* src, float min, float max, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
                 dst[_IX] = src[_IX] < min ? min : src[_IX] > max ? max : src[_IX];
             }
         }
-        public void ClampMin(float* dst, float* src, float min, int count)
+        public static void ClampMin(float* dst, float* src, float min, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
                 dst[_IX] = src[_IX] < min ? min : src[_IX];
             }
         }
-        public void ClampMax(float* dst, float* src, float max, int count)
+        public static void ClampMax(float* dst, float* src, float max, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
@@ -465,14 +467,14 @@ namespace System.NumericsX
             }
         }
 
-        public void Memcpy(void* dst, void* src, int count)
+        public static void Memcpy(void* dst, void* src, int count)
             => Unsafe.CopyBlock((byte*)dst, (byte*)src, (uint)count);
-        public void Memset(void* dst, int val, int count)
+        public static void Memset(void* dst, int val, int count)
             => Unsafe.InitBlock((byte*)dst, (byte)val, (uint)count);
 
-        public void Zero16(float* dst, int count)
+        public static void Zero16(float* dst, int count)
             => Unsafe.InitBlock((byte*)dst, 0, (uint)(count * sizeof(float)));
-        public void Negate16(float* dst, int count)
+        public static void Negate16(float* dst, int count)
         {
             var ptr = (uint*)dst;
             unchecked
@@ -483,49 +485,49 @@ namespace System.NumericsX
                 }
             }
         }
-        public void Copy16(float* dst, float* src, int count)
+        public static void Copy16(float* dst, float* src, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
                 dst[_IX] = src[_IX];
             }
         }
-        public void Add16(float* dst, float* src1, float* src2, int count)
+        public static void Add16(float* dst, float* src1, float* src2, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
                 dst[_IX] = src1[_IX] + src2[_IX];
             }
         }
-        public void Sub16(float* dst, float* src1, float* src2, int count)
+        public static void Sub16(float* dst, float* src1, float* src2, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
                 dst[_IX] = src1[_IX] - src2[_IX];
             }
         }
-        public void Mul16(float* dst, float* src1, float constant, int count)
+        public static void Mul16(float* dst, float* src1, float constant, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
                 dst[_IX] = src1[_IX] * constant;
             }
         }
-        public void AddAssign16(float* dst, float* src, int count)
+        public static void AddAssign16(float* dst, float* src, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
                 dst[_IX] += src[_IX];
             }
         }
-        public void SubAssign16(float* dst, float* src, int count)
+        public static void SubAssign16(float* dst, float* src, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
                 dst[_IX] -= src[_IX];
             }
         }
-        public void MulAssign16(float* dst, float constant, int count)
+        public static void MulAssign16(float* dst, float constant, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
@@ -533,7 +535,7 @@ namespace System.NumericsX
             }
         }
 
-        public void MatX_MultiplyVecX(VectorX dst, MatrixX mat, VectorX vec)
+        public static void MatX_MultiplyVecX(VectorX dst, MatrixX mat, VectorX vec)
         {
             int i, j;
 
@@ -602,7 +604,7 @@ namespace System.NumericsX
                 }
             }
         }
-        public void MatX_MultiplyAddVecX(VectorX dst, MatrixX mat, VectorX vec)
+        public static void MatX_MultiplyAddVecX(VectorX dst, MatrixX mat, VectorX vec)
         {
             int i, j;
 
@@ -671,7 +673,7 @@ namespace System.NumericsX
                 }
             }
         }
-        public void MatX_MultiplySubVecX(VectorX dst, MatrixX mat, VectorX vec)
+        public static void MatX_MultiplySubVecX(VectorX dst, MatrixX mat, VectorX vec)
         {
             int i, j;
 
@@ -740,7 +742,7 @@ namespace System.NumericsX
                 }
             }
         }
-        public void MatX_TransposeMultiplyVecX(VectorX dst, MatrixX mat, VectorX vec)
+        public static void MatX_TransposeMultiplyVecX(VectorX dst, MatrixX mat, VectorX vec)
         {
             int i, j;
 
@@ -812,7 +814,7 @@ namespace System.NumericsX
                 }
             }
         }
-        public void MatX_TransposeMultiplyAddVecX(VectorX dst, MatrixX mat, VectorX vec)
+        public static void MatX_TransposeMultiplyAddVecX(VectorX dst, MatrixX mat, VectorX vec)
         {
             int i, j;
 
@@ -884,7 +886,7 @@ namespace System.NumericsX
                 }
             }
         }
-        public void MatX_TransposeMultiplySubVecX(VectorX dst, MatrixX mat, VectorX vec)
+        public static void MatX_TransposeMultiplySubVecX(VectorX dst, MatrixX mat, VectorX vec)
         {
             int i;
 
@@ -964,7 +966,7 @@ namespace System.NumericsX
         // 6x6 * 6xN
         // 
         // with N in the range [1-6].
-        public void MatX_MultiplyMatX(MatrixX dst, MatrixX m1, MatrixX m2)
+        public static void MatX_MultiplyMatX(MatrixX dst, MatrixX m1, MatrixX m2)
         {
             int i, j, n; double sum;
 
@@ -1347,7 +1349,7 @@ namespace System.NumericsX
         // 6xN * 6x6
         // 
         // with N in the range [1-6].
-        public void MatX_TransposeMultiplyMatX(MatrixX dst, MatrixX m1, MatrixX m2)
+        public static void MatX_TransposeMultiplyMatX(MatrixX dst, MatrixX m1, MatrixX m2)
         {
             int i, j, n; double sum;
 
@@ -1617,7 +1619,7 @@ namespace System.NumericsX
         }
         // solves x in Lx = b for the n * n sub-matrix of L if skip > 0 the first skip elements of x are assumed to be valid already
         // L has to be a lower triangular matrix with(implicit) ones on the diagonal x == b is allowed
-        public void MatX_LowerTriangularSolve(MatrixX L, float* x, float* b, int n, int skip = 0)
+        public static void MatX_LowerTriangularSolve(MatrixX L, float* x, float* b, int n, int skip = 0)
         {
             if (skip >= n)
                 return;
@@ -1735,7 +1737,7 @@ namespace System.NumericsX
         //   solves x in L'x = b for the n * n sub-matrix of L
         // L has to be a lower triangular matrix with(implicit) ones on the diagonal
         // x == b is allowed
-        public void MatX_LowerTriangularSolveTranspose(MatrixX L, float* x, float* b, int n)
+        public static void MatX_LowerTriangularSolveTranspose(MatrixX L, float* x, float* b, int n)
         {
             fixed (float* LF = L.mat)
             {
@@ -1854,7 +1856,7 @@ namespace System.NumericsX
             }
         }
         // in-place factorization LDL' of the n * n sub-matrix of mat the reciprocal of the diagonal elements are stored in invDiag
-        public bool MatX_LDLTFactor(MatrixX mat, VectorX invDiag, int n)
+        public static bool MatX_LDLTFactor(MatrixX mat, VectorX invDiag, int n)
         {
             int i, j, k, nc; double s0, s1, s2, s3, sum, d;
             //float* v, *diag, *mptr;
@@ -2028,7 +2030,7 @@ namespace System.NumericsX
             }
         }
 
-        public void BlendJoints(JointQuat* joints, JointQuat* blendJoints, float lerp, int* index, int numJoints)
+        public static void BlendJoints(JointQuat* joints, JointQuat* blendJoints, float lerp, int* index, int numJoints)
         {
             for (var i = 0; i < numJoints; i++)
             {
@@ -2037,7 +2039,7 @@ namespace System.NumericsX
                 joints[j].t.Lerp(joints[j].t, blendJoints[j].t, lerp);
             }
         }
-        public void ConvertJointQuatsToJointMats(JointMat* jointMats, JointQuat* jointQuats, int numJoints)
+        public static void ConvertJointQuatsToJointMats(JointMat* jointMats, JointQuat* jointQuats, int numJoints)
         {
             for (var i = 0; i < numJoints; i++)
             {
@@ -2045,14 +2047,14 @@ namespace System.NumericsX
                 jointMats[i].SetTranslation(jointQuats[i].t);
             }
         }
-        public void ConvertJointMatsToJointQuats(JointQuat* jointQuats, JointMat* jointMats, int numJoints)
+        public static void ConvertJointMatsToJointQuats(JointQuat* jointQuats, JointMat* jointMats, int numJoints)
         {
             for (var i = 0; i < numJoints; i++)
             {
                 jointQuats[i] = jointMats[i].ToJointQuat();
             }
         }
-        public void TransformJoints(JointMat* jointMats, int* parents, int firstJoint, int lastJoint)
+        public static void TransformJoints(JointMat* jointMats, int* parents, int firstJoint, int lastJoint)
         {
             for (var i = firstJoint; i <= lastJoint; i++)
             {
@@ -2060,7 +2062,7 @@ namespace System.NumericsX
                 jointMats[i] *= jointMats[parents[i]];
             }
         }
-        public void UntransformJoints(JointMat* jointMats, int* parents, int firstJoint, int lastJoint)
+        public static void UntransformJoints(JointMat* jointMats, int* parents, int firstJoint, int lastJoint)
         {
             for (var i = lastJoint; i >= firstJoint; i--)
             {
@@ -2068,7 +2070,7 @@ namespace System.NumericsX
                 jointMats[i] /= jointMats[parents[i]];
             }
         }
-        public void TransformVerts(Span<DrawVert> verts, int numVerts, JointMat* joints, Vector4* weights, int* index, int numWeights)
+        public static void TransformVerts(Span<DrawVert> verts, int numVerts, JointMat* joints, Vector4* weights, int* index, int numWeights)
         {
             for (int j = 0, i = 0; i < numVerts; i++)
             {
@@ -2079,7 +2081,7 @@ namespace System.NumericsX
                 verts[i].xyz = v;
             }
         }
-        public void TracePointCull(byte* cullBits, out byte totalOr, float radius, Plane* planes, Span<DrawVert> verts, int numVerts)
+        public static void TracePointCull(byte* cullBits, out byte totalOr, float radius, Plane* planes, Span<DrawVert> verts, int numVerts)
         {
             var tOr = (byte)0;
 
@@ -2111,7 +2113,7 @@ namespace System.NumericsX
 
             totalOr = tOr;
         }
-        public void DecalPointCull(byte* cullBits, Plane* planes, Span<DrawVert> verts, int numVerts)
+        public static void DecalPointCull(byte* cullBits, Plane* planes, Span<DrawVert> verts, int numVerts)
         {
             for (var i = 0; i < numVerts; i++)
             {
@@ -2135,7 +2137,7 @@ namespace System.NumericsX
                 cullBits[i] = (byte)(bits ^ 0x3F);      // flip lower 6 bits
             }
         }
-        public void OverlayPointCull(byte* cullBits, Vector2* texCoords, Plane* planes, Span<DrawVert> verts, int numVerts)
+        public static void OverlayPointCull(byte* cullBits, Vector2* texCoords, Plane* planes, Span<DrawVert> verts, int numVerts)
         {
             for (var i = 0; i < numVerts; i++)
             {
@@ -2156,7 +2158,7 @@ namespace System.NumericsX
             }
         }
         // Derives a plane equation for each triangle.
-        public void DeriveTriPlanes(Plane* planes, Span<DrawVert> verts, int numVerts, int* indexes, int numIndexes)
+        public static void DeriveTriPlanesi(Plane* planes, Span<DrawVert> verts, int numVerts, int* indexes, int numIndexes)
         {
             for (var i = 0; i < numIndexes; i += 3)
             {
@@ -2190,7 +2192,7 @@ namespace System.NumericsX
             }
         }
         // Derives a plane equation for each triangle.
-        public void DeriveTriPlanes(Plane* planes, Span<DrawVert> verts, int numVerts, short* indexes, int numIndexes)
+        public static void DeriveTriPlaness(Plane* planes, Span<DrawVert> verts, int numVerts, short* indexes, int numIndexes)
         {
             for (var i = 0; i < numIndexes; i += 3)
             {
@@ -2226,7 +2228,7 @@ namespace System.NumericsX
         // Derives the normal and orthogonal tangent vectors for the triangle vertices.
         // For each vertex the normal and tangent vectors are derived from all triangles using the vertex which results in smooth tangents across the mesh.
         // In the process the triangle planes are calculated as well.
-        public void DeriveTangents(Plane* planes, Span<DrawVert> verts, int numVerts, int* indexes, int numIndexes)
+        public static void DeriveTangentsi(Plane* planes, Span<DrawVert> verts, int numVerts, int* indexes, int numIndexes)
         {
             var used = stackalloc bool[numVerts];
             Unsafe.InitBlock(used, 0, (uint)(numVerts * sizeof(bool)));
@@ -2346,7 +2348,7 @@ namespace System.NumericsX
         // Derives the normal and orthogonal tangent vectors for the triangle vertices.
         // For each vertex the normal and tangent vectors are derived from all triangles using the vertex which results in smooth tangents across the mesh.
         // In the process the triangle planes are calculated as well.
-        public void DeriveTangents(Plane* planes, Span<DrawVert> verts, int numVerts, short* indexes, int numIndexes)
+        public static void DeriveTangentss(Plane* planes, Span<DrawVert> verts, int numVerts, short* indexes, int numIndexes)
         {
             var used = stackalloc bool[numVerts];
             Unsafe.InitBlock(used, 0, (uint)(numVerts * sizeof(bool)));
@@ -2465,7 +2467,7 @@ namespace System.NumericsX
         }
         // Derives the normal and orthogonal tangent vectors for the triangle vertices.
         // For each vertex the normal and tangent vectors are derived from a single dominant triangle.
-        public void DeriveUnsmoothedTangents(Span<DrawVert> verts, DominantTri* dominantTris, int numVerts)
+        public static void DeriveUnsmoothedTangents(Span<DrawVert> verts, DominantTri* dominantTris, int numVerts)
         {
             for (var i = 0; i < numVerts; i++)
             {
@@ -2538,7 +2540,7 @@ namespace System.NumericsX
             }
         }
         // Normalizes each vertex normal and projects and normalizes the tangent vectors onto the plane orthogonal to the vertex normal.
-        public void NormalizeTangents(Span<DrawVert> verts, int numVerts)
+        public static void NormalizeTangents(Span<DrawVert> verts, int numVerts)
         {
             for (var i = 0; i < numVerts; i++)
             {
@@ -2560,7 +2562,7 @@ namespace System.NumericsX
         // Calculates light vectors in texture space for the given triangle vertices.
         // For each vertex the direction towards the light origin is projected onto texture space.
         // The light vectors are only calculated for the vertices referenced by the indexes.
-        public void CreateTextureSpaceLightVectors(Vector3* lightVectors, Vector3 lightOrigin, Span<DrawVert> verts, int numVerts, int* indexes, int numIndexes)
+        public static void CreateTextureSpaceLightVectors(Vector3* lightVectors, Vector3 lightOrigin, Span<DrawVert> verts, int numVerts, int* indexes, int numIndexes)
         {
             var used = stackalloc bool[numVerts];
             Unsafe.InitBlock(used, 0, (uint)(numVerts * sizeof(bool)));
@@ -2583,7 +2585,7 @@ namespace System.NumericsX
         // For each vertex the normalized direction towards the light origin is added to the
         // normalized direction towards the view origin and the result is projected onto texture space.
         // The texture coordinates are only calculated for the vertices referenced by the indexes.
-        public void CreateSpecularTextureCoords(Vector4* texCoords, Vector3 lightOrigin, Vector3 viewOrigin, Span<DrawVert> verts, int numVerts, int* indexes, int numIndexes)
+        public static void CreateSpecularTextureCoords(Vector4* texCoords, Vector3 lightOrigin, Vector3 viewOrigin, Span<DrawVert> verts, int numVerts, int* indexes, int numIndexes)
         {
             var used = stackalloc bool[numVerts];
             Unsafe.InitBlock(used, 0, (uint)(numVerts * sizeof(bool)));
@@ -2617,7 +2619,7 @@ namespace System.NumericsX
                 texCoords[i].w = 1f;
             }
         }
-        public int CreateShadowCache(Vector4* vertexCache, int* vertRemap, Vector3 lightOrigin, Span<DrawVert> verts, int numVerts)
+        public static int CreateShadowCache(Vector4* vertexCache, int* vertRemap, Vector3 lightOrigin, Span<DrawVert> verts, int numVerts)
         {
             var outVerts = 0;
 
@@ -2644,7 +2646,7 @@ namespace System.NumericsX
             }
             return outVerts;
         }
-        public int CreateVertexProgramShadowCache(Vector4* vertexCache, Span<DrawVert> verts, int numVerts)
+        public static int CreateVertexProgramShadowCache(Vector4* vertexCache, Span<DrawVert> verts, int numVerts)
         {
             for (var i = 0; i < numVerts; i++)
                 fixed (float* v = &verts[i].xyz.x)
@@ -2662,7 +2664,7 @@ namespace System.NumericsX
         }
 
         // Duplicate samples for 44kHz output.
-        public void UpSamplePCMTo44kHz(float* dest, short* src, int numSamples, int kHz, int numChannels)
+        public static void UpSamplePCMTo44kHz(float* dest, short* src, int numSamples, int kHz, int numChannels)
         {
             if (kHz == 11025)
             {
@@ -2700,7 +2702,7 @@ namespace System.NumericsX
             else Debug.Assert(false);
         }
         // Duplicate samples for 44kHz output.
-        public void UpSampleOGGTo44kHz(float* dest, float** ogg, int numSamples, int kHz, int numChannels)
+        public static void UpSampleOGGTo44kHz(float* dest, float** ogg, int numSamples, int kHz, int numChannels)
         {
             if (kHz == 11025)
             {
@@ -2746,16 +2748,16 @@ namespace System.NumericsX
             }
             else Debug.Assert(false);
         }
-        public void MixSoundTwoSpeakerMono(float* mixBuffer, float* samples, int numSamples, float[] lastV, float[] currentV)
+        public static void MixSoundTwoSpeakerMono(float* mixBuffer, float* samples, int numSamples, float[] lastV, float[] currentV)
         {
             var sL = lastV[0];
             var sR = lastV[1];
-            var incL = (currentV[0] - lastV[0]) / ISimd.MIXBUFFER_SAMPLES;
-            var incR = (currentV[1] - lastV[1]) / ISimd.MIXBUFFER_SAMPLES;
+            var incL = (currentV[0] - lastV[0]) / Simd.MIXBUFFER_SAMPLES;
+            var incR = (currentV[1] - lastV[1]) / Simd.MIXBUFFER_SAMPLES;
 
-            Debug.Assert(numSamples == ISimd.MIXBUFFER_SAMPLES);
+            Debug.Assert(numSamples == Simd.MIXBUFFER_SAMPLES);
 
-            for (var j = 0; j < ISimd.MIXBUFFER_SAMPLES; j++)
+            for (var j = 0; j < Simd.MIXBUFFER_SAMPLES; j++)
             {
                 mixBuffer[j * 2 + 0] += samples[j] * sL;
                 mixBuffer[j * 2 + 1] += samples[j] * sR;
@@ -2763,16 +2765,16 @@ namespace System.NumericsX
                 sR += incR;
             }
         }
-        public void MixSoundTwoSpeakerStereo(float* mixBuffer, float* samples, int numSamples, float[] lastV, float[] currentV)
+        public static void MixSoundTwoSpeakerStereo(float* mixBuffer, float* samples, int numSamples, float[] lastV, float[] currentV)
         {
             var sL = lastV[0];
             var sR = lastV[1];
-            var incL = (currentV[0] - lastV[0]) / ISimd.MIXBUFFER_SAMPLES;
-            var incR = (currentV[1] - lastV[1]) / ISimd.MIXBUFFER_SAMPLES;
+            var incL = (currentV[0] - lastV[0]) / Simd.MIXBUFFER_SAMPLES;
+            var incR = (currentV[1] - lastV[1]) / Simd.MIXBUFFER_SAMPLES;
 
-            Debug.Assert(numSamples == ISimd.MIXBUFFER_SAMPLES);
+            Debug.Assert(numSamples == Simd.MIXBUFFER_SAMPLES);
 
-            for (var j = 0; j < ISimd.MIXBUFFER_SAMPLES; j++)
+            for (var j = 0; j < Simd.MIXBUFFER_SAMPLES; j++)
             {
                 mixBuffer[j * 2 + 0] += samples[j * 2 + 0] * sL;
                 mixBuffer[j * 2 + 1] += samples[j * 2 + 1] * sR;
@@ -2780,7 +2782,7 @@ namespace System.NumericsX
                 sR += incR;
             }
         }
-        public void MixSoundSixSpeakerMono(float* mixBuffer, float* samples, int numSamples, float[] lastV, float[] currentV)
+        public static void MixSoundSixSpeakerMono(float* mixBuffer, float* samples, int numSamples, float[] lastV, float[] currentV)
         {
             var sL0 = lastV[0];
             var sL1 = lastV[1];
@@ -2789,16 +2791,16 @@ namespace System.NumericsX
             var sL4 = lastV[4];
             var sL5 = lastV[5];
 
-            var incL0 = (currentV[0] - lastV[0]) / ISimd.MIXBUFFER_SAMPLES;
-            var incL1 = (currentV[1] - lastV[1]) / ISimd.MIXBUFFER_SAMPLES;
-            var incL2 = (currentV[2] - lastV[2]) / ISimd.MIXBUFFER_SAMPLES;
-            var incL3 = (currentV[3] - lastV[3]) / ISimd.MIXBUFFER_SAMPLES;
-            var incL4 = (currentV[4] - lastV[4]) / ISimd.MIXBUFFER_SAMPLES;
-            var incL5 = (currentV[5] - lastV[5]) / ISimd.MIXBUFFER_SAMPLES;
+            var incL0 = (currentV[0] - lastV[0]) / Simd.MIXBUFFER_SAMPLES;
+            var incL1 = (currentV[1] - lastV[1]) / Simd.MIXBUFFER_SAMPLES;
+            var incL2 = (currentV[2] - lastV[2]) / Simd.MIXBUFFER_SAMPLES;
+            var incL3 = (currentV[3] - lastV[3]) / Simd.MIXBUFFER_SAMPLES;
+            var incL4 = (currentV[4] - lastV[4]) / Simd.MIXBUFFER_SAMPLES;
+            var incL5 = (currentV[5] - lastV[5]) / Simd.MIXBUFFER_SAMPLES;
 
-            Debug.Assert(numSamples == ISimd.MIXBUFFER_SAMPLES);
+            Debug.Assert(numSamples == Simd.MIXBUFFER_SAMPLES);
 
-            for (var i = 0; i < ISimd.MIXBUFFER_SAMPLES; i++)
+            for (var i = 0; i < Simd.MIXBUFFER_SAMPLES; i++)
             {
                 mixBuffer[i * 6 + 0] += samples[i] * sL0;
                 mixBuffer[i * 6 + 1] += samples[i] * sL1;
@@ -2814,7 +2816,7 @@ namespace System.NumericsX
                 sL5 += incL5;
             }
         }
-        public void MixSoundSixSpeakerStereo(float* mixBuffer, float* samples, int numSamples, float[] lastV, float[] currentV)
+        public static void MixSoundSixSpeakerStereo(float* mixBuffer, float* samples, int numSamples, float[] lastV, float[] currentV)
         {
             var sL0 = lastV[0];
             var sL1 = lastV[1];
@@ -2823,16 +2825,16 @@ namespace System.NumericsX
             var sL4 = lastV[4];
             var sL5 = lastV[5];
 
-            var incL0 = (currentV[0] - lastV[0]) / ISimd.MIXBUFFER_SAMPLES;
-            var incL1 = (currentV[1] - lastV[1]) / ISimd.MIXBUFFER_SAMPLES;
-            var incL2 = (currentV[2] - lastV[2]) / ISimd.MIXBUFFER_SAMPLES;
-            var incL3 = (currentV[3] - lastV[3]) / ISimd.MIXBUFFER_SAMPLES;
-            var incL4 = (currentV[4] - lastV[4]) / ISimd.MIXBUFFER_SAMPLES;
-            var incL5 = (currentV[5] - lastV[5]) / ISimd.MIXBUFFER_SAMPLES;
+            var incL0 = (currentV[0] - lastV[0]) / Simd.MIXBUFFER_SAMPLES;
+            var incL1 = (currentV[1] - lastV[1]) / Simd.MIXBUFFER_SAMPLES;
+            var incL2 = (currentV[2] - lastV[2]) / Simd.MIXBUFFER_SAMPLES;
+            var incL3 = (currentV[3] - lastV[3]) / Simd.MIXBUFFER_SAMPLES;
+            var incL4 = (currentV[4] - lastV[4]) / Simd.MIXBUFFER_SAMPLES;
+            var incL5 = (currentV[5] - lastV[5]) / Simd.MIXBUFFER_SAMPLES;
 
-            Debug.Assert(numSamples == ISimd.MIXBUFFER_SAMPLES);
+            Debug.Assert(numSamples == Simd.MIXBUFFER_SAMPLES);
 
-            for (var i = 0; i < ISimd.MIXBUFFER_SAMPLES; i++)
+            for (var i = 0; i < Simd.MIXBUFFER_SAMPLES; i++)
             {
                 mixBuffer[i * 6 + 0] += samples[i * 2 + 0] * sL0;
                 mixBuffer[i * 6 + 1] += samples[i * 2 + 1] * sL1;
@@ -2848,7 +2850,7 @@ namespace System.NumericsX
                 sL5 += incL5;
             }
         }
-        public void MixedSoundToSamples(short* samples, float* mixBuffer, int numSamples)
+        public static void MixedSoundToSamples(short* samples, float* mixBuffer, int numSamples)
         {
             for (var i = 0; i < numSamples; i++)
                 if (mixBuffer[i] <= -32768f) samples[i] = -32768;

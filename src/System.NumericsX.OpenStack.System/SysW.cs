@@ -178,18 +178,6 @@ namespace System.NumericsX.OpenStack.System
         // any game related timing information should come from event timestamps
         public static int Milliseconds => throw new NotImplementedException();
 
-        // returns a selection of the CPUID_* flags
-        public static CPUID ProcessorId => throw new NotImplementedException();
-
-        // sets the FPU precision
-        public static void FPU_SetPrecision() => throw new NotImplementedException();
-
-        // sets Flush-To-Zero mode
-        public static void FPU_SetFTZ(bool enable) => throw new NotImplementedException();
-
-        // sets Denormals-Are-Zero mode
-        public static void FPU_SetDAZ(bool enable) => throw new NotImplementedException();
-
         // returns amount of physical memory in MB
         // returns amount of system ram
         public static unsafe int SystemRam

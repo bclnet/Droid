@@ -1,3 +1,6 @@
+using System.NumericsX;
+using GlIndex = System.Int32;
+
 namespace Gengine.Render
 {
     partial class TRX
@@ -15,8 +18,7 @@ namespace Gengine.Render
 
             R_CalcInteractionFacing(ent, tri, light, cullInfo);
 
-            if (r_useShadowProjectedCull.Bool)
-                R_CalcInteractionCullBits(ent, tri, light, cullInfo);
+            if (r_useShadowProjectedCull.Bool) R_CalcInteractionCullBits(ent, tri, light, cullInfo);
 
             int numFaces = tri.numIndexes / 3;
             int numShadowingFaces = 0;
@@ -64,7 +66,7 @@ namespace Gengine.Render
             GlIndex tempIndexes = newTri.indexes;
             GlIndex shadowIndexes = newTri.indexes;
 #else
-            GLIndex tempIndexes = (GlIndex[tri.numSilEdges * 6];
+            GlIndex tempIndexes = GlIndex[tri.numSilEdges * 6];
             GlIndex shadowIndexes = tempIndexes;
 #endif
 
@@ -104,7 +106,7 @@ namespace Gengine.Render
             // allocate memory for the indexes
             R_AllocStaticTriSurfIndexes(newTri, newTri.numIndexes);
             // copy the indexes we created for the sil planes
-            SIMDProcessor.Memcpy(newTri.indexes, tempIndexes, numShadowIndexes * sizeof(tempIndexes[0]));
+            Simd.Memcpy(newTri.indexes, tempIndexes, numShadowIndexes * sizeof(tempIndexes[0]));
 #endif
 
             // these have no effect, because they extend to infinity

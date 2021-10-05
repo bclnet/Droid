@@ -65,7 +65,7 @@ namespace Gengine.Sound
         public const int fourcc_riff = 'R' | 'I' << 8 | 'F' << 16 | 'F' << 24;
 
         public const int SOUND_MAX_CHANNELS = 8;
-        public const int SOUND_DECODER_FREE_DELAY = 1000 * ISimd.MIXBUFFER_SAMPLES / IUsercmd.USERCMD_MSEC;       // four seconds
+        public const int SOUND_DECODER_FREE_DELAY = 1000 * Simd.MIXBUFFER_SAMPLES / IUsercmd.USERCMD_MSEC;       // four seconds
         public const int PRIMARYFREQ = 44100;          // samples per second
         public const float SND_EPSILON = 1f / 32768f;  // if volume is below this, it will always multiply to zero
         public const int ROOM_SLICES_IN_BUFFER = 10;
@@ -351,8 +351,8 @@ namespace Gengine.Sound
                 return 0;
 
             // here we do it in samples ( overflows in 27 hours or so )
-            var dwCurrentWritePos = MathX.Ftol(SysW.Milliseconds * 44.1f) % (ISimd.MIXBUFFER_SAMPLES * ROOM_SLICES_IN_BUFFER);
-            var dwCurrentBlock = dwCurrentWritePos / ISimd.MIXBUFFER_SAMPLES;
+            var dwCurrentWritePos = MathX.Ftol(SysW.Milliseconds * 44.1f) % (Simd.MIXBUFFER_SAMPLES * ROOM_SLICES_IN_BUFFER);
+            var dwCurrentBlock = dwCurrentWritePos / Simd.MIXBUFFER_SAMPLES;
 
             if (nextWriteBlock == 0xffffffff) nextWriteBlock = dwCurrentBlock;
             if (dwCurrentBlock != nextWriteBlock) return 0;
@@ -365,22 +365,22 @@ namespace Gengine.Sound
             nextWriteBlock++;
             nextWriteBlock %= ROOM_SLICES_IN_BUFFER;
 
-            var newPosition = nextWriteBlock * ISimd.MIXBUFFER_SAMPLES;
+            var newPosition = nextWriteBlock * Simd.MIXBUFFER_SAMPLES;
             if (newPosition < olddwCurrentWritePos) buffers++; // buffer wrapped
 
             // nextWriteSample is in multi-channel samples inside the buffer
-            var nextWriteSamples = nextWriteBlock * ISimd.MIXBUFFER_SAMPLES;
+            var nextWriteSamples = nextWriteBlock * Simd.MIXBUFFER_SAMPLES;
 
             olddwCurrentWritePos = newPosition;
 
             // newSoundTime is in multi-channel samples since the sound system was started
-            var newSoundTime = (int)((buffers * ISimd.MIXBUFFER_SAMPLES * ROOM_SLICES_IN_BUFFER) + nextWriteSamples);
+            var newSoundTime = (int)((buffers * Simd.MIXBUFFER_SAMPLES * ROOM_SLICES_IN_BUFFER) + nextWriteSamples);
 
             // check for impending overflow
             // FIXME: we don't handle sound wrap-around correctly yet
             if (newSoundTime > 0x6fffffff) buffers = 0;
 
-            if (newSoundTime - CurrentSoundTime > ISimd.MIXBUFFER_SAMPLES)
+            if (newSoundTime - CurrentSoundTime > Simd.MIXBUFFER_SAMPLES)
                 soundStats.missedWindow++;
 
             // enable audio hardware caching
@@ -479,7 +479,7 @@ namespace Gengine.Sound
                     for (j = 0; j < numSpeakers; j++)
                     {
                         var meter = 0;
-                        for (i = 0; i < ISimd.MIXBUFFER_SAMPLES; i++)
+                        for (i = 0; i < Simd.MIXBUFFER_SAMPLES; i++)
                         {
                             var result = MathX.Fabs(accum[i * numSpeakers + j]);
                             if (result > meter) meter = (int)result;
@@ -527,8 +527,8 @@ namespace Gengine.Sound
                     for (j = 0; j < numSpeakers; j++)
                     {
                         var xx = 0; float fmeter;
-                        var step = ISimd.MIXBUFFER_SAMPLES / 256;
-                        for (i = 0; i < ISimd.MIXBUFFER_SAMPLES; i += step)
+                        var step = Simd.MIXBUFFER_SAMPLES / 256;
+                        for (i = 0; i < Simd.MIXBUFFER_SAMPLES; i += step)
                         {
                             fmeter = 0f;
                             for (var x = 0; x < step; x++)
@@ -864,7 +864,7 @@ namespace Gengine.Sound
 
         public uint nextWriteBlock;
 
-        public float[] realAccum = new float[6 * ISimd.MIXBUFFER_SAMPLES + 16];
+        public float[] realAccum = new float[6 * Simd.MIXBUFFER_SAMPLES + 16];
         public float[] finalMixBuffer;          // points inside realAccum at a 16 byte aligned boundary
 
         public bool isInitialized;

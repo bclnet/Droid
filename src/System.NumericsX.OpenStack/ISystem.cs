@@ -3,20 +3,6 @@ using static System.NumericsX.Platform;
 
 namespace System.NumericsX.OpenStack
 {
-    [Flags]
-    public enum CPUID
-    {
-        NONE = 0x00000,
-        UNSUPPORTED = 0x00001,  // unsupported (386/486)
-        GENERIC = 0x00002,      // unrecognized processor
-        MMX = 0x00010,          // Multi Media Extensions
-        _3DNOW = 0x00020,       // 3DNow!
-        SSE = 0x00040,          // Streaming SIMD Extensions
-        SSE2 = 0x00080,         // Streaming SIMD Extensions 2
-        SSE3 = 0x00100,         // Streaming SIMD Extentions 3 aka Prescott's New Instructions
-        ALTIVEC = 0x00200,      // AltiVec
-    }
-
     public enum JOYSTICK_AXIS
     {
         SIDE,
@@ -254,9 +240,6 @@ namespace System.NumericsX.OpenStack
         void DebugPrintf(string fmt, params object[] args);
 
         uint Milliseconds { get; }
-        CPUID ProcessorId { get; }
-        void FPU_SetFTZ(bool enable);
-        void FPU_SetDAZ(bool enable);
 
         unsafe bool LockMemory(void* ptr, int bytes);
         unsafe bool UnlockMemory(void* ptr, int bytes);
