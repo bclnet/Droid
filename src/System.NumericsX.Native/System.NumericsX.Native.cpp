@@ -7,8 +7,9 @@ using namespace std;
 
 int main()
 {
-	//cout << "SIMD: " << SIMD_3DNow_GetName() << endl;
-	//cout << "SIMD: " << SIMD_Generic_GetName() << endl;
-	//cout << "SIMD: " << SIMD_MMX_GetName() << endl;
+	cout << "SIMD: " << GetProcessorId() << endl;
+	//cout << "SIMD: " << SIMD_3DNow_GetName() << endl; 
+	cout << "SIMD: " << SIMD_Generic_GetName() << endl;
+	cout << "SIMD: " << SIMD_MMX_GetName() << endl;
 	return 0;
 }

@@ -44,7 +44,7 @@ static inline void CPUid(int index, int* a, int* b, int* c, int* d) {
 			"xchg %%" REG_b ", %%" REG_S
 			:"=a" (*a), "=S" (*b),
 			"=c" (*c), "=d" (*d)
-			:"0" (index));
+			: "0" (index));
 }
 #elif defined(_MSC_VER)
 #include <intrin.h>
@@ -60,10 +60,8 @@ static inline void CPUid(int index, int* a, int* b, int* c, int* d) {
 #error unsupported compiler
 #endif
 
-inline void Printf(const char* message, const char* arg1 = nullptr) {
-
-}
-
+inline void Printf(const char* fmt) { printf(fmt); }
+inline void Printf(const char* fmt, const char* arg1) { printf(fmt, arg1); }
 
 #define c_SSE3		(1 << 0)
 #define d_FXSAVE	(1 << 24)
@@ -87,26 +85,14 @@ static inline bool HasSSE3() {
 #define MXCSR_DAZ (1 << 6)
 #define MXCSR_FTZ (1 << 15)
 
-#ifdef _MSC_VER
-#define STREFLOP_FSTCW(cw) do { short tmp; __asm { fstcw tmp }; (cw) = tmp; } while (0)
-#define STREFLOP_FLDCW(cw) do { short tmp = (cw); __asm { fclex }; __asm { fldcw tmp }; } while (0)
-#define STREFLOP_STMXCSR(cw) do { int tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
-#define STREFLOP_LDMXCSR(cw) do { int tmp = (cw); __asm { ldmxcsr tmp }; } while (0)
-#else
-#define STREFLOP_FSTCW(cw) do { asm volatile ("fstcw %0" : "=m" (cw) : ); } while (0)
-#define STREFLOP_FLDCW(cw) do { asm volatile ("fclex \n fldcw %0" : : "m" (cw)); } while (0)
-#define STREFLOP_STMXCSR(cw) do { asm volatile ("stmxcsr %0" : "=m" (cw) : ); } while (0)
-#define STREFLOP_LDMXCSR(cw) do { asm volatile ("ldmxcsr %0" : : "m" (cw) ); } while (0)
-#endif
-
+//:ref http://www.info.univ-angers.fr/~richer/ens/l3info/ao/intel_intrinsics.pdf
 static void EnableMXCSRFlag(int flag, bool enable, const char* name) {
-	int sse_mode;
-	STREFLOP_STMXCSR(sse_mode);
+	int sse_mode = _mm_getcsr();
 	if (enable && (sse_mode & flag) == flag) { Printf("%s mode is already enabled\n", name); return; }
 	if (!enable && (sse_mode & flag) == 0) { Printf("%s mode is already disabled\n", name); return; }
 	if (enable) { Printf("enabling %s mode\n", name); sse_mode |= flag; }
 	else { Printf("disabling %s mode\n", name); sse_mode &= ~flag; }
-	STREFLOP_LDMXCSR(sse_mode);
+	_mm_setcsr(sse_mode);
 }
 
 void FPU_SetDAZ(bool enable) {
@@ -122,8 +108,8 @@ void FPU_SetFTZ(bool enable) {
 int GetProcessorId(void) {
 	int flags = CPUID_GENERIC;
 	if (CPU_HasMMX()) flags |= CPUID_MMX;
-	if (CPU_Has3DNow())		flags |= CPUID_3DNOW;
-	if (CPU_HasSSE())		flags |= CPUID_SSE;
+	if (CPU_Has3DNow()) flags |= CPUID_3DNOW;
+	if (CPU_HasSSE()) flags |= CPUID_SSE;
 	if (CPU_HasSSE2()) flags |= CPUID_SSE2;
 #ifndef NO_CPUID
 	// there is no SDL_HasSSE3() in SDL 1.2
@@ -134,7 +120,7 @@ int GetProcessorId(void) {
 }
 
 void FPU_SetPrecision() {
-#if defined(_MSC_VER) && defined(_M_IX86)
+#if defined(_MSC_VER)
 	_controlfp(_PC_64, _MCW_PC);
 #endif
 }

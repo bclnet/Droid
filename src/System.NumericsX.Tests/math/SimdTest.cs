@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Linq;
 using p_generic = System.NumericsX.SimdGeneric;
 using p_simd = System.NumericsX.Simd;
+using static System.NumericsX.PlatformNative;
 
 namespace System.NumericsX
 {
@@ -3681,7 +3682,7 @@ namespace System.NumericsX
 #if true
             if (!string.IsNullOrEmpty(args[1]))
             {
-                var cpuid = Platform.GetProcessorId();
+                var cpuid = GetProcessorId();
                 var argString = args.Args().Replace(" ", "");
 
                 if (string.Equals(argString, "MMX", StringComparison.OrdinalIgnoreCase))

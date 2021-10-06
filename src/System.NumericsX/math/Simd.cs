@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using static System.NumericsX.Platform;
+using static System.NumericsX.PlatformNative;
 
 namespace System.NumericsX
 {
@@ -29,7 +29,7 @@ namespace System.NumericsX
                 else SimdGeneric.Activate();
             }
 
-            Printf($"{module} using {Name} for SIMD processing\n");
+            Platform.Printf($"{module} using {Name} for SIMD processing\n");
 
             if ((cpuid & CPUID.SSE) != 0)
             {
