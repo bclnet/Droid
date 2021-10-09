@@ -1,28 +1,25 @@
+using Gengine.Render;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
+using static Gengine.Lib;
+using static Gengine.Render.Lib;
 using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Droid.Render
 {
-    partial class TRX
+    unsafe partial class TRX
     {
         // Modifies the shaderParms on all the lights so the level designers can easily test different color schemes
         void R_ModulateLights_f(CmdArgs args)
         {
-            if (!tr.primaryWorld)
-                return;
-            if (args.Count != 4)
-            {
-                common.Printf("usage: modulateLights <redFloat> <greenFloat> <blueFloat>\n");
-                return;
-            }
+            if (!tr.primaryWorld) return;
+            if (args.Count != 4) { common.Printf("usage: modulateLights <redFloat> <greenFloat> <blueFloat>\n"); return; }
 
-            float modulate[3];
+            var modulate = stackalloc float[3];
             int i;
-            for (i = 0; i < 3; i++)
-                modulate[i] = floatX.Parse(args[i + 1]);
+            for (i = 0; i < 3; i++) modulate[i] = floatX.Parse(args[i + 1]);
 
-            int count = 0;
+            var count = 0;
             for (i = 0; i < tr.primaryWorld.lightDefs.Count; i++)
             {
                 RenderLightLocal light;
@@ -31,87 +28,56 @@ namespace Droid.Render
                 if (light != null)
                 {
                     count++;
-                    for (var j = 0; j < 3; j++)
-                        light.parms.shaderParms[j] *= modulate[j];
+                    for (var j = 0; j < 3; j++) light.parms.shaderParms[j] *= modulate[j];
                 }
             }
             common.Printf($"modulated {count} lights\n");
         }
 
-
         //======================================================================================
 
-
-        // Creates all needed model references in portal areas, chaining them to both the area and the entityDef.
-        // Bumps tr.viewCount.
+        // Creates all needed model references in portal areas, chaining them to both the area and the entityDef. Bumps tr.viewCount.
         void R_CreateEntityRefs(RenderEntityLocal def)
         {
-            int i;
-            idVec3 transformed[8];
-            idVec3 v;
+            int i; Vector3 v; var transformed = stackalloc Vector3[8];
 
-            if (!def.parms.hModel)
-            {
-                def.parms.hModel = renderModelManager.DefaultModel();
-            }
+            if (def.parms.hModel == null) def.parms.hModel = renderModelManager.DefaultModel();
 
-            // if the entity hasn't been fully specified due to expensive animation calcs
-            // for md5 and particles, use the provided conservative bounds.
-            if (def.parms.callback)
-            {
-                def.referenceBounds = def.parms.bounds;
-            }
-            else
-            {
-                def.referenceBounds = def.parms.hModel.Bounds(&def.parms);
-            }
+            // if the entity hasn't been fully specified due to expensive animation calcs for md5 and particles, use the provided conservative bounds.
+            def.referenceBounds = def.parms.callback != null ? def.parms.bounds : def.parms.hModel.Bounds(def.parms);
 
             // some models, like empty particles, may not need to be added at all
-            if (def.referenceBounds.IsCleared())
-            {
-                return;
-            }
+            if (def.referenceBounds.IsCleared) return;
 
-            if (r_showUpdates.GetBool() &&
-                    (def.referenceBounds[1][0] - def.referenceBounds[0][0] > 1024 ||
-                      def.referenceBounds[1][1] - def.referenceBounds[0][1] > 1024))
-            {
-                common.Printf("big entityRef: %f,%f\n", def.referenceBounds[1][0] - def.referenceBounds[0][0],
-                                def.referenceBounds[1][1] - def.referenceBounds[0][1]);
-            }
+            if (R.r_showUpdates.Bool && (
+                def.referenceBounds[1].x - def.referenceBounds[0].x > 1024 ||
+                def.referenceBounds[1].y - def.referenceBounds[0].y > 1024))
+                common.Printf($"big entityRef: {def.referenceBounds[1].x - def.referenceBounds[0].x},{def.referenceBounds[1].y - def.referenceBounds[0].y}\n");
 
             for (i = 0; i < 8; i++)
             {
-                v[0] = def.referenceBounds[i & 1][0];
-                v[1] = def.referenceBounds[(i >> 1) & 1][1];
-                v[2] = def.referenceBounds[(i >> 2) & 1][2];
-
+                v.x = def.referenceBounds[i & 1][0];
+                v.y = def.referenceBounds[(i >> 1) & 1][1];
+                v.z = def.referenceBounds[(i >> 2) & 1][2];
                 R_LocalPointToGlobal(def.modelMatrix, v, transformed[i]);
             }
 
-            // bump the view count so we can tell if an
-            // area already has a reference
+            // bump the view count so we can tell if an area already has a reference
             tr.viewCount++;
 
             // push these points down the BSP tree into areas
-            def.world.PushVolumeIntoTree(def, NULL, 8, transformed);
+            def.world.PushVolumeIntoTree(def, null, 8, transformed);
         }
 
+        //=================================================================================
 
-        /*
-        =================================================================================
-
-        CREATE LIGHT REFS
-
-        =================================================================================
-        */
+        #region CREATE LIGHT REFS
 
         // All values are reletive to the origin
         // Assumes that right and up are not normalized
         // This is also called by dmap during map processing.
         static void R_SetLightProject(Plane[] lightProject, in Vector3 origin, in Vector3 target, in Vector3 rightVector, in Vector3 upVector, in Vector3 start, in Vector3 stop)
         {
-
             float dist;
             float scale;
             float rLen, uLen;
@@ -119,7 +85,7 @@ namespace Droid.Render
             float ofs;
             Vector3 right, up;
             Vector3 startGlobal;
-            Vector4 targetGlobal;
+            Vector4 targetGlobal = default;
 
             right = rightVector;
             rLen = right.Normalize();
@@ -130,25 +96,16 @@ namespace Droid.Render
             normal.Normalize();
 
             dist = target * normal; //  - ( origin * normal );
-            if (dist < 0)
-            {
-                dist = -dist;
-                normal = -normal;
-            }
+            if (dist < 0) { dist = -dist; normal = -normal; }
 
             scale = (0.5f * dist) / rLen;
             right *= scale;
             scale = -(0.5f * dist) / uLen;
             up *= scale;
 
-            lightProject[2] = normal;
-            lightProject[2][3] = -(origin * lightProject[2].Normal);
-
-            lightProject[0] = right;
-            lightProject[0][3] = -(origin * lightProject[0].Normal);
-
-            lightProject[1] = up;
-            lightProject[1][3] = -(origin * lightProject[1].Normal);
+            lightProject[2] = normal; lightProject[2].d = -(origin * lightProject[2].Normal);
+            lightProject[0] = right; lightProject[0].d = -(origin * lightProject[0].Normal);
+            lightProject[1] = up; lightProject[1].d = -(origin * lightProject[1].Normal);
 
             // now offset to center
             targetGlobal.ToVec3() = target + origin;
@@ -161,13 +118,10 @@ namespace Droid.Render
             // set the falloff vector
             normal = stop - start;
             dist = normal.Normalize();
-            if (dist <= 0)
-            {
-                dist = 1;
-            }
+            if (dist <= 0) dist = 1;
             lightProject[3] = normal * (1.0f / dist);
             startGlobal = start + origin;
-            lightProject[3][3] = -(startGlobal * lightProject[3].Normal);
+            lightProject[3].d = -(startGlobal * lightProject[3].Normal);
         }
 
         // Creates plane equations from the light projection, positive sides face out of the light
@@ -184,113 +138,56 @@ namespace Droid.Render
             // we want the planes of s=0 and s=1 for front and rear clipping planes
             frustum[4] = lightProject[3];
 
-            frustum[5] = lightProject[3];
-            frustum[5][3] -= 1.0f;
+            frustum[5] = lightProject[3]; frustum[5].d -= 1.0f;
             frustum[5] = -frustum[5];
 
-            for (i = 0; i < 6; i++)
-            {
-                float l;
-
-                frustum[i] = -frustum[i];
-                l = frustum[i].Normalize();
-                frustum[i][3] /= l;
-            }
+            for (i = 0; i < 6; i++) { frustum[i] = -frustum[i]; frustum[i].d /= frustum[i].Normalize(); }
         }
 
-        /*
-        ====================
-        R_FreeLightDefFrustum
-        ====================
-        */
-        void R_FreeLightDefFrustum(idRenderLightLocal* ldef)
+        static void R_FreeLightDefFrustum(RenderLightLocal ldef)
         {
-            int i;
-
             // free the frustum tris
-            if (ldef.frustumTris)
+            if (ldef.frustumTris != null)
             {
                 R_FreeStaticTriSurf(ldef.frustumTris);
-                ldef.frustumTris = NULL;
+                ldef.frustumTris = null;
             }
             // free frustum windings
-            for (i = 0; i < 6; i++)
-            {
-                if (ldef.frustumWindings[i])
-                {
-                    delete ldef.frustumWindings[i];
-                    ldef.frustumWindings[i] = NULL;
-                }
-            }
+            for (var i = 0; i < 6; i++) if (ldef.frustumWindings[i] != null) ldef.frustumWindings[i] = null;
         }
 
-        /*
-        =================
-        R_DeriveLightData
-
-        Fills everything in based on light.parms
-        =================
-        */
-        void R_DeriveLightData(idRenderLightLocal* light)
+        // Fills everything in based on light.parms
+        static void R_DeriveLightData(RenderLightLocal light)
         {
             int i;
 
             // decide which light shader we are going to use
-            if (light.parms.shader)
-            {
-                light.lightShader = light.parms.shader;
-            }
-            if (!light.lightShader)
-            {
-                if (light.parms.pointLight)
-                {
-                    light.lightShader = declManager.FindMaterial("lights/defaultPointLight");
-                }
-                else
-                {
-                    light.lightShader = declManager.FindMaterial("lights/defaultProjectedLight");
-                }
-            }
+            if (light.parms.shader != null) light.lightShader = light.parms.shader;
+            if (light.lightShader == null) light.lightShader = declManager.FindMaterial(light.parms.pointLight ? "lights/defaultPointLight" : "lights/defaultProjectedLight");
 
             // get the falloff image
-            light.falloffImage = light.lightShader.LightFalloffImage();
-            if (!light.falloffImage)
+            light.falloffImage = light.lightShader.LightFalloffImage;
+            if (light.falloffImage == null)
             {
                 // use the falloff from the default shader of the correct type
-                const idMaterial* defaultShader;
-
-                if (light.parms.pointLight)
-                {
-                    defaultShader = declManager.FindMaterial("lights/defaultPointLight");
-                    light.falloffImage = defaultShader.LightFalloffImage();
-                }
-                else
-                {
-                    // projected lights by default don't diminish with distance
-                    defaultShader = declManager.FindMaterial("lights/defaultProjectedLight");
-                    light.falloffImage = defaultShader.LightFalloffImage();
-                }
+                // projected lights by default don't diminish with distance
+                var defaultShader = declManager.FindMaterial(light.parms.pointLight ? "lights/defaultPointLight" : "lights/defaultProjectedLight");
+                light.falloffImage = defaultShader.LightFalloffImage;
             }
 
             // set the projection
-            if (!light.parms.pointLight)
-            {
-                // projected light
-
-                R_SetLightProject(light.lightProject, vec3_origin /* light.parms.origin */, light.parms.target,
-                                   light.parms.right, light.parms.up, light.parms.start, light.parms.end);
-            }
+            if (!light.parms.pointLight) R_SetLightProject(light.lightProject, Vector3.origin /*light.parms.origin*/, light.parms.target, light.parms.right, light.parms.up, light.parms.start, light.parms.end); // projected light
             else
             {
                 // point light
                 memset(light.lightProject, 0, sizeof(light.lightProject));
-                light.lightProject[0][0] = 0.5f / light.parms.lightRadius[0];
-                light.lightProject[1][1] = 0.5f / light.parms.lightRadius[1];
-                light.lightProject[3][2] = 0.5f / light.parms.lightRadius[2];
-                light.lightProject[0][3] = 0.5f;
-                light.lightProject[1][3] = 0.5f;
-                light.lightProject[2][3] = 1.0f;
-                light.lightProject[3][3] = 0.5f;
+                light.lightProject[0].a = 0.5f / light.parms.lightRadius[0];
+                light.lightProject[1].b = 0.5f / light.parms.lightRadius[1];
+                light.lightProject[3].c = 0.5f / light.parms.lightRadius[2];
+                light.lightProject[0].d = 0.5f;
+                light.lightProject[1].d = 0.5f;
+                light.lightProject[2].d = 1.0f;
+                light.lightProject[3].d = 0.5f;
             }
 
             // set the frustum planes
@@ -299,540 +196,312 @@ namespace Droid.Render
             // rotate the light planes and projections by the axis
             R_AxisToModelMatrix(light.parms.axis, light.parms.origin, light.modelMatrix);
 
-            for (i = 0; i < 6; i++)
-            {
-                idPlane temp;
-                temp = light.frustum[i];
-                R_LocalPlaneToGlobal(light.modelMatrix, temp, light.frustum[i]);
-            }
-            for (i = 0; i < 4; i++)
-            {
-                idPlane temp;
-                temp = light.lightProject[i];
-                R_LocalPlaneToGlobal(light.modelMatrix, temp, light.lightProject[i]);
-            }
+            for (i = 0; i < 6; i++) { var temp = light.frustum[i]; R_LocalPlaneToGlobal(light.modelMatrix, temp, light.frustum[i]); }
+            for (i = 0; i < 4; i++) { var temp = light.lightProject[i]; R_LocalPlaneToGlobal(light.modelMatrix, temp, light.lightProject[i]); }
 
-            // adjust global light origin for off center projections and parallel projections
-            // we are just faking parallel by making it a very far off center for now
+            // adjust global light origin for off center projections and parallel projections we are just faking parallel by making it a very far off center for now
             if (light.parms.parallel)
             {
-                idVec3 dir;
-
-                dir = light.parms.lightCenter;
-                if (!dir.Normalize())
-                {
-                    // make point straight up if not specified
-                    dir[2] = 1;
-                }
+                var dir = light.parms.lightCenter;
+                if (dir.Normalize() == 0f) dir.z = 1f; // make point straight up if not specified
                 light.globalLightOrigin = light.parms.origin + dir * 100000;
             }
-            else
-            {
-                light.globalLightOrigin = light.parms.origin + light.parms.axis * light.parms.lightCenter;
-            }
+            else light.globalLightOrigin = light.parms.origin + light.parms.axis * light.parms.lightCenter;
 
             R_FreeLightDefFrustum(light);
 
             light.frustumTris = R_PolytopeSurface(6, light.frustum, light.frustumWindings);
 
-            // a projected light will have one shadowFrustum, a point light will have
-            // six unless the light center is outside the box
+            // a projected light will have one shadowFrustum, a point light will have six unless the light center is outside the box
             R_MakeShadowFrustums(light);
         }
 
-        /*
-        =================
-        R_CreateLightRefs
-        =================
-        */
-#define MAX_LIGHT_VERTS	40
-        void R_CreateLightRefs(idRenderLightLocal* light)
+        const int MAX_LIGHT_VERTS = 40;
+        static void R_CreateLightRefs(RenderLightLocal light)
         {
-            idVec3 points[MAX_LIGHT_VERTS];
-            int i;
-            srfTriangles_t* tri;
+            int i; SrfTriangles tri; var points = stackalloc Vector3[MAX_LIGHT_VERTS];
 
             tri = light.frustumTris;
 
-            // because a light frustum is made of only six intersecting planes,
-            // we should never be able to get a stupid number of points...
-            if (tri.numVerts > MAX_LIGHT_VERTS)
-            {
-                common.Error("R_CreateLightRefs: %i points in frustumTris!", tri.numVerts);
-            }
-            for (i = 0; i < tri.numVerts; i++)
-            {
-                points[i] = tri.verts[i].xyz;
-            }
+            // because a light frustum is made of only six intersecting planes, we should never be able to get a stupid number of points...
+            if (tri.numVerts > MAX_LIGHT_VERTS) common.Error($"R_CreateLightRefs: {tri.numVerts} points in frustumTris!");
+            for (i = 0; i < tri.numVerts; i++) points[i] = tri.verts[i].xyz;
 
-            if (r_showUpdates.GetBool() && (tri.bounds[1][0] - tri.bounds[0][0] > 1024 ||
-                                               tri.bounds[1][1] - tri.bounds[0][1] > 1024))
-            {
-                common.Printf("big lightRef: %f,%f\n", tri.bounds[1][0] - tri.bounds[0][0]
-                                , tri.bounds[1][1] - tri.bounds[0][1]);
-            }
+            if (R.r_showUpdates.Bool && (
+                tri.bounds[1].x - tri.bounds[0].x > 1024 ||
+                tri.bounds[1].y - tri.bounds[0].y > 1024))
+                common.Printf($"big lightRef: {tri.bounds[1].x - tri.bounds[0].x},{tri.bounds[1].y - tri.bounds[0].y}\n");
 
-            // determine the areaNum for the light origin, which may let us
-            // cull the light if it is behind a closed door
-            // it is debatable if we want to use the entity origin or the center offset origin,
-            // but we definitely don't want to use a parallel offset origin
+            // determine the areaNum for the light origin, which may let us cull the light if it is behind a closed door
+            // it is debatable if we want to use the entity origin or the center offset origin, but we definitely don't want to use a parallel offset origin
             light.areaNum = light.world.PointInArea(light.globalLightOrigin);
-            if (light.areaNum == -1)
-            {
-                light.areaNum = light.world.PointInArea(light.parms.origin);
-            }
+            if (light.areaNum == -1) light.areaNum = light.world.PointInArea(light.parms.origin);
 
-            // bump the view count so we can tell if an
-            // area already has a reference
+            // bump the view count so we can tell if an area already has a reference
             tr.viewCount++;
 
-            // if we have a prelight model that includes all the shadows for the major world occluders,
-            // we can limit the area references to those visible through the portals from the light center.
-            // We can't do this in the normal case, because shadows are cast from back facing triangles, which
-            // may be in areas not directly visible to the light projection center.
-            if (light.parms.prelightModel && r_useLightPortalFlow.GetBool() && light.lightShader.LightCastsShadows())
-            {
-                light.world.FlowLightThroughPortals(light);
-            }
-            else
-            {
-                // push these points down the BSP tree into areas
-                light.world.PushVolumeIntoTree(NULL, light, tri.numVerts, points);
-            }
+            // if we have a prelight model that includes all the shadows for the major world occluders, we can limit the area references to those visible through the portals from the light center.
+            // We can't do this in the normal case, because shadows are cast from back facing triangles, which may be in areas not directly visible to the light projection center.
+            if (light.parms.prelightModel != null && R.r_useLightPortalFlow.Bool && light.lightShader.LightCastsShadows) light.world.FlowLightThroughPortals(light);
+            // push these points down the BSP tree into areas
+            else light.world.PushVolumeIntoTree(null, light, tri.numVerts, points);
         }
 
-        /*
-        ===============
-        R_RenderLightFrustum
-
-        Called by the editor and dmap to operate on light volumes
-        ===============
-        */
-        void R_RenderLightFrustum( const renderLight_t &renderLight, idPlane lightFrustum[6] )
-{
-    idRenderLightLocal fakeLight;
-
-        fakeLight.parms = renderLight;
-
-    R_DeriveLightData(&fakeLight);
-
-        R_FreeStaticTriSurf(fakeLight.frustumTris);
-
-    for (int i = 0; i< 6; i++)
-    {
-        lightFrustum[i] = fakeLight.frustum[i];
-    }
-}
-
-
-//=================================================================================
-
-/*
-===============
-WindingCompletelyInsideLight
-===============
-*/
-bool WindingCompletelyInsideLight( const idWinding* w, const idRenderLightLocal* ldef)
-{
-    int i, j;
-
-    for (i = 0; i < w.GetNumPoints(); i++)
-    {
-        for (j = 0; j < 6; j++)
+        // Called by the editor and dmap to operate on light volumes
+        void R_RenderLightFrustum(RenderLight renderLight, Plane[] lightFrustum)
         {
-            float d;
+            RenderLightLocal fakeLight = new();
 
-            d = (*w)[i].ToVec3() * ldef.frustum[j].Normal() + ldef.frustum[j][3];
-            if (d > 0)
-            {
-                return false;
-            }
+            fakeLight.parms = renderLight;
+
+            R_DeriveLightData(fakeLight);
+
+            R_FreeStaticTriSurf(fakeLight.frustumTris);
+
+            for (var i = 0; i < 6; i++) lightFrustum[i] = fakeLight.frustum[i];
         }
-    }
-    return true;
-}
 
-/*
-======================
-R_CreateLightDefFogPortals
+        #endregion
 
-When a fog light is created or moved, see if it completely
-encloses any portals, which may allow them to be fogged closed.
-======================
-*/
-void R_CreateLightDefFogPortals(idRenderLightLocal* ldef)
-{
-    areaReference_t* lref;
-    portalArea_t* area;
+        //=================================================================================
 
-    ldef.foggedPortals = NULL;
-
-    if (!ldef.lightShader.IsFogLight())
-    {
-        return;
-    }
-
-    // some fog lights will explicitly disallow portal fogging
-    if (ldef.lightShader.TestMaterialFlag(MF_NOPORTALFOG))
-    {
-        return;
-    }
-
-    for (lref = ldef.references; lref; lref = lref.ownerNext)
-    {
-        // check all the models in this area
-        area = lref.area;
-
-        portal_t* prt;
-        doublePortal_t* dp;
-
-        for (prt = area.portals; prt; prt = prt.next)
+        static bool WindingCompletelyInsideLight(Winding w, RenderLightLocal ldef)
         {
-            dp = prt.doublePortal;
+            int i, j;
 
-            // we only handle a single fog volume covering a portal
-            // this will never cause incorrect drawing, but it may
-            // fail to cull a portal
-            if (dp.fogLight)
-            {
-                continue;
-            }
-
-            if (WindingCompletelyInsideLight(prt.w, ldef))
-            {
-                dp.fogLight = ldef;
-                dp.nextFoggedPortal = ldef.foggedPortals;
-                ldef.foggedPortals = dp;
-            }
+            for (i = 0; i < w.NumPoints; i++)
+                for (j = 0; j < 6; j++)
+                {
+                    var d = w[i].ToVec3() * ldef.frustum[j].Normal + ldef.frustum[j].d;
+                    if (d > 0f) return false;
+                }
+            return true;
         }
-    }
-}
 
-/*
-====================
-R_FreeLightDefDerivedData
-
-Frees all references and lit surfaces from the light
-====================
-*/
-void R_FreeLightDefDerivedData(idRenderLightLocal* ldef)
-{
-    areaReference_t* lref, *nextRef;
-
-    // rmove any portal fog references
-    for (doublePortal_t* dp = ldef.foggedPortals; dp; dp = dp.nextFoggedPortal)
-    {
-        dp.fogLight = NULL;
-    }
-
-    // free all the interactions
-    while (ldef.firstInteraction != NULL)
-    {
-        ldef.firstInteraction.UnlinkAndFree();
-    }
-
-    // free all the references to the light
-    for (lref = ldef.references; lref; lref = nextRef)
-    {
-        nextRef = lref.ownerNext;
-
-        // unlink from the area
-        lref.areaNext.areaPrev = lref.areaPrev;
-        lref.areaPrev.areaNext = lref.areaNext;
-
-        // put it back on the free list for reuse
-        ldef.world.areaReferenceAllocator.Free(lref);
-    }
-    ldef.references = NULL;
-
-    R_FreeLightDefFrustum(ldef);
-}
-
-/*
-===================
-R_FreeEntityDefDerivedData
-
-Used by both RE_FreeEntityDef and RE_UpdateEntityDef
-Does not actually free the entityDef.
-===================
-*/
-void R_FreeEntityDefDerivedData(idRenderEntityLocal* def, bool keepDecals, bool keepCachedDynamicModel)
-{
-    int i;
-    areaReference_t * ref, *next;
-
-    // demo playback needs to free the joints, while normal play
-    // leaves them in the control of the game
-    if (session.readDemo)
-    {
-        if (def.parms.joints)
+        // When a fog light is created or moved, see if it completely encloses any portals, which may allow them to be fogged closed.
+        static void R_CreateLightDefFogPortals(RenderLightLocal ldef)
         {
-            Mem_Free16(def.parms.joints);
-            def.parms.joints = NULL;
+            AreaReference lref;
+            PortalArea area;
+
+            ldef.foggedPortals = null;
+
+            if (!ldef.lightShader.IsFogLight) return;
+
+            // some fog lights will explicitly disallow portal fogging
+            if (ldef.lightShader.TestMaterialFlag(MF.NOPORTALFOG)) return;
+
+            for (lref = ldef.references; lref != null; lref = lref.ownerNext)
+            {
+                // check all the models in this area
+                area = lref.area;
+
+                Portal prt; DoublePortal dp;
+                for (prt = area.portals; prt; prt = prt.next)
+                {
+                    dp = prt.doublePortal;
+                    // we only handle a single fog volume covering a portal this will never cause incorrect drawing, but it may fail to cull a portal
+                    if (dp.fogLight) continue;
+                    if (WindingCompletelyInsideLight(prt.w, ldef))
+                    {
+                        dp.fogLight = ldef;
+                        dp.nextFoggedPortal = ldef.foggedPortals;
+                        ldef.foggedPortals = dp;
+                    }
+                }
+            }
         }
-        if (def.parms.callbackData)
+
+        // Frees all references and lit surfaces from the light
+        static void R_FreeLightDefDerivedData(RenderLightLocal ldef)
         {
-            Mem_Free(def.parms.callbackData);
-            def.parms.callbackData = NULL;
+            AreaReference lref, nextRef;
+
+            // rmove any portal fog references
+            for (DoublePortal dp = ldef.foggedPortals; dp != null; dp = dp.nextFoggedPortal) dp.fogLight = null;
+
+            // free all the interactions
+            while (ldef.firstInteraction != null) ldef.firstInteraction.UnlinkAndFree();
+
+            // free all the references to the light
+            for (lref = ldef.references; lref != null; lref = nextRef)
+            {
+                nextRef = lref.ownerNext;
+
+                // unlink from the area
+                lref.areaNext.areaPrev = lref.areaPrev;
+                lref.areaPrev.areaNext = lref.areaNext;
+
+                // put it back on the free list for reuse
+                ldef.world.areaReferenceAllocator.Free(lref);
+            }
+            ldef.references = null;
+
+            R_FreeLightDefFrustum(ldef);
         }
-        for (i = 0; i < MAX_RENDERENTITY_GUI; i++)
+
+        // Used by both RE_FreeEntityDef and RE_UpdateEntityDef Does not actually free the entityDef.
+        static void R_FreeEntityDefDerivedData(RenderEntityLocal def, bool keepDecals, bool keepCachedDynamicModel)
         {
-            if (def.parms.gui[i])
+            int i;
+            AreaReference next;
+
+            // demo playback needs to free the joints, while normal play leaves them in the control of the game
+            if (session.readDemo != null)
             {
-                delete def.parms.gui[i];
-                def.parms.gui[i] = NULL;
+                if (def.parms.joints != null) def.parms.joints = null;
+                if (def.parms.callbackData != null) def.parms.callbackData = null;
+                for (i = 0; i < MAX_RENDERENTITY_GUI; i++) if (def.parms.gui[i] != null) def.parms.gui[i] = null;
             }
+
+            // free all the interactions
+            while (def.firstInteraction != null) def.firstInteraction.UnlinkAndFree();
+
+            // clear the dynamic model if present
+            if (def.dynamicModel != null) def.dynamicModel = null;
+
+            if (!keepDecals)
+            {
+                R_FreeEntityDefDecals(def);
+                R_FreeEntityDefOverlay(def);
+            }
+
+            if (!keepCachedDynamicModel) def.cachedDynamicModel = null;
+
+            // free the entityRefs from the areas
+            for (var r = def.entityRefs; r != null; r = next)
+            {
+                next = r.ownerNext;
+
+                // unlink from the area
+                r.areaNext.areaPrev = r.areaPrev;
+                r.areaPrev.areaNext = r.areaNext;
+
+                // put it back on the free list for reuse
+                def.world.areaReferenceAllocator.Free(r);
+            }
+            def.entityRefs = null;
         }
-    }
 
-    // free all the interactions
-    while (def.firstInteraction != NULL)
-    {
-        def.firstInteraction.UnlinkAndFree();
-    }
-
-    // clear the dynamic model if present
-    if (def.dynamicModel)
-    {
-        def.dynamicModel = NULL;
-    }
-
-    if (!keepDecals)
-    {
-        R_FreeEntityDefDecals(def);
-        R_FreeEntityDefOverlay(def);
-    }
-
-    if (!keepCachedDynamicModel)
-    {
-        delete def.cachedDynamicModel;
-        def.cachedDynamicModel = NULL;
-    }
-
-    // free the entityRefs from the areas
-    for (ref = def.entityRefs; ref ; ref = next)
-    {
-        next = ref.ownerNext;
-
-        // unlink from the area
-        ref.areaNext.areaPrev = ref.areaPrev;
-        ref.areaPrev.areaNext = ref.areaNext;
-
-        // put it back on the free list for reuse
-        def.world.areaReferenceAllocator.Free(ref );
-    }
-    def.entityRefs = NULL;
-}
-
-/*
-==================
-R_ClearEntityDefDynamicModel
-
-If we know the reference bounds stays the same, we
-only need to do this on entity update, not the full
-R_FreeEntityDefDerivedData
-==================
-*/
-void R_ClearEntityDefDynamicModel(idRenderEntityLocal* def)
-{
-    // free all the interaction surfaces
-    for (idInteraction* inter = def.firstInteraction; inter != NULL && !inter.IsEmpty(); inter = inter.entityNext)
-    {
-        inter.FreeSurfaces();
-    }
-
-    // clear the dynamic model if present
-    if (def.dynamicModel)
-    {
-        def.dynamicModel = NULL;
-    }
-}
-
-/*
-===================
-R_FreeEntityDefDecals
-===================
-*/
-void R_FreeEntityDefDecals(idRenderEntityLocal* def)
-{
-    while (def.decals)
-    {
-        idRenderModelDecal* next = def.decals.Next();
-        idRenderModelDecal::Free(def.decals);
-        def.decals = next;
-    }
-}
-
-/*
-===================
-R_FreeEntityDefFadedDecals
-===================
-*/
-void R_FreeEntityDefFadedDecals(idRenderEntityLocal* def, int time)
-{
-    def.decals = idRenderModelDecal::RemoveFadedDecals(def.decals, time);
-}
-
-/*
-===================
-R_FreeEntityDefOverlay
-===================
-*/
-void R_FreeEntityDefOverlay(idRenderEntityLocal* def)
-{
-    if (def.overlay)
-    {
-        idRenderModelOverlay::Free(def.overlay);
-        def.overlay = NULL;
-    }
-}
-
-/*
-===================
-R_FreeDerivedData
-
-ReloadModels and RegenerateWorld call this
-// FIXME: need to do this for all worlds
-===================
-*/
-void R_FreeDerivedData(void )
-{
-    int i, j;
-    idRenderWorldLocal* rw;
-    idRenderEntityLocal* def;
-    idRenderLightLocal* light;
-
-    for (j = 0; j < tr.worlds.Num(); j++)
-    {
-        rw = tr.worlds[j];
-
-        for (i = 0; i < rw.entityDefs.Num(); i++)
+        // If we know the reference bounds stays the same, we only need to do this on entity update, not the full R_FreeEntityDefDerivedData
+        static void R_ClearEntityDefDynamicModel(RenderEntityLocal def)
         {
-            def = rw.entityDefs[i];
-            if (!def)
-            {
-                continue;
-            }
-            R_FreeEntityDefDerivedData(def, false, false);
+            // free all the interaction surfaces
+            for (var inter = def.firstInteraction; inter != null && !inter.IsEmpty; inter = inter.entityNext) inter.FreeSurfaces();
+
+            // clear the dynamic model if present
+            if (def.dynamicModel != null) def.dynamicModel = null;
         }
 
-        for (i = 0; i < rw.lightDefs.Num(); i++)
+        static void R_FreeEntityDefDecals(RenderEntityLocal def)
         {
-            light = rw.lightDefs[i];
-            if (!light)
+            while (def.decals != null)
             {
-                continue;
+                var next = def.decals.Next();
+                RenderModelDecal.Free(def.decals);
+                def.decals = next;
             }
-            R_FreeLightDefDerivedData(light);
+        }
+
+        static void R_FreeEntityDefFadedDecals(RenderEntityLocal def, int time)
+            => def.decals = RenderModelDecal.RemoveFadedDecals(def.decals, time);
+
+        static void R_FreeEntityDefOverlay(RenderEntityLocal def)
+        {
+            if (def.overlay != null) { RenderModelOverlay.Free(def.overlay); def.overlay = null; }
+        }
+
+        // ReloadModels and RegenerateWorld call this
+        // FIXME: need to do this for all worlds
+        static void R_FreeDerivedData()
+        {
+            int i, j;
+            RenderWorldLocal rw;
+            RenderEntityLocal def;
+            RenderLightLocal light;
+
+            for (j = 0; j < tr.worlds.Count; j++)
+            {
+                rw = tr.worlds[j];
+
+                for (i = 0; i < rw.entityDefs.Num(); i++)
+                {
+                    def = rw.entityDefs[i];
+                    if (def == null) continue;
+                    R_FreeEntityDefDerivedData(def, false, false);
+                }
+
+                for (i = 0; i < rw.lightDefs.Num(); i++)
+                {
+                    light = rw.lightDefs[i];
+                    if (light == null) continue;
+                    R_FreeLightDefDerivedData(light);
+                }
+            }
+        }
+
+        static void R_CheckForEntityDefsUsingModel(IRenderModel model)
+        {
+            int i, j;
+            RenderWorldLocal rw;
+            RenderEntityLocal def;
+
+            for (j = 0; j < tr.worlds.Count; j++)
+            {
+                rw = tr.worlds[j];
+                for (i = 0; i < rw.entityDefs.Count; i++)
+                {
+                    def = rw.entityDefs[i];
+                    if (def == null) continue;
+                    // this should never happen but Radiant messes it up all the time so just free the derived data
+                    if (def.parms.hModel == model) R_FreeEntityDefDerivedData(def, false, false);
+                }
+            }
+        }
+
+        // ReloadModels and RegenerateWorld call this
+        // FIXME: need to do this for all worlds
+        static void R_ReCreateWorldReferences()
+        {
+            int i, j;
+            RenderWorldLocal rw;
+            RenderEntityLocal def;
+            RenderLightLocal light;
+
+            // let the interaction generation code know this shouldn't be optimized for a particular view
+            tr.viewDef = null;
+
+            for (j = 0; j < tr.worlds.Count; j++)
+            {
+                rw = tr.worlds[j];
+                for (i = 0; i < rw.entityDefs.Num(); i++)
+                {
+                    def = rw.entityDefs[i];
+                    if (def == null) continue;
+                    // the world model entities are put specifically in a single area, instead of just pushing their bounds into the tree
+                    if (i < rw.numPortalAreas) rw.AddEntityRefToArea(def, &rw.portalAreas[i]);
+                    else R_CreateEntityRefs(def);
+                }
+
+                for (i = 0; i < rw.lightDefs.Num(); i++)
+                {
+                    light = rw.lightDefs[i];
+                    if (light == null) continue;
+                    var parms = light.parms;
+                    light.world.FreeLightDef(i);
+                    rw.UpdateLightDef(i, parms);
+                }
+            }
+        }
+
+        // Frees and regenerates all references and interactions, which must be done when switching between display list mode and immediate mode
+        static void R_RegenerateWorld_f(CmdArgs args)
+        {
+            R_FreeDerivedData();
+            // watch how much memory we allocate
+            tr.staticAllocCount = 0;
+            R_ReCreateWorldReferences();
+            common.Printf($"Regenerated world, staticAllocCount = {tr.staticAllocCount}.\n");
         }
     }
-}
-
-/*
-===================
-R_CheckForEntityDefsUsingModel
-===================
-*/
-void R_CheckForEntityDefsUsingModel(idRenderModel* model)
-{
-    int i, j;
-    idRenderWorldLocal* rw;
-    idRenderEntityLocal* def;
-
-    for (j = 0; j < tr.worlds.Num(); j++)
-    {
-        rw = tr.worlds[j];
-
-        for (i = 0; i < rw.entityDefs.Num(); i++)
-        {
-            def = rw.entityDefs[i];
-            if (!def)
-            {
-                continue;
-            }
-            if (def.parms.hModel == model)
-            {
-                //assert( 0 );
-                // this should never happen but Radiant messes it up all the time so just free the derived data
-                R_FreeEntityDefDerivedData(def, false, false);
-            }
-        }
-    }
-}
-
-/*
-===================
-R_ReCreateWorldReferences
-
-ReloadModels and RegenerateWorld call this
-// FIXME: need to do this for all worlds
-===================
-*/
-void R_ReCreateWorldReferences(void )
-{
-    int i, j;
-    idRenderWorldLocal* rw;
-    idRenderEntityLocal* def;
-    idRenderLightLocal* light;
-
-    // let the interaction generation code know this shouldn't be optimized for
-    // a particular view
-    tr.viewDef = NULL;
-
-    for (j = 0; j < tr.worlds.Num(); j++)
-    {
-        rw = tr.worlds[j];
-
-        for (i = 0; i < rw.entityDefs.Num(); i++)
-        {
-            def = rw.entityDefs[i];
-            if (!def)
-            {
-                continue;
-            }
-            // the world model entities are put specifically in a single
-            // area, instead of just pushing their bounds into the tree
-            if (i < rw.numPortalAreas)
-            {
-                rw.AddEntityRefToArea(def, &rw.portalAreas[i]);
-            }
-            else
-            {
-                R_CreateEntityRefs(def);
-            }
-        }
-
-        for (i = 0; i < rw.lightDefs.Num(); i++)
-        {
-            light = rw.lightDefs[i];
-            if (!light)
-            {
-                continue;
-            }
-            renderLight_t parms = light.parms;
-
-            light.world.FreeLightDef(i);
-            rw.UpdateLightDef(i, &parms);
-        }
-    }
-}
-
-/*
-===================
-R_RegenerateWorld_f
-
-Frees and regenerates all references and interactions, which
-must be done when switching between display list mode and immediate mode
-===================
-*/
-void R_RegenerateWorld_f( const idCmdArgs &args )
-{
-    R_FreeDerivedData();
-
-    // watch how much memory we allocate
-    tr.staticAllocCount = 0;
-
-    R_ReCreateWorldReferences();
-
-    common.Printf("Regenerated world, staticAllocCount = %i.\n", tr.staticAllocCount);
 }

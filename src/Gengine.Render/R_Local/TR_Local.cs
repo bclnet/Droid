@@ -38,7 +38,7 @@ namespace Gengine.Render
         public void Intersect(ScreenRect rect);
         public void Union(ScreenRect rect);
         public bool Equals(ScreenRect rect);
-        public bool IsEmpty();
+        public bool IsEmpty { get; }
     }
 
     partial class TRX
@@ -73,7 +73,7 @@ namespace Gengine.Render
     // drawSurf_t are always allocated and freed every frame, they are never cached
     public class DrawSurf
     {
-        const int DSF_VIEW_INSIDE_SHADOW = 1;
+        internal const int DSF_VIEW_INSIDE_SHADOW = 1;
 
         public SrfTriangles geoFrontEnd;
         public ViewEntity space;
@@ -166,7 +166,7 @@ namespace Gengine.Render
 
         public Plane[] frustum = new Plane[6];             // in global space, positive side facing out, last two are front/back
         public Winding[] frustumWindings = new Winding[6];      // used for culling
-        public SrfTriangles[] frustumTris;            // triangulated frustumWindings[]
+        public SrfTriangles frustumTris;            // triangulated frustumWindings[]
 
         public int numShadowFrustums;      // one for projected lights, usually six for point lights
         public ShadowFrustum[] shadowFrustums = new ShadowFrustum[6];
@@ -994,9 +994,9 @@ namespace Gengine.Render
 
         public static void R_GlobalToNormalizedDeviceCoordinates(Vector3 global, Vector3 ndc);
 
-        public static void R_TransformModelToClip(Vector3 src, float[] modelMatrix, float[] projectionMatrix, Plane eye, Plane dst);
+        public static void R_TransformModelToClip(Vector3 src, float[] modelMatrix, float[] projectionMatrix, out Plane eye, out Plane dst);
 
-        public static void R_TransformClipToDevice(Plane clip, ViewDef view, Vector3 normalized);
+        public static void R_TransformClipToDevice(Plane clip, ViewDef view, out Vector3 normalized);
 
         public static void R_TransposeGLMatrix(float[] i, out float[] o);
 
@@ -1017,7 +1017,7 @@ namespace Gengine.Render
         public static ViewEntity R_SetEntityDefViewEntity(RenderEntityLocal def);
         public static ViewLight R_SetLightDefViewLight(RenderLightLocal def);
 
-        public static void R_AddDrawSurf(SrfTriangles tri, ViewEntity space, IRenderEntity renderEntity, Material shader, ScreenRect scissor);
+        public static void R_AddDrawSurf(SrfTriangles tri, ViewEntity space, RenderEntity renderEntity, Material shader, ScreenRect scissor);
 
         public static void R_LinkLightSurf(DrawSurf[] link, SrfTriangles tri, ViewEntity space, RenderLightLocal light, Material shader, ScreenRect scissor, bool viewInsideShadow);
 

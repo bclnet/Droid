@@ -2,33 +2,39 @@ using Gengine.UI;
 using System;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
+using static Gengine.Lib;
+using static Gengine.Render.Lib;
 using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Render
 {
-    partial class TRX
+    unsafe partial class TRX
     {
         // Calculates two axis for the surface sutch that a point dotted against the axis will give a 0.0 to 1.0 range in S and T when inside the gui surface
-        public static void R_SurfaceToTextureAxis(SrfTriangles tri, ref Vector3 origin, Vector3[] axis)
+        public static void R_SurfaceToTextureAxis(SrfTriangles tri, ref Vector3 origin, Vector3* axis)
         {
-            float[] d0 = new float[5], d1 = new float[5];
-            float[] bounds0 = new float[2], bounds1 = new float[2], boundsOrg = new float[2];
-            int i, j; float v, area, inva; DrawVert a, b, c;
+            float* d0 = stackalloc float[5], d1 = stackalloc float[5];
+            var bounds = stackalloc (float x, float y)[2];
+            var boundsOrg = stackalloc float[2];
+            float v, area, inva; DrawVert a, b, c;
 
             // find the bounds of the texture
-            bounds0[0] = bounds0[1] = 999999;
-            bounds1[0] = bounds1[1] = -999999;
-            for (i = 0; i < tri.numVerts; i++)
-                for (j = 0; j < 2; j++)
-                {
-                    v = tri.verts[i].st[j];
-                    if (v < bounds0[j]) bounds0[j] = v;
-                    if (v > bounds1[j]) bounds1[j] = v;
-                }
+            bounds[0].x = bounds[1].x = 999999;
+            bounds[0].y = bounds[1].y = -999999;
+            for (var i = 0; i < tri.numVerts; i++)
+            {
+                v = tri.verts[i].st.x;
+                if (v < bounds[0].x) bounds[0].x = v;
+                if (v > bounds[1].x) bounds[1].x = v;
+
+                v = tri.verts[i].st.y;
+                if (v < bounds[0].y) bounds[0].y = v;
+                if (v > bounds[1].y) bounds[1].y = v;
+            }
 
             // use the floor of the midpoint as the origin of the surface, which will prevent a slight misalignment from throwing it an entire cycle off
-            boundsOrg[0] = (float)Math.Floor((bounds0[0] + bounds1[0]) * 0.5f);
-            boundsOrg[1] = (float)Math.Floor((bounds0[1] + bounds1[1]) * 0.5f);
+            boundsOrg[0] = (float)Math.Floor((bounds[0].x + bounds[1].x) * 0.5f);
+            boundsOrg[1] = (float)Math.Floor((bounds[0].y + bounds[1].y) * 0.5f);
 
             // determine the world S and T vectors from the first drawSurf triangle
             a = tri.verts[tri.indexes[0]]; b = tri.verts[tri.indexes[1]]; c = tri.verts[tri.indexes[2]];
@@ -57,7 +63,7 @@ namespace Gengine.Render
             axis[1].y = (d0[3] * d1[1] - d0[1] * d1[3]) * inva;
             axis[1].z = (d0[3] * d1[2] - d0[2] * d1[3]) * inva;
 
-            Plane plane = new();
+            Plane plane = default;
             plane.FromPoints(a.xyz, b.xyz, c.xyz);
             axis[2].x = plane[0]; axis[2].y = plane[1]; axis[2].z = plane[2];
 
@@ -69,15 +75,13 @@ namespace Gengine.Render
         // Create a texture space on the given surface and call the GUI generator to create quads for it.
         public static void R_RenderGuiSurf(IUserInterface gui, DrawSurf drawSurf)
         {
-            Vector3 origin = new(); Vector3[] axis = new Vector3[3];
+            Vector3 origin = default; Vector3* axis = stackalloc Vector3[3];
 
             // for testing the performance hit
-            if (r_skipGuiShaders.Integer == 1)
-                return;
+            if (r_skipGuiShaders.Integer == 1) return;
 
             // don't allow an infinite recursion loop
-            if (tr.guiRecursionLevel == 4)
-                return;
+            if (tr.guiRecursionLevel == 4) return;
 
             tr.pc.c_guiSurfs++;
 
@@ -123,19 +127,11 @@ namespace Gengine.Render
         // Should we also reload the map models?
         public static void R_ReloadGuis_f(CmdArgs args)
         {
-            if (string.Equals(args[1], "all", System.StringComparison.OrdinalIgnoreCase))
-            {
-                common.Printf("Reloading all gui files...\n");
-                UIX.uiManager.Reload(true);
-            }
-            else
-            {
-                common.Printf("Checking for changed gui files...\n");
-                UIX.uiManager.Reload(false);
-            }
+            if (string.Equals(args[1], "all", System.StringComparison.OrdinalIgnoreCase)) { common.Printf("Reloading all gui files...\n"); uiManager.Reload(true); }
+            else { common.Printf("Checking for changed gui files...\n"); uiManager.Reload(false); }
         }
 
         public static void R_ListGuis_f(CmdArgs args)
-            => UIX.uiManager.ListGuis();
+            => uiManager.ListGuis();
     }
 }

@@ -1,112 +1,78 @@
+using System.Runtime.CompilerServices;
+using static System.NumericsX.OpenStack.OpenStack;
+using GlIndex = System.Int32;
+
 namespace Gengine.Render
 {
     partial class TRX
     {
-        /*
-		===============
-		R_MeshCost
-		===============
-		*/
+
 #if false
-#define CACHE_SIZE	24
-#define STALL_SIZE	8
-int	R_MeshCost( int numIndexes, glIndex_t *indexes ) {
-	int	inCache[CACHE_SIZE];
-	int	i, j, v;
-	int	c_stalls;
-	int	c_loads;
-	int	fifo;
+        const int CACHE_SIZE = 24;
+        const int STALL_SIZE = 8;
+        static int R_MeshCost(int numIndexes, GlIndex indexes)
+        {
+            int inCache[CACHE_SIZE];
+            int i, j, v, c_stalls, c_loads, fifo;
 
-	for ( i = 0 ; i < CACHE_SIZE ; i++ ) {
-		inCache[i] = -1;
-	}
+            for (i = 0; i < CACHE_SIZE; i++) inCache[i] = -1;
+            c_loads = 0;
+            c_stalls = 0;
+            fifo = 0;
 
-	c_loads = 0;
-	c_stalls = 0;
-	fifo = 0;
-
-	for ( i = 0 ; i < numIndexes ; i++ ) {
-		v = indexes[i];
-		for ( j = 0 ; j < CACHE_SIZE ; j++ ) {
-			if ( inCache[ ( fifo + j ) % CACHE_SIZE ] == v ) {
-				break;
-			}
-		}
-		if ( j == CACHE_SIZE ) {
-			c_loads++;
-			inCache[ fifo % CACHE_SIZE ] = v;
-			fifo++;
-		} else if ( j < STALL_SIZE ) {
-			c_stalls++;
-		}
-	}
-
-	return c_loads;
-}
+            for (i = 0; i < numIndexes; i++)
+            {
+                v = indexes[i];
+                for (j = 0; j < CACHE_SIZE; j++) if (inCache[(fifo + j) % CACHE_SIZE] == v) break;
+                if (j == CACHE_SIZE) { c_loads++; inCache[fifo % CACHE_SIZE] = v; fifo++; }
+                else if (j < STALL_SIZE) c_stalls++;
+            }
+            return c_loads;
+        }
 #endif
 
-
-        typedef struct vertRef_s
+        class VertRef
         {
-            struct vertRef_s    *next;
-	int tri;
+            public VertRef next;
+            public int tri;
         }
-        vertRef_t;
 
-/*
-====================
-R_OrderIndexes
-
-Reorganizes the indexes so they will take best advantage
-of the internal GPU vertex caches
-====================
-*/
-void R_OrderIndexes(int numIndexes, glIndex_t* indexes)
+        // Reorganizes the indexes so they will take best advantage of the internal GPU vertex caches
+        static void R_OrderIndexes(int numIndexes, GlIndex[] indexes)
         {
-            bool* triangleUsed;
             int numTris;
-            glIndex_t* oldIndexes;
-            glIndex_t * base;
+            GlIndex base_;
             int numOldIndexes;
             int tri;
             int i;
-            vertRef_t* vref, **vrefs, *vrefTable;
+            VertRef vref, vrefs, vrefTable;
             int numVerts;
             int v1, v2;
             int c_starts;
-            //int			c_cost;
+            //int c_cost;
 
-            if (!r_orderIndexes.GetBool())
-            {
-                return;
-            }
+            if (!r_orderIndexes.Bool) return;
 
             // save off the original indexes
-            oldIndexes = (glIndex_t*)_alloca(numIndexes * sizeof( *oldIndexes) );
-            memcpy(oldIndexes, indexes, numIndexes * sizeof( *oldIndexes) );
+            var oldIndexes = stackalloc GlIndex[numIndexes];
+            memcpy(oldIndexes, indexes, numIndexes * sizeof(GlIndex));
             numOldIndexes = numIndexes;
 
             // make a table to mark the triangles when they are emited
             numTris = numIndexes / 3;
-            triangleUsed = (bool*)_alloca(numTris * sizeof( *triangleUsed) );
-            memset(triangleUsed, 0, numTris * sizeof( *triangleUsed) );
+            var triangleUsed = stackalloc bool[numTris];
+            Unsafe.InitBlock(triangleUsed, 0, numTris * sizeof(bool));
 
             // find the highest vertex number
             numVerts = 0;
-            for (i = 0; i < numIndexes; i++)
-            {
-                if (indexes[i] > numVerts)
-                {
-                    numVerts = indexes[i];
-                }
-            }
+            for (i = 0; i < numIndexes; i++) if (indexes[i] > numVerts) numVerts = indexes[i];
             numVerts++;
 
             // create a table of triangles used by each vertex
-            vrefs = (vertRef_t**)_alloca(numVerts * sizeof( *vrefs) );
-            memset(vrefs, 0, numVerts * sizeof( *vrefs) );
+            vrefs = new VertRef[numVerts];
+            //Unsafe.InitBlock(vrefs, 0, numVerts * sizeof(VertRef) );
 
-            vrefTable = (vertRef_t*)_alloca(numIndexes * sizeof( *vrefTable) );
+            vrefTable = new VertRef[numIndexes];
             for (i = 0; i < numIndexes; i++)
             {
                 tri = i / 3;
@@ -122,27 +88,18 @@ void R_OrderIndexes(int numIndexes, glIndex_t* indexes)
             while (numIndexes != numOldIndexes)
             {
                 // find a triangle that hasn't been used
-                for (tri = 0; tri < numTris; tri++)
-                {
-                    if (!triangleUsed[tri])
-                    {
-                        break;
-                    }
-                }
-                if (tri == numTris)
-                {
-                    common->Error("R_OrderIndexes: ran out of unused tris");
-                }
+                for (tri = 0; tri < numTris; tri++) if (!triangleUsed[tri]) break;
+                
+                if (tri == numTris) common.Error("R_OrderIndexes: ran out of unused tris");
 
                 c_starts++;
-
                 do
                 {
                     // emit this tri
-                    base = oldIndexes + tri * 3;
-                    indexes[numIndexes + 0] = base[0];
-                    indexes[numIndexes + 1] = base[1];
-                    indexes[numIndexes + 2] = base[2];
+                    base_ = oldIndexes + tri * 3;
+                    indexes[numIndexes + 0] = base_[0];
+                    indexes[numIndexes + 1] = base_[1];
+                    indexes[numIndexes + 2] = base_[2];
                     numIndexes += 3;
 
                     triangleUsed[tri] = true;
@@ -150,53 +107,28 @@ void R_OrderIndexes(int numIndexes, glIndex_t* indexes)
                     // try to find a shared edge to another unused tri
                     for (i = 0; i < 3; i++)
                     {
-                        v1 = base[i];
-                        v2 = base[(i + 1) % 3];
+                        v1 = base_[i];
+                        v2 = base_[(i + 1) % 3];
 
-                        for (vref = vrefs[v1]; vref; vref = vref->next)
+                        for (vref = vrefs[v1]; vref!=null; vref = vref.next)
                         {
-                            tri = vref->tri;
-                            if (triangleUsed[tri])
-                            {
-                                continue;
-                            }
+                            tri = vref.tri;
+                            if (triangleUsed[tri]) continue;
 
                             // if this triangle also uses v2, grab it
-                            if (oldIndexes[tri * 3 + 0] == v2
-                                    || oldIndexes[tri * 3 + 1] == v2
-                                    || oldIndexes[tri * 3 + 2] == v2)
-                            {
+                            if (oldIndexes[tri * 3 + 0] == v2 ||
+                                oldIndexes[tri * 3 + 1] == v2 ||
+                                oldIndexes[tri * 3 + 2] == v2)
                                 break;
-                            }
                         }
-                        if (vref)
-                        {
-                            break;
-                        }
+                        if (vref) break;
                     }
 
                     // if we couldn't chain off of any verts, we need to find a new one
-                    if (i == 3)
-                    {
-                        break;
-                    }
-                } while (1);
+                    if (i == 3) break;
+                } while (true);
             }
-
             //c_cost = R_MeshCost( numIndexes, indexes );
-
         }
-
-
-/*
-
-  add all triangles that can be specified by the vertexes in the last 14 cache positions
-
-  pick a new vert to add to the cache
-  don't pick one in the 24 previous cache positions
-  try to pick one that will enable the creation of as many triangles as possible
-
-  look for a vert that shares an edge with the vert about to be evicted
-
-
-*/
+    }
+}

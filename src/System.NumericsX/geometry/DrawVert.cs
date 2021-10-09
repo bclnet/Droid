@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace System.NumericsX
 {
-    public class DrawVert
+    public struct DrawVert
     {
         // GPU half-float bit patterns
         [MethodImpl(MethodImplOptions.AggressiveInlining)] static int HF_MANTISSA(ushort x) => x & 1023;
@@ -36,6 +36,7 @@ namespace System.NumericsX
         }
 
         public unsafe static readonly int SizeOf = Marshal.SizeOf<DrawVert>();
+        public const int ALLOC16 = 1;
 
         public Vector3 xyz;
         public Vector2 st;

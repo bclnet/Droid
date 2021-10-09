@@ -196,8 +196,7 @@ namespace Gengine.Render
         }
 
         // This function will be called syncronously if running without smp extensions, or asyncronously by another thread.
-        static int backEndStartTime, backEndFinishTime;
-
+        static int RB_ExecuteBackEndCommands_backEndStartTime, RB_ExecuteBackEndCommands_backEndFinishTime;
         public static void RB_ExecuteBackEndCommands(EmptyCommand cmds)
         {
             // r_debugRenderToTexture
@@ -206,7 +205,7 @@ namespace Gengine.Render
             if (cmds.commandId == RC.NOP && cmds.next == null) return;
 
             var cmd = cmds;
-            backEndStartTime = SysW.Milliseconds;
+            RB_ExecuteBackEndCommands_backEndStartTime = SysW.Milliseconds;
 
             // needed for editor rendering
             RB_SetDefaultGLState();
@@ -225,8 +224,8 @@ namespace Gengine.Render
                 }
 
             // stop rendering on this thread
-            backEndFinishTime = SysW.Milliseconds;
-            backEnd.pc.msec = backEndFinishTime - backEndStartTime;
+            RB_ExecuteBackEndCommands_backEndFinishTime = SysW.Milliseconds;
+            backEnd.pc.msec = RB_ExecuteBackEndCommands_backEndFinishTime - RB_ExecuteBackEndCommands_backEndStartTime;
 
             if (r_debugRenderToTexture.Integer == 1)
             {

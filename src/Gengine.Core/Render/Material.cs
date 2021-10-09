@@ -454,7 +454,7 @@ namespace Gengine.Render
         }
 
         // DFRM_NONE, DFRM_SPRITE, etc
-        public DFRM Deform() => deform;
+        public DFRM Deform => deform;
 
         // flare size, expansion size, etc
         public int GetDeformRegister(int index) => deformRegisters[index];
@@ -463,7 +463,7 @@ namespace Gengine.Render
         public Decl DeformDecl => deformDecl;
 
         // currently a surface can only have one unique texgen for all the stages
-        public TG Texgen() => throw new NotImplementedException();
+        public TG Texgen => throw new NotImplementedException();
 
         // wobble sky parms
         public int[] TexGenRegisters => texGenRegisters;

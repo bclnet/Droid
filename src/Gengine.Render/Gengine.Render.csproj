@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
+    <ProjectReference Include="..\Gengine.Framework\Gengine.Framework.csproj" />
   </ItemGroup>
 
   <ItemGroup>

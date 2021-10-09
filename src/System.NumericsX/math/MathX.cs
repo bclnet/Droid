@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace System.NumericsX
 {
     // token types
-    public static class MathX
+    public unsafe static class MathX
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float DEG2RAD(float a) => a * M_DEG2RAD;
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float RAD2DEG(float a) => a * M_RAD2DEG;
@@ -19,16 +19,16 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static int ANGLE2BYTE(float x) => FtoiFast(x * 256f / 360f) & 255;
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float BYTE2ANGLE(int x) => x * (360f / 256f);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOATSIGNBITSET(float f) => ((*(uint*)&f) >> 31) != 0;[MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe int FLOATSIGNBITSET_(float f) => ((*(int*)&f) >> 31);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOATSIGNBITNOTSET(float f) => ((~*(uint*)&f) >> 31) != 0;[MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe int FLOATSIGNBITNOTSET_(float f) => (~*(int*)&f) >> 31;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOATNOTZERO(float f) => ((*(uint*)&f) & ~(1 << 31)) != 0;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool INTSIGNBITSET(int i) => (((uint)i) >> 31) != 0;[MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe int INTSIGNBITSET_(int i) => i >> 31;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool INTSIGNBITNOTSET(int i) => ((~(uint)i) >> 31) != 0;[MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe int INTSIGNBITNOTSET_(int i) => (~i) >> 31;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool FLOATSIGNBITSET(float f) => ((*(uint*)&f) >> 31) != 0;[MethodImpl(MethodImplOptions.AggressiveInlining)] public static  int FLOATSIGNBITSET_(float f) => ((*(int*)&f) >> 31);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool FLOATSIGNBITNOTSET(float f) => ((~*(uint*)&f) >> 31) != 0;[MethodImpl(MethodImplOptions.AggressiveInlining)] public static  int FLOATSIGNBITNOTSET_(float f) => (~*(int*)&f) >> 31;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool FLOATNOTZERO(float f) => ((*(uint*)&f) & ~(1 << 31)) != 0;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool INTSIGNBITSET(int i) => (((uint)i) >> 31) != 0;[MethodImpl(MethodImplOptions.AggressiveInlining)] public static  int INTSIGNBITSET_(int i) => i >> 31;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool INTSIGNBITNOTSET(int i) => ((~(uint)i) >> 31) != 0;[MethodImpl(MethodImplOptions.AggressiveInlining)] public static  int INTSIGNBITNOTSET_(int i) => (~i) >> 31;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOAT_IS_NAN(float x) => ((*(uint*)&x) & 0x7f800000) == 0x7f800000;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOAT_IS_INF(float x) => ((*(uint*)&x) & 0x7fffffff) == 0x7f800000;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOAT_IS_IND(float x) => (*(uint*)&x) == 0xffc00000;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static unsafe bool FLOAT_IS_DENORMAL(float x) => ((*(uint*)&x) & 0x7f800000) == 0x00000000 && ((*(uint*)&x) & 0x007fffff) != 0x00000000;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool FLOAT_IS_NAN(float x) => ((*(uint*)&x) & 0x7f800000) == 0x7f800000;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool FLOAT_IS_INF(float x) => ((*(uint*)&x) & 0x7fffffff) == 0x7f800000;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool FLOAT_IS_IND(float x) => (*(uint*)&x) == 0xffc00000;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool FLOAT_IS_DENORMAL(float x) => ((*(uint*)&x) & 0x7f800000) == 0x00000000 && ((*(uint*)&x) & 0x007fffff) != 0x00000000;
 
         public const int IEEE_FLT_MANTISSA_BITS = 23;
         public const int IEEE_FLT_EXPONENT_BITS = 8;
@@ -782,6 +782,7 @@ namespace System.NumericsX
 
         //#define DotProduct( a, b)			((a)[0]*(b)[0]+(a)[1]*(b)[1]+(a)[2]*(b)[2])
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorSubtract(in Vector3 a, in Vector3 b, float[] c) { c[0] = a.x - b.x; c[1] = a.y - b.y; c[2] = a.z - b.z; }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorSubtract(in Vector3 a, in Vector3 b, float* c) { c[0] = a.x - b.x; c[1] = a.y - b.y; c[2] = a.z - b.z; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorAdd(in Vector3 a, in Vector3 b, float[] c) { c[0] = a.x + b.x; c[1] = a.y + b.y; c[2] = a.z + b.z; }
         //#define VectorScale( v, s, o )		((o)[0]=(v)[0]*(s),(o)[1]=(v)[1]*(s),(o)[2]=(v)[2]*(s))
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorMA(in Vector3 v, float s, in Vector3 b, out Vector3 o) { o.x = v.x + b.x * s; o.y = v.y + b.y * s; o.z = v.z + b.z * s; }

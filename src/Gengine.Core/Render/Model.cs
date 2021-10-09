@@ -39,11 +39,12 @@ namespace Gengine.Render
 
     public struct ShadowCache
     {
+        public const int ALLOC16 = 1;
         public Vector4 xyz;                            // we use homogenous coordinate tricks
     }
 
     // our only drawing geometry type
-    public class SrfTriangles
+    public unsafe class SrfTriangles
     {
         public Bounds bounds;                   // for culling
 
@@ -56,7 +57,7 @@ namespace Gengine.Render
         public bool deformedSurface;            // if true, indexes, silIndexes, mirrorVerts, and silEdges are pointers into the original surface, and should not be freed
 
         public int numVerts;                    // number of vertices
-        public DrawVert[] verts;                // vertices, allocated with special allocator
+        public DrawVert* verts;                 // vertices, allocated with special allocator
 
         public int numIndexes;                  // for shadows, this has both front and rear end caps and silhouette planes
         public GlIndex[] indexes;               // indexes, allocated with special allocator
