@@ -4,9 +4,8 @@ using GlIndex = System.Int32;
 
 namespace Gengine.Render
 {
-    partial class TRX
+    unsafe partial class TR
     {
-
 #if false
         const int CACHE_SIZE = 24;
         const int STALL_SIZE = 8;
@@ -38,7 +37,7 @@ namespace Gengine.Render
         }
 
         // Reorganizes the indexes so they will take best advantage of the internal GPU vertex caches
-        static void R_OrderIndexes(int numIndexes, GlIndex[] indexes)
+        public static void R_OrderIndexes(int numIndexes, GlIndex[] indexes)
         {
             int numTris;
             GlIndex base_;

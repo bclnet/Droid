@@ -187,8 +187,7 @@ namespace System.NumericsX.OpenStack
                     writeTotalBytes++;
                 }
                 put = 8 - writeBit;
-                if (put > numBits)
-                    put = numBits;
+                if (put > numBits) put = numBits;
                 fraction = value & ((1 << put) - 1);
                 writeData[writeByte - 1] |= (byte)(fraction << writeBit);
                 numBits -= put;
@@ -234,8 +233,7 @@ namespace System.NumericsX.OpenStack
                     readTotalBytes++;
                 }
                 get = 8 - readBit;
-                if (get > (numBits - valueBits))
-                    get = (numBits - valueBits);
+                if (get > (numBits - valueBits)) get = numBits - valueBits;
                 fraction = readData[readByte - 1];
                 fraction >>= readBit;
                 fraction &= (1 << get) - 1;
@@ -249,10 +247,9 @@ namespace System.NumericsX.OpenStack
 
         protected void UnreadBits(int numBits)
         {
-            readByte -= (numBits >> 3);
-            readTotalBytes -= (numBits >> 3);
-            if (readBit == 0)
-                readBit = 8 - (numBits & 7);
+            readByte -= numBits >> 3;
+            readTotalBytes -= numBits >> 3;
+            if (readBit == 0) readBit = 8 - (numBits & 7);
             else
             {
                 readBit -= numBits & 7;
@@ -289,8 +286,7 @@ namespace System.NumericsX.OpenStack
                     {
                         for (i = (bitPtr1 & 7); i < 8; i++, bits++)
                         {
-                            if ((((*p1 >> i) ^ (*p2 >> i)) & 1) != 0)
-                                return bits;
+                            if ((((*p1 >> i) ^ (*p2 >> i)) & 1) != 0) return bits;
                             bitsRemain--;
                         }
                         p1++;
@@ -321,9 +317,7 @@ namespace System.NumericsX.OpenStack
                     var finalBits = 8;
                     if (remain == 0)
                         finalBits = (bitsRemain & 7);
-                    for (i = 0; i < finalBits; i++, bits++)
-                        if ((((*p1 >> i) ^ (*p2 >> i)) & 1) != 0)
-                            return bits;
+                    for (i = 0; i < finalBits; i++, bits++) if ((((*p1 >> i) ^ (*p2 >> i)) & 1) != 0) return bits;
 
                     Debug.Assert(bits == maxBits);
                     return bits;
@@ -333,8 +327,7 @@ namespace System.NumericsX.OpenStack
             {
                 for (i = 0; i < maxBits; i++)
                 {
-                    if ((((src1[bitPtr1 >> 3] >> (bitPtr1 & 7)) ^ (src2[bitPtr2 >> 3] >> (bitPtr2 & 7))) & 1) != 0)
-                        break;
+                    if ((((src1[bitPtr1 >> 3] >> (bitPtr1 & 7)) ^ (src2[bitPtr2 >> 3] >> (bitPtr2 & 7))) & 1) != 0) break;
                     bitPtr1++;
                     bitPtr2++;
                 }
@@ -344,24 +337,19 @@ namespace System.NumericsX.OpenStack
 
         public override int Write(byte[] inData, int inLength)
         {
-            if (!compress || inLength <= 0)
-                return 0;
+            if (!compress || inLength <= 0) return 0;
 
             InitCompress(inData, inLength);
 
-            int i;
-            for (i = 0; i < inLength; i++)
-                WriteBits(ReadBits(8), 8);
+            int i; for (i = 0; i < inLength; i++) WriteBits(ReadBits(8), 8);
             return i;
         }
 
         public override void FinishCompress()
         {
-            if (!compress)
-                return;
+            if (!compress) return;
 
-            if (writeByte == 0)
-                file.Write(buffer, writeByte);
+            if (writeByte == 0) file.Write(buffer, writeByte);
             writeLength = 0;
             writeByte = 0;
             writeBit = 0;
@@ -369,14 +357,11 @@ namespace System.NumericsX.OpenStack
 
         public override int Read(byte[] outData, int outLength)
         {
-            if (compress || outLength <= 0)
-                return 0;
+            if (compress || outLength <= 0) return 0;
 
             InitDecompress(outData, outLength);
 
-            int i;
-            for (i = 0; i < outLength && readLength >= 0; i++)
-                WriteBits(ReadBits(8), 8);
+            int i; for (i = 0; i < outLength && readLength >= 0; i++) WriteBits(ReadBits(8), 8);
             return i;
         }
 
@@ -408,8 +393,7 @@ namespace System.NumericsX.OpenStack
         {
             int bits, nextBits, count;
 
-            if (!compress || inLength <= 0)
-                return 0;
+            if (!compress || inLength <= 0) return 0;
 
             InitCompress(inData, inLength);
 
@@ -420,23 +404,17 @@ namespace System.NumericsX.OpenStack
                 for (nextBits = ReadBits(wordLength); nextBits == bits; nextBits = ReadBits(wordLength))
                 {
                     count++;
-                    if (count >= (1 << wordLength))
-                        if (count >= (1 << wordLength) + 3 || bits == runLengthCode)
-                            break;
+                    if (count >= (1 << wordLength)) if (count >= (1 << wordLength) + 3 || bits == runLengthCode) break;
                 }
-                if (nextBits != bits)
-                    UnreadBits(wordLength);
+                if (nextBits != bits) UnreadBits(wordLength);
                 if (count > 3 || bits == runLengthCode)
                 {
                     WriteBits(runLengthCode, wordLength);
                     WriteBits(bits, wordLength);
-                    if (bits != runLengthCode)
-                        count -= 3;
+                    if (bits != runLengthCode) count -= 3;
                     WriteBits(count - 1, wordLength);
                 }
-                else
-                    while (count-- != 0)
-                        WriteBits(bits, wordLength);
+                else while (count-- != 0) WriteBits(bits, wordLength);
             }
 
             return inLength;
@@ -446,8 +424,7 @@ namespace System.NumericsX.OpenStack
         {
             int bits, count;
 
-            if (compress || outLength <= 0)
-                return 0;
+            if (compress || outLength <= 0) return 0;
 
             InitDecompress(outData, outLength);
 
@@ -458,13 +435,10 @@ namespace System.NumericsX.OpenStack
                 {
                     bits = ReadBits(wordLength);
                     count = ReadBits(wordLength) + 1;
-                    if (bits != runLengthCode)
-                        count += 3;
-                    while (count-- != 0)
-                        WriteBits(bits, wordLength);
+                    if (bits != runLengthCode) count += 3;
+                    while (count-- != 0) WriteBits(bits, wordLength);
                 }
-                else
-                    WriteBits(bits, wordLength);
+                else WriteBits(bits, wordLength);
             }
 
             return writeByte;
@@ -485,24 +459,21 @@ namespace System.NumericsX.OpenStack
         {
             int bits, count;
 
-            if (!compress || inLength <= 0)
-                return 0;
+            if (!compress || inLength <= 0) return 0;
 
             InitCompress(inData, inLength);
 
             while (readByte <= readLength)
             {
                 count = 0;
-                for (bits = ReadBits(wordLength); bits == 0 && count < (1 << wordLength); bits = ReadBits(wordLength))
-                    count++;
+                for (bits = ReadBits(wordLength); bits == 0 && count < (1 << wordLength); bits = ReadBits(wordLength)) count++;
                 if (count != 0)
                 {
                     WriteBits(0, wordLength);
                     WriteBits(count - 1, wordLength);
                     UnreadBits(wordLength);
                 }
-                else
-                    WriteBits(bits, wordLength);
+                else WriteBits(bits, wordLength);
             }
 
             return inLength;
@@ -512,8 +483,7 @@ namespace System.NumericsX.OpenStack
         {
             int bits, count;
 
-            if (compress || outLength <= 0)
-                return 0;
+            if (compress || outLength <= 0) return 0;
 
             InitDecompress(outData, outLength);
 
@@ -523,11 +493,9 @@ namespace System.NumericsX.OpenStack
                 if (bits == 0)
                 {
                     count = ReadBits(wordLength) + 1;
-                    while (count-- > 0)
-                        WriteBits(0, wordLength);
+                    while (count-- > 0) WriteBits(0, wordLength);
                 }
-                else
-                    WriteBits(bits, wordLength);
+                else WriteBits(bits, wordLength);
             }
 
             return writeByte;
@@ -595,8 +563,7 @@ namespace System.NumericsX.OpenStack
             tree = null;
             lhead = null;
             ltail = null;
-            for (i = 0; i < (HMAX + 1); i++)
-                loc[i] = null;
+            for (i = 0; i < (HMAX + 1); i++) loc[i] = null;
             freelist = null;
 
             for (i = 0; i < 768; i++)
@@ -629,8 +596,7 @@ namespace System.NumericsX.OpenStack
         void PutBit(int bit, byte[] fout, ref int offset)
         {
             bloc = offset;
-            if ((bloc & 7) == 0)
-                fout[bloc >> 3] = 0;
+            if ((bloc & 7) == 0) fout[bloc >> 3] = 0;
             fout[bloc >> 3] |= (byte)(bit << (bloc & 7));
             bloc++;
             offset = bloc;
@@ -648,8 +614,7 @@ namespace System.NumericsX.OpenStack
         // Add a bit to the output file (buffered)
         void Add_bit(char bit, byte[] fout)
         {
-            if ((bloc & 7) == 0)
-                fout[(bloc >> 3)] = 0;
+            if ((bloc & 7) == 0) fout[(bloc >> 3)] = 0;
             fout[(bloc >> 3)] |= (byte)(bit << (bloc & 7));
             bloc++;
         }
@@ -672,10 +637,7 @@ namespace System.NumericsX.OpenStack
         HuffmanNode[] Get_ppnode()
         {
             HuffmanNode tppnode;
-            if (freelist == null)
-            {
-                return nodePtrs[blocPtrs++];
-            }
+            if (freelist == null) return nodePtrs[blocPtrs++];
             else
             {
                 tppnode = freelist;
@@ -736,39 +698,26 @@ namespace System.NumericsX.OpenStack
         {
             HuffmanNode lnode;
 
-            if (node == null)
-                return;
+            if (node == null) return;
 
             if (node.next != null && node.next.weight == node.weight)
             {
                 lnode = node.head;
-                if (lnode != node.parent)
-                    Swap(lnode, node);
+                if (lnode != node.parent) Swap(lnode, node);
                 Swaplist(lnode, node);
             }
-            if (node.prev != null && node.prev.weight == node.weight)
-                node.head = node.prev;
-            else
-            {
-                node.head = null;
-                Free_ppnode(ref node.head);
-            }
+            if (node.prev != null && node.prev.weight == node.weight) node.head = node.prev;
+            else { node.head = null; Free_ppnode(ref node.head); }
             node.weight++;
-            if (node.next != null && node.next.weight == node.weight)
-                node.head = node.next.head;
-            else
-            {
-                node.head = Get_ppnode();
-                node.head = node;
-            }
+            if (node.next != null && node.next.weight == node.weight) node.head = node.next.head;
+            else { node.head = Get_ppnode(); node.head = node; }
             if (node.parent != null)
             {
                 Increment(node.parent);
                 if (node.prev == node.parent)
                 {
                     Swaplist(node, node.parent);
-                    if (node.head == node)
-                        node.head = node.parent;
+                    if (node.head == node) node.head = node.parent;
                 }
             }
         }
@@ -787,13 +736,8 @@ namespace System.NumericsX.OpenStack
                 if (lhead.next != null)
                 {
                     lhead.next.prev = tnode2;
-                    if (lhead.next.weight == 1)
-                        tnode2.head = lhead.next.head;
-                    else
-                    {
-                        tnode2.head = Get_ppnode();
-                        tnode2.head = tnode2;
-                    }
+                    if (lhead.next.weight == 1) tnode2.head = lhead.next.head;
+                    else { tnode2.head = Get_ppnode(); tnode2.head = tnode2; }
                 }
                 else
                 {
@@ -809,8 +753,7 @@ namespace System.NumericsX.OpenStack
                 if (lhead.next != null)
                 {
                     lhead.next.prev = tnode;
-                    if (lhead.next.weight == 1)
-                        tnode.head = lhead.next.head;
+                    if (lhead.next.weight == 1) tnode.head = lhead.next.head;
                     else
                     {
                         // this should never happen
@@ -845,25 +788,21 @@ namespace System.NumericsX.OpenStack
 
                 Increment(tnode2.parent);
             }
-            else
-                Increment(loc[ch]);
+            else Increment(loc[ch]);
         }
 
         // Get a symbol.
         int Receive(HuffmanNode node, ref int ch)
         {
-            while (node != null && node.symbol == INTERNAL_NODE)
-                node = Get_bit() != 0 ? node.right : node.left;
+            while (node != null && node.symbol == INTERNAL_NODE) node = Get_bit() != 0 ? node.right : node.left;
             return node == null ? 0 : (ch = node.symbol);
         }
 
         // Send the prefix code for this node.
         void Send(HuffmanNode node, HuffmanNode child, byte[] fout)
         {
-            if (node.parent != null)
-                Send(node.parent, node, fout);
-            if (child != null)
-                Add_bit((char)(node.right == child ? 1 : 0), fout);
+            if (node.parent != null) Send(node.parent, node, fout);
+            if (child != null) Add_bit((char)(node.right == child ? 1 : 0), fout);
         }
 
         // Send a symbol.
@@ -873,8 +812,7 @@ namespace System.NumericsX.OpenStack
             {
                 // HuffmanNode hasn't been transmitted, send a NYT, then the symbol
                 Transmit(NYT, fout);
-                for (var i = 7; i >= 0; i--)
-                    Add_bit((char)((ch >> i) & 0x1), fout);
+                for (var i = 7; i >= 0; i--) Add_bit((char)((ch >> i) & 0x1), fout);
             }
             else Send(loc[ch], null, fout);
         }
@@ -883,8 +821,7 @@ namespace System.NumericsX.OpenStack
         {
             int i, ch;
 
-            if (!compress || inLength <= 0)
-                return 0;
+            if (!compress || inLength <= 0) return 0;
 
             for (i = 0; i < inLength; i++)
             {
@@ -907,8 +844,7 @@ namespace System.NumericsX.OpenStack
 
         public override void FinishCompress()
         {
-            if (!compress)
-                return;
+            if (!compress) return;
 
             bloc += 7;
             var str = (bloc >> 3);
@@ -923,8 +859,7 @@ namespace System.NumericsX.OpenStack
         {
             int i, j, ch;
 
-            if (compress || outLength <= 0)
-                return 0;
+            if (compress || outLength <= 0) return 0;
 
             if (bloc == 0)
             {
@@ -936,14 +871,12 @@ namespace System.NumericsX.OpenStack
             {
                 ch = 0;
                 // don't overflow reading from the file
-                if ((bloc >> 3) > blocMax)
-                    break;
+                if ((bloc >> 3) > blocMax) break;
                 Receive(tree, ref ch);      // Get a character
                 if (ch == NYT)
                 {                           // We got a NYT, get the symbol associated with it
                     ch = 0;
-                    for (j = 0; j < 8; j++)
-                        ch = (ch << 1) + Get_bit();
+                    for (j = 0; j < 8; j++) ch = (ch << 1) + Get_bit();
                 }
 
                 outData[i] = (byte)ch;          // Write symbol
@@ -1200,8 +1133,7 @@ namespace System.NumericsX.OpenStack
         {
             int i, j;
 
-            if (!compress || inLength <= 0)
-                return 0;
+            if (!compress || inLength <= 0) return 0;
 
             InitCompress(inData, inLength);
 
@@ -1218,8 +1150,7 @@ namespace System.NumericsX.OpenStack
                     }
                     InitProbabilities();
                 }
-                for (j = 0; j < 8; j++)
-                    PutBit(ReadBits(1));
+                for (j = 0; j < 8; j++) PutBit(ReadBits(1));
             }
 
             return inLength;
@@ -1227,8 +1158,7 @@ namespace System.NumericsX.OpenStack
 
         public override void FinishCompress()
         {
-            if (!compress)
-                return;
+            if (!compress) return;
 
             WriteOverflowBits();
 
@@ -1239,8 +1169,7 @@ namespace System.NumericsX.OpenStack
         {
             int i, j;
 
-            if (compress || outLength <= 0)
-                return 0;
+            if (compress || outLength <= 0) return 0;
 
             InitDecompress(outData, outLength);
 
@@ -1260,8 +1189,7 @@ namespace System.NumericsX.OpenStack
                         code |= (ushort)ReadBits(1);
                     }
                 }
-                for (j = 0; j < 8; j++)
-                    WriteBits(GetBit(), 1);
+                for (j = 0; j < 8; j++) WriteBits(GetBit(), 1);
             }
 
             return i;
@@ -1366,8 +1294,7 @@ namespace System.NumericsX.OpenStack
             {
                 if (blockBit == 0)
                 {
-                    if (blockByte >= LZSS_BLOCK_SIZE)
-                        return value;
+                    if (blockByte >= LZSS_BLOCK_SIZE) return value;
                     blockByte++;
                 }
                 get = 8 - blockBit;
@@ -1433,7 +1360,6 @@ namespace System.NumericsX.OpenStack
 
             startWord = 0;
             while (writeByte < writeLength && readLength >= 0)
-            {
                 if (ReadBits(1) != 0)
                 {
                     offset = startWord - ReadBits(offsetBits);
@@ -1449,7 +1375,6 @@ namespace System.NumericsX.OpenStack
                     WriteBits(ReadBits(wordLength), wordLength);
                     startWord++;
                 }
-            }
 
             blockSize = Math.Min(writeByte, LZSS_BLOCK_SIZE);
         }
@@ -1458,8 +1383,7 @@ namespace System.NumericsX.OpenStack
         {
             int i, n;
 
-            if (!compress || inLength <= 0)
-                return 0;
+            if (!compress || inLength <= 0) return 0;
 
             for (i = 0; i < inLength; i += n)
             {
@@ -1484,10 +1408,8 @@ namespace System.NumericsX.OpenStack
 
         public override void FinishCompress()
         {
-            if (!compress)
-                return;
-            if (blockSize != 0)
-                CompressBlock();
+            if (!compress) return;
+            if (blockSize != 0) CompressBlock();
             base.FinishCompress();
         }
 
@@ -1495,16 +1417,13 @@ namespace System.NumericsX.OpenStack
         {
             int i, n;
 
-            if (compress || outLength <= 0)
-                return 0;
+            if (compress || outLength <= 0) return 0;
 
-            if (blockSize == 0)
-                DecompressBlock();
+            if (blockSize == 0) DecompressBlock();
 
             for (i = 0; i < outLength; i += n)
             {
-                if (blockSize == 0)
-                    return i;
+                if (blockSize == 0) return i;
                 n = blockSize - blockIndex;
                 if (outLength - i >= n)
                 {
@@ -1702,16 +1621,13 @@ namespace System.NumericsX.OpenStack
         {
             int i, n;
 
-            if (compress || outLength <= 0)
-                return 0;
+            if (compress || outLength <= 0) return 0;
 
-            if (blockSize == 0)
-                DecompressBlock();
+            if (blockSize == 0) DecompressBlock();
 
             for (i = 0; i < outLength; i += n)
             {
-                if (blockSize == 0)
-                    return i;
+                if (blockSize == 0) return i;
                 n = blockSize - blockIndex;
                 if (outLength - i >= n)
                 {
@@ -1734,12 +1650,8 @@ namespace System.NumericsX.OpenStack
         {
             int j;
 
-            if (w == -1)
-                return k;
-            else
-                for (j = index.First(w ^ k); j >= 0; j = index.Next(j))
-                    if (dictionary[j].k == k && dictionary[j].w == w)
-                        return j;
+            if (w == -1) return k;
+            else for (j = index.First(w ^ k); j >= 0; j = index.Next(j)) if (dictionary[j].k == k && dictionary[j].w == w) return j;
 
             return -1;
         }
@@ -1790,13 +1702,11 @@ namespace System.NumericsX.OpenStack
                 var k = ReadBits(8);
 
                 var code = Lookup(w, k);
-                if (code >= 0)
-                    w = code;
+                if (code >= 0) w = code;
                 else
                 {
                     WriteBits(w, codeBits);
-                    if (!BumpBits())
-                        AddToDict(w, k);
+                    if (!BumpBits()) AddToDict(w, k);
                     w = k;
                 }
             }
@@ -1820,8 +1730,7 @@ namespace System.NumericsX.OpenStack
                 code = dictionary[code].w;
             } while (code >= 0);
             var firstChar = chain[--i];
-            for (; i >= 0; i--)
-                WriteBits(chain[i], 8);
+            for (; i >= 0; i--) WriteBits(chain[i], 8);
             return firstChar;
         }
 
@@ -1836,8 +1745,7 @@ namespace System.NumericsX.OpenStack
                 Debug.Assert(codeBits <= LZW_DICT_BITS);
 
                 code = ReadBits(codeBits);
-                if (readLength == 0)
-                    break;
+                if (readLength == 0) break;
 
                 if (oldCode == -1)
                 {

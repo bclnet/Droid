@@ -15,8 +15,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Winding2D(in Winding2D winding)
         {
-            for (var i = 0; i < winding.numPoints; i++)
-                p[i] = winding.p[i];
+            for (var i = 0; i < winding.numPoints; i++) p[i] = winding.p[i];
             numPoints = winding.numPoints;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -45,22 +44,8 @@ namespace System.NumericsX
         static bool GetAxialBevel(in Vector3 plane1, in Vector3 plane2, in Vector2 point, out Vector3 bevel)
         {
             bevel = new();
-            if (MathX.FLOATSIGNBITSET(plane1.x) ^ MathX.FLOATSIGNBITSET(plane2.x) &&
-                MathX.Fabs(plane1.x) > 0.1f && MathX.Fabs(plane2.x) > 0.1f) //: opt
-            {
-                bevel.x = 0f;
-                bevel.y = MathX.FLOATSIGNBITSET(plane1.y) ? -1f : 1f; //: opt
-                bevel.z = -(point.x * bevel.x + point.y * bevel.y);
-                return true;
-            }
-            if (MathX.FLOATSIGNBITSET(plane1.y) ^ MathX.FLOATSIGNBITSET(plane2.y) &&
-                MathX.Fabs(plane1.y) > 0.1f && MathX.Fabs(plane2.y) > 0.1f) //: opt
-            {
-                bevel.y = 0f;
-                bevel.x = MathX.FLOATSIGNBITSET(plane1.x) ? -1f : 1f; //: opt
-                bevel.z = -(point.x * bevel.x + point.y * bevel.y);
-                return true;
-            }
+            if (MathX.FLOATSIGNBITSET(plane1.x) ^ MathX.FLOATSIGNBITSET(plane2.x) && MathX.Fabs(plane1.x) > 0.1f && MathX.Fabs(plane2.x) > 0.1f) { bevel.x = 0f; bevel.y = MathX.FLOATSIGNBITSET(plane1.y) ? -1f : 1f; bevel.z = -(point.x * bevel.x + point.y * bevel.y); return true; }
+            if (MathX.FLOATSIGNBITSET(plane1.y) ^ MathX.FLOATSIGNBITSET(plane2.y) && MathX.Fabs(plane1.y) > 0.1f && MathX.Fabs(plane2.y) > 0.1f) { bevel.y = 0f; bevel.x = MathX.FLOATSIGNBITSET(plane1.x) ? -1f : 1f; bevel.z = -(point.x * bevel.x + point.y * bevel.y); return true; }
             return false;
         }
 
@@ -79,8 +64,7 @@ namespace System.NumericsX
                 edgeNormals[i] *= d;
             }
 
-            for (i = 0; i < numPoints; i++)
-                p[i] += edgeNormals[i] + edgeNormals[(i + numPoints - 1) % numPoints];
+            for (i = 0; i < numPoints; i++) p[i] += edgeNormals[i] + edgeNormals[(i + numPoints - 1) % numPoints];
         }
 
         public unsafe void ExpandForAxialBox(Vector2[] bounds)
@@ -93,17 +77,13 @@ namespace System.NumericsX
             for (numPlanes = i = 0; i < numPoints; i++)
             {
                 j = (i + 1) % numPoints;
-                if ((p[j] - p[i]).LengthSqr < 0.01f)
-                    continue;
+                if ((p[j] - p[i]).LengthSqr < 0.01f) continue;
                 plane = Plane2DFromPoints(p[i], p[j], true);
-                if (numPlanes > 0)
-                    if (GetAxialBevel(planes[numPlanes - 1], plane, p[i], out bevel))
-                        planes[numPlanes++] = bevel;
+                if (numPlanes > 0 && GetAxialBevel(planes[numPlanes - 1], plane, p[i], out bevel)) planes[numPlanes++] = bevel;
                 Debug.Assert(numPlanes < MAX_POINTS_ON_WINDING_2D);
                 planes[numPlanes++] = plane;
             }
-            if (GetAxialBevel(planes[numPlanes - 1], planes[0], p[0], out bevel))
-                planes[numPlanes++] = bevel;
+            if (GetAxialBevel(planes[numPlanes - 1], planes[0], p[0], out bevel)) planes[numPlanes++] = bevel;
 
             // expand the planes
             for (i = 0; i < numPlanes; i++)
@@ -114,9 +94,7 @@ namespace System.NumericsX
             }
 
             // get intersection points of the planes
-            for (numPoints = i = 0; i < numPlanes; i++)
-                if (Plane2DIntersection(planes[(i + numPlanes - 1) % numPlanes], planes[i], ref p[numPoints]))
-                    numPoints++;
+            for (numPoints = i = 0; i < numPlanes; i++) if (Plane2DIntersection(planes[(i + numPlanes - 1) % numPlanes], planes[i], ref p[numPoints])) numPoints++;
         }
 
         // splits the winding into a front and back winding, the winding itself stays unchanged, returns a SIDE_?
@@ -134,9 +112,7 @@ namespace System.NumericsX
             for (i = 0; i < numPoints; i++)
             {
                 dists[i] = dot = plane.x * p[i].x + plane.y * p[i].y + plane.z;
-                sides[i] = (byte)(dot > epsilon ? SIDE_FRONT
-                    : dot < -epsilon ? SIDE_BACK
-                    : SIDE_ON); //: opt
+                sides[i] = (byte)(dot > epsilon ? SIDE_FRONT : dot < -epsilon ? SIDE_BACK : SIDE_ON);
                 counts[sides[i]]++;
             }
             sides[i] = sides[0];
@@ -145,17 +121,9 @@ namespace System.NumericsX
             front = back = null;
 
             // if nothing at the front of the clipping plane
-            if (counts[SIDE_FRONT] == 0)
-            {
-                back = Copy();
-                return SIDE_BACK;
-            }
+            if (counts[SIDE_FRONT] == 0) { back = Copy(); return SIDE_BACK; }
             // if nothing at the back of the clipping plane
-            if (counts[SIDE_BACK] == 0)
-            {
-                front = Copy();
-                return SIDE_FRONT;
-            }
+            if (counts[SIDE_BACK] == 0) { front = Copy(); return SIDE_FRONT; }
 
             front = f = new Winding2D();
             back = b = new Winding2D();
@@ -164,29 +132,10 @@ namespace System.NumericsX
                 {
                     p1 = &p[i];
 
-                    if (sides[i] == SIDE_ON)
-                    {
-                        f.p[f.numPoints] = *p1;
-                        f.numPoints++;
-                        b.p[b.numPoints] = *p1;
-                        b.numPoints++;
-                        continue;
-                    }
-
-                    if (sides[i] == SIDE_FRONT)
-                    {
-                        f.p[f.numPoints] = *p1;
-                        f.numPoints++;
-                    }
-
-                    if (sides[i] == SIDE_BACK)
-                    {
-                        b.p[b.numPoints] = *p1;
-                        b.numPoints++;
-                    }
-
-                    if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])
-                        continue;
+                    if (sides[i] == SIDE_ON) { f.p[f.numPoints] = *p1; f.numPoints++; b.p[b.numPoints] = *p1; b.numPoints++; continue; }
+                    if (sides[i] == SIDE_FRONT) { f.p[f.numPoints] = *p1; f.numPoints++; }
+                    if (sides[i] == SIDE_BACK) { b.p[b.numPoints] = *p1; b.numPoints++; }
+                    if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) continue;
 
                     // generate a split point
                     p2 = &p[(i + 1) % numPoints];
@@ -196,20 +145,20 @@ namespace System.NumericsX
                     if (sides[i] == SIDE_FRONT)
                     {
                         dot = dists[i] / (dists[i] - dists[i + 1]);
+                        // avoid round off error when possible
                         for (j = 0; j < 2; j++)
-                            // avoid round off error when possible
                             mid[j] = plane[j] == 1f ? plane.z
                                 : plane[j] == -1f ? -plane.z
-                                : (*p1)[j] + dot * ((*p2)[j] - (*p1)[j]); //: opt
+                                : (*p1)[j] + dot * ((*p2)[j] - (*p1)[j]);
                     }
                     else
                     {
                         dot = dists[i + 1] / (dists[i + 1] - dists[i]);
+                        // avoid round off error when possible
                         for (j = 0; j < 2; j++)
-                            // avoid round off error when possible
                             mid[j] = plane[j] == 1f ? plane.z
                                 : plane[j] == -1f ? -plane.z
-                                : (*p2)[j] + dot * ((*p1)[j] - (*p2)[j]); //: opt
+                                : (*p2)[j] + dot * ((*p1)[j] - (*p2)[j]);
                     }
 
                     f.p[f.numPoints] = mid;
@@ -234,24 +183,16 @@ namespace System.NumericsX
             for (i = 0; i < numPoints; i++)
             {
                 dists[i] = dot = plane.x * p[i].x + plane.y * p[i].y + plane.z;
-                sides[i] = dot > epsilon ? SIDE_FRONT
-                    : dot < -epsilon ? SIDE_BACK
-                    : SIDE_ON; //: opt
+                sides[i] = dot > epsilon ? SIDE_FRONT : dot < -epsilon ? SIDE_BACK : SIDE_ON;
                 counts[sides[i]]++;
             }
             sides[i] = sides[0];
             dists[i] = dists[0];
 
             // if the winding is on the plane and we should keep it
-            if (keepOn && counts[SIDE_FRONT] == 0 && counts[SIDE_BACK] == 0)
-                return true;
-            if (counts[SIDE_FRONT] == 0)
-            {
-                numPoints = 0;
-                return false;
-            }
-            if (counts[SIDE_BACK] == 0)
-                return true;
+            if (keepOn && counts[SIDE_FRONT] == 0 && counts[SIDE_BACK] == 0) return true;
+            if (counts[SIDE_FRONT] == 0) { numPoints = 0; return false; }
+            if (counts[SIDE_BACK] == 0) return true;
 
             maxpts = numPoints + 4;     // cant use counts[0]+2 because of fp grouping errors
             newNumPoints = 0;
@@ -262,27 +203,13 @@ namespace System.NumericsX
                 {
                     p1 = &p[i];
 
-                    if (newNumPoints + 1 > maxpts)
-                        return true;        // can't split -- fall back to original
+                    if (newNumPoints + 1 > maxpts) return true;        // can't split -- fall back to original
 
-                    if (sides[i] == SIDE_ON)
-                    {
-                        newPoints[newNumPoints] = *p1;
-                        newNumPoints++;
-                        continue;
-                    }
+                    if (sides[i] == SIDE_ON) { newPoints[newNumPoints] = *p1; newNumPoints++; continue; }
+                    if (sides[i] == SIDE_FRONT) { newPoints[newNumPoints] = *p1; newNumPoints++; }
+                    if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) continue;
 
-                    if (sides[i] == SIDE_FRONT)
-                    {
-                        newPoints[newNumPoints] = *p1;
-                        newNumPoints++;
-                    }
-
-                    if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])
-                        continue;
-
-                    if (newNumPoints + 1 > maxpts)
-                        return true;        // can't split -- fall back to original
+                    if (newNumPoints + 1 > maxpts) return true;        // can't split -- fall back to original
 
                     // generate a split point
                     p2 = &p[(i + 1) % numPoints];
@@ -292,7 +219,7 @@ namespace System.NumericsX
                         // avoid round off error when possible
                         mid[j] = plane[j] == 1f ? plane.z
                             : plane[j] == -1f ? -plane.z
-                            : (*p1)[j] + dot * ((*p2)[j] - (*p1)[j]); //: opt
+                            : (*p1)[j] + dot * ((*p2)[j] - (*p1)[j]);
 
                     newPoints[newNumPoints] = mid;
                     newNumPoints++;
@@ -311,19 +238,15 @@ namespace System.NumericsX
 
         public unsafe Winding2D Copy()
         {
-            var w = new Winding2D();
-            w.numPoints = numPoints;
-            fixed (void* w_p = w.p, p = this.p)
-                Unsafe.CopyBlock(w_p, p, (uint)(numPoints * sizeof(Vector2)));
+            var w = new Winding2D { numPoints = numPoints };
+            fixed (void* w_p = w.p, p = this.p) Unsafe.CopyBlock(w_p, p, (uint)(numPoints * sizeof(Vector2)));
             return w;
         }
 
         public Winding2D Reverse()
         {
-            var w = new Winding2D();
-            w.numPoints = numPoints;
-            for (var i = 0; i < numPoints; i++)
-                w.p[numPoints - i - 1] = p[i];
+            var w = new Winding2D { numPoints = numPoints };
+            for (var i = 0; i < numPoints; i++) w.p[numPoints - i - 1] = p[i];
             return w;
         }
 
@@ -332,12 +255,7 @@ namespace System.NumericsX
             get
             {
                 var total = 0f;
-                for (var i = 2; i < numPoints; i++)
-                {
-                    var d1 = p[i - 1] - p[0];
-                    var d2 = p[i] - p[0];
-                    total += d1.x * d2.y - d1.y * d2.x;
-                }
+                for (var i = 2; i < numPoints; i++) { var d1 = p[i - 1] - p[0]; var d2 = p[i] - p[0]; total += d1.x * d2.y - d1.y * d2.x; }
                 return total * 0.5f;
             }
         }
@@ -348,8 +266,7 @@ namespace System.NumericsX
             {
                 Vector2 center = new();
                 center.Zero();
-                for (var i = 0; i < numPoints; i++)
-                    center += p[i];
+                for (var i = 0; i < numPoints; i++) center += p[i];
                 center *= (1f / numPoints);
                 return center;
             }
@@ -362,20 +279,14 @@ namespace System.NumericsX
             {
                 var dir = p[i] - center;
                 var r = dir * dir;
-                if (r > radius)
-                    radius = r;
+                if (r > radius) radius = r;
             }
             return MathX.Sqrt(radius);
         }
 
         public void GetBounds(Vector2[] bounds)
         {
-            if (numPoints == 0)
-            {
-                bounds[0].x = bounds[0].y = MathX.INFINITY;
-                bounds[1].x = bounds[1].y = -MathX.INFINITY;
-                return;
-            }
+            if (numPoints == 0) { bounds[0].x = bounds[0].y = MathX.INFINITY; bounds[1].x = bounds[1].y = -MathX.INFINITY; return; }
 
             bounds[0] = bounds[1] = p[0];
             for (var i = 1; i < numPoints; i++)
@@ -397,9 +308,7 @@ namespace System.NumericsX
                 {
                     var delta = p[(i + 1) % numPoints] - p[i];
                     var len = delta.Length;
-                    if (len > EDGE_LENGTH)
-                        if (++edges == 3)
-                            return false;
+                    if (len > EDGE_LENGTH && ++edges == 3) return false;
                 }
                 return true;
             }
@@ -409,18 +318,14 @@ namespace System.NumericsX
         {
             get
             {
-                for (var i = 0; i < numPoints; i++)
-                    for (var j = 0; j < 2; j++)
-                        if (p[i][j] <= MIN_WORLD_COORD || p[i][j] >= MAX_WORLD_COORD)
-                            return true;
+                for (var i = 0; i < numPoints; i++) for (var j = 0; j < 2; j++) if (p[i][j] <= MIN_WORLD_COORD || p[i][j] >= MAX_WORLD_COORD) return true;
                 return false;
             }
         }
 
         public void Print()
         {
-            for (var i = 0; i < numPoints; i++)
-                Printf($"({p[i].x:5.1}, {p[i].y:5.1})\n");
+            for (var i = 0; i < numPoints; i++) Printf($"({p[i].x:5.1}, {p[i].y:5.1})\n");
         }
 
         public float PlaneDistance(in Vector3 plane)
@@ -431,18 +336,8 @@ namespace System.NumericsX
             for (var i = 0; i < numPoints; i++)
             {
                 var d = plane.x * p[i].x + plane.y * p[i].y + plane.z;
-                if (d < min)
-                {
-                    min = d;
-                    if (MathX.FLOATSIGNBITSET(min) & MathX.FLOATSIGNBITNOTSET(max))
-                        return 0f;
-                }
-                if (d > max)
-                {
-                    max = d;
-                    if (MathX.FLOATSIGNBITSET(min) & MathX.FLOATSIGNBITNOTSET(max))
-                        return 0f;
-                }
+                if (d < min) { min = d; if (MathX.FLOATSIGNBITSET(min) & MathX.FLOATSIGNBITNOTSET(max)) return 0f; }
+                if (d > max) { max = d; if (MathX.FLOATSIGNBITSET(min) & MathX.FLOATSIGNBITNOTSET(max)) return 0f; }
             }
             if (MathX.FLOATSIGNBITNOTSET(min)) return min;
             if (MathX.FLOATSIGNBITSET(max)) return max;
@@ -456,22 +351,9 @@ namespace System.NumericsX
             for (var i = 0; i < numPoints; i++)
             {
                 var d = plane.x * p[i].x + plane.y * p[i].y + plane.z;
-                if (d < -epsilon)
-                {
-                    if (front)
-                        return SIDE_CROSS;
-                    back = true;
-                    continue;
-                }
-                else if (d > epsilon)
-                {
-                    if (back)
-                        return SIDE_CROSS;
-                    front = true;
-                    continue;
-                }
+                if (d < -epsilon) { if (front) return SIDE_CROSS; back = true; continue; }
+                else if (d > epsilon) { if (back) return SIDE_CROSS; front = true; continue; }
             }
-
             if (back) return SIDE_BACK;
             if (front) return SIDE_FRONT;
             return SIDE_ON;
@@ -483,8 +365,7 @@ namespace System.NumericsX
             {
                 var plane = Plane2DFromPoints(p[i], p[(i + 1) % numPoints]);
                 var d = plane.x * point.x + plane.y * point.y + plane.z;
-                if (d > epsilon)
-                    return false;
+                if (d > epsilon) return false;
             }
             return true;
         }
@@ -501,37 +382,29 @@ namespace System.NumericsX
             for (i = 0; i < numPoints; i++)
             {
                 d1 = plane.x * p[i].x + plane.y * p[i].y + plane.z;
-                sides[i] = d1 > epsilon ? SIDE_FRONT
-                    : d1 < -epsilon ? SIDE_BACK
-                    : SIDE_ON; //: opt
+                sides[i] = d1 > epsilon ? SIDE_FRONT : d1 < -epsilon ? SIDE_BACK : SIDE_ON;
                 counts[sides[i]]++;
             }
             sides[i] = sides[0];
 
-            if (counts[SIDE_FRONT] == 0)
-                return false;
-            if (counts[SIDE_BACK] == 0)
-                return false;
+            if (counts[SIDE_FRONT] == 0) return false;
+            if (counts[SIDE_BACK] == 0) return false;
 
             numEdges = 0;
             for (i = 0; i < numPoints; i++)
                 if (sides[i] != sides[i + 1] && sides[i + 1] != SIDE_ON)
                 {
                     edges[numEdges++] = Plane2DFromPoints(p[i], p[(i + 1) % numPoints]);
-                    if (numEdges >= 2)
-                        break;
+                    if (numEdges >= 2) break;
                 }
-            if (numEdges < 2)
-                return false;
+            if (numEdges < 2) return false;
 
             d1 = edges[0].x * start.x + edges[0].y * start.y + edges[0].z;
             d2 = edges[0].x * end.x + edges[0].y * end.y + edges[0].z;
-            if (MathX.FLOATSIGNBITNOTSET(d1) & MathX.FLOATSIGNBITNOTSET(d2))
-                return false;
+            if (MathX.FLOATSIGNBITNOTSET(d1) & MathX.FLOATSIGNBITNOTSET(d2)) return false;
             d1 = edges[1].x * start.x + edges[1].y * start.y + edges[1].z;
             d2 = edges[1].x * end.x + edges[1].y * end.y + edges[1].z;
-            if (MathX.FLOATSIGNBITNOTSET(d1) & MathX.FLOATSIGNBITNOTSET(d2))
-                return false;
+            if (MathX.FLOATSIGNBITNOTSET(d1) & MathX.FLOATSIGNBITNOTSET(d2)) return false;
             return true;
         }
 
@@ -548,17 +421,13 @@ namespace System.NumericsX
             for (i = 0; i < numPoints; i++)
             {
                 d1 = plane.x * p[i].x + plane.y * p[i].y + plane.z;
-                sides[i] = d1 > epsilon ? SIDE_FRONT
-                : d1 < -epsilon ? SIDE_BACK
-                : SIDE_ON; //: opt
+                sides[i] = d1 > epsilon ? SIDE_FRONT : d1 < -epsilon ? SIDE_BACK : SIDE_ON;
                 counts[sides[i]]++;
             }
             sides[i] = sides[0];
 
-            if (counts[SIDE_FRONT] == 0)
-                return false;
-            if (counts[SIDE_BACK] == 0)
-                return false;
+            if (counts[SIDE_FRONT] == 0) return false;
+            if (counts[SIDE_BACK] == 0) return false;
 
             numEdges = 0;
             for (i = 0; i < numPoints; i++)
@@ -566,34 +435,22 @@ namespace System.NumericsX
                 {
                     localEdgeNums[numEdges] = i;
                     edges[numEdges++] = Plane2DFromPoints(p[i], p[(i + 1) % numPoints]);
-                    if (numEdges >= 2)
-                        break;
+                    if (numEdges >= 2) break;
                 }
-            if (numEdges < 2)
-                return false;
+            if (numEdges < 2) return false;
 
             d1 = edges[0].x * start.x + edges[0].y * start.y + edges[0].z;
             d2 = -(edges[0].x * dir.x + edges[0].y * dir.y);
-            if (d2 == 0f)
-                return false;
+            if (d2 == 0f) return false;
             scale1 = d1 / d2;
             d1 = edges[1].x * start.x + edges[1].y * start.y + edges[1].z;
             d2 = -(edges[1].x * dir.x + edges[1].y * dir.y);
-            if (d2 == 0f)
-                return false;
+            if (d2 == 0f) return false;
             scale2 = d1 / d2;
 
-            if (MathX.Fabs(scale1) > MathX.Fabs(scale2))
-            {
-                UnsafeX.Swap(ref scale1, ref scale2);
-                UnsafeX.Swap(ref localEdgeNums[0], ref localEdgeNums[1]);
-            }
+            if (MathX.Fabs(scale1) > MathX.Fabs(scale2)) { UnsafeX.Swap(ref scale1, ref scale2); UnsafeX.Swap(ref localEdgeNums[0], ref localEdgeNums[1]); }
 
-            if (edgeNums != null)
-            {
-                edgeNums[0] = localEdgeNums[0];
-                edgeNums[1] = localEdgeNums[1];
-            }
+            if (edgeNums != null) { edgeNums[0] = localEdgeNums[0]; edgeNums[1] = localEdgeNums[1]; }
             return true;
         }
 
@@ -603,8 +460,7 @@ namespace System.NumericsX
             Vector3 plane = new();
             plane.x = start.y - end.y;
             plane.y = end.x - start.x;
-            if (normalize)
-                plane.ToVec2().Normalize();
+            if (normalize) plane.ToVec2().Normalize();
             plane.z = -(start.x * plane.x + start.y * plane.y);
             return plane;
         }
@@ -615,8 +471,7 @@ namespace System.NumericsX
             Vector3 plane = new();
             plane.x = -dir.y;
             plane.y = dir.x;
-            if (normalize)
-                plane.ToVec2().Normalize();
+            if (normalize) plane.ToVec2().Normalize();
             plane.z = -(start.x * plane.x + start.y * plane.y);
             return plane;
         }
@@ -631,8 +486,7 @@ namespace System.NumericsX
             n11 = plane2.x * plane2.x + plane2.y * plane2.y;
             det = n00 * n11 - n01 * n01;
 
-            if (MathX.Fabs(det) < 1e-6f)
-                return false;
+            if (MathX.Fabs(det) < 1e-6f) return false;
 
             invDet = 1f / det;
             f0 = (n01 * plane2.z - n11 * plane1.z) * invDet;

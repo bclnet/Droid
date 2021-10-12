@@ -342,31 +342,31 @@ namespace Gengine.Render
         static CVar image_downSizeLimit;      // downsize diffuse limit
 
         // built-in images
-        Image defaultImage;
-        Image flatNormalMap;             // 128 128 255 in all pixels
-        Image ambientNormalMap;          // tr.ambientLightVector encoded in all pixels
-        Image rampImage;                 // 0-255 in RGBA in S
-        Image alphaRampImage;                // 0-255 in alpha, 255 in RGB
-        Image alphaNotchImage;           // 2x1 texture with just 1110 and 1111 with point sampling
-        Image whiteImage;                    // full of 0xff
-        Image blackImage;                    // full of 0x00
-        Image normalCubeMapImage;            // cube map to normalize STR into RGB
-        Image noFalloffImage;                // all 255, but zero clamped
-        Image quadraticImage;                //
-        Image fogImage;                  // increasing alpha is denser fog
-        Image fogEnterImage;             // adjust fogImage alpha based on terminator plane
-        Image cinematicImage;
-        Image scratchImage;
-        Image scratchImage2;
-        Image accumImage;
-        Image currentRenderImage;            // for SS_POST_PROCESS shaders
-        Image scratchCubeMapImage;
-        Image specularTableImage;            // 1D intensity texture with our specular function
-        Image specular2DTableImage;      // 2D intensity texture with our specular function with variable specularity
-        Image borderClampImage;          // white inside, black outside
+        public Image defaultImage;
+        public Image flatNormalMap;             // 128 128 255 in all pixels
+        public Image ambientNormalMap;          // tr.ambientLightVector encoded in all pixels
+        public Image rampImage;                 // 0-255 in RGBA in S
+        public Image alphaRampImage;                // 0-255 in alpha, 255 in RGB
+        public Image alphaNotchImage;           // 2x1 texture with just 1110 and 1111 with point sampling
+        public Image whiteImage;                    // full of 0xff
+        public Image blackImage;                    // full of 0x00
+        public Image normalCubeMapImage;            // cube map to normalize STR into RGB
+        public Image noFalloffImage;                // all 255, but zero clamped
+        public Image quadraticImage;                //
+        public Image fogImage;                  // increasing alpha is denser fog
+        public Image fogEnterImage;             // adjust fogImage alpha based on terminator plane
+        public Image cinematicImage;
+        public Image scratchImage;
+        public Image scratchImage2;
+        public Image accumImage;
+        public Image currentRenderImage;            // for SS_POST_PROCESS shaders
+        public Image scratchCubeMapImage;
+        public Image specularTableImage;            // 1D intensity texture with our specular function
+        public Image specular2DTableImage;      // 2D intensity texture with our specular function with variable specularity
+        public Image borderClampImage;          // white inside, black outside
 
-        Image hudImage;
-        Image pdaImage;
+        public Image hudImage;
+        public Image pdaImage;
 
         //--------------------------------------------------------
 

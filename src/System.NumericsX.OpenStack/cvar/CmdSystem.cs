@@ -112,12 +112,7 @@ namespace System.NumericsX.OpenStack
             CommandDef cmd;
 
             // fail if the command already exists
-            for (cmd = commands; cmd != null; cmd = cmd.next)
-                if (cmdName == cmd.name && function != cmd.function)
-                {
-                    Printf($"CmdSystemLocal::AddCommand: {cmdName} already defined\n");
-                    return;
-                }
+            for (cmd = commands; cmd != null; cmd = cmd.next) if (cmdName == cmd.name && function != cmd.function) { Printf($"CmdSystemLocal::AddCommand: {cmdName} already defined\n"); return; }
 
             cmd = new CommandDef
             {
@@ -137,11 +132,7 @@ namespace System.NumericsX.OpenStack
 
             for (cmd = last; cmd != null; cmd = last)
             {
-                if (cmdName == cmd.name)
-                {
-                    last = cmd.next;
-                    return;
-                }
+                if (cmdName == cmd.name) { last = cmd.next; return; }
                 last = cmd.next;
             }
         }
@@ -152,11 +143,7 @@ namespace System.NumericsX.OpenStack
 
             for (cmd = last; cmd != null; cmd = last)
             {
-                if ((cmd.flags & flags) != 0)
-                {
-                    last = cmd.next;
-                    continue;
-                }
+                if ((cmd.flags & flags) != 0) { last = cmd.next; continue; }
                 last = cmd.next;
             }
         }
@@ -165,8 +152,7 @@ namespace System.NumericsX.OpenStack
         {
             CommandDef cmd;
 
-            for (cmd = commands; cmd != null; cmd = cmd.next)
-                callback(cmd.name);
+            for (cmd = commands; cmd != null; cmd = cmd.next) callback(cmd.name);
         }
 
         public void ArgCompletion(string cmdString, Action<string> callback)
@@ -177,13 +163,8 @@ namespace System.NumericsX.OpenStack
 
             for (cmd = commands; cmd != null; cmd = cmd.next)
             {
-                if (cmd.argCompletion == null)
-                    continue;
-                if (args[0] == cmd.name)
-                {
-                    cmd.argCompletion(args, callback);
-                    break;
-                }
+                if (cmd.argCompletion == null) continue;
+                if (args[0] == cmd.name) { cmd.argCompletion(args, callback); break; }
             }
         }
 
@@ -204,12 +185,8 @@ namespace System.NumericsX.OpenStack
 
             while (textBuf.Length != 0)
             {
-                if (wait != 0)
-                {
-                    // skip out while text still remains in buffer, leaving it for next frame
-                    wait--;
-                    break;
-                }
+                // skip out while text still remains in buffer, leaving it for next frame
+                if (wait != 0) { wait--; break; }
 
                 // find a \n or ; line break
                 quotes = 0;
@@ -222,24 +199,13 @@ namespace System.NumericsX.OpenStack
 
                 text = textBuf.ToString(0, i);
 
-                if (text == "_execTokenized")
-                {
-                    args = tokenizedCmds[0];
-                    tokenizedCmds.RemoveAt(0);
-                }
+                if (text == "_execTokenized") { args = tokenizedCmds[0]; tokenizedCmds.RemoveAt(0); }
                 else args.TokenizeString(text, false);
 
-                // delete the text from the command buffer and move remaining commands down
-                // this is necessary because commands (exec) can insert data at the
-                // beginning of the text buffer
+                // delete the text from the command buffer and move remaining commands down this is necessary because commands (exec) can insert data at the beginning of the text buffer
 
-                if (i == textBuf.Length)
-                    textBuf.Length = 0;
-                else
-                {
-                    i++;
-                    textBuf.Remove(0, i);
-                }
+                if (i == textBuf.Length) textBuf.Length = 0;
+                else { i++; textBuf.Remove(0, i); }
 
                 // execute the command line that we have already tokenized
                 ExecuteTokenizedString(args);
@@ -261,8 +227,7 @@ namespace System.NumericsX.OpenStack
 
                 parm = args[1];
                 path = Path.GetFileName(parm);
-                if (stripFolder || path.Length == 0)
-                    path = folder + path;
+                if (stripFolder || path.Length == 0) path = folder + path;
                 path = path.TrimEnd('/');
 
                 // list folders
@@ -290,8 +255,7 @@ namespace System.NumericsX.OpenStack
                     fileSystem.FreeFileList(names);
                 }
             }
-            for (i = 0; i < completionParms.Count; i++)
-                callback(completionParms[i]);
+            for (i = 0; i < completionParms.Count; i++) callback(completionParms[i]);
         }
 
         public void BufferCommandArgs(CMD_EXEC exec, CmdArgs args)
@@ -312,8 +276,7 @@ namespace System.NumericsX.OpenStack
 
         public bool PostReloadEngine()
         {
-            if (postReload.Count == 0)
-                return false;
+            if (postReload.Count == 0) return false;
             BufferCommandArgs(CMD_EXEC.APPEND, postReload);
             postReload.Clear();
             return true;
@@ -330,8 +293,7 @@ namespace System.NumericsX.OpenStack
             CommandDef cmd; ref CommandDef prev = ref commands;
 
             // execute the command line
-            if (args.Count == 0)
-                return;     // no tokens
+            if (args.Count == 0) return;     // no tokens
 
             // check registered command functions
             for (; prev != null; prev = cmd.next)
@@ -344,22 +306,16 @@ namespace System.NumericsX.OpenStack
                     cmd.next = commands;
                     commands = cmd;
 
-                    if ((cmd.flags & (CMD_FL.CHEAT | CMD_FL.TOOL)) != 0 && Session_IsMultiplayer != null && Session_IsMultiplayer() && !cvarSystem.GetCVarBool("net_allowCheats"))
-                    {
-                        Printf($"Command '{cmd.name}' not valid in multiplayer mode.\n");
-                        return;
-                    }
+                    if ((cmd.flags & (CMD_FL.CHEAT | CMD_FL.TOOL)) != 0 && Session_IsMultiplayer != null && Session_IsMultiplayer() && !cvarSystem.GetCVarBool("net_allowCheats")) { Printf($"Command '{cmd.name}' not valid in multiplayer mode.\n"); return; }
                     // perform the action
-                    if (cmd.function == null)
-                        break;
+                    if (cmd.function == null) break;
                     cmd.function(args);
                     return;
                 }
             }
 
             // check cvars
-            if (cvarSystem.Command(args))
-                return;
+            if (cvarSystem.Command(args)) return;
 
             Printf($"Unknown command '{args[0]}'\n");
         }
@@ -374,31 +330,21 @@ namespace System.NumericsX.OpenStack
 
         static void ListByFlags(CmdArgs args, CMD_FL flags)
         {
-            var match = args.Count > 1
-                ? args.Args(1, -1).Replace(" ", "")
-                : string.Empty;
+            var match = args.Count > 1 ? args.Args(1, -1).Replace(" ", "") : string.Empty;
 
             CommandDef cmd;
             var cmdList = new List<CommandDef>();
             for (cmd = cmdSystemLocal.Commands; cmd != null; cmd = cmd.next)
             {
-                if ((cmd.flags & flags) == 0)
-                    continue;
-                if (match.Length != 0 && cmd.name.Filter(match, false))
-                    continue;
+                if ((cmd.flags & flags) == 0) continue;
+                if (match.Length != 0 && cmd.name.Filter(match, false)) continue;
 
                 cmdList.Add(cmd);
             }
 
             cmdList.Sort();
 
-            for (var i = 0; i < cmdList.Count; i++)
-            {
-                cmd = cmdList[i];
-
-                Printf($"  {cmd.name:-21} {cmd.description}\n");
-            }
-
+            for (var i = 0; i < cmdList.Count; i++) { cmd = cmdList[i]; Printf($"  {cmd.name:-21} {cmd.description}\n"); }
             Printf($"{cmdList.Count} commands\n");
         }
 
@@ -411,20 +357,12 @@ namespace System.NumericsX.OpenStack
 
         static void Exec_f(CmdArgs args)
         {
-            if (args.Count != 2)
-            {
-                Printf("exec <filename> : execute a script file\n");
-                return;
-            }
+            if (args.Count != 2) { Printf("exec <filename> : execute a script file\n"); return; }
 
             var filename = args[1];
             filename = Path.GetExtension(filename).Length != 0 ? filename : $"{filename}.cfg";
             fileSystem.ReadFile(filename, out var f, out var _);
-            if (f == null)
-            {
-                Printf($"couldn't exec {args[1]}\n");
-                return;
-            }
+            if (f == null) { Printf($"couldn't exec {args[1]}\n"); return; }
             Printf($"execing {args[1]}\n");
 
             cmdSystemLocal.BufferCommandText(CMD_EXEC.INSERT, Encoding.ASCII.GetString(f));
@@ -434,11 +372,7 @@ namespace System.NumericsX.OpenStack
 
         static void Vstr_f(CmdArgs args)
         {
-            if (args.Count != 2)
-            {
-                Printf("vstr <variablename> : execute a variable command\n");
-                return;
-            }
+            if (args.Count != 2) { Printf("vstr <variablename> : execute a variable command\n"); return; }
 
             var v = cvarSystem.GetCVarString(args[1]);
 
@@ -446,15 +380,13 @@ namespace System.NumericsX.OpenStack
         }
         static void Echo_f(CmdArgs args)
         {
-            for (var i = 1; i < args.Count; i++)
-                Printf($"{args[i]} ");
+            for (var i = 1; i < args.Count; i++) Printf($"{args[i]} ");
             Printf("\n");
         }
 
         static void Parse_f(CmdArgs args)
         {
-            for (var i = 0; i < args.Count; i++)
-                Printf($"{i}: {args[i]}\n");
+            for (var i = 0; i < args.Count; i++) Printf($"{i}: {args[i]}\n");
         }
 
         static void Wait_f(CmdArgs args)

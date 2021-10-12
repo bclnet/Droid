@@ -209,8 +209,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
-            fixed (float* _ = &r)
-                return callback(_);
+            fixed (float* _ = &r) return callback(_);
         }
 
         public unsafe string ToString(int precision = 2)

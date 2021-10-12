@@ -57,13 +57,11 @@ namespace System.NumericsX
         public Vector4 GetCurrentValue(float time)
         {
             float deltaTime, s;
-            if (time == currentTime)
-                return currentValue;
+            if (time == currentTime) return currentValue;
             currentTime = time;
             if (time < startTime) return startValue;
 
-            if ((extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && (time > startTime + duration))
-                time = startTime + duration;
+            if ((extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && (time > startTime + duration)) time = startTime + duration;
 
             switch (extrapolationType & ~EXTRAPOLATION.NOSTOP)
             {
@@ -77,39 +75,19 @@ namespace System.NumericsX
                     break;
                 case EXTRAPOLATION.ACCELLINEAR:
                     if (duration == 0) currentValue = startValue;
-                    else
-                    {
-                        deltaTime = (time - startTime) / duration;
-                        s = (0.5f * deltaTime * deltaTime) * (duration * 0.001f);
-                        currentValue = startValue + deltaTime * baseSpeed + s * speed;
-                    }
+                    else { deltaTime = (time - startTime) / duration; s = (0.5f * deltaTime * deltaTime) * (duration * 0.001f); currentValue = startValue + deltaTime * baseSpeed + s * speed; }
                     break;
                 case EXTRAPOLATION.DECELLINEAR:
                     if (duration == 0) currentValue = startValue;
-                    else
-                    {
-                        deltaTime = (time - startTime) / duration;
-                        s = (deltaTime - (0.5f * deltaTime * deltaTime)) * (duration * 0.001f);
-                        currentValue = startValue + deltaTime * baseSpeed + s * speed;
-                    }
+                    else { deltaTime = (time - startTime) / duration; s = (deltaTime - (0.5f * deltaTime * deltaTime)) * (duration * 0.001f); currentValue = startValue + deltaTime * baseSpeed + s * speed; }
                     break;
                 case EXTRAPOLATION.ACCELSINE:
                     if (duration == 0) currentValue = startValue;
-                    else
-                    {
-                        deltaTime = (time - startTime) / duration;
-                        s = (1f - MathX.Cos(deltaTime * MathX.HALF_PI)) * duration * 0.001f * MathX.SQRT_1OVER2;
-                        currentValue = startValue + deltaTime * baseSpeed + s * speed;
-                    }
+                    else { deltaTime = (time - startTime) / duration; s = (1f - MathX.Cos(deltaTime * MathX.HALF_PI)) * duration * 0.001f * MathX.SQRT_1OVER2; currentValue = startValue + deltaTime * baseSpeed + s * speed; }
                     break;
                 case EXTRAPOLATION.DECELSINE:
                     if (duration == 0) currentValue = startValue;
-                    else
-                    {
-                        deltaTime = (time - startTime) / duration;
-                        s = MathX.Sin(deltaTime * MathX.HALF_PI) * duration * 0.001f * MathX.SQRT_1OVER2;
-                        currentValue = startValue + deltaTime * baseSpeed + s * speed;
-                    }
+                    else { deltaTime = (time - startTime) / duration; s = MathX.Sin(deltaTime * MathX.HALF_PI) * duration * 0.001f * MathX.SQRT_1OVER2; currentValue = startValue + deltaTime * baseSpeed + s * speed; }
                     break;
             }
             return currentValue;
@@ -118,37 +96,19 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector4 GetCurrentSpeed(float time)
         {
-            if (time < startTime || duration == 0)
-                return startValue - startValue;
-
-            if ((extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && (time > startTime + duration))
-                return startValue - startValue;
+            if (time < startTime || duration == 0) return startValue - startValue;
+            if ((extrapolationType & EXTRAPOLATION.NOSTOP) == 0 && (time > startTime + duration)) return startValue - startValue;
 
             float deltaTime, s;
             switch (extrapolationType & ~EXTRAPOLATION.NOSTOP)
             {
-                case EXTRAPOLATION.NONE:
-                    return baseSpeed;
-                case EXTRAPOLATION.LINEAR:
-                    return baseSpeed + speed;
-                case EXTRAPOLATION.ACCELLINEAR:
-                    deltaTime = (time - startTime) / duration;
-                    s = deltaTime;
-                    return baseSpeed + s * speed;
-                case EXTRAPOLATION.DECELLINEAR:
-                    deltaTime = (time - startTime) / duration;
-                    s = 1f - deltaTime;
-                    return baseSpeed + s * speed;
-                case EXTRAPOLATION.ACCELSINE:
-                    deltaTime = (time - startTime) / duration;
-                    s = MathX.Sin(deltaTime * MathX.HALF_PI);
-                    return baseSpeed + s * speed;
-                case EXTRAPOLATION.DECELSINE:
-                    deltaTime = (time - startTime) / duration;
-                    s = MathX.Cos(deltaTime * MathX.HALF_PI);
-                    return baseSpeed + s * speed;
-                default:
-                    return baseSpeed;
+                case EXTRAPOLATION.NONE: return baseSpeed;
+                case EXTRAPOLATION.LINEAR: return baseSpeed + speed;
+                case EXTRAPOLATION.ACCELLINEAR: deltaTime = (time - startTime) / duration; s = deltaTime; return baseSpeed + s * speed;
+                case EXTRAPOLATION.DECELLINEAR: deltaTime = (time - startTime) / duration; s = 1f - deltaTime; return baseSpeed + s * speed;
+                case EXTRAPOLATION.ACCELSINE: deltaTime = (time - startTime) / duration; s = MathX.Sin(deltaTime * MathX.HALF_PI); return baseSpeed + s * speed;
+                case EXTRAPOLATION.DECELSINE: deltaTime = (time - startTime) / duration; s = MathX.Cos(deltaTime * MathX.HALF_PI); return baseSpeed + s * speed;
+                default: return baseSpeed;
             }
         }
 

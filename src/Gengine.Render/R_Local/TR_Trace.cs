@@ -5,8 +5,17 @@ using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Render
 {
-    partial class TRX
+    partial class TR
     {
+        public struct LocalTrace
+        {
+            public float fraction;
+            // only valid if fraction < 1.0
+            public Vector3 point;
+            public Vector3 normal;
+            public int[] indexes;
+        }
+
         // If we resort the vertexes so all silverts come first, we can save some work here.
         public unsafe static LocalTrace R_LocalTrace(Vector3 start, Vector3 end, float radius, SrfTriangles tri)
         {

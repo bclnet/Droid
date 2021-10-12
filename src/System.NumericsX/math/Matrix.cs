@@ -34,27 +34,19 @@ namespace System.NumericsX
         public Matrix2x2(float[] src)
         {
             this = default;
-            fixed (void* mat_ = &mat0, src_ = src)
-                Unsafe.CopyBlock(mat_, src_, 2 * 2 * sizeof(float));
+            fixed (void* mat_ = &mat0, src_ = src) Unsafe.CopyBlock(mat_, src_, 2 * 2 * sizeof(float));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix2x2(float[,] src)
         {
             this = default;
-            fixed (void* mat_ = &mat0, src_ = &src[0, 0])
-                Unsafe.CopyBlock(mat_, src_, 2 * 2 * sizeof(float));
-            //mat0 = new Vector2(src[0, 0], src[0, 1]);
-            //mat1 = new Vector2(src[1, 0], src[1, 1]);
+            fixed (void* mat_ = &mat0, src_ = &src[0, 0]) Unsafe.CopyBlock(mat_, src_, 2 * 2 * sizeof(float));
         }
 
         public ref Vector2 this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (Vector2* mat_ = &mat0)
-                    return ref mat_[index];
-            }
+            get { fixed (Vector2* mat_ = &mat0) return ref mat_[index]; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -179,8 +171,7 @@ namespace System.NumericsX
             double det, invDet, a;
 
             det = mat0.x * mat1.y - mat0.y * mat1.x;
-            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
-                return false;
+            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON) return false;
 
             invDet = 1f / det;
             a = mat0.x;
@@ -206,8 +197,7 @@ namespace System.NumericsX
             double det, invDet, a;
 
             det = mat0.x * mat1.y - mat0.y * mat1.x;
-            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
-                return false;
+            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON) return false;
 
             invDet = 1f / det;
             a = mat0.x;
@@ -226,8 +216,7 @@ namespace System.NumericsX
 
         public string ToString(int precision = 2)
         {
-            fixed (float* _ = &mat0.x)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = &mat0.x) return FloatArrayToString(_, Dimension, precision);
         }
     }
 
@@ -263,28 +252,19 @@ namespace System.NumericsX
         public Matrix3x3(float[] src)
         {
             this = default;
-            fixed (void* mat_ = &mat0, src_ = src)
-                Unsafe.CopyBlock(mat_, src_, 2U * 2U * sizeof(float));
+            fixed (void* mat_ = &mat0, src_ = src) Unsafe.CopyBlock(mat_, src_, 2U * 2U * sizeof(float));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix3x3(float[,] src)
         {
             this = default;
-            fixed (void* mat_ = &mat0, src_ = &src[0, 0])
-                Unsafe.CopyBlock(mat_, src_, 2U * 2U * sizeof(float));
-            //mat0 = new Vector3(src[0, 0], src[0, 1], src[0, 2]);
-            //mat1 = new Vector3(src[1, 0], src[1, 1], src[1, 2]);
-            //mat2 = new Vector3(src[2, 0], src[2, 1], src[2, 2]);
+            fixed (void* mat_ = &mat0, src_ = &src[0, 0]) Unsafe.CopyBlock(mat_, src_, 2U * 2U * sizeof(float));
         }
 
         public ref Vector3 this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (Vector3* mat_ = &mat0)
-                    return ref mat_[index];
-            }
+            get { fixed (Vector3* mat_ = &mat0) return ref mat_[index]; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -372,8 +352,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()
         {
-            fixed (void* mat_ = &mat0)
-                Unsafe.InitBlock(mat_, 0, 3U * (uint)sizeof(Vector3));
+            fixed (void* mat_ = &mat0) Unsafe.InitBlock(mat_, 0, 3U * (uint)sizeof(Vector3));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -755,8 +734,7 @@ namespace System.NumericsX
 
         public string ToString(int precision = 2)
         {
-            fixed (float* _ = &mat0.x)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = &mat0.x) return FloatArrayToString(_, Dimension, precision);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -837,29 +815,19 @@ namespace System.NumericsX
         public Matrix4x4(float[] src)
         {
             this = default;
-            fixed (void* mat_ = &mat0, src_ = src)
-                Unsafe.CopyBlock(mat_, src_, 4U * 4U * sizeof(float));
+            fixed (void* mat_ = &mat0, src_ = src) Unsafe.CopyBlock(mat_, src_, 4U * 4U * sizeof(float));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix4x4(float[,] src)
         {
             this = default;
-            fixed (void* mat_ = &mat0, src_ = &src[0, 0])
-                Unsafe.CopyBlock(mat_, src_, 4U * 4U * sizeof(float));
-            //mat0 = new Vector4(src[0, 0], src[0, 1], src[0, 2], src[0, 3]);
-            //mat1 = new Vector4(src[1, 0], src[1, 1], src[1, 2], src[1, 3]);
-            //mat2 = new Vector4(src[2, 0], src[2, 1], src[2, 2], src[2, 3]);
-            //mat3 = new Vector4(src[3, 0], src[3, 1], src[3, 2], src[3, 3]);
+            fixed (void* mat_ = &mat0, src_ = &src[0, 0]) Unsafe.CopyBlock(mat_, src_, 4U * 4U * sizeof(float));
         }
 
         public ref Vector4 this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (Vector4* mat_ = &mat0)
-                    return ref mat_[index];
-            }
+            get { fixed (Vector4* mat_ = &mat0) return ref mat_[index]; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -880,8 +848,7 @@ namespace System.NumericsX
         public static Vector3 operator *(in Matrix4x4 _, in Vector3 vec)
         {
             var s = _.mat3.x * vec.x + _.mat3.y * vec.y + _.mat3.z * vec.z + _.mat3.w;
-            if (s == 0f)
-                return new(0f, 0f, 0f);
+            if (s == 0f) return new(0f, 0f, 0f);
             if (s == 1f)
                 return new(
                 _.mat0.x * vec.x + _.mat0.y * vec.y + _.mat0.z * vec.z + _.mat0.w,
@@ -952,9 +919,7 @@ namespace System.NumericsX
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
-                for (var i = 0; i < 4 * 4; i++)
-                    if (ptr1[i] != ptr2[i])
-                        return false;
+                for (var i = 0; i < 4 * 4; i++) if (ptr1[i] != ptr2[i]) return false;
                 return true;
             }
         }
@@ -965,9 +930,7 @@ namespace System.NumericsX
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
-                for (var i = 0; i < 4 * 4; i++)
-                    if (MathX.Fabs(ptr1[i] - ptr2[i]) > epsilon)
-                        return false;
+                for (var i = 0; i < 4 * 4; i++) if (MathX.Fabs(ptr1[i] - ptr2[i]) > epsilon) return false;
                 return true;
             }
         }
@@ -985,8 +948,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()
         {
-            fixed (void* mat_ = &mat0)
-                Unsafe.InitBlock(mat_, 0, 4U * (uint)sizeof(Vector4));
+            fixed (void* mat_ = &mat0) Unsafe.InitBlock(mat_, 0, 4U * (uint)sizeof(Vector4));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1000,20 +962,14 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
         {
-            for (var i = 1; i < 4; i++)
-                for (var j = 0; j < i; j++)
-                    if (MathX.Fabs(this[i][j] - this[j][i]) > epsilon)
-                        return false;
+            for (var i = 1; i < 4; i++) for (var j = 0; j < i; j++) if (MathX.Fabs(this[i][j] - this[j][i]) > epsilon) return false;
             return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
         {
-            for (var i = 0; i < 4; i++)
-                for (var j = 0; j < 4; j++)
-                    if (i != j && MathX.Fabs(this[i][j]) > epsilon)
-                        return false;
+            for (var i = 0; i < 4; i++) for (var j = 0; j < 4; j++) if (i != j && MathX.Fabs(this[i][j]) > epsilon) return false;
             return true;
         }
 
@@ -1064,9 +1020,7 @@ namespace System.NumericsX
         public Matrix4x4 Transpose()   // returns transpose
         {
             var transpose = new Matrix4x4();
-            for (var i = 0; i < 4; i++)
-                for (var j = 0; j < 4; j++)
-                    transpose[i][j] = this[j][i];
+            for (var i = 0; i < 4; i++) for (var j = 0; j < 4; j++) transpose[i][j] = this[j][i];
             return transpose;
         }
         public Matrix4x4 TransposeSelf()
@@ -1111,8 +1065,7 @@ namespace System.NumericsX
 
             det = -det3_201_123 * mat3.x + det3_201_023 * mat3.y - det3_201_013 * mat3.z + det3_201_012 * mat3.w;
 
-            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
-                return false;
+            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON) return false;
 
             invDet = 1f / det;
 
@@ -1184,8 +1137,7 @@ namespace System.NumericsX
             var det3_201_123 = mat2.y * det2_01_23 - mat2.z * det2_01_13 + mat2.w * det2_01_12;
 
              det = -det3_201_123 * mat3.x + det3_201_023 * mat3.y - det3_201_013 * mat3.z + det3_201_012 * mat3.w;
-            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
-                return false;
+            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON) return false;
 
             invDet = 1f / det;
 
@@ -1234,8 +1186,7 @@ namespace System.NumericsX
                 // r0 = m0.Inverse();
                 det = mat_[0 * 4 + 0] * mat_[1 * 4 + 1] - mat_[0 * 4 + 1] * mat_[1 * 4 + 0];
 
-                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
-                    return false;
+                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON) return false;
 
                 invDet = 1f / det;
 
@@ -1265,8 +1216,7 @@ namespace System.NumericsX
                 // r3.InverseSelf();
                 det = r3.mat0.x * r3.mat1.y - r3.mat0.y * r3.mat1.x;
 
-                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
-                    return false;
+                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON) return false;
 
                 invDet = 1f / det;
 
@@ -1322,8 +1272,7 @@ namespace System.NumericsX
 
         public string ToString(int precision = 2)
         {
-            fixed (float* _ = &mat0.x)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = &mat0.x) return FloatArrayToString(_, Dimension, precision);
         }
     }
 
@@ -1355,30 +1304,19 @@ namespace System.NumericsX
         public Matrix5x5(float[] src)
         {
             this = default;
-            fixed (void* mat_ = &mat0, src_ = src)
-                Unsafe.CopyBlock(mat_, src_, 5U * 5U * sizeof(float));
+            fixed (void* mat_ = &mat0, src_ = src) Unsafe.CopyBlock(mat_, src_, 5U * 5U * sizeof(float));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix5x5(float[,] src)
         {
             this = default;
-            fixed (void* mat_ = &mat0, src_ = &src[0, 0])
-                Unsafe.CopyBlock(mat_, src_, 5U * 5U * sizeof(float));
-            //mat0 = new Vector5(src[0, 0], src[0, 1], src[0, 2], src[0, 3], src[0, 4]);
-            //mat1 = new Vector5(src[1, 0], src[1, 1], src[1, 2], src[1, 3], src[1, 4]);
-            //mat2 = new Vector5(src[2, 0], src[2, 1], src[2, 2], src[2, 3], src[2, 4]);
-            //mat3 = new Vector5(src[3, 0], src[3, 1], src[3, 2], src[3, 3], src[3, 4]);
-            //mat4 = new Vector5(src[4, 0], src[4, 1], src[4, 2], src[4, 3], src[4, 4]);
+            fixed (void* mat_ = &mat0, src_ = &src[0, 0]) Unsafe.CopyBlock(mat_, src_, 5U * 5U * sizeof(float));
         }
 
         public ref Vector5 this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (Vector5* mat_ = &mat0)
-                    return ref mat_[index];
-            }
+            get { fixed (Vector5* mat_ = &mat0) return ref mat_[index]; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1453,9 +1391,7 @@ namespace System.NumericsX
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
-                for (var i = 0; i < 5 * 5; i++)
-                    if (ptr1[i] != ptr2[i])
-                        return false;
+                for (var i = 0; i < 5 * 5; i++) if (ptr1[i] != ptr2[i]) return false;
                 return true;
             }
         }
@@ -1466,9 +1402,7 @@ namespace System.NumericsX
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
-                for (var i = 0; i < 5 * 5; i++)
-                    if (MathX.Fabs(ptr1[i] - ptr2[i]) > epsilon)
-                        return false;
+                for (var i = 0; i < 5 * 5; i++) if (MathX.Fabs(ptr1[i] - ptr2[i]) > epsilon) return false;
                 return true;
             }
         }
@@ -1486,8 +1420,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()
         {
-            fixed (void* mat_ = &mat0)
-                Unsafe.InitBlock(mat_, 0, 5U * (uint)sizeof(Vector5));
+            fixed (void* mat_ = &mat0) Unsafe.InitBlock(mat_, 0, 5U * (uint)sizeof(Vector5));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1501,20 +1434,14 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
         {
-            for (var i = 1; i < 5; i++)
-                for (var j = 0; j < i; j++)
-                    if (MathX.Fabs(this[i][j] - this[j][i]) > epsilon)
-                        return false;
+            for (var i = 1; i < 5; i++) for (var j = 0; j < i; j++) if (MathX.Fabs(this[i][j] - this[j][i]) > epsilon) return false;
             return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
         {
-            for (var i = 0; i < 5; i++)
-                for (var j = 0; j < 5; j++)
-                    if (i != j && MathX.Fabs(this[i][j]) > epsilon)
-                        return false;
+            for (var i = 0; i < 5; i++) for (var j = 0; j < 5; j++) if (i != j && MathX.Fabs(this[i][j]) > epsilon) return false;
             return true;
         }
 
@@ -1564,9 +1491,7 @@ namespace System.NumericsX
         public Matrix5x5 Transpose()   // returns transpose
         {
             Matrix5x5 transpose = new();
-            for (var i = 0; i < 5; i++)
-                for (var j = 0; j < 5; j++)
-                    transpose[i][j] = this[j][i];
+            for (var i = 0; i < 5; i++) for (var j = 0; j < 5; j++) transpose[i][j] = this[j][i];
             return transpose;
         }
         public Matrix5x5 TransposeSelf()
@@ -1740,8 +1665,7 @@ namespace System.NumericsX
                 c2 = mat_[1 * 5 + 0] * mat_[2 * 5 + 1] - mat_[1 * 5 + 1] * mat_[2 * 5 + 0];
 
                 det = mat_[0 * 5 + 0] * c0 + mat_[0 * 5 + 1] * c1 + mat_[0 * 5 + 2] * c2;
-                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
-                    return false;
+                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON) return false;
 
                 invDet = 1f / det;
 
@@ -1777,8 +1701,7 @@ namespace System.NumericsX
 
                 // r3.InverseSelf();	// 2x2
                 det = r3.mat0.x * r3.mat1.y - r3.mat0.y * r3.mat1.x;
-                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
-                    return false;
+                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON) return false;
 
                 invDet = 1f / det;
 
@@ -1841,8 +1764,7 @@ namespace System.NumericsX
 
         public string ToString(int precision = 2)
         {
-            fixed (float* _ = &mat0.x)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = &mat0.x) return FloatArrayToString(_, Dimension, precision);
         }
     }
 
@@ -1886,31 +1808,19 @@ namespace System.NumericsX
         public Matrix6x6(float[] src)
         {
             this = default;
-            fixed (void* mat_ = &mat0, src_ = src)
-                Unsafe.CopyBlock(mat_, src_, 6U * 6U * sizeof(float));
+            fixed (void* mat_ = &mat0, src_ = src) Unsafe.CopyBlock(mat_, src_, 6U * 6U * sizeof(float));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix6x6(float[,] src)
         {
             this = default;
-            fixed (void* mat_ = &mat0, src_ = &src[0, 0])
-                Unsafe.CopyBlock(mat_, src_, 6U * 6U * sizeof(float));
-            //mat0 = new Vector6(src[0, 0], src[0, 1], src[0, 2], src[0, 3], src[0, 4], src[0, 5]);
-            //mat1 = new Vector6(src[1, 0], src[1, 1], src[1, 2], src[1, 3], src[1, 4], src[1, 5]);
-            //mat2 = new Vector6(src[2, 0], src[2, 1], src[2, 2], src[2, 3], src[2, 4], src[2, 5]);
-            //mat3 = new Vector6(src[3, 0], src[3, 1], src[3, 2], src[3, 3], src[3, 4], src[3, 5]);
-            //mat4 = new Vector6(src[4, 0], src[4, 1], src[4, 2], src[4, 3], src[4, 4], src[4, 5]);
-            //mat5 = new Vector6(src[5, 0], src[5, 1], src[5, 2], src[5, 3], src[5, 4], src[5, 5]);
+            fixed (void* mat_ = &mat0, src_ = &src[0, 0]) Unsafe.CopyBlock(mat_, src_, 6U * 6U * sizeof(float));
         }
 
         public ref Vector6 this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (Vector6* mat_ = &mat0)
-                    return ref mat_[index];
-            }
+            get { fixed (Vector6* mat_ = &mat0) return ref mat_[index]; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1990,9 +1900,7 @@ namespace System.NumericsX
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
-                for (var i = 0; i < 6 * 6; i++)
-                    if (ptr1[i] != ptr2[i])
-                        return false;
+                for (var i = 0; i < 6 * 6; i++) if (ptr1[i] != ptr2[i]) return false;
                 return true;
             }
         }
@@ -2003,9 +1911,7 @@ namespace System.NumericsX
             {
                 var ptr1 = (float*)mat_;
                 var ptr2 = (float*)a_;
-                for (var i = 0; i < 6 * 6; i++)
-                    if (MathX.Fabs(ptr1[i] - ptr2[i]) > epsilon)
-                        return false;
+                for (var i = 0; i < 6 * 6; i++) if (MathX.Fabs(ptr1[i] - ptr2[i]) > epsilon) return false;
                 return true;
             }
         }
@@ -2023,8 +1929,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Zero()
         {
-            fixed (void* mat_ = &mat0)
-                Unsafe.InitBlock(mat_, 0, 6U * (uint)sizeof(Vector6));
+            fixed (void* mat_ = &mat0) Unsafe.InitBlock(mat_, 0, 6U * (uint)sizeof(Vector6));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2038,20 +1943,14 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSymmetric(float epsilon = MatrixX.EPSILON)
         {
-            for (var i = 1; i < 6; i++)
-                for (var j = 0; j < i; j++)
-                    if (MathX.Fabs(this[i][j] - this[j][i]) > epsilon)
-                        return false;
+            for (var i = 1; i < 6; i++) for (var j = 0; j < i; j++) if (MathX.Fabs(this[i][j] - this[j][i]) > epsilon) return false;
             return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsDiagonal(float epsilon = MatrixX.EPSILON)
         {
-            for (var i = 0; i < 6; i++)
-                for (var j = 0; j < 6; j++)
-                    if (i != j && MathX.Fabs(this[i][j]) > epsilon)
-                        return false;
+            for (var i = 0; i < 6; i++) for (var j = 0; j < 6; j++) if (i != j && MathX.Fabs(this[i][j]) > epsilon) return false;
             return true;
         }
 
@@ -2151,9 +2050,7 @@ namespace System.NumericsX
         public Matrix6x6 Transpose()   // returns transpose
         {
             Matrix6x6 transpose = new();
-            for (var i = 0; i < 6; i++)
-                for (var j = 0; j < 6; j++)
-                    transpose[i][j] = this[j][i];
+            for (var i = 0; i < 6; i++) for (var j = 0; j < 6; j++) transpose[i][j] = this[j][i];
             return transpose;
         }
         public Matrix6x6 TransposeSelf()
@@ -2254,8 +2151,7 @@ namespace System.NumericsX
                 + mat0[4] * det5_12345_01235
                 - mat0[5] * det5_12345_01234;
 
-            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
-                return false;
+            if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON) return false;
 
             invDet = 1f / det;
 
@@ -2479,8 +2375,7 @@ namespace System.NumericsX
                 c2 = mat[1 * 6 + 0] * mat[2 * 6 + 1] - mat[1 * 6 + 1] * mat[2 * 6 + 0];
 
                 det = mat[0 * 6 + 0] * c0 + mat[0 * 6 + 1] * c1 + mat[0 * 6 + 2] * c2;
-                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
-                    return false;
+                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON) return false;
 
                 invDet = 1f / det;
 
@@ -2533,8 +2428,7 @@ namespace System.NumericsX
                 r2.mat2.x = r3.mat1.x * r3.mat2.y - r3.mat1.y * r3.mat2.x;
 
                 det = r3.mat0.x * r2.mat0.x + r3.mat0.y * r2.mat1.x + r3.mat0.z * r2.mat2.x;
-                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON)
-                    return false;
+                if (MathX.Fabs(det) < MatrixX.INVERSE_EPSILON) return false;
 
                 invDet = 1f / det;
 
@@ -2622,8 +2516,7 @@ namespace System.NumericsX
 
         public string ToString(int precision = 2)
         {
-            fixed (float* _ = mat0.p)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = mat0.p) return FloatArrayToString(_, Dimension, precision);
         }
     }
 
@@ -2654,10 +2547,9 @@ namespace System.NumericsX
             mat = null;
             SetSize(a.numRows, a.numColumns);
 #if MATX_SIMD
-            SIMDProcessor.Copy16(mat, a.mat, a.numRows * a.numColumns);
+            Simd.Copy16(mat, a.mat, a.numRows * a.numColumns);
 #else
-            fixed (float* mat = this.mat, a_mat = a.mat)
-                Unsafe.CopyBlock(mat, a_mat, (uint)(a.numRows * a.numColumns * sizeof(float)));
+            fixed (float* mat = this.mat, a_mat = a.mat) Unsafe.CopyBlock(mat, a_mat, (uint)(a.numRows * a.numColumns * sizeof(float)));
 #endif
             tempIndex = 0;
         }
@@ -2680,8 +2572,7 @@ namespace System.NumericsX
         public void Set(int rows, int columns, float[] src)
         {
             SetSize(rows, columns);
-            fixed (void* mat = this.mat, src_ = src)
-                Unsafe.CopyBlock(mat, src_, (uint)(rows * columns * sizeof(float)));
+            fixed (void* mat = this.mat, src_ = src) Unsafe.CopyBlock(mat, src_, (uint)(rows * columns * sizeof(float)));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(in Matrix3x3 m1, in Matrix3x3 m2)
@@ -2724,11 +2615,10 @@ namespace System.NumericsX
             var m = new MatrixX();
             m.SetTempSize(_.numRows, _.numColumns);
 #if MATX_SIMD
-            SIMDProcessor.Mul16(m.mat, mat, a, numRows * numColumns);
+            Simd.Mul16(m.mat, mat, a, numRows * numColumns);
 #else
             var s = _.numRows * _.numColumns;
-            for (var i = 0; i < s; i++)
-                m.mat[i] = _.mat[i] * a;
+            for (var i = 0; i < s; i++) m.mat[i] = _.mat[i] * a;
 #endif
             return m;
         }
@@ -2739,7 +2629,7 @@ namespace System.NumericsX
             VectorX dst = new();
             dst.SetTempSize(_.numRows);
 #if MATX_SIMD
-            SIMDProcessor.MatX_MultiplyVecX(dst, *this, vec);
+            Simd.MatX_MultiplyVecX(dst, *this, vec);
 #else
             _.Multiply(dst, vec);
 #endif
@@ -2752,7 +2642,7 @@ namespace System.NumericsX
             MatrixX dst = new();
             dst.SetTempSize(_.numRows, a.numColumns);
 #if MATX_SIMD
-            SIMDProcessor.MatX_MultiplyMatX(dst, *this, a);
+            Simd.MatX_MultiplyMatX(dst, *this, a);
 #else
             _.Multiply(dst, a);
 #endif
@@ -2765,11 +2655,10 @@ namespace System.NumericsX
             MatrixX m = new();
             m.SetTempSize(_.numRows, _.numColumns);
 #if MATX_SIMD
-            SIMDProcessor.Add16(m.mat, mat, a.mat, numRows * numColumns);
+            Simd.Add16(m.mat, mat, a.mat, numRows * numColumns);
 #else
             var s = _.numRows * _.numColumns;
-            for (var i = 0; i < s; i++)
-                m.mat[i] = _.mat[i] + a.mat[i];
+            for (var i = 0; i < s; i++) m.mat[i] = _.mat[i] + a.mat[i];
 #endif
             return m;
         }
@@ -2780,11 +2669,10 @@ namespace System.NumericsX
             MatrixX m = new();
             m.SetTempSize(_.numRows, _.numColumns);
 #if MATX_SIMD
-            SIMDProcessor.Sub16(m.mat, mat, a.mat, numRows * numColumns);
+            Simd.Sub16(m.mat, mat, a.mat, numRows * numColumns);
 #else
             var s = _.numRows * _.numColumns;
-            for (var i = 0; i < s; i++)
-                m.mat[i] = _.mat[i] - a.mat[i];
+            for (var i = 0; i < s; i++) m.mat[i] = _.mat[i] - a.mat[i];
 #endif
             return m;
         }
@@ -2800,9 +2688,7 @@ namespace System.NumericsX
         {
             Debug.Assert(numRows == a.numRows && numColumns == a.numColumns);
             var s = numRows * numColumns;
-            for (var i = 0; i < s; i++)
-                if (mat[i] != a.mat[i])
-                    return false;
+            for (var i = 0; i < s; i++) if (mat[i] != a.mat[i]) return false;
             return true;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2831,11 +2717,7 @@ namespace System.NumericsX
         {
             //Debug.Assert(mat < tempPtr || mat > tempPtr + MATX_MAX_TEMP);
             var alloc = (rows * columns + 3) & ~3;
-            if (alloc > alloced && alloced != -1)
-            {
-                mat = new float[alloc];
-                alloced = alloc;
-            }
+            if (alloc > alloced && alloced != -1) { mat = new float[alloc]; alloced = alloc; }
             numRows = rows;
             numColumns = columns;
             MATX_CLEAREND();
@@ -2846,8 +2728,7 @@ namespace System.NumericsX
         {
             var newSize = (rows * columns + 3) & ~3;
             Debug.Assert(newSize < MATX_MAX_TEMP);
-            if (tempIndex + newSize > MATX_MAX_TEMP)
-                tempIndex = 0;
+            if (tempIndex + newSize > MATX_MAX_TEMP) tempIndex = 0;
             mat = new float[newSize]; // tempPtr + tempIndex;
             tempIndex += newSize;
             alloced = newSize;
@@ -2868,9 +2749,7 @@ namespace System.NumericsX
                 {
                     var minRow = Math.Min(numRows, rows);
                     var minColumn = Math.Min(numColumns, columns);
-                    for (var i = 0; i < minRow; i++)
-                        for (var j = 0; j < minColumn; j++)
-                            mat[i * columns + j] = oldMat[i * numColumns + j];
+                    for (var i = 0; i < minRow; i++) for (var j = 0; j < minColumn; j++) mat[i * columns + j] = oldMat[i * numColumns + j];
                 }
             }
             else
@@ -2878,21 +2757,15 @@ namespace System.NumericsX
                 if (columns < numColumns)
                 {
                     var minRow = Math.Min(numRows, rows);
-                    for (var i = 0; i < minRow; i++)
-                        for (var j = 0; j < columns; j++)
-                            mat[i * columns + j] = mat[i * numColumns + j];
+                    for (var i = 0; i < minRow; i++) for (var j = 0; j < columns; j++) mat[i * columns + j] = mat[i * numColumns + j];
                 }
                 else if (columns > numColumns)
                     for (var i = Math.Min(numRows, rows) - 1; i >= 0; i--)
                     {
-                        if (makeZero)
-                            for (var j = columns - 1; j >= numColumns; j--)
-                                mat[i * columns + j] = 0f;
-                        for (var j = numColumns - 1; j >= 0; j--)
-                            mat[i * columns + j] = mat[i * numColumns + j];
+                        if (makeZero) for (var j = columns - 1; j >= numColumns; j--) mat[i * columns + j] = 0f;
+                        for (var j = numColumns - 1; j >= 0; j--) mat[i * columns + j] = mat[i * numColumns + j];
                     }
-                if (makeZero && rows > numRows)
-                    Array.Clear(mat, numRows * columns, (rows - numRows) * columns);
+                if (makeZero && rows > numRows) Array.Clear(mat, numRows * columns, (rows - numRows) * columns);
             }
             numRows = rows;
             numColumns = columns;
@@ -2918,10 +2791,9 @@ namespace System.NumericsX
         public void Zero()                                                   // clear matrix
         {
 #if MATX_SIMD
-            SIMDProcessor.Zero16(mat, numRows * numColumns);
+            Simd.Zero16(mat, numRows * numColumns);
 #else
-            fixed (void* mat = this.mat)
-                Unsafe.InitBlock(mat, 0, (uint)(numRows * numColumns * sizeof(float)));
+            fixed (void* mat = this.mat) Unsafe.InitBlock(mat, 0, (uint)(numRows * numColumns * sizeof(float)));
 #endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2929,10 +2801,9 @@ namespace System.NumericsX
         {
             SetSize(rows, columns);
 #if MATX_SIMD
-            SIMDProcessor.Zero16(mat, numRows * numColumns);
+            Simd.Zero16(mat, numRows * numColumns);
 #else
-            fixed (void* mat = this.mat)
-                Unsafe.InitBlock(mat, 0, (uint)(rows * columns * sizeof(float)));
+            fixed (void* mat = this.mat) Unsafe.InitBlock(mat, 0, (uint)(rows * columns * sizeof(float)));
 #endif
         }
 
@@ -2941,13 +2812,11 @@ namespace System.NumericsX
         {
             Debug.Assert(numRows == numColumns);
 #if MATX_SIMD
-            SIMDProcessor.Zero16(mat, numRows * numColumns);
+            Simd.Zero16(mat, numRows * numColumns);
 #else
-            fixed (void* mat = this.mat)
-                Unsafe.InitBlock(mat, 0, (uint)(numRows * numColumns * sizeof(float)));
+            fixed (void* mat = this.mat) Unsafe.InitBlock(mat, 0, (uint)(numRows * numColumns * sizeof(float)));
 #endif
-            for (var i = 0; i < numRows; i++)
-                mat[i * numColumns + i] = 1f;
+            for (var i = 0; i < numRows; i++) mat[i * numColumns + i] = 1f;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Identity(int rows, int columns)                               // set size and clear to identity matrix
@@ -2961,8 +2830,7 @@ namespace System.NumericsX
         public void Diag(in VectorX v)                                      // create diagonal matrix from vector
         {
             Zero(v.Size, v.Size);
-            for (var i = 0; i < v.Size; i++)
-                mat[i * numColumns + i] = v[i];
+            for (var i = 0; i < v.Size; i++) mat[i * numColumns + i] = v[i];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2971,8 +2839,7 @@ namespace System.NumericsX
             var rnd = new RandomX(seed);
             var c = u - l;
             var s = numRows * numColumns;
-            for (var i = 0; i < s; i++)
-                mat[i] = l + rnd.RandomFloat() * c;
+            for (var i = 0; i < s; i++) mat[i] = l + rnd.RandomFloat() * c;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Random(int rows, int columns, long seed, float l = 0f, float u = 1f)
@@ -2981,19 +2848,17 @@ namespace System.NumericsX
             SetSize(rows, columns);
             var c = u - l;
             var s = numRows * numColumns;
-            for (var i = 0; i < s; i++)
-                mat[i] = l + rnd.RandomFloat() * c;
+            for (var i = 0; i < s; i++) mat[i] = l + rnd.RandomFloat() * c;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Negate()                                                 // this = - this
         {
 #if MATX_SIMD
-            SIMDProcessor.Negate16(mat, numRows * numColumns);
+            Simd.Negate16(mat, numRows * numColumns);
 #else
             var s = numRows * numColumns;
-            for (var i = 0; i < s; i++)
-                mat[i] = -mat[i];
+            for (var i = 0; i < s; i++) mat[i] = -mat[i];
 #endif
         }
 
@@ -3049,9 +2914,7 @@ namespace System.NumericsX
 
             numRows--;
 
-            fixed (float* mat = this.mat)
-                for (var i = r; i < numRows; i++)
-                    Unsafe.CopyBlock(&mat[i * numColumns], &mat[(i + 1) * numColumns], (uint)numColumns * sizeof(float));
+            fixed (float* mat = this.mat) for (var i = r; i < numRows; i++) Unsafe.CopyBlock(&mat[i * numColumns], &mat[(i + 1) * numColumns], (uint)numColumns * sizeof(float));
 
             return this;
         }
@@ -3065,8 +2928,7 @@ namespace System.NumericsX
 
             fixed (float* mat = this.mat)
             {
-                for (i = 0; i < numRows - 1; i++)
-                    UnsafeX.MoveBlock(&mat[i * numColumns + r], &mat[i * (numColumns + 1) + r + 1], (uint)numColumns * sizeof(float));
+                for (i = 0; i < numRows - 1; i++) UnsafeX.MoveBlock(&mat[i * numColumns + r], &mat[i * (numColumns + 1) + r + 1], (uint)numColumns * sizeof(float));
                 UnsafeX.MoveBlock(&mat[i * numColumns + r], &mat[i * (numColumns + 1) + r + 1], (uint)(numColumns - r) * sizeof(float));
                 return this;
             }
@@ -3084,13 +2946,11 @@ namespace System.NumericsX
             {
                 if (r > 0)
                 {
-                    for (i = 0; i < r - 1; i++)
-                        UnsafeX.MoveBlock(&mat[i * numColumns + r], &mat[i * (numColumns + 1) + r + 1], (uint)numColumns * sizeof(float));
+                    for (i = 0; i < r - 1; i++) UnsafeX.MoveBlock(&mat[i * numColumns + r], &mat[i * (numColumns + 1) + r + 1], (uint)numColumns * sizeof(float));
                     UnsafeX.MoveBlock(&mat[i * numColumns + r], &mat[i * (numColumns + 1) + r + 1], (uint)(numColumns - r) * sizeof(float));
                 }
                 Unsafe.CopyBlock(&mat[r * numColumns], &mat[(r + 1) * (numColumns + 1)], (uint)r * sizeof(float));
-                for (i = r; i < numRows - 1; i++)
-                    Unsafe.CopyBlock(&mat[i * numColumns + r], &mat[(i + 1) * (numColumns + 1) + r + 1], (uint)numColumns * sizeof(float));
+                for (i = r; i < numRows - 1; i++) Unsafe.CopyBlock(&mat[i * numColumns + r], &mat[(i + 1) * (numColumns + 1) + r + 1], (uint)numColumns * sizeof(float));
                 Unsafe.CopyBlock(&mat[i * numColumns + r], &mat[(i + 1) * (numColumns + 1) + r + 1], (uint)(numColumns - r) * sizeof(float));
                 return this;
             }
@@ -3101,9 +2961,7 @@ namespace System.NumericsX
         {
             Debug.Assert(numRows == numColumns);
 
-            fixed (float* mat = this.mat)
-                for (var i = numRows - 2; i >= 0; i--)
-                    Unsafe.InitBlock(mat + i * numColumns + i + 1, 0, (uint)(numColumns - 1 - i) * sizeof(float));
+            fixed (float* mat = this.mat) for (var i = numRows - 2; i >= 0; i--) Unsafe.InitBlock(mat + i * numColumns + i + 1, 0, (uint)(numColumns - 1 - i) * sizeof(float));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3111,9 +2969,7 @@ namespace System.NumericsX
         {
             Debug.Assert(numRows == numColumns);
 
-            fixed (float* mat = this.mat)
-                for (var i = 1; i < numRows; i++)
-                    Unsafe.InitBlock(mat + i * numColumns, 0, (uint)i * sizeof(float));
+            fixed (float* mat = this.mat) for (var i = 1; i < numRows; i++) Unsafe.InitBlock(mat + i * numColumns, 0, (uint)i * sizeof(float));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3123,9 +2979,7 @@ namespace System.NumericsX
 
             SetSize(size, size);
 
-            fixed (float* mat = this.mat, m_mat = m.mat)
-                for (var i = 0; i < size; i++)
-                    Unsafe.CopyBlock(mat + i * numColumns, m_mat + i * m.numColumns, (uint)size * sizeof(float));
+            fixed (float* mat = this.mat, m_mat = m.mat) for (var i = 0; i < size; i++) Unsafe.CopyBlock(mat + i * numColumns, m_mat + i * m.numColumns, (uint)size * sizeof(float));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3138,8 +2992,7 @@ namespace System.NumericsX
                 for (var j = 0; j < numColumns; j++)
                 {
                     var diff = MathX.Fabs(mat[i * numColumns + j] - m[i][j]);
-                    if (maxDiff < 0f || diff > maxDiff)
-                        maxDiff = diff;
+                    if (maxDiff < 0f || diff > maxDiff) maxDiff = diff;
                 }
             return maxDiff;
         }
@@ -3152,10 +3005,7 @@ namespace System.NumericsX
         public bool IsZero(float epsilon = EPSILON)
         {
             // returns true if this == Zero
-            for (var i = 0; i < numRows; i++)
-                for (var j = 0; j < numColumns; j++)
-                    if (MathX.Fabs(mat[i * numColumns + j]) > epsilon)
-                        return false;
+            for (var i = 0; i < numRows; i++) for (var j = 0; j < numColumns; j++) if (MathX.Fabs(mat[i * numColumns + j]) > epsilon) return false;
             return true;
         }
 
@@ -3165,10 +3015,7 @@ namespace System.NumericsX
             // returns true if this == Identity
             Debug.Assert(numRows == numColumns);
 
-            for (var i = 0; i < numRows; i++)
-                for (var j = 0; j < numColumns; j++)
-                    if (MathX.Fabs(mat[i * numColumns + j] - (i == j ? 1f : 0f)) > epsilon)
-                        return false;
+            for (var i = 0; i < numRows; i++) for (var j = 0; j < numColumns; j++) if (MathX.Fabs(mat[i * numColumns + j] - (i == j ? 1f : 0f)) > epsilon) return false;
             return true;
         }
 
@@ -3178,10 +3025,7 @@ namespace System.NumericsX
             // returns true if all elements are zero except for the elements on the diagonal
             Debug.Assert(numRows == numColumns);
 
-            for (var i = 0; i < numRows; i++)
-                for (var j = 0; j < numColumns; j++)
-                    if (i != j && MathX.Fabs(mat[i * numColumns + j]) > epsilon)
-                        return false;
+            for (var i = 0; i < numRows; i++) for (var j = 0; j < numColumns; j++) if (i != j && MathX.Fabs(mat[i * numColumns + j]) > epsilon) return false;
             return true;
         }
 
@@ -3189,15 +3033,12 @@ namespace System.NumericsX
         public bool IsTriDiagonal(float epsilon = EPSILON)
         {
             // returns true if all elements are zero except for the elements on the diagonal plus or minus one column
-            if (numRows != numColumns)
-                return false;
+            if (numRows != numColumns) return false;
             for (var i = 0; i < numRows - 2; i++)
                 for (var j = i + 2; j < numColumns; j++)
                 {
-                    if (MathX.Fabs(this[i][j]) > epsilon)
-                        return false;
-                    if (MathX.Fabs(this[j][i]) > epsilon)
-                        return false;
+                    if (MathX.Fabs(this[i][j]) > epsilon) return false;
+                    if (MathX.Fabs(this[j][i]) > epsilon) return false;
                 }
             return true;
         }
@@ -3206,12 +3047,10 @@ namespace System.NumericsX
         public bool IsSymmetric(float epsilon = EPSILON)
         {
             // this[i][j] == this[j][i]
-            if (numRows != numColumns)
-                return false;
+            if (numRows != numColumns) return false;
             for (var i = 0; i < numRows; i++)
                 for (var j = 0; j < numColumns; j++)
-                    if (MathX.Fabs(mat[i * numColumns + j] - mat[j * numColumns + i]) > epsilon)
-                        return false;
+                    if (MathX.Fabs(mat[i * numColumns + j] - mat[j * numColumns + i]) > epsilon) return false;
             return true;
         }
 
@@ -3224,8 +3063,7 @@ namespace System.NumericsX
         /// </returns>
         public bool IsOrthogonal(float epsilon = EPSILON)
         {
-            if (!IsSquare())
-                return false;
+            if (!IsSquare()) return false;
             fixed (float* mat = this.mat)
             {
                 var ptr1 = mat;
@@ -3235,13 +3073,8 @@ namespace System.NumericsX
                     {
                         var ptr2 = mat + j;
                         var sum = ptr1[0] * ptr2[0] - (i == j ? 1f : 0f);
-                        for (var n = 1; n < numColumns; n++)
-                        {
-                            ptr2 += numColumns;
-                            sum += ptr1[n] * ptr2[0];
-                        }
-                        if (MathX.Fabs(sum) > epsilon)
-                            return false;
+                        for (var n = 1; n < numColumns; n++) { ptr2 += numColumns; sum += ptr1[n] * ptr2[0]; }
+                        if (MathX.Fabs(sum) > epsilon) return false;
                     }
                     ptr1 += numColumns;
                 }
@@ -3257,8 +3090,7 @@ namespace System.NumericsX
         /// </returns>
         public bool IsOrthonormal(float epsilon = EPSILON)
         {
-            if (!IsSquare())
-                return false;
+            if (!IsSquare()) return false;
             fixed (float* mat = this.mat)
             {
                 var ptr1 = mat;
@@ -3270,13 +3102,8 @@ namespace System.NumericsX
                     {
                         var ptr2 = mat + j;
                         var sum = ptr1[0] * ptr2[0] - (i == j ? 1f : 0f);
-                        for (var n = 1; n < numColumns; n++)
-                        {
-                            ptr2 += numColumns;
-                            sum += ptr1[n] * ptr2[0];
-                        }
-                        if (MathX.Fabs(sum) > epsilon)
-                            return false;
+                        for (var n = 1; n < numColumns; n++) { ptr2 += numColumns; sum += ptr1[n] * ptr2[0]; }
+                        if (MathX.Fabs(sum) > epsilon) return false;
                         // row j, col i - this works because numRows == numColumns
                         colVecSum += colVecPtr[0] * colVecPtr[0];
                         colVecPtr += numColumns; // next row, same column
@@ -3284,8 +3111,7 @@ namespace System.NumericsX
                     ptr1 += numColumns;
 
                     // check that length of *column* vector i is 1 (no need for sqrt because sqrt(1)==1)
-                    if (MathX.Fabs(colVecSum - 1f) > epsilon)
-                        return false;
+                    if (MathX.Fabs(colVecSum - 1f) > epsilon) return false;
                 }
                 return true;
             }
@@ -3301,31 +3127,22 @@ namespace System.NumericsX
         /// </returns>
         public bool IsPMatrix(float epsilon = EPSILON)
         {
-            if (!IsSquare())
-                return false;
-            if (numRows <= 0)
-                return true;
-            if (this[0][0] <= epsilon)
-                return false;
-            if (numRows <= 1)
-                return true;
+            if (!IsSquare()) return false;
+            if (numRows <= 0) return true;
+            if (this[0][0] <= epsilon) return false;
+            if (numRows <= 1) return true;
 
             var m = new MatrixX();
             m.SetData(numRows - 1, numColumns - 1, MATX_ALLOCA((numRows - 1) * (numColumns - 1)));
 
             int i, j;
-            for (i = 1; i < numRows; i++)
-                for (j = 1; j < numColumns; j++)
-                    m[i - 1][j - 1] = this[i][j];
-
-            if (!m.IsPMatrix(epsilon))
-                return false;
+            for (i = 1; i < numRows; i++) for (j = 1; j < numColumns; j++) m[i - 1][j - 1] = this[i][j];
+            if (!m.IsPMatrix(epsilon)) return false;
 
             for (i = 1; i < numRows; i++)
             {
                 var d = this[i][0] / this[0][0];
-                for (j = 1; j < numColumns; j++)
-                    m[i - 1][j - 1] = this[i][j] - d * this[0][j];
+                for (j = 1; j < numColumns; j++) m[i - 1][j - 1] = this[i][j] - d * this[0][j];
             }
 
             return m.IsPMatrix(epsilon);
@@ -3341,12 +3158,8 @@ namespace System.NumericsX
         /// </returns>
         public bool IsZMatrix(float epsilon = EPSILON)
         {
-            if (!IsSquare())
-                return false;
-            for (var i = 0; i < numRows; i++)
-                for (var j = 0; j < numColumns; j++)
-                    if (this[i][j] > epsilon && i != j)
-                        return false;
+            if (!IsSquare()) return false;
+            for (var i = 0; i < numRows; i++) for (var j = 0; j < numColumns; j++) if (this[i][j] > epsilon && i != j) return false;
             return true;
         }
 
@@ -3361,8 +3174,7 @@ namespace System.NumericsX
         public bool IsPositiveDefinite(float epsilon = EPSILON)
         {
             // the matrix must be square
-            if (!IsSquare())
-                return false;
+            if (!IsSquare()) return false;
 
             // copy matrix
             var m = new MatrixX();
@@ -3371,23 +3183,18 @@ namespace System.NumericsX
 
             // add transpose
             int i, j, k;
-            for (i = 0; i < numRows; i++)
-                for (j = 0; j < numColumns; j++)
-                    m[i][j] += this[j][i];
+            for (i = 0; i < numRows; i++) for (j = 0; j < numColumns; j++) m[i][j] += this[j][i];
 
             // test Positive Definiteness with Gaussian pivot steps
             for (i = 0; i < numRows; i++)
             {
-                for (j = i; j < numColumns; j++)
-                    if (m[j][j] <= epsilon)
-                        return false;
+                for (j = i; j < numColumns; j++) if (m[j][j] <= epsilon) return false;
                 var d = 1f / m[i][i];
                 for (j = i + 1; j < numColumns; j++)
                 {
                     var s = d * m[j][i];
                     m[j][i] = 0f;
-                    for (k = i + 1; k < numRows; k++)
-                        m[j][k] -= s * m[i][k];
+                    for (k = i + 1; k < numRows; k++) m[j][k] -= s * m[i][k];
                 }
             }
 
@@ -3405,8 +3212,7 @@ namespace System.NumericsX
         public bool IsSymmetricPositiveDefinite(float epsilon = EPSILON)
         {
             // the matrix must be symmetric
-            if (!IsSymmetric(epsilon))
-                return false;
+            if (!IsSymmetric(epsilon)) return false;
 
             // copy matrix
             var m = new MatrixX();
@@ -3428,8 +3234,7 @@ namespace System.NumericsX
         public bool IsPositiveSemiDefinite(float epsilon = EPSILON)
         {
             // the matrix must be square
-            if (!IsSquare())
-                return false;
+            if (!IsSquare()) return false;
 
             // copy original matrix
             var m = new MatrixX();
@@ -3438,34 +3243,26 @@ namespace System.NumericsX
 
             // add transpose
             int i, j, k;
-            for (i = 0; i < numRows; i++)
-                for (j = 0; j < numColumns; j++)
-                    m[i][j] += this[j][i];
+            for (i = 0; i < numRows; i++) for (j = 0; j < numColumns; j++) m[i][j] += this[j][i];
 
             // test Positive Semi Definiteness with Gaussian pivot steps
             for (i = 0; i < numRows; i++)
             {
                 for (j = i; j < numColumns; j++)
                 {
-                    if (m[j][j] < -epsilon)
-                        return false;
-                    if (m[j][j] > epsilon)
-                        continue;
-                    for (k = 0; k < numRows; k++)
-                        if (MathX.Fabs(m[k][j]) > epsilon || MathX.Fabs(m[j][k]) > epsilon)
-                            return false;
+                    if (m[j][j] < -epsilon) return false;
+                    if (m[j][j] > epsilon) continue;
+                    for (k = 0; k < numRows; k++) if (MathX.Fabs(m[k][j]) > epsilon || MathX.Fabs(m[j][k]) > epsilon) return false;
                 }
 
-                if (m[i][i] <= epsilon)
-                    continue;
+                if (m[i][i] <= epsilon) continue;
 
                 var d = 1f / m[i][i];
                 for (j = i + 1; j < numColumns; j++)
                 {
                     var s = d * m[j][i];
                     m[j][i] = 0f;
-                    for (k = i + 1; k < numRows; k++)
-                        m[j][k] -= s * m[i][k];
+                    for (k = i + 1; k < numRows; k++) m[j][k] -= s * m[i][k];
                 }
             }
 
@@ -3492,8 +3289,7 @@ namespace System.NumericsX
                 Debug.Assert(numRows == numColumns);
                 // sum of elements on the diagonal
                 var trace = 0f;
-                for (var i = 0; i < numRows; i++)
-                    trace += mat[i * numRows + i];
+                for (var i = 0; i < numRows; i++) trace += mat[i * numRows + i];
                 return trace;
             }
         }
@@ -3502,8 +3298,7 @@ namespace System.NumericsX
         public float Determinant()                                     // returns determinant of matrix
         {
             Debug.Assert(numRows == numColumns);
-            if (numRows == 1)
-                return mat[0];
+            if (numRows == 1) return mat[0];
             fixed (float* mat_ = mat)
                 return numRows switch
                 {
@@ -3521,9 +3316,7 @@ namespace System.NumericsX
         {
             MatrixX m = new();
             m.SetTempSize(numColumns, numRows);
-            for (var i = 0; i < numRows; i++)
-                for (var j = 0; j < numColumns; j++)
-                    m.mat[j * m.numColumns + i] = mat[i * numColumns + j];
+            for (var i = 0; i < numRows; i++) for (var j = 0; j < numColumns; j++) m.mat[j * m.numColumns + i] = mat[i * numColumns + j];
             return m;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3538,8 +3331,7 @@ namespace System.NumericsX
         {
             MatrixX invMat = new();
             invMat.SetTempSize(numRows, numColumns);
-            fixed (float* invMat_mat = invMat.mat, mat = this.mat)
-                Unsafe.CopyBlock(invMat_mat, mat, (uint)(numRows * numColumns * sizeof(float)));
+            fixed (float* invMat_mat = invMat.mat, mat = this.mat) Unsafe.CopyBlock(invMat_mat, mat, (uint)(numRows * numColumns * sizeof(float)));
             var r = invMat.InverseSelf();
             Debug.Assert(r);
             return invMat;
@@ -3550,8 +3342,7 @@ namespace System.NumericsX
             Debug.Assert(numRows == numColumns);
             if (numRows == 1)
             {
-                if (MathX.Fabs(mat[0]) < INVERSE_EPSILON)
-                    return false;
+                if (MathX.Fabs(mat[0]) < INVERSE_EPSILON) return false;
                 mat[0] = 1f / mat[0];
                 return true;
             }
@@ -3572,8 +3363,7 @@ namespace System.NumericsX
         {
             MatrixX invMat = new();
             invMat.SetTempSize(numRows, numColumns);
-            fixed (float* invMat_mat = invMat.mat, mat = this.mat)
-                Unsafe.CopyBlock(invMat_mat, mat, (uint)(numRows * numColumns * sizeof(float)));
+            fixed (float* invMat_mat = invMat.mat, mat = this.mat) Unsafe.CopyBlock(invMat_mat, mat, (uint)(numRows * numColumns * sizeof(float)));
             var r = invMat.InverseFastSelf();
             Debug.Assert(r);
             return invMat;
@@ -3584,8 +3374,7 @@ namespace System.NumericsX
             Debug.Assert(numRows == numColumns);
             if (numRows == 1)
             {
-                if (MathX.Fabs(mat[0]) < INVERSE_EPSILON)
-                    return false;
+                if (MathX.Fabs(mat[0]) < INVERSE_EPSILON) return false;
                 mat[0] = 1f / mat[0];
                 return true;
             }
@@ -3612,14 +3401,12 @@ namespace System.NumericsX
             for (i = 0; i < numRows; i++)
             {
                 d = this[i][i];
-                if (d == 0f)
-                    return false;
+                if (d == 0f) return false;
                 this[i][i] = (float)(d = 1f / d);
                 for (j = 0; j < i; j++)
                 {
                     sum = 0f;
-                    for (k = j; k < i; k++)
-                        sum -= this[i][k] * this[k][j];
+                    for (k = j; k < i; k++) sum -= this[i][k] * this[k][j];
                     this[i][j] = (float)(sum * d);
                 }
             }
@@ -3637,14 +3424,12 @@ namespace System.NumericsX
             for (i = numRows - 1; i >= 0; i--)
             {
                 d = this[i][i];
-                if (d == 0f)
-                    return false;
+                if (d == 0f) return false;
                 this[i][i] = (float)(d = 1f / d);
                 for (j = numRows - 1; j > i; j--)
                 {
                     sum = 0f;
-                    for (k = j; k > i; k--)
-                        sum -= this[i][k] * this[k][j];
+                    for (k = j; k > i; k--) sum -= this[i][k] * this[k][j];
                     this[i][j] = (float)(sum * d);
                 }
             }
@@ -3658,7 +3443,7 @@ namespace System.NumericsX
             var dst = new VectorX();
             dst.SetTempSize(numRows);
 #if MATX_SIMD
-            SIMDProcessor.MatX_MultiplyVecX(dst, *this, vec);
+            Simd.MatX_MultiplyVecX(dst, *this, vec);
 #else
             Multiply(dst, vec);
 #endif
@@ -3671,7 +3456,7 @@ namespace System.NumericsX
             var dst = new VectorX();
             dst.SetTempSize(numColumns);
 #if MATX_SIMD
-    SIMDProcessor.MatX_TransposeMultiplyVecX(dst, *this, vec);
+            Simd.MatX_TransposeMultiplyVecX(dst, *this, vec);
 #else
             TransposeMultiply(dst, vec);
 #endif
@@ -3685,7 +3470,7 @@ namespace System.NumericsX
             var dst = new MatrixX();
             dst.SetTempSize(numRows, a.numColumns);
 #if MATX_SIMD
-            SIMDProcessor.MatX_MultiplyMatX(dst, *this, a);
+            Simd.MatX_MultiplyMatX(dst, *this, a);
 #else
             Multiply(dst, a);
 #endif
@@ -3698,7 +3483,7 @@ namespace System.NumericsX
             var dst = new MatrixX();
             dst.SetTempSize(numColumns, a.numColumns);
 #if MATX_SIMD
-            SIMDProcessor.MatX_TransposeMultiplyMatX(dst, *this, a);
+            Simd.MatX_TransposeMultiplyMatX(dst, *this, a);
 #else
             TransposeMultiply(dst, a);
 #endif
@@ -3708,7 +3493,7 @@ namespace System.NumericsX
         public void Multiply(in VectorX dst, in VectorX vec)             // dst = this * vec
         {
 #if MATX_SIMD
-            SIMDProcessor.MatX_MultiplyVecX(dst, *this, vec);
+            Simd.MatX_MultiplyVecX(dst, *this, vec);
 #else
             fixed (float* mat = this.mat, dstp = dst.p, vecp = vec.p)
             {
@@ -3718,8 +3503,7 @@ namespace System.NumericsX
                 for (var i = 0; i < numRows; i++)
                 {
                     var sum = mPtr[0] * vPtr[0];
-                    for (var j = 1; j < numColumns; j++)
-                        sum += mPtr[j] * vPtr[j];
+                    for (var j = 1; j < numColumns; j++) sum += mPtr[j] * vPtr[j];
                     dstPtr[i] = sum;
                     mPtr += numColumns;
                 }
@@ -3730,7 +3514,7 @@ namespace System.NumericsX
         public void MultiplyAdd(in VectorX dst, in VectorX vec)          // dst += this * vec
         {
 #if MATX_SIMD
-            SIMDProcessor.MatX_MultiplyAddVecX(dst, *this, vec);
+            Simd.MatX_MultiplyAddVecX(dst, *this, vec);
 #else
             fixed (float* mat = this.mat, dstp = dst.p, vecp = vec.p)
             {
@@ -3740,8 +3524,7 @@ namespace System.NumericsX
                 for (var i = 0; i < numRows; i++)
                 {
                     var sum = mPtr[0] * vPtr[0];
-                    for (var j = 1; j < numColumns; j++)
-                        sum += mPtr[j] * vPtr[j];
+                    for (var j = 1; j < numColumns; j++) sum += mPtr[j] * vPtr[j];
                     dstPtr[i] += sum;
                     mPtr += numColumns;
                 }
@@ -3752,7 +3535,7 @@ namespace System.NumericsX
         public void MultiplySub(in VectorX dst, in VectorX vec)          // dst -= this * vec
         {
 #if MATX_SIMD
-            SIMDProcessor.MatX_MultiplySubVecX(dst, *this, vec);
+            Simd.MatX_MultiplySubVecX(dst, *this, vec);
 #else
             fixed (float* mat = this.mat, dstp = dst.p, vecp = vec.p)
             {
@@ -3762,8 +3545,7 @@ namespace System.NumericsX
                 for (var i = 0; i < numRows; i++)
                 {
                     var sum = mPtr[0] * vPtr[0];
-                    for (var j = 1; j < numColumns; j++)
-                        sum += mPtr[j] * vPtr[j];
+                    for (var j = 1; j < numColumns; j++) sum += mPtr[j] * vPtr[j];
                     dstPtr[i] -= sum;
                     mPtr += numColumns;
                 }
@@ -3774,7 +3556,7 @@ namespace System.NumericsX
         public void TransposeMultiply(in VectorX dst, in VectorX vec)        // dst = this.Transpose() * vec
         {
 #if MATX_SIMD
-            SIMDProcessor.MatX_TransposeMultiplyVecX(dst, *this, vec);
+            Simd.MatX_TransposeMultiplyVecX(dst, *this, vec);
 #else
             fixed (float* mat = this.mat, dstp = dst.p, vecp = vec.p)
             {
@@ -3784,11 +3566,7 @@ namespace System.NumericsX
                 {
                     var mPtr = mat + i;
                     var sum = mPtr[0] * vPtr[0];
-                    for (var j = 1; j < numRows; j++)
-                    {
-                        mPtr += numColumns;
-                        sum += mPtr[0] * vPtr[j];
-                    }
+                    for (var j = 1; j < numRows; j++) { mPtr += numColumns; sum += mPtr[0] * vPtr[j]; }
                     dstPtr[i] = sum;
                 }
             }
@@ -3798,7 +3576,7 @@ namespace System.NumericsX
         public void TransposeMultiplyAdd(in VectorX dst, in VectorX vec) // dst += this.Transpose() * vec
         {
 #if MATX_SIMD
-            SIMDProcessor.MatX_TransposeMultiplyAddVecX(dst, *this, vec);
+            Simd.MatX_TransposeMultiplyAddVecX(dst, *this, vec);
 #else
             fixed (float* mat = this.mat, dstp = dst.p, vecp = vec.p)
             {
@@ -3808,11 +3586,7 @@ namespace System.NumericsX
                 {
                     var mPtr = mat + i;
                     var sum = mPtr[0] * vPtr[0];
-                    for (var j = 1; j < numRows; j++)
-                    {
-                        mPtr += numColumns;
-                        sum += mPtr[0] * vPtr[j];
-                    }
+                    for (var j = 1; j < numRows; j++) { mPtr += numColumns; sum += mPtr[0] * vPtr[j]; }
                     dstPtr[i] += sum;
                 }
             }
@@ -3822,7 +3596,7 @@ namespace System.NumericsX
         public void TransposeMultiplySub(in VectorX dst, in VectorX vec) // dst -= this.Transpose() * vec
         {
 #if MATX_SIMD
-            SIMDProcessor.MatX_TransposeMultiplySubVecX(dst, *this, vec);
+            Simd.MatX_TransposeMultiplySubVecX(dst, *this, vec);
 #else
             fixed (float* mat = this.mat, dstp = dst.p, vecp = vec.p)
             {
@@ -3832,11 +3606,7 @@ namespace System.NumericsX
                 {
                     var mPtr = mat + i;
                     var sum = mPtr[0] * vPtr[0];
-                    for (var j = 1; j < numRows; j++)
-                    {
-                        mPtr += numColumns;
-                        sum += mPtr[0] * vPtr[j];
-                    }
+                    for (var j = 1; j < numRows; j++) { mPtr += numColumns; sum += mPtr[0] * vPtr[j]; }
                     dstPtr[i] -= sum;
                 }
             }
@@ -3846,7 +3616,7 @@ namespace System.NumericsX
         public void Multiply(in MatrixX dst, in MatrixX a)                   // dst = this * a
         {
 #if MATX_SIMD
-            SIMDProcessor.MatX_MultiplyMatX(dst, *this, a);
+            Simd.MatX_MultiplyMatX(dst, *this, a);
 #else
             Debug.Assert(numColumns == a.numRows);
             int i, j, k, l, n; double sum;
@@ -3865,11 +3635,7 @@ namespace System.NumericsX
                     {
                         m2Ptr = a_mat + j;
                         sum = m1Ptr[0] * m2Ptr[0];
-                        for (n = 1; n < numColumns; n++)
-                        {
-                            m2Ptr += l;
-                            sum += m1Ptr[n] * m2Ptr[0];
-                        }
+                        for (n = 1; n < numColumns; n++) { m2Ptr += l; sum += m1Ptr[n] * m2Ptr[0]; }
                         *dstPtr++ = (float)sum;
                     }
                     m1Ptr += numColumns;
@@ -3881,7 +3647,7 @@ namespace System.NumericsX
         public void TransposeMultiply(in MatrixX dst, in MatrixX a)      // dst = this.Transpose() * a
         {
 #if MATX_SIMD
-            SIMDProcessor.MatX_TransposeMultiplyMatX(dst, *this, a);
+            Simd.MatX_TransposeMultiplyMatX(dst, *this, a);
 #else
             Debug.Assert(numRows == a.numRows);
             int i, j, k, l, n; double sum;
@@ -3900,12 +3666,7 @@ namespace System.NumericsX
                         m1Ptr = mat + i;
                         var m2Ptr = a_mat + j;
                         sum = m1Ptr[0] * m2Ptr[0];
-                        for (n = 1; n < numRows; n++)
-                        {
-                            m1Ptr += numColumns;
-                            m2Ptr += a.numColumns;
-                            sum += m1Ptr[0] * m2Ptr[0];
-                        }
+                        for (n = 1; n < numRows; n++) { m1Ptr += numColumns; m2Ptr += a.numColumns; sum += m1Ptr[0] * m2Ptr[0]; }
                         *dstPtr++ = (float)sum;
                     }
                 }
@@ -3923,8 +3684,7 @@ namespace System.NumericsX
         public ref Vector6 SubVec6(int row)                                       // interpret beginning of row as a Vector6
         {
             Debug.Assert(numColumns >= 6 && row >= 0 && row < numRows);
-            fixed (float* mat = &this.mat[0])
-                return ref reinterpret.cast_vec6(mat, row * numColumns);
+            fixed (float* mat = &this.mat[0]) return ref reinterpret.cast_vec6(mat, row * numColumns);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public VectorX SubVecX(int row)                                     // interpret complete row as a VectorX
@@ -3938,15 +3698,13 @@ namespace System.NumericsX
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
-        //    fixed (float* _ = mat)
-        //        return callback(_);
+        //    fixed (float* _ = mat) return callback(_);
         //}
 
         public string ToString(int precision = 2)
         {
             var dimension = Dimension;
-            fixed (float* _ = mat)
-                return FloatArrayToString(_, dimension, precision);
+            fixed (float* _ = mat) return FloatArrayToString(_, dimension, precision);
         }
 
         float DeterminantGeneric()
@@ -3956,9 +3714,7 @@ namespace System.NumericsX
             tmp.SetData(numRows, numColumns, MATX_ALLOCA(numRows * numColumns));
             tmp = this;
 
-            if (!tmp.LU_Factor(index, out var det))
-                return 0f;
-
+            if (!tmp.LU_Factor(index, out var det)) return 0f;
             return det;
         }
 
@@ -3969,8 +3725,7 @@ namespace System.NumericsX
             tmp.SetData(numRows, numColumns, MATX_ALLOCA(numRows * numColumns));
             tmp = this;
 
-            if (!tmp.LU_Factor(index))
-                return false;
+            if (!tmp.LU_Factor(index)) return false;
             VectorX x = new(), b = new();
             x.SetData(numRows, VectorX.VECX_ALLOCA(numRows));
             b.SetData(numRows, VectorX.VECX_ALLOCA(numRows));
@@ -3980,8 +3735,7 @@ namespace System.NumericsX
             {
                 b[i] = 1f;
                 tmp.LU_Solve(ref x, b, index);
-                for (var j = 0; j < numRows; j++)
-                    this[j][i] = x[j];
+                for (var j = 0; j < numRows; j++) this[j][i] = x[j];
                 b[i] = 0f;
             }
             return true;

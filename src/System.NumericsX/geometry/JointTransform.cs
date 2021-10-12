@@ -132,17 +132,13 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Compare(in JointMat a)                       // exact compare, no epsilon
         {
-            for (var i = 0; i < 12; i++)
-                if (mat[i] != a.mat[i])
-                    return false;
+            for (var i = 0; i < 12; i++) if (mat[i] != a.mat[i]) return false;
             return true;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Compare(in JointMat a, float epsilon)  // compare with epsilon
         {
-            for (var i = 0; i < 12; i++)
-                if (MathX.Fabs(mat[i] - a.mat[i]) > epsilon)
-                    return false;
+            for (var i = 0; i < 12; i++) if (MathX.Fabs(mat[i] - a.mat[i]) > epsilon) return false;
             return true;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -237,8 +233,7 @@ namespace System.NumericsX
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
-        //    fixed (float* _ = mat)
-        //        return callback(_);
+        //    fixed (float* _ = mat) return callback(_);
         //}
     }
 }

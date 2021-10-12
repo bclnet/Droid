@@ -88,14 +88,8 @@ namespace System.NumericsX.OpenStack
             //d = s;
             //while ((c = *s2) != 0)
             //{
-            //    if (IsColor(s, s2))
-            //    {
-            //        s2++;
-            //    }
-            //    else
-            //    {
-            //        *d++ = c;
-            //    }
+            //    if (IsColor(s, s2)) s2++;
+            //    else *d++ = c;
             //    s2++;
             //}
             //*d = '\0';
@@ -105,8 +99,7 @@ namespace System.NumericsX.OpenStack
 
         public static int LengthWithoutColors(string s)
         {
-            if (s == null)
-                return 0;
+            if (s == null) return 0;
             int sourceLength = s.Length, len = 0, p = 0;
             while (p < sourceLength)
             {

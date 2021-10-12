@@ -1,5 +1,7 @@
-using Droid.Core;
 using System.Collections.Generic;
+using System.NumericsX;
+using System.NumericsX.OpenStack;
+using GlIndex = System.Int32;
 
 namespace Gengine.Render
 {
@@ -13,12 +15,12 @@ namespace Gengine.Render
         public int numIndexes;
     }
 
-    public class GuiModel
+    public unsafe class GuiModel
     {
         GuiModelSurface surf;
 
         List<GuiModelSurface> surfaces = new();
-        List<Index> indexes = new();
+        List<GlIndex> indexes = new();
         List<DrawVert> verts = new();
 
         public GuiModel()
@@ -47,24 +49,23 @@ namespace Gengine.Render
                 demo.WriteVec3(verts[j].xyz);
                 demo.WriteVec2(verts[j].st);
                 demo.WriteVec3(verts[j].normal);
-                demo.WriteVec3(verts[j].tangents[0]);
-                demo.WriteVec3(verts[j].tangents[1]);
-                demo.WriteUnsignedChar(verts[j].color[0]);
-                demo.WriteUnsignedChar(verts[j].color[1]);
-                demo.WriteUnsignedChar(verts[j].color[2]);
-                demo.WriteUnsignedChar(verts[j].color[3]);
+                demo.WriteVec3(verts[j].tangents0);
+                demo.WriteVec3(verts[j].tangents1);
+                demo.WriteUnsignedChar(verts[j].color0);
+                demo.WriteUnsignedChar(verts[j].color1);
+                demo.WriteUnsignedChar(verts[j].color2);
+                demo.WriteUnsignedChar(verts[j].color3);
             }
 
             i = indexes.Count;
             demo.WriteInt(i);
-            for (j = 0; j < i; j++)
-                demo.WriteInt(indexes[j]);
+            for (j = 0; j < i; j++) demo.WriteInt(indexes[j]);
 
             i = surfaces.Count;
             demo.WriteInt(i);
             for (j = 0; j < i; j++)
             {
-                guiModelSurface_t* surf = &surfaces[j];
+                ref GuiModelSurface surf = ref surfaces[j];
 
                 demo.WriteInt((int &)surf.material);
                 demo.WriteFloat(surf.color[0]);
@@ -75,7 +76,7 @@ namespace Gengine.Render
                 demo.WriteInt(surf.numVerts);
                 demo.WriteInt(surf.firstIndex);
                 demo.WriteInt(surf.numIndexes);
-                demo.WriteHashString(surf.material.GetName());
+                demo.WriteHashString(surf.material.Name);
             }
         }
         public void ReadFromDemo(VFileDemo demo)
@@ -90,15 +91,15 @@ namespace Gengine.Render
                 demo.ReadVec3(out verts[j].xyz);
                 demo.ReadVec2(out verts[j].st);
                 demo.ReadVec3(out verts[j].normal);
-                demo.ReadVec3(out verts[j].tangents[0]);
-                demo.ReadVec3(out verts[j].tangents[1]);
-                demo.ReadUnsignedChar(out verts[j].color[0]);
-                demo.ReadUnsignedChar(out verts[j].color[1]);
-                demo.ReadUnsignedChar(out verts[j].color[2]);
-                demo.ReadUnsignedChar(out verts[j].color[3]);
+                demo.ReadVec3(out verts[j].tangents0);
+                demo.ReadVec3(out verts[j].tangents1);
+                demo.ReadUnsignedChar(out verts[j].color0);
+                demo.ReadUnsignedChar(out verts[j].color1);
+                demo.ReadUnsignedChar(out verts[j].color2);
+                demo.ReadUnsignedChar(out verts[j].color3);
             }
 
-            i = indexes.count;
+            i = indexes.Count;
             demo.ReadInt(out i);
             indexes.SetNum(i, false);
             for (j = 0; j < i; j++)
@@ -115,46 +116,44 @@ namespace Gengine.Render
             surfaces.SetNum(i, false);
             for (j = 0; j < i; j++)
             {
-                guiModelSurface_t* surf = &surfaces[j];
+                ref GuiModelSurface surf = ref surfaces[j];
 
                 demo.ReadInt((int &)surf.material);
-                demo.ReadFloat(surf.color[0]);
-                demo.ReadFloat(surf.color[1]);
-                demo.ReadFloat(surf.color[2]);
-                demo.ReadFloat(surf.color[3]);
-                demo.ReadInt(surf.firstVert);
-                demo.ReadInt(surf.numVerts);
-                demo.ReadInt(surf.firstIndex);
-                demo.ReadInt(surf.numIndexes);
+                demo.ReadFloat(out surf.color[0]);
+                demo.ReadFloat(out surf.color[1]);
+                demo.ReadFloat(out surf.color[2]);
+                demo.ReadFloat(out surf.color[3]);
+                demo.ReadInt(out surf.firstVert);
+                demo.ReadInt(out surf.numVerts);
+                demo.ReadInt(out surf.firstIndex);
+                demo.ReadInt(out surf.numIndexes);
                 surf.material = declManager.FindMaterial(demo.ReadHashString());
             }
         }
 
         void EmitSurface(GuiModelSurface surf, float[] modelMatrix, float[] modelViewMatrix, bool depthHack)
         {
-            srfTriangles_t* tri;
+            SrfTriangles tri;
 
-            if (surf.numVerts == 0)
-                return;     // nothing in the surface
+            if (surf.numVerts == 0) return;     // nothing in the surface
 
             // copy verts and indexes
-            tri = (srfTriangles_t*)R_ClearedFrameAlloc(sizeof( *tri) );
+            tri = R_ClearedFrameAlloc<SrfTriangles>();
 
             tri.numIndexes = surf.numIndexes;
             tri.numVerts = surf.numVerts;
-            tri.indexes = (glIndex_t*)R_FrameAlloc(tri.numIndexes * sizeof(tri.indexes[0]));
+            tri.indexes = R_FrameAllocMany<GlIndex>(tri.numIndexes);
             memcpy(tri.indexes, &indexes[surf.firstIndex], tri.numIndexes * sizeof(tri.indexes[0]));
 
-            // we might be able to avoid copying these and just let them reference the list vars but some things, like deforms and recursive
-            // guis, need to access the verts in cpu space, not just through the vertex range
-            tri.verts = (idDrawVert*)R_FrameAlloc(tri.numVerts * sizeof(tri.verts[0]));
+            // we might be able to avoid copying these and just let them reference the list vars but some things, like deforms and recursive guis, need to access the verts in cpu space, not just through the vertex range
+            tri.verts = R_FrameAllocMany<DrawVert>(tri.numVerts);
             memcpy(tri.verts, &verts[surf.firstVert], tri.numVerts * sizeof(tri.verts[0]));
 
             // move the verts to the vertex cache
             tri.ambientCache = vertexCache.AllocFrameTemp(tri.verts, tri.numVerts * sizeof(tri.verts[0]), false);
-            tri.indexCache = vertexCache.AllocFrameTemp(tri.indexes, tri.numIndexes * sizeof(glIndex_t), true);
+            tri.indexCache = vertexCache.AllocFrameTemp(tri.indexes, tri.numIndexes * sizeof(GlIndex), true);
 
-            renderEntity_t renderEntity;
+            RenderEntity renderEntity;
             memset(&renderEntity, 0, sizeof(renderEntity));
             memcpy(renderEntity.shaderParms, surf.color, sizeof(surf.color));
 
@@ -190,20 +189,19 @@ namespace Gengine.Render
         // Creates a view that covers the screen and emit the surfaces
         public void EmitFullScreen()
         {
-            viewDef_t* viewDef;
+            ViewDef viewDef;
 
-            if (surfaces[0].numVerts == 0)
-                return;
+            if (surfaces[0].numVerts == 0) return;
 
-            viewDef = (viewDef_t*)R_ClearedFrameAlloc(sizeof( *viewDef) );
+            viewDef = R_ClearedFrameAlloc<ViewDef>();
 
             // for gui editor
             if (!tr.viewDef || !tr.viewDef.isEditor)
             {
                 viewDef.renderView.x = 0;
                 viewDef.renderView.y = 0;
-                viewDef.renderView.width = SCREEN_WIDTH;
-                viewDef.renderView.height = SCREEN_HEIGHT;
+                viewDef.renderView.width = R.SCREEN_WIDTH;
+                viewDef.renderView.height = R.SCREEN_HEIGHT;
 
                 tr.RenderViewToViewport(&viewDef.renderView, &viewDef.viewport);
 
@@ -267,10 +265,7 @@ namespace Gengine.Render
             tr.viewDef = viewDef;
 
             // add the surfaces to this view
-            for (int i = 0; i < surfaces.Num(); i++)
-            {
-                EmitSurface(&surfaces[i], viewDef.worldSpace.modelMatrix, viewDef.worldSpace.viewMatrix, false);
-            }
+            for (var i = 0; i < surfaces.Count; i++) EmitSurface(&surfaces[i], viewDef.worldSpace.modelMatrix, viewDef.worldSpace.viewMatrix, false);
 
             tr.viewDef = oldViewDef;
 
@@ -280,9 +275,9 @@ namespace Gengine.Render
 
         void AdvanceSurf()
         {
-            guiModelSurface_t s;
+            GuiModelSurface s;
 
-            if (surfaces.Num())
+            if (surfaces.Count != 0)
             {
                 s.color[0] = surf.color[0];
                 s.color[1] = surf.color[1];
@@ -299,24 +294,21 @@ namespace Gengine.Render
                 s.material = tr.defaultMaterial;
             }
             s.numIndexes = 0;
-            s.firstIndex = indexes.Num();
+            s.firstIndex = indexes.Count;
             s.numVerts = 0;
-            s.firstVert = verts.Num();
+            s.firstVert = verts.Count;
 
-            surfaces.Append(s);
-            surf = &surfaces[surfaces.Num() - 1];
+            surfaces.Add(s);
+            surf = ref surfaces[surfaces.Count - 1];
         }
 
         // these calls are forwarded from the renderer
         public void SetColor(float r, float g, float b, float a)
         {
-            if (!glConfig.isInitialized)
-                return;
-            if (r == surf.color[0] && g == surf.color[1] && b == surf.color[2] && a == surf.color[3])
-                return; // no change
+            if (!glConfig.isInitialized) return;
+            if (r == surf.color[0] && g == surf.color[1] && b == surf.color[2] && a == surf.color[3]) return; // no change
 
-            if (surf.numVerts != 0)
-                AdvanceSurf();
+            if (surf.numVerts != 0) AdvanceSurf();
 
             // change the parms
             surf.color[0] = r;
@@ -324,26 +316,18 @@ namespace Gengine.Render
             surf.color[2] = b;
             surf.color[3] = a;
         }
-        public void DrawStretchPic(DrawVert[] verts, glIndex[] indexes, int vertCount, int indexCount, Material hShader,
+
+        public void DrawStretchPic(DrawVert[] verts, GlIndex[] indexes, int vertCount, int indexCount, Material hShader,
             bool clip = true, float min_x = 0f, float min_y = 0f, float max_x = 640f, float max_y = 480f)
         {
-            if (!glConfig.isInitialized)
-            {
-                return;
-            }
-            if (!(dverts && dindexes && vertCount && indexCount && hShader))
-            {
-                return;
-            }
+            if (!glConfig.isInitialized) return;
+            if (!(dverts && dindexes && vertCount && indexCount && hShader)) return;
 
             // break the current surface if we are changing to a new material
             if (hShader != surf.material)
             {
-                if (surf.numVerts)
-                {
-                    AdvanceSurf();
-                }
-                const_cast<idMaterial*>(hShader).EnsureNotPurged();    // in case it was a gui item started before a level change
+                if (surf.numVerts != 0) AdvanceSurf();
+                hShader.EnsureNotPurged();    // in case it was a gui item started before a level change
                 surf.material = hShader;
             }
 
@@ -353,67 +337,59 @@ namespace Gengine.Render
             {
                 int i, j;
 
-                // FIXME:	this is grim stuff, and should be rewritten if we have any significant
-                //			number of guis asking for clipping
-                idFixedWinding w;
+                // FIXME:	this is grim stuff, and should be rewritten if we have any significant number of guis asking for clipping
+                FixedWinding w;
                 for (i = 0; i < indexCount; i += 3)
                 {
                     w.Clear();
-                    w.AddPoint(idVec5(dverts[dindexes[i]].xyz.x, dverts[dindexes[i]].xyz.y, dverts[dindexes[i]].xyz.z, dverts[dindexes[i]].st.x, dverts[dindexes[i]].st.y));
-                    w.AddPoint(idVec5(dverts[dindexes[i + 1]].xyz.x, dverts[dindexes[i + 1]].xyz.y, dverts[dindexes[i + 1]].xyz.z, dverts[dindexes[i + 1]].st.x, dverts[dindexes[i + 1]].st.y));
-                    w.AddPoint(idVec5(dverts[dindexes[i + 2]].xyz.x, dverts[dindexes[i + 2]].xyz.y, dverts[dindexes[i + 2]].xyz.z, dverts[dindexes[i + 2]].st.x, dverts[dindexes[i + 2]].st.y));
+                    w.AddPoint(new Vector5(dverts[dindexes[i]].xyz.x, dverts[dindexes[i]].xyz.y, dverts[dindexes[i]].xyz.z, dverts[dindexes[i]].st.x, dverts[dindexes[i]].st.y));
+                    w.AddPoint(new Vector5(dverts[dindexes[i + 1]].xyz.x, dverts[dindexes[i + 1]].xyz.y, dverts[dindexes[i + 1]].xyz.z, dverts[dindexes[i + 1]].st.x, dverts[dindexes[i + 1]].st.y));
+                    w.AddPoint(new Vector5(dverts[dindexes[i + 2]].xyz.x, dverts[dindexes[i + 2]].xyz.y, dverts[dindexes[i + 2]].xyz.z, dverts[dindexes[i + 2]].st.x, dverts[dindexes[i + 2]].st.y));
 
                     for (j = 0; j < 3; j++)
-                    {
-                        if (w[j].x < min_x || w[j].x > max_x ||
-                                w[j].y < min_y || w[j].y > max_y)
-                        {
-                            break;
-                        }
-                    }
+                        if (w[j].x < min_x || w[j].x > max_x || w[j].y < min_y || w[j].y > max_y) break;
                     if (j < 3)
                     {
-                        idPlane p;
-                        p.Normal().y = p.Normal().z = 0.0f;
-                        p.Normal().x = 1.0f;
-                        p.SetDist(min_x);
+                        Plane p;
+                        p.Normal.y = p.Normal.z = 0.0f;
+                        p.Normal.x = 1.0f;
+                        p.Dist = min_x;
                         w.ClipInPlace(p);
-                        p.Normal().y = p.Normal().z = 0.0f;
-                        p.Normal().x = -1.0f;
-                        p.SetDist(-max_x);
+                        p.Normal.y = p.Normal.z = 0.0f;
+                        p.Normal.x = -1.0f;
+                        p.Dist = -max_x;
                         w.ClipInPlace(p);
-                        p.Normal().x = p.Normal().z = 0.0f;
-                        p.Normal().y = 1.0f;
-                        p.SetDist(min_y);
+                        p.Normal.x = p.Normal.z = 0.0f;
+                        p.Normal.y = 1.0f;
+                        p.Dist = min_y;
                         w.ClipInPlace(p);
-                        p.Normal().x = p.Normal().z = 0.0f;
-                        p.Normal().y = -1.0f;
-                        p.SetDist(-max_y);
+                        p.Normal.x = p.Normal.z = 0.0f;
+                        p.Normal.y = -1.0f;
+                        p.Dist = -max_y;
                         w.ClipInPlace(p);
                     }
 
-                    int numVerts = verts.Num();
-                    verts.SetNum(numVerts + w.GetNumPoints(), false);
-                    for (j = 0; j < w.GetNumPoints(); j++)
+                    var numVerts = verts.Length;
+                    verts.SetNum(numVerts + w.NumPoints, false);
+                    for (j = 0; j < w.NumPoints; j++)
                     {
-                        idDrawVert* dv = &verts[numVerts + j];
-
+                        ref DrawVert dv = ref verts[numVerts + j];
                         dv.xyz.x = w[j].x;
                         dv.xyz.y = w[j].y;
                         dv.xyz.z = w[j].z;
                         dv.st.x = w[j].s;
                         dv.st.y = w[j].t;
                         dv.normal.Set(0, 0, 1);
-                        dv.tangents[0].Set(1, 0, 0);
-                        dv.tangents[1].Set(0, 1, 0);
+                        dv.tangents0.Set(1, 0, 0);
+                        dv.tangents1.Set(0, 1, 0);
                     }
-                    surf.numVerts += w.GetNumPoints();
+                    surf.numVerts += w.NumPoints;
 
-                    for (j = 2; j < w.GetNumPoints(); j++)
+                    for (j = 2; j < w.NumPoints; j++)
                     {
-                        indexes.Append(numVerts - surf.firstVert);
-                        indexes.Append(numVerts + j - 1 - surf.firstVert);
-                        indexes.Append(numVerts + j - surf.firstVert);
+                        indexes.Add(numVerts - surf.firstVert);
+                        indexes.Add(numVerts + j - 1 - surf.firstVert);
+                        indexes.Add(numVerts + j - surf.firstVert);
                         surf.numIndexes += 3;
                     }
                 }
@@ -555,19 +531,13 @@ namespace Gengine.Render
         // x/y/w/h are in the 0,0 to 640,480 range
         public void DrawStretchTri(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 t1, Vector2 t2, Vector2 t3, Material material)
         {
-            idDrawVert tempVerts[3];
-            glIndex_t tempIndexes[3];
+            DrawVert tempVerts[3];
+            GlIndex tempIndexes[3];
             int vertCount = 3;
             int indexCount = 3;
 
-            if (!glConfig.isInitialized)
-            {
-                return;
-            }
-            if (!material)
-            {
-                return;
-            }
+            if (!glConfig.isInitialized) return;
+            if (material == null) return;
 
             tempIndexes[0] = 1;
             tempIndexes[1] = 0;
@@ -618,17 +588,14 @@ namespace Gengine.Render
             // break the current surface if we are changing to a new material
             if (material != surf.material)
             {
-                if (surf.numVerts)
-                {
-                    AdvanceSurf();
-                }
-                const_cast<idMaterial*>(material).EnsureNotPurged();   // in case it was a gui item started before a level change
+                if (surf.numVerts!=0) AdvanceSurf();
+                material.EnsureNotPurged();   // in case it was a gui item started before a level change
                 surf.material = material;
             }
 
 
-            int numVerts = verts.Num();
-            int numIndexes = indexes.Num();
+            var numVerts = verts.Count;
+            var numIndexes = indexes.Count;
 
             verts.AssureSize(numVerts + vertCount);
             indexes.AssureSize(numIndexes + indexCount);
@@ -636,10 +603,7 @@ namespace Gengine.Render
             surf.numVerts += vertCount;
             surf.numIndexes += indexCount;
 
-            for (int i = 0; i < indexCount; i++)
-            {
-                indexes[numIndexes + i] = numVerts + tempIndexes[i] - surf.firstVert;
-            }
+            for (var i = 0; i < indexCount; i++) indexes[numIndexes + i] = numVerts + tempIndexes[i] - surf.firstVert;
 
             memcpy(&verts[numVerts], tempVerts, vertCount * sizeof(verts[0]));
         }

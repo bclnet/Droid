@@ -615,11 +615,7 @@ namespace System.NumericsX.OpenStack.System
 
             public void Dispose()
             {
-                if (code != IntPtr.Zero)
-                {
-                    VirtualFree(code, 0, FreeType.MEM_RELEASE);
-                    code = IntPtr.Zero;
-                }
+                if (code != IntPtr.Zero) { VirtualFree(code, 0, FreeType.MEM_RELEASE); code = IntPtr.Zero; }
             }
         }
 

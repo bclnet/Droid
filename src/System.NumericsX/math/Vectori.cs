@@ -42,17 +42,9 @@ namespace System.NumericsX
         public int this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (int* p = &x)
-                    return p[index];
-            }
+            get { fixed (int* p = &x) return p[index]; }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set
-            {
-                fixed (int* p = &x)
-                    p[index] = value;
-            }
+            set { fixed (int* p = &x) p[index] = value; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

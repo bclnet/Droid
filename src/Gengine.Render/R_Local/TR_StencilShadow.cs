@@ -1,6 +1,6 @@
 namespace Gengine.Render
 {
-	partial class TRX
+	partial class TR
 	{
 
 #define TRIANGLE_CULLED(p1,p2,p3) ( pointCull[p1] & pointCull[p2] & pointCull[p3] & 0x3f )
@@ -40,12 +40,12 @@ static bool overflowed;
 
 idPlane	pointLightFrustums[6][6] = {
 	{
-		idPlane( 1,0,0,0 ),
-		idPlane( 1,1,0,0 ),
-		idPlane( 1,-1,0,0 ),
-		idPlane( 1,0,1,0 ),
-		idPlane( 1,0,-1,0 ),
-		idPlane( -1,0,0,0 ),
+		TR( 1,0,0,0 ),
+		TR( 1,1,0,0 ),
+		TR( 1,-1,0,0 ),
+		TR( 1,0,1,0 ),
+		TR( 1,0,-1,0 ),
+		TR( -1,0,0,0 ),
 	},
 	{
 		idPlane( -1,0,0,0 ),

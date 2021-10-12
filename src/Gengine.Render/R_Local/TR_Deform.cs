@@ -11,7 +11,7 @@ using GlIndex = System.Int32;
 
 namespace Gengine.Render
 {
-    unsafe partial class TRX
+    unsafe partial class TR
     {
         // The ambientCache is on the stack, so we don't want to leave a reference to it that would try to be freed later.  Create the ambientCache immediately.
         static void R_FinishDeform(DrawSurf drawSurf, SrfTriangles newTri, DrawVert* ac)
@@ -792,7 +792,7 @@ namespace Gengine.Render
 
         //========================================================================================
 
-        static void R_DeformDrawSurf(DrawSurf drawSurf)
+        public static void R_DeformDrawSurf(DrawSurf drawSurf)
         {
             if (drawSurf.material == null || r_skipDeforms.Bool) return;
             switch (drawSurf.material.Deform)

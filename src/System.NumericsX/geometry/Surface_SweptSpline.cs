@@ -39,13 +39,9 @@ namespace System.NumericsX
             int i, j, offset, baseOffset, splineDiv, sweptSplineDiv, i0, i1, j0, j1; float totalTime, t;
             Vector4 splinePos, splineD1; Matrix3x3 splineMat = new();
 
-            if (spline == null || sweptSpline == null)
-            {
-                base.Clear();
-                return;
-            }
+            if (spline == null || sweptSpline == null) { base.Clear(); return; }
 
-            verts.SetNum(splineSubdivisions * sweptSplineSubdivisions, false);
+            var verts_ = verts.SetNum(splineSubdivisions * sweptSplineSubdivisions, false);
 
             // calculate the points and first derivatives for the swept spline
             totalTime = sweptSpline.GetTime(sweptSpline.NumValues - 1) - sweptSpline.GetTime(0) + sweptSpline.CloseTime;
@@ -56,9 +52,9 @@ namespace System.NumericsX
                 t = totalTime * i / sweptSplineDiv;
                 splinePos = sweptSpline.GetCurrentValue(t);
                 splineD1 = sweptSpline.GetCurrentFirstDerivative(t);
-                verts[baseOffset + i].xyz = splinePos.ToVec3();
-                verts[baseOffset + i].st.x = splinePos.w;
-                verts[baseOffset + i].tangents0 = splineD1.ToVec3();
+                verts_[baseOffset + i].xyz = splinePos.ToVec3();
+                verts_[baseOffset + i].st.x = splinePos.w;
+                verts_[baseOffset + i].tangents0 = splineD1.ToVec3();
             }
 
             // sweep the spline
@@ -77,10 +73,10 @@ namespace System.NumericsX
                 offset = i * sweptSplineSubdivisions;
                 for (j = 0; j < sweptSplineSubdivisions; j++)
                 {
-                    var v = verts[offset + j];
-                    v.xyz = splinePos.ToVec3() + verts[baseOffset + j].xyz * splineMat;
-                    v.st.x = verts[baseOffset + j].st[0]; v.st.y = splinePos.w;
-                    v.tangents0 = verts[baseOffset + j].tangents0 * splineMat; v.tangents1 = splineD1.ToVec3();
+                    var v = verts_[offset + j];
+                    v.xyz = splinePos.ToVec3() + verts_[baseOffset + j].xyz * splineMat;
+                    v.st.x = verts_[baseOffset + j].st[0]; v.st.y = splinePos.w;
+                    v.tangents0 = verts_[baseOffset + j].tangents0 * splineMat; v.tangents1 = splineD1.ToVec3();
                     v.normal = v.tangents1.Cross(v.tangents0); v.normal.Normalize();
                     v.color0 = v.color1 = v.color2 = v.color3 = 0;
                 }
@@ -130,10 +126,8 @@ namespace System.NumericsX
             float a, c, s, x, y, z;
             Vector3 d, v; Matrix3x3 axis = new();
 
-            d = dir;
-            d.Normalize();
-            v = d.Cross(previousFrame[2]);
-            v.Normalize();
+            d = dir; d.Normalize();
+            v = d.Cross(previousFrame[2]); v.Normalize();
 
             a = MathX.ACos(previousFrame[2] * d) * 0.5f;
             c = MathX.Cos(a);
@@ -156,15 +150,9 @@ namespace System.NumericsX
             wy = c * y2;
             wz = c * z2;
 
-            axis[0].x = 1f - (yy + zz);
-            axis[0].y = xy - wz;
-            axis[0].z = xz + wy;
-            axis[1].x = xy + wz;
-            axis[1].y = 1f - (xx + zz);
-            axis[1].z = yz - wx;
-            axis[2].x = xz - wy;
-            axis[2].y = yz + wx;
-            axis[2].z = 1f - (xx + yy);
+            axis[0].x = 1f - (yy + zz); axis[0].y = xy - wz; axis[0].z = xz + wy;
+            axis[1].x = xy + wz; axis[1].y = 1f - (xx + zz); axis[1].z = yz - wx;
+            axis[2].x = xz - wy; axis[2].y = yz + wx; axis[2].z = 1f - (xx + yy);
 
             newFrame = previousFrame * axis;
 

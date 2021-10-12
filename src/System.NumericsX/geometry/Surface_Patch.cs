@@ -35,10 +35,8 @@ namespace System.NumericsX
 
         public void SetSize(int patchWidth, int patchHeight)
         {
-            if (patchWidth < 1 || patchWidth > maxWidth)
-                FatalError("Surface_Patch::SetSize: invalid patchWidth");
-            if (patchHeight < 1 || patchHeight > maxHeight)
-                FatalError("Surface_Patch::SetSize: invalid patchHeight");
+            if (patchWidth < 1 || patchWidth > maxWidth) FatalError("Surface_Patch::SetSize: invalid patchWidth");
+            if (patchHeight < 1 || patchHeight > maxHeight) FatalError("Surface_Patch::SetSize: invalid patchHeight");
             width = patchWidth;
             height = patchHeight;
             verts.SetNum(width * height, false);
@@ -63,8 +61,7 @@ namespace System.NumericsX
             Vector3 prevxyz = new(), nextxyz = new(), midxyz = new(), delta; DrawVert prev, next, mid;
 
             // generate normals for the control mesh
-            if (genNormals)
-                GenerateNormals();
+            if (genNormals) GenerateNormals();
 
             maxHorizontalErrorSqr = MathX.Square(maxHorizontalError);
             maxVerticalErrorSqr = MathX.Square(maxVerticalError);
@@ -88,20 +85,16 @@ namespace System.NumericsX
                     if (maxLength > 0f)
                     {
                         // if the span length is too long, force a subdivision
-                        if (prevxyz.LengthSqr > maxLengthSqr || nextxyz.LengthSqr > maxLengthSqr)
-                            break;
+                        if (prevxyz.LengthSqr > maxLengthSqr || nextxyz.LengthSqr > maxLengthSqr) break;
                     }
                     // see if this midpoint is off far enough to subdivide
                     delta = verts[i * maxWidth + j + 1].xyz - midxyz;
-                    if (delta.LengthSqr > maxHorizontalErrorSqr)
-                        break;
+                    if (delta.LengthSqr > maxHorizontalErrorSqr) break;
                 }
 
-                if (i == height)
-                    continue;   // didn't need subdivision
+                if (i == height) continue;   // didn't need subdivision
 
-                if (width + 2 >= maxWidth)
-                    ResizeExpanded(maxHeight, maxWidth + 4);
+                if (width + 2 >= maxWidth) ResizeExpanded(maxHeight, maxWidth + 4);
 
                 // insert two columns and replace the peak
                 width += 2;
@@ -112,8 +105,7 @@ namespace System.NumericsX
                     LerpVert(verts[i * maxWidth + j + 1], verts[i * maxWidth + j + 2], out next);
                     LerpVert(prev, next, out mid);
 
-                    for (k = width - 1; k > j + 3; k--)
-                        verts[i * maxWidth + k] = verts[i * maxWidth + k - 2];
+                    for (k = width - 1; k > j + 3; k--) verts[i * maxWidth + k] = verts[i * maxWidth + k - 2];
                     verts[i * maxWidth + j + 1] = prev;
                     verts[i * maxWidth + j + 2] = mid;
                     verts[i * maxWidth + j + 3] = next;
@@ -139,20 +131,16 @@ namespace System.NumericsX
                     if (maxLength > 0f)
                     {
                         // if the span length is too long, force a subdivision
-                        if (prevxyz.LengthSqr > maxLengthSqr || nextxyz.LengthSqr > maxLengthSqr)
-                            break;
+                        if (prevxyz.LengthSqr > maxLengthSqr || nextxyz.LengthSqr > maxLengthSqr) break;
                     }
                     // see if this midpoint is off far enough to subdivide
                     delta = verts[(j + 1) * maxWidth + i].xyz - midxyz;
-                    if (delta.LengthSqr > maxVerticalErrorSqr)
-                        break;
+                    if (delta.LengthSqr > maxVerticalErrorSqr) break;
                 }
 
-                if (i == width)
-                    continue;   // didn't need subdivision
+                if (i == width) continue;   // didn't need subdivision
 
-                if (height + 2 >= maxHeight)
-                    ResizeExpanded(maxHeight + 4, maxWidth);
+                if (height + 2 >= maxHeight) ResizeExpanded(maxHeight + 4, maxWidth);
 
                 // insert two columns and replace the peak
                 height += 2;
@@ -163,8 +151,7 @@ namespace System.NumericsX
                     LerpVert(verts[(j + 1) * maxWidth + i], verts[(j + 2) * maxWidth + i], out next);
                     LerpVert(prev, next, out mid);
 
-                    for (k = height - 1; k > j + 3; k--)
-                        verts[k * maxWidth + i] = verts[(k - 2) * maxWidth + i];
+                    for (k = height - 1; k > j + 3; k--) verts[k * maxWidth + i] = verts[(k - 2) * maxWidth + i];
                     verts[(j + 1) * maxWidth + i] = prev;
                     verts[(j + 2) * maxWidth + i] = mid;
                     verts[(j + 3) * maxWidth + i] = next;
@@ -181,9 +168,7 @@ namespace System.NumericsX
             Collapse();
 
             // normalize all the lerped normals
-            if (genNormals)
-                for (i = 0; i < width * height; i++)
-                    verts[i].normal.Normalize();
+            if (genNormals) for (i = 0; i < width * height; i++) verts[i].normal.Normalize();
 
             GenerateIndexes();
         }
@@ -198,8 +183,7 @@ namespace System.NumericsX
             DrawVert[] dv = new DrawVert[outWidth * outHeight];
 
             // generate normals for the control mesh
-            if (genNormals)
-                GenerateNormals();
+            if (genNormals) GenerateNormals();
 
             var baseCol = 0;
             for (i = 0; i + 2 < width; i += 2)
@@ -207,33 +191,23 @@ namespace System.NumericsX
                 var baseRow = 0;
                 for (j = 0; j + 2 < height; j += 2)
                 {
-                    for (k = 0; k < 3; k++)
-                        for (l = 0; l < 3; l++)
-                            sample[k][l] = verts[((j + l) * width) + i + k];
+                    for (k = 0; k < 3; k++) for (l = 0; l < 3; l++) sample[k][l] = verts[((j + l) * width) + i + k];
                     SampleSinglePatch(sample, baseCol, baseRow, outWidth, horzSubdivisions, vertSubdivisions, dv);
                     baseRow += vertSubdivisions;
                 }
                 baseCol += horzSubdivisions;
             }
             verts.SetNum(outWidth * outHeight);
-            for (i = 0; i < outWidth * outHeight; i++)
-                verts[i] = dv[i];
+            for (i = 0; i < outWidth * outHeight; i++) verts[i] = dv[i];
 
             width = maxWidth = outWidth;
             height = maxHeight = outHeight;
             expanded = false;
 
-            if (removeLinear)
-            {
-                Expand();
-                RemoveLinearColumnsRows();
-                Collapse();
-            }
+            if (removeLinear) { Expand(); RemoveLinearColumnsRows(); Collapse(); }
 
             // normalize all the lerped normals
-            if (genNormals)
-                for (i = 0; i < width * height; i++)
-                    verts[i].normal.Normalize();
+            if (genNormals) for (i = 0; i < width * height; i++) verts[i].normal.Normalize();
 
             GenerateIndexes();
         }
@@ -278,15 +252,12 @@ namespace System.NumericsX
                     ProjectPointOntoVector(verts[i * maxWidth + j].xyz, verts[i * maxWidth + j - 1].xyz, verts[i * maxWidth + j + 1].xyz, out proj);
                     dir = verts[i * maxWidth + j].xyz - proj;
                     len = dir.LengthSqr;
-                    if (len > maxLength)
-                        maxLength = len;
+                    if (len > maxLength) maxLength = len;
                 }
                 if (maxLength < MathX.Square(0.2f))
                 {
                     width--;
-                    for (i = 0; i < height; i++)
-                        for (k = j; k < width; k++)
-                            verts[i * maxWidth + k] = verts[i * maxWidth + k + 1];
+                    for (i = 0; i < height; i++) for (k = j; k < width; k++) verts[i * maxWidth + k] = verts[i * maxWidth + k + 1];
                     j--;
                 }
             }
@@ -298,15 +269,12 @@ namespace System.NumericsX
                     ProjectPointOntoVector(verts[j * maxWidth + i].xyz, verts[(j - 1) * maxWidth + i].xyz, verts[(j + 1) * maxWidth + i].xyz, out proj);
                     dir = verts[j * maxWidth + i].xyz - proj;
                     len = dir.LengthSqr;
-                    if (len > maxLength)
-                        maxLength = len;
+                    if (len > maxLength) maxLength = len;
                 }
                 if (maxLength < MathX.Square(0.2f))
                 {
                     height--;
-                    for (i = 0; i < width; i++)
-                        for (k = j; k < height; k++)
-                            verts[k * maxWidth + i] = verts[(k + 1) * maxWidth + i];
+                    for (i = 0; i < width; i++) for (k = j; k < height; k++) verts[k * maxWidth + i] = verts[(k + 1) * maxWidth + i];
                     j--;
                 }
             }
@@ -318,14 +286,10 @@ namespace System.NumericsX
             int i, j;
 
             Debug.Assert(expanded == true);
-            if (height <= maxHeight && width <= maxWidth)
-                return;
-            if (height * width > maxHeight * maxWidth)
-                verts.SetNum(height * width);
+            if (height <= maxHeight && width <= maxWidth) return;
+            if (height * width > maxHeight * maxWidth) verts.SetNum(height * width);
             // space out verts for new height and width
-            for (j = maxHeight - 1; j >= 0; j--)
-                for (i = maxWidth - 1; i >= 0; i--)
-                    verts[j * width + i] = verts[j * maxWidth + i];
+            for (j = maxHeight - 1; j >= 0; j--) for (i = maxWidth - 1; i >= 0; i--) verts[j * width + i] = verts[j * maxWidth + i];
             maxHeight = height;
             maxWidth = width;
         }
@@ -335,14 +299,10 @@ namespace System.NumericsX
         {
             int i, j;
 
-            if (expanded)
-                FatalError("Surface_Patch::Expand: patch alread expanded");
+            if (expanded) FatalError("Surface_Patch::Expand: patch alread expanded");
             expanded = true;
             verts.SetNum(maxWidth * maxHeight, false);
-            if (width != maxWidth)
-                for (j = height - 1; j >= 0; j--)
-                    for (i = width - 1; i >= 0; i--)
-                        verts[j * maxWidth + i] = verts[j * width + i];
+            if (width != maxWidth) for (j = height - 1; j >= 0; j--) for (i = width - 1; i >= 0; i--) verts[j * maxWidth + i] = verts[j * width + i];
         }
 
         // move all points to the start of the verts buffer
@@ -350,13 +310,9 @@ namespace System.NumericsX
         {
             int i, j;
 
-            if (!expanded)
-                FatalError("Surface_Patch::Collapse: patch not expanded");
+            if (!expanded) FatalError("Surface_Patch::Collapse: patch not expanded");
             expanded = false;
-            if (width != maxWidth)
-                for (j = 0; j < height; j++)
-                    for (i = 0; i < width; i++)
-                        verts[j * width + i] = verts[j * maxWidth + i];
+            if (width != maxWidth) for (j = 0; j < height; j++) for (i = 0; i < width; i++) verts[j * width + i] = verts[j * maxWidth + i];
             verts.SetNum(width * height, false);
         }
 
@@ -385,40 +341,36 @@ namespace System.NumericsX
 
             Debug.Assert(expanded == false);
 
-            //
             // if all points are coplanar, set all normals to that plane
-            //
+            var verts_ = verts.Ptr();
             Vector3* extent = stackalloc Vector3[3];
             float offset;
 
-            extent[0] = verts[width - 1].xyz - verts[0].xyz;
-            extent[1] = verts[(height - 1) * width + width - 1].xyz - verts[0].xyz;
-            extent[2] = verts[(height - 1) * width].xyz - verts[0].xyz;
+            extent[0] = verts_[width - 1].xyz - verts_[0].xyz;
+            extent[1] = verts_[(height - 1) * width + width - 1].xyz - verts_[0].xyz;
+            extent[2] = verts_[(height - 1) * width].xyz - verts_[0].xyz;
 
             norm = extent[0].Cross(extent[1]);
             if (norm.LengthSqr == 0f)
             {
                 norm = extent[0].Cross(extent[2]);
-                if (norm.LengthSqr == 0f)
-                    norm = extent[1].Cross(extent[2]);
+                if (norm.LengthSqr == 0f) norm = extent[1].Cross(extent[2]);
             }
 
             // wrapped patched may not get a valid normal here
             if (norm.Normalize() != 0f)
             {
-                offset = verts[0].xyz * norm;
+                offset = verts_[0].xyz * norm;
                 for (i = 1; i < width * height; i++)
                 {
-                    var d = verts[i].xyz * norm;
-                    if (MathX.Fabs(d - offset) > COPLANAR_EPSILON)
-                        break;
+                    var d = verts_[i].xyz * norm;
+                    if (MathX.Fabs(d - offset) > COPLANAR_EPSILON) break;
                 }
 
                 if (i == width * height)
                 {
                     // all are coplanar
-                    for (i = 0; i < width * height; i++)
-                        verts[i].normal = norm;
+                    for (i = 0; i < width * height; i++) verts_[i].normal = norm;
                     return;
                 }
             }
@@ -427,28 +379,24 @@ namespace System.NumericsX
             wrapWidth = false;
             for (i = 0; i < height; i++)
             {
-                delta = verts[i * width].xyz - verts[i * width + width - 1].xyz;
-                if (delta.LengthSqr > MathX.Square(1f))
-                    break;
+                delta = verts_[i * width].xyz - verts_[i * width + width - 1].xyz;
+                if (delta.LengthSqr > MathX.Square(1f)) break;
             }
-            if (i == height)
-                wrapWidth = true;
+            if (i == height) wrapWidth = true;
 
             wrapHeight = false;
             for (i = 0; i < width; i++)
             {
-                delta = verts[i].xyz - verts[(height - 1) * width + i].xyz;
-                if (delta.LengthSqr > MathX.Square(1f))
-                    break;
+                delta = verts_[i].xyz - verts_[(height - 1) * width + i].xyz;
+                if (delta.LengthSqr > MathX.Square(1f)) break;
             }
-            if (i == width)
-                wrapHeight = true;
+            if (i == width) wrapHeight = true;
 
             for (i = 0; i < width; i++)
                 for (j = 0; j < height; j++)
                 {
                     count = 0;
-                    base_ = verts[j * width + i].xyz;
+                    base_ = verts_[j * width + i].xyz;
                     for (k = 0; k < 8; k++)
                     {
                         around[k] = Vector3.origin;
@@ -460,49 +408,34 @@ namespace System.NumericsX
                             y = j + GenerateNormals_neighbors[k][1] * dist;
                             if (wrapWidth)
                             {
-                                if (x < 0)
-                                    x = width - 1 + x;
-                                else if (x >= width)
-                                    x = 1 + x - width;
+                                if (x < 0) x = width - 1 + x;
+                                else if (x >= width) x = 1 + x - width;
                             }
                             if (wrapHeight)
                             {
-                                if (y < 0)
-                                    y = height - 1 + y;
-                                else if (y >= height)
-                                    y = 1 + y - height;
+                                if (y < 0) y = height - 1 + y;
+                                else if (y >= height) y = 1 + y - height;
                             }
 
-                            if (x < 0 || x >= width || y < 0 || y >= height)
-                                break;                  // edge of patch
-                            temp = verts[y * width + x].xyz - base_;
-                            if (temp.Normalize() == 0f)
-                                continue;               // degenerate edge, get more dist
-                            else
-                            {
-                                good[k] = true;
-                                around[k] = temp;
-                                break;                  // good edge
-                            }
+                            if (x < 0 || x >= width || y < 0 || y >= height) break; // edge of patch
+                            temp = verts_[y * width + x].xyz - base_;
+                            if (temp.Normalize() == 0f) continue;               // degenerate edge, get more dist
+                            else { good[k] = true; around[k] = temp; break; }   // good edge
                         }
                     }
 
                     sum = Vector3.origin;
                     for (k = 0; k < 8; k++)
                     {
-                        if (!good[k] || !good[(k + 1) & 7])
-                            continue;   // didn't get two points
+                        if (!good[k] || !good[(k + 1) & 7]) continue;   // didn't get two points
                         norm = around[(k + 1) & 7].Cross(around[k]);
-                        if (norm.Normalize() == 0f)
-                            continue;
+                        if (norm.Normalize() == 0f) continue;
                         sum += norm;
                         count++;
                     }
-                    if (count == 0)
-                        //Lib.Printf("bad normal\n");
-                        count = 1;
-                    verts[j * width + i].normal = sum;
-                    verts[j * width + i].normal.Normalize();
+                    if (count == 0) { count = 1; /*Lib.Printf("bad normal\n");*/ }
+                    verts_[j * width + i].normal = sum;
+                    verts_[j * width + i].normal.Normalize();
                 }
         }
 
@@ -514,7 +447,6 @@ namespace System.NumericsX
             indexes.SetNum((width - 1) * (height - 1) * 2 * 3, false);
             index = 0;
             for (i = 0; i < width - 1; i++)
-            {
                 for (j = 0; j < height - 1; j++)
                 {
                     v1 = j * width + i;
@@ -528,7 +460,6 @@ namespace System.NumericsX
                     indexes[index++] = v4;
                     indexes[index++] = v3;
                 }
-            }
 
             GenerateEdgeIndexes();
         }
@@ -550,9 +481,7 @@ namespace System.NumericsX
         // sample a single 3x3 patch
         void SampleSinglePatchPoint(DrawVert[][] ctrl, float u, float v, out DrawVert o)
         {
-            float[,] vCtrl = new float[3, 8];
-            int vPoint;
-            int axis;
+            float[,] vCtrl = new float[3, 8]; int vPoint, axis;
 
             o = new();
             // find the control points for the v coordinate

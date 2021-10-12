@@ -36,17 +36,9 @@ namespace System.NumericsX
         public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (float* p = &x)
-                    return p[index];
-            }
+            get { fixed (float* p = &x) return p[index]; }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set
-            {
-                fixed (float* p = &x)
-                    p[index] = value;
-            }
+            set { fixed (float* p = &x) p[index] = value; }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 operator -(in Vector2 _)
@@ -170,8 +162,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector2 Truncate(float length)
         {
-            if (length == 0)
-                Zero();
+            if (length == 0) Zero();
             else
             {
                 var length2 = LengthSqr;
@@ -219,14 +210,12 @@ namespace System.NumericsX
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
-        //    fixed (float* _ = &x)
-        //        return callback(_);
+        //    fixed (float* _ = &x) return callback(_);
         //}
 
         public string ToString(int precision = 2)
         {
-            fixed (float* _ = &x)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = &x) return FloatArrayToString(_, Dimension, precision);
         }
 
         /// <summary>
@@ -283,17 +272,9 @@ namespace System.NumericsX
         public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (float* p = &x)
-                    return p[index];
-            }
+            get { fixed (float* p = &x) return p[index]; }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set
-            {
-                fixed (float* p = &x)
-                    p[index] = value;
-            }
+            set { fixed (float* p = &x) p[index] = value; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -647,14 +628,12 @@ namespace System.NumericsX
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
-        //    fixed (float* _ = &x)
-        //        return callback(_);
+        //    fixed (float* _ = &x) return callback(_);
         //}
 
         public string ToString(int precision = 2)
         {
-            fixed (float* _ = &x)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = &x) return FloatArrayToString(_, Dimension, precision);
         }
 
         /// <summary>
@@ -729,8 +708,7 @@ namespace System.NumericsX
             // normalize so a fixed epsilon can be used
             cross.Normalize();
             var len = normal * cross;
-            if (MathX.Fabs(len) < epsilon)
-                return false;
+            if (MathX.Fabs(len) < epsilon) return false;
             cross *= overBounce * (normal * this) / len;
             this -= cross;
             return true;
@@ -833,17 +811,9 @@ namespace System.NumericsX
         public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (float* p = &x)
-                    return p[index];
-            }
+            get { fixed (float* p = &x) return p[index]; }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set
-            {
-                fixed (float* p = &x)
-                    p[index] = value;
-            }
+            set { fixed (float* p = &x) p[index] = value; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -962,14 +932,12 @@ namespace System.NumericsX
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
-        //    fixed (float* _ = &x)
-        //        return callback(_);
+        //    fixed (float* _ = &x) return callback(_);
         //}
 
         public string ToString(int precision = 2)
         {
-            fixed (float* _ = &x)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = &x) return FloatArrayToString(_, Dimension, precision);
         }
 
         /// <summary>
@@ -1021,17 +989,9 @@ namespace System.NumericsX
         public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (float* p = &x)
-                    return p[index];
-            }
+            get { fixed (float* p = &x) return p[index]; }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set
-            {
-                fixed (float* p = &x)
-                    p[index] = value;
-            }
+            set { fixed (float* p = &x) p[index] = value; }
         }
 
         public const int Dimension = 5;
@@ -1043,14 +1003,12 @@ namespace System.NumericsX
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
-        //    fixed (float* _ = &x)
-        //        return callback(_);
+        //    fixed (float* _ = &x) return callback(_);
         //}
 
         public string ToString(int precision = 2)
         {
-            fixed (float* _ = &x)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = &x) return FloatArrayToString(_, Dimension, precision);
         }
 
         public void Lerp(in Vector5 v1, in Vector5 v2, float l)
@@ -1080,8 +1038,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector6(float[] a)
         {
-            fixed (float* p = this.p, a_ = a)
-                Unsafe.CopyBlock(p, a_, 6U * sizeof(float));
+            fixed (float* p = this.p, a_ = a) Unsafe.CopyBlock(p, a_, 6U * sizeof(float));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector6(float a1, float a2, float a3, float a4, float a5, float a6)
@@ -1242,21 +1199,18 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ref Vector3 SubVec3(int index)
         {
-            fixed (float* p = this.p)
-                return ref reinterpret.cast_vec3(p, index * 3);
+            fixed (float* p = this.p) return ref reinterpret.cast_vec3(p, index * 3);
         }
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
-        //    fixed (float* _ = p)
-        //        return callback(_);
+        //    fixed (float* _ = p) return callback(_);
         //}
 
         public string ToString(int precision = 2)
         {
-            fixed (float* _ = p)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = p) return FloatArrayToString(_, Dimension, precision);
         }
     }
 
@@ -1284,10 +1238,9 @@ namespace System.NumericsX
             p = null; pi = 0;
             SetSize(a.size);
 #if VECX_SIMD
-            SIMDProcessor.Copy16(p, a.p, a.size);
+            Simd.Copy16(p, a.p, a.size);
 #else
-            fixed (float* p = this.p, a_p = a.p)
-                Unsafe.CopyBlock(p + pi, a_p + a.pi, (uint)a.size * sizeof(float));
+            fixed (float* p = this.p, a_p = a.p) Unsafe.CopyBlock(p + pi, a_p + a.pi, (uint)a.size * sizeof(float));
 #endif
             tempIndex = 0;
         }
@@ -1326,8 +1279,7 @@ namespace System.NumericsX
         {
             var m = new VectorX();
             m.SetTempSize(_.size);
-            for (var i = 0; i < _.size; i++)
-                m.p[m.pi + i] = -_.p[_.pi + i];
+            for (var i = 0; i < _.size; i++) m.p[m.pi + i] = -_.p[_.pi + i];
             return m;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1336,10 +1288,9 @@ namespace System.NumericsX
             var m = new VectorX();
             m.SetTempSize(_.size);
 #if VECX_SIMD
-            SIMDProcessor.Mul16(m.p, _.p, a, _.size);
+            Simd.Mul16(m.p, _.p, a, _.size);
 #else
-            for (var i = 0; i < _.size; i++)
-                m.p[m.pi + i] = _.p[_.pi + i] * a;
+            for (var i = 0; i < _.size; i++) m.p[m.pi + i] = _.p[_.pi + i] * a;
 #endif
             return m;
         }
@@ -1354,8 +1305,7 @@ namespace System.NumericsX
         {
             Debug.Assert(_.size == a.size);
             var sum = 0f;
-            for (var i = 0; i < _.size; i++)
-                sum += _.p[_.pi + i] * a.p[a.pi + i];
+            for (var i = 0; i < _.size; i++) sum += _.p[_.pi + i] * a.p[a.pi + i];
             return sum;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1365,10 +1315,9 @@ namespace System.NumericsX
             var m = new VectorX();
             m.SetTempSize(_.size);
 #if VECX_SIMD
-            SIMDProcessor.Sub16(m.p, _.p, a.p, _.size);
+            Simd.Sub16(m.p, _.p, a.p, _.size);
 #else
-            for (var i = 0; i < _.size; i++)
-                m.p[m.pi + i] = _.p[_.pi + i] - a.p[a.pi + i];
+            for (var i = 0; i < _.size; i++) m.p[m.pi + i] = _.p[_.pi + i] - a.p[a.pi + i];
 #endif
             return m;
         }
@@ -1379,10 +1328,9 @@ namespace System.NumericsX
             var m = new VectorX();
             m.SetTempSize(_.size);
 #if VECX_SIMD
-            SIMDProcessor.Add16(m.p, _.p, a.p, _.size);
+            Simd.Add16(m.p, _.p, a.p, _.size);
 #else
-            for (var i = 0; i < _.size; i++)
-                m.p[m.pi + i] = _.p[_.pi + i] + a.p[a.pi + i];
+            for (var i = 0; i < _.size; i++) m.p[m.pi + i] = _.p[_.pi + i] + a.p[a.pi + i];
 #endif
             return m;
         }
@@ -1399,9 +1347,7 @@ namespace System.NumericsX
         public bool Compare(in VectorX a)
         {
             Debug.Assert(size == a.size);
-            for (var i = 0; i < size; i++)
-                if (p[pi + i] != a.p[a.pi + i])
-                    return false;
+            for (var i = 0; i < size; i++) if (p[pi + i] != a.p[a.pi + i]) return false;
             return true;
         }
         /// <summary>
@@ -1414,9 +1360,7 @@ namespace System.NumericsX
         public bool Compare(in VectorX a, float epsilon)
         {
             Debug.Assert(size == a.size);
-            for (var i = 0; i < size; i++)
-                if (MathX.Fabs(p[pi + i] - a.p[a.pi + i]) > epsilon)
-                    return false;
+            for (var i = 0; i < size; i++) if (MathX.Fabs(p[pi + i] - a.p[a.pi + i]) > epsilon) return false;
             return true;
         }
         /// <summary>
@@ -1450,12 +1394,7 @@ namespace System.NumericsX
         public void SetSize(int size)
         {
             var alloc = (size + 3) & ~3;
-            if (alloc > alloced && alloced != -1)
-            {
-                p = new float[alloc];
-                pi = 0;
-                alloced = alloc;
-            }
+            if (alloc > alloced && alloced != -1) { p = new float[alloc]; pi = 0; alloced = alloc; }
             this.size = size;
             VECX_CLEAREND();
         }
@@ -1469,14 +1408,10 @@ namespace System.NumericsX
                 var oldVec = p;
                 p = new float[alloc];
                 alloced = alloc;
-                if (oldVec != null)
-                    for (var i = 0; i < this.size; i++)
-                        p[i] = oldVec[pi + i];
+                if (oldVec != null) for (var i = 0; i < this.size; i++) p[i] = oldVec[pi + i];
                 pi = 0;
                 // zero any new elements
-                if (makeZero)
-                    for (var i = size; i < size; i++)
-                        p[i] = 0f;
+                if (makeZero) for (var i = size; i < size; i++) p[i] = 0f;
             }
             this.size = size;
             VECX_CLEAREND();
@@ -1488,11 +1423,9 @@ namespace System.NumericsX
             this.size = size;
             alloced = (size + 3) & ~3;
             Debug.Assert(alloced < VECX_MAX_TEMP);
-            if (tempIndex + alloced > VECX_MAX_TEMP)
-                tempIndex = 0;
+            if (tempIndex + alloced > VECX_MAX_TEMP) tempIndex = 0;
             p = temp;
-            //fixed (float* p = &temp[0])
-            //    tempPtr = (int)((ulong)p + 15) & ~15;
+            //fixed (float* p = &temp[0]) tempPtr = (int)((ulong)p + 15) & ~15;
             pi = tempIndex;
             tempIndex += alloced;
             VECX_CLEAREND();
@@ -1516,10 +1449,9 @@ namespace System.NumericsX
         public void Zero()
         {
 #if VECX_SIMD
-            SIMDProcessor.Zero16(p, size);
+            Simd.Zero16(p, size);
 #else
-            fixed (float* p = this.p)
-                Unsafe.InitBlock(p + pi, 0, (uint)size * sizeof(float));
+            fixed (float* p = this.p) Unsafe.InitBlock(p + pi, 0, (uint)size * sizeof(float));
 #endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1527,10 +1459,9 @@ namespace System.NumericsX
         {
             SetSize(length);
 #if VECX_SIMD
-            SIMDProcessor.Zero16(p, length);
+            Simd.Zero16(p, length);
 #else
-            fixed (float* p = this.p)
-                Unsafe.InitBlock(p + pi, 0, (uint)size * sizeof(float));
+            fixed (float* p = this.p) Unsafe.InitBlock(p + pi, 0, (uint)size * sizeof(float));
 #endif
         }
 
@@ -1539,8 +1470,7 @@ namespace System.NumericsX
         {
             var rnd = new RandomX(seed);
             var c = u - l;
-            for (var i = 0; i < size; i++)
-                p[pi + i] = l + rnd.RandomFloat() * c;
+            for (var i = 0; i < size; i++) p[pi + i] = l + rnd.RandomFloat() * c;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1549,18 +1479,16 @@ namespace System.NumericsX
             var rnd = new RandomX(seed);
             SetSize(length);
             var c = u - l;
-            for (var i = 0; i < size; i++)
-                p[pi + i] = l + rnd.RandomFloat() * c;
+            for (var i = 0; i < size; i++) p[pi + i] = l + rnd.RandomFloat() * c;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Negate()
         {
 #if VECX_SIMD
-            SIMDProcessor.Negate16(p, size);
+            Simd.Negate16(p, size);
 #else
-            for (var i = 0; i < size; i++)
-                p[pi + i] = -p[pi + i];
+            for (var i = 0; i < size; i++) p[pi + i] = -p[pi + i];
 #endif
         }
 
@@ -1589,8 +1517,7 @@ namespace System.NumericsX
             get
             {
                 var sum = 0f;
-                for (var i = 0; i < size; i++)
-                    sum += p[pi + i] * p[pi + i];
+                for (var i = 0; i < size; i++) sum += p[pi + i] * p[pi + i];
                 return MathX.Sqrt(sum);
             }
         }
@@ -1600,8 +1527,7 @@ namespace System.NumericsX
             get
             {
                 var sum = 0f;
-                for (var i = 0; i < size; i++)
-                    sum += p[pi + i] * p[pi + i];
+                for (var i = 0; i < size; i++) sum += p[pi + i] * p[pi + i];
                 return sum;
             }
         }
@@ -1613,11 +1539,9 @@ namespace System.NumericsX
             var m = new VectorX();
             m.SetTempSize(size);
             var sum = 0f;
-            for (i = 0; i < size; i++)
-                sum += p[pi + i] * p[pi + i];
+            for (i = 0; i < size; i++) sum += p[pi + i] * p[pi + i];
             var invSqrt = MathX.InvSqrt(sum);
-            for (i = 0; i < size; i++)
-                m.p[pi + i] = p[pi + i] * invSqrt;
+            for (i = 0; i < size; i++) m.p[pi + i] = p[pi + i] * invSqrt;
             return m;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1625,11 +1549,9 @@ namespace System.NumericsX
         {
             int i;
             var sum = 0f;
-            for (i = 0; i < size; i++)
-                sum += p[pi + i] * p[pi + i];
+            for (i = 0; i < size; i++) sum += p[pi + i] * p[pi + i];
             var invSqrt = MathX.InvSqrt(sum);
-            for (i = 0; i < size; i++)
-                p[pi + i] *= invSqrt;
+            for (i = 0; i < size; i++) p[pi + i] *= invSqrt;
             return invSqrt * sum;
         }
 
@@ -1643,28 +1565,24 @@ namespace System.NumericsX
         public ref Vector3 SubVec3(int index)
         {
             Debug.Assert(index >= 0 && index * 3 + 3 <= size);
-            fixed (float* p = this.p)
-                return ref reinterpret.cast_vec3(p, pi + index * 3);
+            fixed (float* p = this.p) return ref reinterpret.cast_vec3(p, pi + index * 3);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ref Vector6 SubVec6(int index)
         {
             Debug.Assert(index >= 0 && index * 6 + 6 <= size);
-            fixed (float* p = this.p)
-                return ref reinterpret.cast_vec6(p, pi + index * 6);
+            fixed (float* p = this.p) return ref reinterpret.cast_vec6(p, pi + index * 6);
         }
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
-        //    fixed (float* _ = p)
-        //        return callback(_ + pi);
+        //    fixed (float* _ = p) return callback(_ + pi);
         //}
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public  void ToFloatPtr(FloatPtr callback)
         //{
-        //    fixed (float* _ = p)
-        //        callback(_ + pi);
+        //    fixed (float* _ = p) callback(_ + pi);
         //}
 
         public string ToString(int precision = 2)
@@ -1701,11 +1619,7 @@ namespace System.NumericsX
         public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (float* p = &radius)
-                    return p[index];
-            }
+            get { fixed (float* p = &radius) return p[index]; }
         }
 
         public static Polar3 operator -(in Polar3 _) => new(_.radius, -_.theta, -_.phi);

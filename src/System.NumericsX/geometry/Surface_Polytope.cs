@@ -18,24 +18,15 @@ namespace System.NumericsX
 
                 for (j = 0; j < numPlanes; j++)
                 {
-                    if (j == i)
-                        continue;
-                    if (!w.ClipInPlace(-planes[j], Plane.ON_EPSILON, true))
-                        break;
+                    if (j == i) continue;
+                    if (!w.ClipInPlace(-planes[j], Plane.ON_EPSILON, true)) break;
                 }
-                if (w.NumPoints == 0)
-                    continue;
+                if (w.NumPoints == 0) continue;
 
                 for (j = 0; j < w.NumPoints; j++)
                 {
-                    for (k = 0; k < verts.Count; k++)
-                        if (verts[k].xyz.Compare(w[j].ToVec3(), POLYTOPE_VERTEX_EPSILON))
-                            break;
-                    if (k >= verts.Count)
-                    {
-                        newVert.xyz = w[j].ToVec3();
-                        k = verts.Add_(newVert);
-                    }
+                    for (k = 0; k < verts.Count; k++) if (verts[k].xyz.Compare(w[j].ToVec3(), POLYTOPE_VERTEX_EPSILON)) break;
+                    if (k >= verts.Count) { newVert.xyz = w[j].ToVec3(); k = verts.Add_(newVert); }
                     windingVerts[j] = k;
                 }
 
@@ -62,11 +53,11 @@ namespace System.NumericsX
             center = bounds.Center;
             scale = bounds[1] - center;
 
-            verts.SetNum(4);
-            verts[0].xyz = center + new Vector3(0.0f, 0.0f, scale.z);
-            verts[1].xyz = center + new Vector3(2.0f * c1 * scale.x, 0.0f, c3 * scale.z);
-            verts[2].xyz = center + new Vector3(-c1 * scale.x, c2 * scale.y, c3 * scale.z);
-            verts[3].xyz = center + new Vector3(-c1 * scale.x, -c2 * scale.y, c3 * scale.z);
+            var verts_ = verts.SetNum(4);
+            verts_[0].xyz = center + new Vector3(0.0f, 0.0f, scale.z);
+            verts_[1].xyz = center + new Vector3(2.0f * c1 * scale.x, 0.0f, c3 * scale.z);
+            verts_[2].xyz = center + new Vector3(-c1 * scale.x, c2 * scale.y, c3 * scale.z);
+            verts_[3].xyz = center + new Vector3(-c1 * scale.x, -c2 * scale.y, c3 * scale.z);
 
             indexes.SetNum(4 * 3);
             indexes[0 * 3 + 0] = 0;
@@ -92,15 +83,15 @@ namespace System.NumericsX
             center = bounds.Center;
             scale = bounds[1] - center;
 
-            verts.SetNum(8);
-            verts[0].xyz = center + new Vector3(-scale.x, -scale.y, -scale.z);
-            verts[1].xyz = center + new Vector3(scale.x, -scale.y, -scale.z);
-            verts[2].xyz = center + new Vector3(scale.x, scale.y, -scale.z);
-            verts[3].xyz = center + new Vector3(-scale.x, scale.y, -scale.z);
-            verts[4].xyz = center + new Vector3(-scale.x, -scale.y, scale.z);
-            verts[5].xyz = center + new Vector3(scale.x, -scale.y, scale.z);
-            verts[6].xyz = center + new Vector3(scale.x, scale.y, scale.z);
-            verts[7].xyz = center + new Vector3(-scale.x, scale.y, scale.z);
+            var verts_ = verts.SetNum(8);
+            verts_[0].xyz = center + new Vector3(-scale.x, -scale.y, -scale.z);
+            verts_[1].xyz = center + new Vector3(scale.x, -scale.y, -scale.z);
+            verts_[2].xyz = center + new Vector3(scale.x, scale.y, -scale.z);
+            verts_[3].xyz = center + new Vector3(-scale.x, scale.y, -scale.z);
+            verts_[4].xyz = center + new Vector3(-scale.x, -scale.y, scale.z);
+            verts_[5].xyz = center + new Vector3(scale.x, -scale.y, scale.z);
+            verts_[6].xyz = center + new Vector3(scale.x, scale.y, scale.z);
+            verts_[7].xyz = center + new Vector3(-scale.x, scale.y, scale.z);
 
             indexes.SetNum(12 * 3);
             indexes[0 * 3 + 0] = 0;
@@ -150,13 +141,13 @@ namespace System.NumericsX
             center = bounds.Center;
             scale = bounds[1] - center;
 
-            verts.SetNum(6);
-            verts[0].xyz = center + new Vector3(scale.x, 0.0f, 0.0f);
-            verts[1].xyz = center + new Vector3(-scale.x, 0.0f, 0.0f);
-            verts[2].xyz = center + new Vector3(0.0f, scale.y, 0.0f);
-            verts[3].xyz = center + new Vector3(0.0f, -scale.y, 0.0f);
-            verts[4].xyz = center + new Vector3(0.0f, 0.0f, scale.z);
-            verts[5].xyz = center + new Vector3(0.0f, 0.0f, -scale.z);
+            var verts_ = verts.SetNum(6);
+            verts_[0].xyz = center + new Vector3(scale.x, 0.0f, 0.0f);
+            verts_[1].xyz = center + new Vector3(-scale.x, 0.0f, 0.0f);
+            verts_[2].xyz = center + new Vector3(0.0f, scale.y, 0.0f);
+            verts_[3].xyz = center + new Vector3(0.0f, -scale.y, 0.0f);
+            verts_[4].xyz = center + new Vector3(0.0f, 0.0f, scale.z);
+            verts_[5].xyz = center + new Vector3(0.0f, 0.0f, -scale.z);
 
             indexes.SetNum(8 * 3);
             indexes[0 * 3 + 0] = 4;
@@ -225,8 +216,7 @@ namespace System.NumericsX
             front = polytopeSurfaces[0];
             back = polytopeSurfaces[1];
 
-            if (side != SIDE_CROSS)
-                return side;
+            if (side != SIDE_CROSS) return side;
 
             // add triangles to close off the front and back polytope
             for (s = 0; s < 2; s++)

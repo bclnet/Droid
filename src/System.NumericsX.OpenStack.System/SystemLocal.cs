@@ -59,23 +59,14 @@ namespace System.NumericsX.OpenStack.System
         static bool OpenURL_doexit_spamguard = false;
         public void OpenURL(string url, bool quit)
         {
-            //if (OpenURL_doexit_spamguard)
-            //{
-            //    Lib.DPrintf($"OpenURL: already in an exit sequence, ignoring {url}\n" );
-            //    return;
-            //}
+            //if (OpenURL_doexit_spamguard) { DPrintf($"OpenURL: already in an exit sequence, ignoring {url}\n"); return; }
 
             //Lib.Printf($"Open URL: {url}\n");
 
-            //if (ShellExecute(IntPtr.Zero, "open", url, null, null, SW_RESTORE) == IntPtr.Zero)
-            //{
-            //    Lib.Error($"Could not open url: '{url}'");
-            //    return;
-            //}
+            //if (ShellExecute(IntPtr.Zero, "open", url, null, null, SW_RESTORE) == IntPtr.Zero) { Lib.Error($"Could not open url: '{url}'"); return; }
 
             //var wnd = GetForegroundWindow();
-            //if (wnd != IntPtr.Zero)
-            //    ShowWindow(wnd, SW_MAXIMIZE);
+            //if (wnd != IntPtr.Zero) ShowWindow(wnd, SW_MAXIMIZE);
 
             //if (quit)
             //{
@@ -95,14 +86,9 @@ namespace System.NumericsX.OpenStack.System
 
             //strncpy(szPathOrig, exePath, _MAX_PATH);
 
-            //if (!CreateProcess(NULL, szPathOrig, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
-            //{
-            //    Lib.Error($"Could not start process: '{szPathOrig}'", );
-            //    return;
-            //}
+            //if (!CreateProcess(NULL, szPathOrig, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) { Lib.Error($"Could not start process: '{szPathOrig}'", ); return; }
 
-            //if (quit)
-            //    cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "quit\n");
+            //if (quit) cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "quit\n");
         }
     }
 

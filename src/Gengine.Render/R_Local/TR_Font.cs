@@ -6,7 +6,7 @@ using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Render
 {
-    unsafe partial class TRX
+    unsafe partial class TR
     {
         const int FILESIZE_fontInfo_t = 20548;
 

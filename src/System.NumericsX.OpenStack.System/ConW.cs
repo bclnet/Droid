@@ -88,8 +88,7 @@ namespace System.NumericsX.OpenStack.System
             switch (uMsg)
             {
                 case WM_ACTIVATE:
-                    if (LOWORD(wParam) != WA_INACTIVE)
-                        SetFocus(s_wcd.hwndInputLine);
+                    if (LOWORD(wParam) != WA_INACTIVE) SetFocus(s_wcd.hwndInputLine);
                     break;
                 case WM_CLOSE:
 #if ID_DEDICATED
@@ -101,13 +100,8 @@ namespace System.NumericsX.OpenStack.System
 #endif
                         cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "quit\n");
                     }
-                    else if (s_wcd.quitOnClose)
-                        PostQuitMessage(0);
-                    else
-                    {
-                        SysW.ShowConsole(0, false);
-                        SysW.win_viewlog.Bool = false;
-                    }
+                    else if (s_wcd.quitOnClose) PostQuitMessage(0);
+                    else { SysW.ShowConsole(0, false); SysW.win_viewlog.Bool = false; }
                     return IntPtr.Zero;
 
                 case WM_CTLCOLORSTATIC:
@@ -119,22 +113,13 @@ namespace System.NumericsX.OpenStack.System
                     }
                     else if (lParam == s_wcd.hwndErrorBox)
                     {
-                        if (ConWndProc_timePolarity)
-                        {
-                            SetBkColor(wParam, RGB(0x80, 0x80, 0x80));
-                            SetTextColor(wParam, RGB(0xff, 0x0, 0x00));
-                        }
-                        else
-                        {
-                            SetBkColor(wParam, RGB(0x80, 0x80, 0x80));
-                            SetTextColor(wParam, RGB(0x00, 0x0, 0x00));
-                        }
+                        if (ConWndProc_timePolarity) { SetBkColor(wParam, RGB(0x80, 0x80, 0x80)); SetTextColor(wParam, RGB(0xff, 0x0, 0x00)); }
+                        else { SetBkColor(wParam, RGB(0x80, 0x80, 0x80)); SetTextColor(wParam, RGB(0x00, 0x0, 0x00)); }
                         return s_wcd.hbrErrorBackground;
                     }
                     break;
                 case WM_SYSCOMMAND:
-                    if (wParam == (IntPtr)SC_CLOSE)
-                        PostQuitMessage(0);
+                    if (wParam == (IntPtr)SC_CLOSE) PostQuitMessage(0);
                     break;
                 case WM_COMMAND:
                     if (wParam == (IntPtr)COPY_ID)
@@ -147,10 +132,8 @@ namespace System.NumericsX.OpenStack.System
 #if ID_DEDICATED
                         cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "quit\n");
 #else
-                        if (s_wcd.quitOnClose)
-                            PostQuitMessage(0);
-                        else
-                            cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "quit\n");
+                        if (s_wcd.quitOnClose) PostQuitMessage(0);
+                        else cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "quit\n");
 #endif
                     }
                     else if (wParam == (IntPtr)CLEAR_ID)
@@ -169,8 +152,7 @@ namespace System.NumericsX.OpenStack.System
                     if (wParam == (IntPtr)1)
                     {
                         ConWndProc_timePolarity = !ConWndProc_timePolarity;
-                        if (s_wcd.hwndErrorBox != IntPtr.Zero)
-                            InvalidateRect(s_wcd.hwndErrorBox, IntPtr.Zero, false);
+                        if (s_wcd.hwndErrorBox != IntPtr.Zero) InvalidateRect(s_wcd.hwndErrorBox, IntPtr.Zero, false);
                     }
                     break;
             }
@@ -184,11 +166,7 @@ namespace System.NumericsX.OpenStack.System
             switch (uMsg)
             {
                 case WM_KILLFOCUS:
-                    if (wParam == s_wcd.hWnd || wParam == s_wcd.hwndErrorBox)
-                    {
-                        SetFocus(hWnd);
-                        return IntPtr.Zero;
-                    }
+                    if (wParam == s_wcd.hWnd || wParam == s_wcd.hwndErrorBox) { SetFocus(hWnd); return IntPtr.Zero; }
                     break;
 
                 case WM_KEYDOWN:
@@ -197,8 +175,7 @@ namespace System.NumericsX.OpenStack.System
                     // command history
                     if (key == K_UPARROW || key == K_KP_UPARROW)
                     {
-                        if (s_wcd.nextHistoryLine - s_wcd.historyLine < COMMAND_HISTORY && s_wcd.historyLine > 0)
-                            s_wcd.historyLine--;
+                        if (s_wcd.nextHistoryLine - s_wcd.historyLine < COMMAND_HISTORY && s_wcd.historyLine > 0) s_wcd.historyLine--;
                         s_wcd.consoleField = s_wcd.historyEditLines[s_wcd.historyLine % COMMAND_HISTORY];
 
                         SetWindowText(s_wcd.hwndInputLine, s_wcd.consoleField.Buffer);
@@ -208,8 +185,7 @@ namespace System.NumericsX.OpenStack.System
 
                     if (key == K_DOWNARROW || key == K_KP_DOWNARROW)
                     {
-                        if (s_wcd.historyLine == s_wcd.nextHistoryLine)
-                            return IntPtr.Zero;
+                        if (s_wcd.historyLine == s_wcd.nextHistoryLine) return IntPtr.Zero;
                         s_wcd.historyLine++;
                         s_wcd.consoleField = s_wcd.historyEditLines[s_wcd.historyLine % COMMAND_HISTORY];
 
@@ -258,9 +234,7 @@ namespace System.NumericsX.OpenStack.System
                     }
 
                     // clear autocompletion buffer on normal key input
-                    if ((key >= K_SPACE && key <= K_BACKSPACE) ||
-                        (key >= K_KP_SLASH && key <= K_KP_PLUS) || (key >= K_KP_STAR && key <= K_KP_EQUALS))
-                        s_wcd.consoleField.ClearAutoComplete();
+                    if ((key >= K_SPACE && key <= K_BACKSPACE) || (key >= K_KP_SLASH && key <= K_KP_PLUS) || (key >= K_KP_STAR && key <= K_KP_EQUALS)) s_wcd.consoleField.ClearAutoComplete();
                     break;
             }
 
@@ -288,8 +262,7 @@ namespace System.NumericsX.OpenStack.System
             };
 
             var regResult = RegisterClassEx(ref wc);
-            if (regResult == 0)
-                return;
+            if (regResult == 0) return;
 
             RECT rect;
             rect.left = 0;
@@ -311,8 +284,7 @@ namespace System.NumericsX.OpenStack.System
                 regResult, PlatformW.GAME_NAME, DEDSTYLE,
                 (swidth - 600) / 2, (sheight - 450) / 2, rect.right - rect.left + 1, rect.bottom - rect.top + 1,
                 IntPtr.Zero, IntPtr.Zero, SysW.hInstance, IntPtr.Zero);
-            if (s_wcd.hWnd == IntPtr.Zero)
-                return;
+            if (s_wcd.hWnd == IntPtr.Zero) return;
 
             //
             // create fonts
@@ -320,8 +292,7 @@ namespace System.NumericsX.OpenStack.System
             hDC = GetDC(s_wcd.hWnd);
             var nHeight = -intX.MulDiv(8, GetDeviceCaps(hDC, LOGPIXELSY), 72);
 
-            s_wcd.hfBufferFont = CreateFont(nHeight, 0, 0, 0, FontWeight.FW_LIGHT, 0, 0, 0,
-                FontCharSet.DEFAULT_CHARSET, FontOutputPrecision.OUT_DEFAULT_PRECIS, FontClipPrecision.CLIP_DEFAULT_PRECIS, FontQuality.DEFAULT_QUALITY, FontPitchAndFamily.FF_MODERN | FontPitchAndFamily.FIXED_PITCH, "Courier New");
+            s_wcd.hfBufferFont = CreateFont(nHeight, 0, 0, 0, FontWeight.FW_LIGHT, 0, 0, 0, FontCharSet.DEFAULT_CHARSET, FontOutputPrecision.OUT_DEFAULT_PRECIS, FontClipPrecision.CLIP_DEFAULT_PRECIS, FontQuality.DEFAULT_QUALITY, FontPitchAndFamily.FF_MODERN | FontPitchAndFamily.FIXED_PITCH, "Courier New");
 
             ReleaseDC(s_wcd.hWnd, hDC);
 
@@ -355,7 +326,6 @@ namespace System.NumericsX.OpenStack.System
                 SysW.hInstance, IntPtr.Zero);
             SendMessage(s_wcd.hwndButtonQuit, WM_SETTEXT, 0, "quit");
 
-
             //
             // create the scrollbuffer
             //
@@ -378,8 +348,7 @@ namespace System.NumericsX.OpenStack.System
 
             s_wcd.consoleField.Clear();
 
-            for (var i = 0; i < COMMAND_HISTORY; i++)
-                s_wcd.historyEditLines[i].Clear();
+            for (var i = 0; i < COMMAND_HISTORY; i++) s_wcd.historyEditLines[i].Clear();
         }
 
         public static void DestroyConsole()
@@ -396,8 +365,7 @@ namespace System.NumericsX.OpenStack.System
         public static void ShowConsole(int visLevel, bool quitOnClose)
         {
             s_wcd.quitOnClose = quitOnClose;
-            if (s_wcd.hWnd == IntPtr.Zero)
-                return;
+            if (s_wcd.hWnd == IntPtr.Zero) return;
 
             switch (visLevel)
             {
@@ -410,8 +378,7 @@ namespace System.NumericsX.OpenStack.System
 
         string ConsoleInput()
         {
-            if (s_wcd.consoleText[0] == 0)
-                return null;
+            if (s_wcd.consoleText[0] == 0) return null;
 
             s_wcd.returnedText = s_wcd.consoleText;
             s_wcd.consoleText = string.Empty;

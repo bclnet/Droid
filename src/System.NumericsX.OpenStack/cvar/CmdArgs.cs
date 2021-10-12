@@ -86,8 +86,7 @@ namespace System.NumericsX.OpenStack
             // clear previous args
             argc = 0;
 
-            if (text == null)
-                return;
+            if (text == null) return;
 
             lex.LoadMemory(text, "CmdSystemLocal::TokenizeString");
             lex.Flags = LEXFL.NOERRORS
@@ -100,11 +99,9 @@ namespace System.NumericsX.OpenStack
 
             while (true)
             {
-                if (argc == MAX_COMMAND_ARGS)
-                    return; // this is usually something malicious
+                if (argc == MAX_COMMAND_ARGS) return; // this is usually something malicious
 
-                if (!lex.ReadToken(out var token))
-                    return;
+                if (!lex.ReadToken(out var token)) return;
 
                 // check for negative numbers
                 if (!keepAsStrings && token == "-" &&
@@ -114,8 +111,7 @@ namespace System.NumericsX.OpenStack
                 // check for cvar expansion
                 if (token == "$")
                 {
-                    if (!lex.ReadToken(out token))
-                        return;
+                    if (!lex.ReadToken(out token)) return;
                     token = cvarSystem != null
                         ? cvarSystem.GetCVarString(token)
                         : "<unknown>";
@@ -136,7 +132,7 @@ namespace System.NumericsX.OpenStack
             argc = this.argc;
             return argv;
         }
-    
+
         // Default argument completion functions.
         public static void ArgCompletion_Boolean(CmdArgs args, Action<string> callback)
         {
@@ -146,14 +142,12 @@ namespace System.NumericsX.OpenStack
 
         public static ArgCompletion ArgCompletion_Integer(int min, int max) => (CmdArgs args, Action<string> callback) =>
         {
-            for (var i = min; i <= max; i++)
-                callback($"{args[0]} {i}");
+            for (var i = min; i <= max; i++) callback($"{args[0]} {i}");
         };
 
         public static ArgCompletion ArgCompletion_String(string[] strings) => (CmdArgs args, Action<string> callback) =>
         {
-            for (var i = 0; i < strings.Length; i++)
-                callback($"{args[0]} {strings[i]}");
+            for (var i = 0; i < strings.Length; i++) callback($"{args[0]} {strings[i]}");
         };
 
         public static void ArgCompletion_FileName(CmdArgs args, Action<string> callback) =>

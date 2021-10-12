@@ -103,8 +103,7 @@
             this.decelTime = decelTime;
             this.startValue = startValue;
             this.endValue = endValue;
-            if (duration <= 0f)
-                return;
+            if (duration <= 0f) return;
 
             if (this.accelTime + this.decelTime > duration)
             {
@@ -184,18 +183,15 @@
             deltaTime = time - startTime;
             if (deltaTime < accelTime)
             {
-                if (extrapolate.ExtrapolationType != EXTRAPOLATION.ACCELLINEAR)
-                    extrapolate.Init(startTime, accelTime, startValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.ACCELLINEAR);
+                if (extrapolate.ExtrapolationType != EXTRAPOLATION.ACCELLINEAR) extrapolate.Init(startTime, accelTime, startValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.ACCELLINEAR);
             }
             else if (deltaTime < accelTime + linearTime)
             {
-                if (extrapolate.ExtrapolationType != EXTRAPOLATION.LINEAR)
-                    extrapolate.Init(startTime + accelTime, linearTime, startValue + extrapolate.Speed * (accelTime * 0.001f * 0.5f), extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.LINEAR);
+                if (extrapolate.ExtrapolationType != EXTRAPOLATION.LINEAR) extrapolate.Init(startTime + accelTime, linearTime, startValue + extrapolate.Speed * (accelTime * 0.001f * 0.5f), extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.LINEAR);
             }
             else
             {
-                if (extrapolate.ExtrapolationType != EXTRAPOLATION.DECELLINEAR)
-                    extrapolate.Init(startTime + accelTime + linearTime, decelTime, endValue - (extrapolate.Speed * (decelTime * 0.001f * 0.5f)), extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.DECELLINEAR);
+                if (extrapolate.ExtrapolationType != EXTRAPOLATION.DECELLINEAR) extrapolate.Init(startTime + accelTime + linearTime, decelTime, endValue - (extrapolate.Speed * (decelTime * 0.001f * 0.5f)), extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.DECELLINEAR);
             }
         }
     }
@@ -230,8 +226,7 @@
             this.startValue = startValue;
             this.endValue = endValue;
 
-            if (duration <= 0f)
-                return;
+            if (duration <= 0f) return;
 
             if (this.accelTime + this.decelTime > duration)
             {
@@ -303,18 +298,15 @@
             var deltaTime = time - startTime;
             if (deltaTime < accelTime)
             {
-                if (extrapolate.ExtrapolationType != EXTRAPOLATION.ACCELSINE)
-                    extrapolate.Init(startTime, accelTime, startValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.ACCELSINE);
+                if (extrapolate.ExtrapolationType != EXTRAPOLATION.ACCELSINE) extrapolate.Init(startTime, accelTime, startValue, extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.ACCELSINE);
             }
             else if (deltaTime < accelTime + linearTime)
             {
-                if (extrapolate.ExtrapolationType != EXTRAPOLATION.LINEAR)
-                    extrapolate.Init(startTime + accelTime, linearTime, startValue + extrapolate.Speed * (accelTime * 0.001f * MathX.SQRT_1OVER2), extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.LINEAR);
+                if (extrapolate.ExtrapolationType != EXTRAPOLATION.LINEAR) extrapolate.Init(startTime + accelTime, linearTime, startValue + extrapolate.Speed * (accelTime * 0.001f * MathX.SQRT_1OVER2), extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.LINEAR);
             }
             else
             {
-                if (extrapolate.ExtrapolationType != EXTRAPOLATION.DECELSINE)
-                    extrapolate.Init(startTime + accelTime + linearTime, decelTime, endValue - (extrapolate.Speed * (decelTime * 0.001f * MathX.SQRT_1OVER2)), extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.DECELSINE);
+                if (extrapolate.ExtrapolationType != EXTRAPOLATION.DECELSINE) extrapolate.Init(startTime + accelTime + linearTime, decelTime, endValue - (extrapolate.Speed * (decelTime * 0.001f * MathX.SQRT_1OVER2)), extrapolate.BaseSpeed, extrapolate.Speed, EXTRAPOLATION.DECELSINE);
             }
         }
     }

@@ -56,8 +56,7 @@ namespace System.NumericsX
             get
             {
                 Debug.Assert(index >= 0 && index < 5);
-                fixed (float* p = &xyz.x)
-                    return p[index];
+                fixed (float* p = &xyz.x) return p[index];
             }
         }
 
@@ -96,26 +95,16 @@ namespace System.NumericsX
         public void Normalize()
         {
             normal.Normalize();
-            tangents1.Cross(normal, tangents0);
-            tangents1.Normalize();
-            tangents0.Cross(tangents1, normal);
-            tangents0.Normalize();
+            tangents1.Cross(normal, tangents0); tangents1.Normalize();
+            tangents0.Cross(tangents1, normal); tangents0.Normalize();
         }
 
         public unsafe uint Color
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (byte* _ = &color0)
-                    return *(uint*)_;
-            }
+            get { fixed (byte* _ = &color0) return *(uint*)_; }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set
-            {
-                fixed (byte* _ = &color0)
-                    *(uint*)_ = value;
-            }
+            set { fixed (byte* _ = &color0) *(uint*)_ = value; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

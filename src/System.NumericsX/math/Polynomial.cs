@@ -15,8 +15,7 @@ namespace System.NumericsX
         public Polynomial(in Polynomial p)
         {
             Resize(p.degree, false);
-            for (var i = 0; i <= degree; i++)
-                coefficient[i] = p.coefficient[i];
+            for (var i = 0; i <= degree; i++) coefficient[i] = p.coefficient[i];
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Polynomial()
@@ -94,8 +93,7 @@ namespace System.NumericsX
         public static Polynomial operator -(in Polynomial _)
         {
             Polynomial n = new(_);
-            for (var i = 0; i <= _.degree; i++)
-                n.coefficient[i] = -n.coefficient[i];
+            for (var i = 0; i <= _.degree; i++) n.coefficient[i] = -n.coefficient[i];
             return n;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -106,19 +104,15 @@ namespace System.NumericsX
             if (_.degree > p.degree)
             {
                 n.Resize(_.degree, false);
-                for (i = 0; i <= p.degree; i++)
-                    n.coefficient[i] = _.coefficient[i] + p.coefficient[i];
-                for (; i <= _.degree; i++)
-                    n.coefficient[i] = _.coefficient[i];
+                for (i = 0; i <= p.degree; i++) n.coefficient[i] = _.coefficient[i] + p.coefficient[i];
+                for (; i <= _.degree; i++) n.coefficient[i] = _.coefficient[i];
                 n.degree = _.degree;
             }
             else if (p.degree > _.degree)
             {
                 n.Resize(p.degree, false);
-                for (i = 0; i <= _.degree; i++)
-                    n.coefficient[i] = _.coefficient[i] + p.coefficient[i];
-                for (; i <= p.degree; i++)
-                    n.coefficient[i] = p.coefficient[i];
+                for (i = 0; i <= _.degree; i++) n.coefficient[i] = _.coefficient[i] + p.coefficient[i];
+                for (; i <= p.degree; i++) n.coefficient[i] = p.coefficient[i];
                 n.degree = p.degree;
             }
             else
@@ -128,8 +122,7 @@ namespace System.NumericsX
                 for (i = 0; i <= _.degree; i++)
                 {
                     n.coefficient[i] = _.coefficient[i] + p.coefficient[i];
-                    if (n.coefficient[i] != 0f)
-                        n.degree = i;
+                    if (n.coefficient[i] != 0f) n.degree = i;
                 }
             }
             return n;
@@ -142,19 +135,15 @@ namespace System.NumericsX
             if (_.degree > p.degree)
             {
                 n.Resize(_.degree, false);
-                for (i = 0; i <= p.degree; i++)
-                    n.coefficient[i] = _.coefficient[i] - p.coefficient[i];
-                for (; i <= _.degree; i++)
-                    n.coefficient[i] = _.coefficient[i];
+                for (i = 0; i <= p.degree; i++) n.coefficient[i] = _.coefficient[i] - p.coefficient[i];
+                for (; i <= _.degree; i++) n.coefficient[i] = _.coefficient[i];
                 n.degree = _.degree;
             }
             else if (p.degree >= _.degree)
             {
                 n.Resize(p.degree, false);
-                for (i = 0; i <= _.degree; i++)
-                    n.coefficient[i] = _.coefficient[i] - p.coefficient[i];
-                for (; i <= p.degree; i++)
-                    n.coefficient[i] = -p.coefficient[i];
+                for (i = 0; i <= _.degree; i++) n.coefficient[i] = _.coefficient[i] - p.coefficient[i];
+                for (; i <= p.degree; i++) n.coefficient[i] = -p.coefficient[i];
                 n.degree = p.degree;
             }
             else
@@ -164,8 +153,7 @@ namespace System.NumericsX
                 for (i = 0; i <= _.degree; i++)
                 {
                     n.coefficient[i] = _.coefficient[i] - p.coefficient[i];
-                    if (n.coefficient[i] != 0f)
-                        n.degree = i;
+                    if (n.coefficient[i] != 0f) n.degree = i;
                 }
             }
             return n;
@@ -175,13 +163,11 @@ namespace System.NumericsX
         {
             Polynomial n = new();
 
-            if (s == 0f)
-                n.degree = 0;
+            if (s == 0f) n.degree = 0;
             else
             {
                 n.Resize(_.degree, false);
-                for (var i = 0; i <= _.degree; i++)
-                    n.coefficient[i] = _.coefficient[i] * s;
+                for (var i = 0; i <= _.degree; i++) n.coefficient[i] = _.coefficient[i] * s;
             }
             return n;
         }
@@ -193,8 +179,7 @@ namespace System.NumericsX
             Debug.Assert(s != 0f);
             n.Resize(_.degree, false);
             invs = 1f / s;
-            for (var i = 0; i <= _.degree; i++)
-                n.coefficient[i] = _.coefficient[i] * invs;
+            for (var i = 0; i <= _.degree; i++) n.coefficient[i] = _.coefficient[i] * invs;
             return n;
         }
 
@@ -203,9 +188,7 @@ namespace System.NumericsX
         {
             if (degree != p.degree)
                 return false;
-            for (var i = 0; i <= degree; i++)
-                if (coefficient[i] != p.coefficient[i])
-                    return false;
+            for (var i = 0; i <= degree; i++) if (coefficient[i] != p.coefficient[i]) return false;
             return true;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -213,9 +196,7 @@ namespace System.NumericsX
         {
             if (degree != p.degree)
                 return false;
-            for (var i = 0; i <= degree; i++)
-                if (MathX.Fabs(coefficient[i] - p.coefficient[i]) > epsilon)
-                    return false;
+            for (var i = 0; i <= degree; i++) if (MathX.Fabs(coefficient[i] - p.coefficient[i]) > epsilon) return false;
             return true;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -236,8 +217,7 @@ namespace System.NumericsX
         public void Zero(int d)
         {
             Resize(d, false);
-            for (var i = 0; i <= degree; i++)
-                coefficient[i] = 0f;
+            for (var i = 0; i <= degree; i++) coefficient[i] = 0f;
         }
 
         public int Dimension                                   // get the degree of the polynomial
@@ -257,11 +237,7 @@ namespace System.NumericsX
         {
             var y = coefficient[0];
             var z = x;
-            for (int i = 1; i <= degree; i++)
-            {
-                y += coefficient[i] * z;
-                z *= x;
-            }
+            for (var i = 1; i <= degree; i++) { y += coefficient[i] * z; z *= x; }
             return y;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -269,11 +245,7 @@ namespace System.NumericsX
         {
             var y = new Complex(coefficient[0], 0f);
             var z = x;
-            for (var i = 1; i <= degree; i++)
-            {
-                y += coefficient[i] * z;
-                z *= x;
-            }
+            for (var i = 1; i <= degree; i++) { y += coefficient[i] * z; z *= x; }
             return y;
         }
 
@@ -285,8 +257,7 @@ namespace System.NumericsX
             if (degree == 0) return n;
 
             n.Resize(degree - 1, false);
-            for (var i = 1; i <= degree; i++)
-                n.coefficient[i - 1] = i * coefficient[i];
+            for (var i = 1; i <= degree; i++) n.coefficient[i - 1] = i * coefficient[i];
             return n;
         }
 
@@ -299,8 +270,7 @@ namespace System.NumericsX
 
             n.Resize(degree + 1, false);
             n.coefficient[0] = 0f;
-            for (var i = 0; i <= degree; i++)
-                n.coefficient[i + 1] = coefficient[i] / (i + 1);
+            for (var i = 0; i <= degree; i++) n.coefficient[i + 1] = coefficient[i] / (i + 1);
             return n;
         }
 
@@ -309,8 +279,7 @@ namespace System.NumericsX
             int i, j; Complex x = new(), b, c;
 
             var coef = stackalloc Complex[degree + 1 + Complex.ALLOC16]; coef = (Complex*)_alloca16(coef);
-            for (i = 0; i <= degree; i++)
-                coef[i].Set(coefficient[i], 0f);
+            for (i = 0; i <= degree; i++) coef[i].Set(coefficient[i], 0f);
 
             for (i = degree - 1; i >= 0; i--)
             {
@@ -327,10 +296,8 @@ namespace System.NumericsX
                 }
             }
 
-            for (i = 0; i <= degree; i++)
-                coef[i].Set(coefficient[i], 0f);
-            for (i = 0; i < degree; i++)
-                Laguer(coef, degree, ref roots[i]);
+            for (i = 0; i <= degree; i++) coef[i].Set(coefficient[i], 0f);
+            for (i = 0; i < degree; i++) Laguer(coef, degree, ref roots[i]);
 
             for (i = 1; i < degree; i++)
             {
@@ -350,7 +317,7 @@ namespace System.NumericsX
             switch (degree)
             {
                 case 0: roots = default; return 0;
-                case 1: return GetRoots1(coefficient[1], coefficient[0],  roots);
+                case 1: return GetRoots1(coefficient[1], coefficient[0], roots);
                 case 2: return GetRoots2(coefficient[2], coefficient[1], coefficient[0], roots);
                 case 3: return GetRoots3(coefficient[3], coefficient[2], coefficient[1], coefficient[0], roots);
                 case 4: return GetRoots4(coefficient[4], coefficient[3], coefficient[2], coefficient[1], coefficient[0], roots);
@@ -361,12 +328,7 @@ namespace System.NumericsX
                     GetRoots(complexRoots);
 
                     int i, num;
-                    for (num = i = 0; i < degree; i++)
-                        if (complexRoots[i].i == 0f)
-                        {
-                            roots[i] = complexRoots[i].r;
-                            num++;
-                        }
+                    for (num = i = 0; i < degree; i++) if (complexRoots[i].i == 0f) { roots[i] = complexRoots[i].r; num++; }
                     return num;
             }
         }
@@ -383,41 +345,18 @@ namespace System.NumericsX
         {
             float inva, ds;
 
-            if (a != 1f)
-            {
-                Debug.Assert(a != 0f);
-                inva = 1f / a;
-                c *= inva;
-                b *= inva;
-            }
+            if (a != 1f) { Debug.Assert(a != 0f); inva = 1f / a; c *= inva; b *= inva; }
             ds = b * b - 4f * c;
             if (ds < 0f) return 0;
-            else if (ds > 0f)
-            {
-                ds = MathX.Sqrt(ds);
-                roots[0] = 0.5f * (-b - ds);
-                roots[1] = 0.5f * (-b + ds);
-                return 2;
-            }
-            else
-            {
-                roots[0] = 0.5f * -b;
-                return 1;
-            }
+            else if (ds > 0f) { ds = MathX.Sqrt(ds); roots[0] = 0.5f * (-b - ds); roots[1] = 0.5f * (-b + ds); return 2; }
+            else { roots[0] = 0.5f * -b; return 1; }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetRoots3(float a, float b, float c, float d, float* roots)
         {
             float inva, f, g, halfg, ofs, ds, dist, angle, cs, ss, t;
 
-            if (a != 1f)
-            {
-                Debug.Assert(a != 0f);
-                inva = 1f / a;
-                d *= inva;
-                c *= inva;
-                b *= inva;
-            }
+            if (a != 1f) { Debug.Assert(a != 0f); inva = 1f / a; d *= inva; c *= inva; b *= inva; }
 
             f = (1f / 3f) * (3f * c - b * b);
             g = (1f / 27f) * (2f * b * b * b - 9f * c * b + 27f * d);
@@ -450,9 +389,7 @@ namespace System.NumericsX
             }
             else
             {
-                t = halfg >= 0f
-                    ? -MathX.Pow(halfg, 1f / 3f)
-                    : MathX.Pow(-halfg, 1f / 3f); //: opt
+                t = halfg >= 0f ? -MathX.Pow(halfg, 1f / 3f) : MathX.Pow(-halfg, 1f / 3f);
                 roots[0] = 2f * t - ofs;
                 roots[1] = -t - ofs;
                 roots[2] = roots[1];
@@ -465,15 +402,7 @@ namespace System.NumericsX
             int count; float inva, y, ds, r, s1, s2, t1, t2, tp, tm;
             var roots3 = stackalloc float[3];
 
-            if (a != 1f)
-            {
-                Debug.Assert(a != 0f);
-                inva = 1f / a;
-                e *= inva;
-                d *= inva;
-                c *= inva;
-                b *= inva;
-            }
+            if (a != 1f) { Debug.Assert(a != 0f); inva = 1f / a; e *= inva; d *= inva; c *= inva; b *= inva; }
 
             count = 0;
 
@@ -535,9 +464,7 @@ namespace System.NumericsX
             if (alloc > allocated)
             {
                 var ptr = new float[alloc];
-                if (coefficient != null && keep)
-                    for (int i = 0; i <= degree; i++)
-                        ptr[i] = coefficient[i];
+                if (coefficient != null && keep) for (int i = 0; i <= degree; i++) ptr[i] = coefficient[i];
                 allocated = alloc;
                 coefficient = ptr;
             }
@@ -547,14 +474,12 @@ namespace System.NumericsX
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
-        //    fixed (float* _ = this.coefficient)
-        //        return callback(_);
+        //    fixed (float* _ = this.coefficient) return callback(_);
         //}
 
         public string ToString(int precision = 2)
         {
-            fixed (float* _ = coefficient)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = coefficient) return FloatArrayToString(_, Dimension, precision);
         }
 
         static readonly float[] Laguer_frac = new[] { 0f, 0.5f, 0.25f, 0.75f, 0.13f, 0.38f, 0.62f, 0.88f, 1f };
@@ -579,8 +504,7 @@ namespace System.NumericsX
                     b = r * b + coef[j];
                     err = b.Abs() + abx * err;
                 }
-                if (b.Abs() < err * EPSILON)
-                    return i;
+                if (b.Abs() < err * EPSILON) return i;
                 g = d / b;
                 g2 = g * g;
                 s = ((degree - 1) * (degree * (g2 - 2f * f / b) - g2)).Sqrt();
@@ -594,11 +518,10 @@ namespace System.NumericsX
                     ? degree / gps
                     : MathX.Exp(MathX.Log(1f + abx)) * new Complex(MathX.Cos(i), MathX.Sin(i)); //: opt
                 cx = r - dx;
-                if (r == cx)
-                    return i;
+                if (r == cx) return i;
                 r = i % MT == 0
                     ? cx
-                    : r - (Laguer_frac[i / MT] * dx); //: opt
+                    : r - (Laguer_frac[i / MT] * dx);
             }
             return i;
         }

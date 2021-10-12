@@ -121,14 +121,9 @@ namespace System.NumericsX.OpenStack
         {
             Lexer script;
 
-            if (loaded)
-            {
-                FatalError("Parser::loadFile: another source already loaded");
-                return false;
-            }
+            if (loaded) { FatalError("Parser::loadFile: another source already loaded"); return false; }
             script = new Lexer(filename, 0, osPath);
-            if (!script.IsLoaded)
-                return false;
+            if (!script.IsLoaded) return false;
             script.Flags = flags;
             script.SetPunctuations(punctuations);
             script.next = null;
@@ -140,11 +135,7 @@ namespace System.NumericsX.OpenStack
             skip = 0;
             loaded = true;
 
-            if (defines == null)
-            {
-                defines = new();
-                AddGlobalDefinesToSource();
-            }
+            if (defines == null) { defines = new(); AddGlobalDefinesToSource(); }
             return true;
         }
 
@@ -153,14 +144,9 @@ namespace System.NumericsX.OpenStack
         {
             Lexer script;
 
-            if (loaded)
-            {
-                FatalError("Parser::loadMemory: another source already loaded");
-                return false;
-            }
+            if (loaded) { FatalError("Parser::loadMemory: another source already loaded"); return false; }
             script = new Lexer(ptr, length, name);
-            if (!script.IsLoaded)
-                return false;
+            if (!script.IsLoaded) return false;
             script.Flags = flags;
             script.SetPunctuations(punctuations);
             script.next = null;
@@ -171,19 +157,14 @@ namespace System.NumericsX.OpenStack
             skip = 0;
             loaded = true;
 
-            if (defines == null)
-            {
-                defines = new();
-                AddGlobalDefinesToSource();
-            }
+            if (defines == null) { defines = new(); AddGlobalDefinesToSource(); }
             return true;
         }
 
         // free the current source
         public void FreeSource(bool keepDefines = false)
         {
-            if (!keepDefines)
-                defines = null;
+            if (!keepDefines) defines = null;
             loaded = false;
         }
 
@@ -196,19 +177,16 @@ namespace System.NumericsX.OpenStack
         {
             while (true)
             {
-                if (!ReadSourceToken(out token))
-                    return false;
+                if (!ReadSourceToken(out token)) return false;
                 // check for precompiler directives
                 if (token.type == TT.PUNCTUATION && token[0] == '#' && token[1] == '\0')
                 {
                     // read the precompiler directive
-                    if (!ReadDirective())
-                        return false;
+                    if (!ReadDirective()) return false;
                     continue;
                 }
                 // if skipping source because of conditional compilation
-                if (skip != 0)
-                    continue;
+                if (skip != 0) continue;
                 // recursively concatenate strings that are behind each other still resolving defines
                 if (token.type == TT.STRING && (scriptstack.Flags & LEXFL.NOSTRINGCONCAT) == 0)
                     if (ReadToken(out var newtoken))
@@ -222,8 +200,7 @@ namespace System.NumericsX.OpenStack
                     // check for special precompiler directives
                     if (token.type == TT.PUNCTUATION && token[0] == '$' && token[1] == '\0')
                         // read the precompiler directive
-                        if (ReadDollarDirective())
-                            continue;
+                        if (ReadDollarDirective()) continue;
                 }
                 // if the token is a name
                 if (token.type == TT.NAME && (token.flags & TOKEN_FL_RECURSIVE_DEFINE) == 0)
@@ -234,8 +211,7 @@ namespace System.NumericsX.OpenStack
                     if (define != null)
                     {
                         // expand the defined macro
-                        if (!ExpandDefineIntoSource(token, define))
-                            return false;
+                        if (!ExpandDefineIntoSource(token, define)) return false;
                         continue;
                     }
                 }
@@ -247,16 +223,8 @@ namespace System.NumericsX.OpenStack
         // expect a certain token, reads the token when available
         public bool ExpectTokenString(string s)
         {
-            if (!ReadToken(out var token))
-            {
-                Error($"couldn't find expected '{s}'");
-                return false;
-            }
-            if (token != s)
-            {
-                Error($"expected '{s}' but found '{token}'");
-                return false;
-            }
+            if (!ReadToken(out var token)) { Error($"couldn't find expected '{s}'"); return false; }
+            if (token != s) { Error($"expected '{s}' but found '{token}'"); return false; }
             return true;
         }
 
@@ -265,11 +233,7 @@ namespace System.NumericsX.OpenStack
         {
             string str;
 
-            if (!ReadToken(out token))
-            {
-                Error("couldn't read expected token");
-                return false;
-            }
+            if (!ReadToken(out token)) { Error("couldn't read expected token"); return false; }
 
             if (token.type != type)
             {
@@ -305,16 +269,8 @@ namespace System.NumericsX.OpenStack
             }
             else if (token.type == TT.PUNCTUATION)
             {
-                if (subtype < 0)
-                {
-                    Error("BUG: wrong punctuation subtype");
-                    return false;
-                }
-                if (token.subtype != subtype)
-                {
-                    Error($"expected '{scriptstack.GetPunctuationFromId(subtype)}' but found '{token}'");
-                    return false;
-                }
+                if (subtype < 0) { Error("BUG: wrong punctuation subtype"); return false; }
+                if (token.subtype != subtype) { Error($"expected '{scriptstack.GetPunctuationFromId(subtype)}' but found '{token}'"); return false; }
             }
             return true;
         }
@@ -322,22 +278,16 @@ namespace System.NumericsX.OpenStack
         // expect a token
         public bool ExpectAnyToken(out Token token)
         {
-            if (!ReadToken(out token))
-            {
-                Error("couldn't read expected token");
-                return false;
-            }
+            if (!ReadToken(out token)) { Error("couldn't read expected token"); return false; }
             return true;
         }
 
         // returns true if the next token equals the given string and removes the token from the source
         public bool CheckTokenString(string s)
         {
-            if (!ReadToken(out var tok))
-                return false;
+            if (!ReadToken(out var tok)) return false;
             // if the token is available
-            if (tok == s)
-                return true;
+            if (tok == s) return true;
 
             UnreadSourceToken(tok);
             return false;
@@ -346,17 +296,9 @@ namespace System.NumericsX.OpenStack
         // returns true if the next token equals the given type and removes the token from the source
         public bool CheckTokenType(TT type, int subtype, out Token token)
         {
-            if (!ReadToken(out var tok))
-            {
-                token = default;
-                return false;
-            }
+            if (!ReadToken(out var tok)) { token = default; return false; }
             //if the type matches
-            if (tok.type == type && (tok.subtype & subtype) == subtype)
-            {
-                token = tok;
-                return true;
-            }
+            if (tok.type == type && (tok.subtype & subtype) == subtype) { token = tok; return true; }
 
             UnreadSourceToken(tok);
             token = default;
@@ -366,8 +308,7 @@ namespace System.NumericsX.OpenStack
         // returns true if the next token equals the given string but does not remove the token from the source
         public bool PeekTokenString(string s)
         {
-            if (!ReadToken(out var tok))
-                return false;
+            if (!ReadToken(out var tok)) return false;
 
             UnreadSourceToken(tok);
             // if the token is available
@@ -377,19 +318,11 @@ namespace System.NumericsX.OpenStack
         // returns true if the next token equals the given type but does not remove the token from the source
         public bool PeekTokenType(TT type, int subtype, out Token token)
         {
-            if (!ReadToken(out var tok))
-            {
-                token = default;
-                return false;
-            }
+            if (!ReadToken(out var tok)) { token = default; return false; }
 
             UnreadSourceToken(tok);
             // if the type matches
-            if (tok.type == type && (tok.subtype & subtype) == subtype)
-            {
-                token = tok;
-                return true;
-            }
+            if (tok.type == type && (tok.subtype & subtype) == subtype) { token = tok; return true; }
             token = default;
             return false;
         }
@@ -397,21 +330,14 @@ namespace System.NumericsX.OpenStack
         // skip tokens until the given token string is read
         public bool SkipUntilString(string s)
         {
-            while (ReadToken(out var token))
-                if (token == s)
-                    return true;
+            while (ReadToken(out var token)) if (token == s) return true;
             return false;
         }
 
         // skip the rest of the current line
         public bool SkipRestOfLine()
         {
-            while (ReadToken(out var token))
-                if (token.linesCrossed != 0)
-                {
-                    UnreadSourceToken(token);
-                    return true;
-                }
+            while (ReadToken(out var token)) if (token.linesCrossed != 0) { UnreadSourceToken(token); return true; }
             return false;
         }
 
@@ -422,8 +348,7 @@ namespace System.NumericsX.OpenStack
             var depth = parseFirstBrace ? 0 : 1;
             do
             {
-                if (!ReadToken(out var token))
-                    return false;
+                if (!ReadToken(out var token)) return false;
                 if (token.type == TT.PUNCTUATION)
                 {
                     if (token == "{") depth++;
@@ -438,21 +363,15 @@ namespace System.NumericsX.OpenStack
         public string ParseBracedSection(out string o, int tabs = -1)
         {
             int i, depth; bool doTabs = false;
-            if (tabs >= 0)
-                doTabs = true;
+            if (tabs >= 0) doTabs = true;
 
             o = string.Empty;
-            if (!ExpectTokenString("{"))
-                return o;
+            if (!ExpectTokenString("{")) return o;
             o = "{";
             depth = 1;
             do
             {
-                if (!ReadToken(out var token))
-                {
-                    Error("missing closing brace");
-                    return o;
-                }
+                if (!ReadToken(out var token)) { Error("missing closing brace"); return o; }
 
                 // if the token is on a new line
                 for (i = 0; i < token.linesCrossed; i++) o += "\r\n";
@@ -488,11 +407,7 @@ namespace System.NumericsX.OpenStack
             o = string.Empty;
             while (ReadToken(out var token))
             {
-                if (token.linesCrossed != 0)
-                {
-                    UnreadSourceToken(token);
-                    break;
-                }
+                if (token.linesCrossed != 0) { UnreadSourceToken(token); break; }
                 if (o.Length != 0) o += " ";
                 o += token;
             }
@@ -506,17 +421,9 @@ namespace System.NumericsX.OpenStack
         // read a token only if on the current line
         public bool ReadTokenOnLine(out Token token)
         {
-            if (!ReadToken(out var tok))
-            {
-                token = default;
-                return false;
-            }
+            if (!ReadToken(out var tok)) { token = default; return false; }
             // if no lines were crossed before this token
-            if (tok.linesCrossed == 0)
-            {
-                token = tok;
-                return true;
-            }
+            if (tok.linesCrossed == 0) { token = tok; return true; }
             //
             UnreadSourceToken(tok);
             token = default;
@@ -526,77 +433,47 @@ namespace System.NumericsX.OpenStack
         // read a signed integer
         public int ParseInt()
         {
-            if (!ReadToken(out var token))
-            {
-                Error("couldn't read expected integer");
-                return 0;
-            }
-            if (token.type == TT.PUNCTUATION && token == "-")
-            {
-                ExpectTokenType(TT.NUMBER, TT_INTEGER, out token);
-                return -token.IntValue;
-            }
-            else if (token.type != TT.NUMBER || token.subtype == TT_FLOAT)
-                Error("expected integer value, found '{token}'");
+            if (!ReadToken(out var token)) { Error("couldn't read expected integer"); return 0; }
+            if (token.type == TT.PUNCTUATION && token == "-") { ExpectTokenType(TT.NUMBER, TT_INTEGER, out token); return -token.IntValue; }
+            else if (token.type != TT.NUMBER || token.subtype == TT_FLOAT) Error("expected integer value, found '{token}'");
             return token.IntValue;
         }
 
         // read a boolean
         public bool ParseBool()
         {
-            if (!ExpectTokenType(TT.NUMBER, 0, out var token))
-            {
-                Error("couldn't read expected boolean");
-                return false;
-            }
+            if (!ExpectTokenType(TT.NUMBER, 0, out var token)) { Error("couldn't read expected boolean"); return false; }
             return token.IntValue != 0;
         }
 
         // read a floating point number
         public float ParseFloat()
         {
-            if (!ReadToken(out var token))
-            {
-                Error("couldn't read expected floating point number");
-                return 0f;
-            }
-            if (token.type == TT.PUNCTUATION && token == "-")
-            {
-                ExpectTokenType(TT.NUMBER, 0, out token);
-                return -token.FloatValue;
-            }
-            else if (token.type != TT.NUMBER)
-                Error("expected float value, found '{token}'");
+            if (!ReadToken(out var token)) { Error("couldn't read expected floating point number"); return 0f; }
+            if (token.type == TT.PUNCTUATION && token == "-") { ExpectTokenType(TT.NUMBER, 0, out token); return -token.FloatValue; }
+            else if (token.type != TT.NUMBER) Error("expected float value, found '{token}'");
             return token.FloatValue;
         }
 
         // parse matrices with floats
         public bool Parse1DMatrix(int x, float[] m, int offset = 0)
         {
-            if (!ExpectTokenString("("))
-                return false;
-            for (var i = 0; i < x; i++)
-                m[offset + i] = ParseFloat();
+            if (!ExpectTokenString("(")) return false;
+            for (var i = 0; i < x; i++) m[offset + i] = ParseFloat();
             return ExpectTokenString(")");
         }
-        
+
         public bool Parse2DMatrix(int y, int x, float[] m, int offset = 0)
         {
-            if (!ExpectTokenString("("))
-                return false;
-            for (var i = 0; i < y; i++)
-                if (!Parse1DMatrix(x, m, i * x))
-                    return false;
+            if (!ExpectTokenString("(")) return false;
+            for (var i = 0; i < y; i++) if (!Parse1DMatrix(x, m, i * x)) return false;
             return ExpectTokenString(")");
         }
 
         public bool Parse3DMatrix(int z, int y, int x, float[] m, int offset = 0)
         {
-            if (!ExpectTokenString("("))
-                return false;
-            for (var i = 0; i < z; i++)
-                if (!Parse2DMatrix(y, x, m, i * x * y))
-                    return false;
+            if (!ExpectTokenString("(")) return false;
+            for (var i = 0; i < z; i++) if (!Parse2DMatrix(y, x, m, i * x * y)) return false;
             return ExpectTokenString(")");
         }
 
@@ -617,8 +494,7 @@ namespace System.NumericsX.OpenStack
         public void GetStringFromMarker(out string o, bool clean = false)
         {
             var buffer = scriptstack.buffer;
-            if (marker_p == 0)
-                marker_p = buffer.Length;
+            if (marker_p == 0) marker_p = buffer.Length;
             var p = tokens != null
                 ? tokens.whiteSpaceStart_p
                 : scriptstack.script_p;
@@ -630,8 +506,7 @@ namespace System.NumericsX.OpenStack
             {
                 o = string.Empty;
                 var temp = new Parser(marker, marker.Length, "temp", flags);
-                while (temp.ReadToken(out var token))
-                    o += token;
+                while (temp.ReadToken(out var token)) o += token;
             }
             else o = marker;
         }
@@ -640,14 +515,13 @@ namespace System.NumericsX.OpenStack
         public bool AddDefine(string s)
         {
             var define = DefineFromString(s);
-            if (define == null)
-                return false;
+            if (define == null) return false;
             AddDefineToHash(define, defines);
             return true;
         }
 
         // add builtin defines
-        static readonly (string s, int i)[] builtin = new[] {
+        static readonly (string s, int i)[] AddBuiltinDefines_builtin = new[] {
             ( "__LINE__", BUILTIN_LINE ),
             ( "__FILE__", BUILTIN_FILE ),
             ( "__DATE__", BUILTIN_DATE ),
@@ -657,13 +531,13 @@ namespace System.NumericsX.OpenStack
         };
         public void AddBuiltinDefines()
         {
-            for (var i = 0; builtin[i].s != null; i++)
+            for (var i = 0; AddBuiltinDefines_builtin[i].s != null; i++)
                 // add the define to the source
                 AddDefineToHash(new Define
                 {
-                    name = builtin[i].s,
+                    name = AddBuiltinDefines_builtin[i].s,
                     flags = DEFINE_FIXED,
-                    builtin = builtin[i].i,
+                    builtin = AddBuiltinDefines_builtin[i].i,
                     numparms = 0,
                     parms = null,
                     tokens = null
@@ -686,24 +560,18 @@ namespace System.NumericsX.OpenStack
         // returns a pointer to the punctuation with the given id
         public string GetPunctuationFromId(int id)
         {
-            if (punctuations == null)
-                return new Lexer().GetPunctuationFromId(id);
+            if (punctuations == null) return new Lexer().GetPunctuationFromId(id);
 
-            for (var i = 0; punctuations[i].p != null; i++)
-                if (punctuations[i].n == id)
-                    return punctuations[i].p;
+            for (var i = 0; punctuations[i].p != null; i++) if (punctuations[i].n == id) return punctuations[i].p;
             return "unknown punctuation";
         }
 
         // get the id for the given punctuation
         public int GetPunctuationId(string p)
         {
-            if (punctuations == null)
-                return new Lexer().GetPunctuationId(p);
+            if (punctuations == null) return new Lexer().GetPunctuationId(p);
 
-            for (var i = 0; punctuations[i].p != null; i++)
-                if (punctuations[i].p == p)
-                    return punctuations[i].n;
+            for (var i = 0; punctuations[i].p != null; i++) if (punctuations[i].p == p) return punctuations[i].n;
             return 0;
         }
 
@@ -711,12 +579,7 @@ namespace System.NumericsX.OpenStack
         public LEXFL Flags
         {
             get => flags;
-            set
-            {
-                flags = value;
-                for (var s = scriptstack; s != null; s = s.next)
-                    s.Flags = flags;
-            }
+            set { flags = value; for (var s = scriptstack; s != null; s = s.next) s.Flags = flags; }
         }
 
         // returns the current filename
@@ -747,8 +610,7 @@ namespace System.NumericsX.OpenStack
         public static bool AddGlobalDefine(string s)
         {
             var define = DefineFromString(s);
-            if (define == null)
-                return false;
+            if (define == null) return false;
             define.next = globaldefines;
             globaldefines = define;
             return true;
@@ -758,9 +620,7 @@ namespace System.NumericsX.OpenStack
         public static bool RemoveGlobalDefine(string name)
         {
             Define d, prev;
-            for (prev = null, d = globaldefines; d != null; prev = d, d = d.next)
-                if (d.name == name)
-                    break;
+            for (prev = null, d = globaldefines; d != null; prev = d, d = d.next) if (d.name == name) break;
             if (d != null)
             {
                 if (prev != null) prev.next = d.next;
@@ -773,8 +633,7 @@ namespace System.NumericsX.OpenStack
         // remove all global defines
         public static void RemoveAllGlobalDefines()
         {
-            for (var define = globaldefines; define != null; define = globaldefines)
-                globaldefines = globaldefines.next;
+            for (var define = globaldefines; define != null; define = globaldefines) globaldefines = globaldefines.next;
         }
 
         // set the base folder to load files from
@@ -801,8 +660,7 @@ namespace System.NumericsX.OpenStack
             if (indent == null) return;
 
             // must be an indent from the current script
-            if (indentstack.script != scriptstack)
-                return;
+            if (indentstack.script != scriptstack) return;
 
             type = indent.type;
             skip = indent.skip;
@@ -812,12 +670,7 @@ namespace System.NumericsX.OpenStack
 
         void PushScript(Lexer script)
         {
-            for (var s = scriptstack; s != null; s = s.next)
-                if (string.Equals(s.FileName, script.FileName, StringComparison.OrdinalIgnoreCase))
-                {
-                    Warning($"'{script.FileName}' recursively included");
-                    return;
-                }
+            for (var s = scriptstack; s != null; s = s.next) if (string.Equals(s.FileName, script.FileName, StringComparison.OrdinalIgnoreCase)) { Warning($"'{script.FileName}' recursively included"); return; }
             // push the script on the script stack
             script.next = scriptstack;
             scriptstack = script;
@@ -827,12 +680,7 @@ namespace System.NumericsX.OpenStack
         {
             Token t; Lexer script; int changedScript;
 
-            if (scriptstack == null)
-            {
-                FatalError("Parser::ReadSourceToken: not loaded");
-                token = null;
-                return false;
-            }
+            if (scriptstack == null) { FatalError("Parser::ReadSourceToken: not loaded"); token = null; return false; }
             changedScript = 0;
             // if there's no token already available
             while (tokens == null)
@@ -843,24 +691,18 @@ namespace System.NumericsX.OpenStack
                     token.linesCrossed += changedScript;
 
                     // set the marker based on the start of the token read in
-                    if (marker_p == 0)
-                        marker_p = token.whiteSpaceEnd_p;
+                    if (marker_p == 0) marker_p = token.whiteSpaceEnd_p;
                     return true;
                 }
                 // if at the end of the script
                 if (scriptstack.EndOfFile())
                 {
                     // remove all indents of the script
-                    while (indentstack != null && indentstack.script == scriptstack)
-                    {
-                        Warning("missing #endif");
-                        PopIndent(out var _, out var _);
-                    }
+                    while (indentstack != null && indentstack.script == scriptstack) { Warning("missing #endif"); PopIndent(out var _, out var _); }
                     changedScript = 1;
                 }
                 // if this was the initial script
-                if (scriptstack.next == null)
-                    return false;
+                if (scriptstack.next == null) return false;
                 // remove the script and return to the previous one
                 script = scriptstack;
                 scriptstack = scriptstack.next;
@@ -879,14 +721,9 @@ namespace System.NumericsX.OpenStack
             var crossline = 0;
             do
             {
-                if (!ReadSourceToken(out token))
-                    return false;
+                if (!ReadSourceToken(out token)) return false;
 
-                if (token.linesCrossed > crossline)
-                {
-                    UnreadSourceToken(token);
-                    return false;
-                }
+                if (token.linesCrossed > crossline) { UnreadSourceToken(token); return false; }
                 crossline = 1;
             } while (token == "\\");
             return true;
@@ -902,67 +739,41 @@ namespace System.NumericsX.OpenStack
         {
             Define newdefine; Token t, last; int i, done, lastcomma, numparms, indent;
 
-            if (!ReadSourceToken(out var token))
-            {
-                Error($"define '{define.name}' missing parameters");
-                return false;
-            }
+            if (!ReadSourceToken(out var token)) { Error($"define '{define.name}' missing parameters"); return false; }
 
-            if (define.numparms > maxparms)
-            {
-                Error($"define with more than {maxparms} parameters");
-                return false;
-            }
+            if (define.numparms > maxparms) { Error($"define with more than {maxparms} parameters"); return false; }
 
-            for (i = 0; i < define.numparms; i++)
-                parms[i] = null;
+            for (i = 0; i < define.numparms; i++) parms[i] = null;
             // if no leading "("
-            if (token != "(")
-            {
-                UnreadSourceToken(token);
-                Error($"define '{define.name}' missing parameters");
-                return false;
-            }
+            if (token != "(") { UnreadSourceToken(token); Error($"define '{define.name}' missing parameters"); return false; }
             // read the define parameters
             for (done = 0, numparms = 0, indent = 1; done == 0;)
             {
-                if (numparms >= maxparms)
-                {
-                    Error($"define '{define.name}' with too many parameters");
-                    return false;
-                }
+                if (numparms >= maxparms) { Error($"define '{define.name}' with too many parameters"); return false; }
                 parms[numparms] = null;
                 lastcomma = 1;
                 last = null;
                 while (done == 0)
                 {
-                    if (!ReadSourceToken(out token))
-                    {
-                        Error($"define '{define.name}' incomplete");
-                        return false;
-                    }
+                    if (!ReadSourceToken(out token)) { Error($"define '{define.name}' incomplete"); return false; }
 
                     if (token == ",")
                     {
                         if (indent <= 1)
                         {
-                            if (lastcomma != 0)
-                                Warning("too many comma's");
-                            if (numparms >= define.numparms)
-                                Warning("too many define parameters");
+                            if (lastcomma != 0) Warning("too many comma's");
+                            if (numparms >= define.numparms) Warning("too many define parameters");
                             lastcomma = 1;
                             break;
                         }
                     }
-                    else if (token == "(")
-                        indent++;
+                    else if (token == "(") indent++;
                     else if (token == ")")
                     {
                         indent--;
                         if (indent <= 0)
                         {
-                            if (parms[define.numparms - 1] == null)
-                                Warning("too few define parameters");
+                            if (parms[define.numparms - 1] == null) Warning("too few define parameters");
                             done = 1;
                             break;
                         }
@@ -972,8 +783,7 @@ namespace System.NumericsX.OpenStack
                         newdefine = FindHashedDefine(defines, token);
                         if (newdefine != null)
                         {
-                            if (!ExpandDefineIntoSource(token, newdefine))
-                                return false;
+                            if (!ExpandDefineIntoSource(token, newdefine)) return false;
                             continue;
                         }
                     }
@@ -1000,33 +810,20 @@ namespace System.NumericsX.OpenStack
             token.whiteSpaceStart_p = 0;
             token.whiteSpaceEnd_p = 0;
             token = string.Empty;
-            for (var t = tokens; t != null; t = t.next)
-                token += t;
+            for (var t = tokens; t != null; t = t.next) token += t;
             return true;
         }
 
         bool MergeTokens(Token t1, Token t2)
         {
             // merging of a name with a name or number
-            if (t1.type == TT.NAME && (t2.type == TT.NAME || (t2.type == TT.NUMBER && (t2.subtype & TT_FLOAT) == 0)))
-            {
-                t1 += t2;
-                return true;
-            }
+            if (t1.type == TT.NAME && (t2.type == TT.NAME || (t2.type == TT.NUMBER && (t2.subtype & TT_FLOAT) == 0))) { t1 += t2; return true; }
             // merging of two strings
-            if (t1.type == TT.STRING && t2.type == TT.STRING)
-            {
-                t1 += t2;
-                return true;
-            }
+            if (t1.type == TT.STRING && t2.type == TT.STRING) { t1 += t2; return true; }
             // merging of two numbers
             if (t1.type == TT.NUMBER && t2.type == TT.NUMBER &&
                 (t1.subtype & (TT_HEX | TT_BINARY)) == 0 && (t2.subtype & (TT_HEX | TT_BINARY)) == 0 &&
-                ((t1.subtype & TT_FLOAT) == 0 || (t2.subtype & TT_FLOAT) == 0))
-            {
-                t1 += t2;
-                return true;
-            }
+                ((t1.subtype & TT_FLOAT) == 0 || (t2.subtype & TT_FLOAT) == 0)) { t1 += t2; return true; }
 
             return false;
         }
@@ -1037,68 +834,56 @@ namespace System.NumericsX.OpenStack
             switch (define.builtin)
             {
                 case BUILTIN_LINE:
-                    {
-                        token = deftoken.line.ToString();
-                        token.intvalue = (uint)deftoken.line;
-                        token.floatvalue = deftoken.line;
-                        token.type = TT.NUMBER;
-                        token.subtype = TT_DECIMAL | TT_INTEGER | TT_VALUESVALID;
-                        token.line = deftoken.line;
-                        token.linesCrossed = deftoken.linesCrossed;
-                        token.flags = 0;
-                        firsttoken = token;
-                        lasttoken = token;
-                        break;
-                    }
+                    token = deftoken.line.ToString();
+                    token.intvalue = (uint)deftoken.line;
+                    token.floatvalue = deftoken.line;
+                    token.type = TT.NUMBER;
+                    token.subtype = TT_DECIMAL | TT_INTEGER | TT_VALUESVALID;
+                    token.line = deftoken.line;
+                    token.linesCrossed = deftoken.linesCrossed;
+                    token.flags = 0;
+                    firsttoken = token;
+                    lasttoken = token;
+                    break;
                 case BUILTIN_FILE:
-                    {
-                        token = scriptstack.FileName;
-                        token.type = TT.NAME;
-                        token.subtype = token.val.Length;
-                        token.line = deftoken.line;
-                        token.linesCrossed = deftoken.linesCrossed;
-                        token.flags = 0;
-                        firsttoken = token;
-                        lasttoken = token;
-                        break;
-                    }
+                    token = scriptstack.FileName;
+                    token.type = TT.NAME;
+                    token.subtype = token.val.Length;
+                    token.line = deftoken.line;
+                    token.linesCrossed = deftoken.linesCrossed;
+                    token.flags = 0;
+                    firsttoken = token;
+                    lasttoken = token;
+                    break;
                 case BUILTIN_DATE:
-                    {
-                        token = $"\"{DateTime.Now:MMM dd yyyy}\"";
-                        token.type = TT.STRING;
-                        token.subtype = token.val.Length;
-                        token.line = deftoken.line;
-                        token.linesCrossed = deftoken.linesCrossed;
-                        token.flags = 0;
-                        firsttoken = token;
-                        lasttoken = token;
-                        break;
-                    }
+                    token = $"\"{DateTime.Now:MMM dd yyyy}\"";
+                    token.type = TT.STRING;
+                    token.subtype = token.val.Length;
+                    token.line = deftoken.line;
+                    token.linesCrossed = deftoken.linesCrossed;
+                    token.flags = 0;
+                    firsttoken = token;
+                    lasttoken = token;
+                    break;
                 case BUILTIN_TIME:
-                    {
-                        token = $"\"{DateTime.Now:HH:mm:ss}\"";
-                        token.type = TT.STRING;
-                        token.subtype = token.val.Length;
-                        token.line = deftoken.line;
-                        token.linesCrossed = deftoken.linesCrossed;
-                        token.flags = 0;
-                        firsttoken = token;
-                        lasttoken = token;
-                        break;
-                    }
+                    token = $"\"{DateTime.Now:HH:mm:ss}\"";
+                    token.type = TT.STRING;
+                    token.subtype = token.val.Length;
+                    token.line = deftoken.line;
+                    token.linesCrossed = deftoken.linesCrossed;
+                    token.flags = 0;
+                    firsttoken = token;
+                    lasttoken = token;
+                    break;
                 case BUILTIN_STDC:
-                    {
-                        Warning("__STDC__ not supported\n");
-                        firsttoken = null;
-                        lasttoken = null;
-                        break;
-                    }
+                    Warning("__STDC__ not supported\n");
+                    firsttoken = null;
+                    lasttoken = null;
+                    break;
                 default:
-                    {
-                        firsttoken = null;
-                        lasttoken = null;
-                        break;
-                    }
+                    firsttoken = null;
+                    lasttoken = null;
+                    break;
             }
             return true;
         }
@@ -1108,22 +893,16 @@ namespace System.NumericsX.OpenStack
             Token[] parms = new Token[MAX_DEFINEPARMS]; Token dt, pt, t, t1, t2, first, last, nextpt, token; int parmnum, i;
 
             // if it is a builtin define
-            if (define.builtin != 0)
-                return ExpandBuiltinDefine(deftoken, define, out firsttoken, out lasttoken);
+            if (define.builtin != 0) return ExpandBuiltinDefine(deftoken, define, out firsttoken, out lasttoken);
             // if the define has parameters
             if (define.numparms != 0)
             {
-                if (!ReadDefineParms(define, parms, MAX_DEFINEPARMS))
-                {
-                    firsttoken = lasttoken = default;
-                    return false;
-                }
+                if (!ReadDefineParms(define, parms, MAX_DEFINEPARMS)) { firsttoken = lasttoken = default; return false; }
 #if DEBUG_EVAL
                 for (i = 0; i < define.numparms; i++)
                 {
                     Console.Write($"define parms {i}:");
-                    for (pt = parms[i]; pt != null; pt = pt.next)
-                        Console.Write(pt);
+                    for (pt = parms[i]; pt != null; pt = pt.next) Console.Write(pt);
                 }
 #endif
             }
@@ -1134,18 +913,14 @@ namespace System.NumericsX.OpenStack
             {
                 parmnum = -1;
                 // if the token is a name, it could be a define parameter
-                if (dt.type == TT.NAME)
-                    parmnum = FindDefineParm(define, dt);
+                if (dt.type == TT.NAME) parmnum = FindDefineParm(define, dt);
                 // if it is a define parameter
                 if (parmnum >= 0)
                 {
                     for (pt = parms[parmnum]; pt != null; pt = pt.next)
                     {
-                        t = new Token(pt)
-                        {
-                            //add the token to the list
-                            next = null
-                        };
+                        t = new Token(pt) { next = null };
+                        // add the token to the list
                         if (last != null) last.next = t;
                         else first = t;
                         last = t;
@@ -1164,25 +939,12 @@ namespace System.NumericsX.OpenStack
                             // step over the stringizing operator
                             dt = dt.next;
                             // stringize the define parameter tokens
-                            if (!StringizeTokens(parms[parmnum], out token))
-                            {
-                                Error("can't stringize tokens");
-                                firsttoken = lasttoken = default;
-                                return false;
-                            }
+                            if (!StringizeTokens(parms[parmnum], out token)) { Error("can't stringize tokens"); firsttoken = lasttoken = default; return false; }
                             t = new Token(token) { line = deftoken.line };
                         }
-                        else
-                        {
-                            Warning("stringizing operator without define parameter");
-                            continue;
-                        }
+                        else { Warning("stringizing operator without define parameter"); continue; }
                     }
-                    else
-                        t = new Token(dt)
-                        {
-                            line = deftoken.line
-                        };
+                    else t = new Token(dt) { line = deftoken.line };
                     // add the token to the list
                     t.next = null;
                     // the token being read from the define list should use the line number of the original file, not the header file
@@ -1196,25 +958,17 @@ namespace System.NumericsX.OpenStack
             // check for the merging operator
             for (t = first; t != null;)
             {
-                if (t.next != null)
+                // if the merging operator
+                if (t.next != null && t.next == "##")
                 {
-                    // if the merging operator
-                    if (t.next == "##")
+                    t1 = t;
+                    t2 = t.next.next;
+                    if (t2 != null)
                     {
-                        t1 = t;
-                        t2 = t.next.next;
-                        if (t2 != null)
-                        {
-                            if (!MergeTokens(t1, t2))
-                            {
-                                Error($"can't merge '{t1}' with '{t2}'");
-                                firsttoken = lasttoken = default;
-                                return false;
-                            }
-                            t1.next = t2.next;
-                            if (t2 == last) last = t1;
-                            continue;
-                        }
+                        if (!MergeTokens(t1, t2)) { Error($"can't merge '{t1}' with '{t2}'"); firsttoken = lasttoken = default; return false; }
+                        t1.next = t2.next;
+                        if (t2 == last) last = t1;
+                        continue;
                     }
                 }
                 t = t.next;
@@ -1223,9 +977,7 @@ namespace System.NumericsX.OpenStack
             firsttoken = first;
             lasttoken = last;
             // free all the parameter tokens
-            for (i = 0; i < define.numparms; i++)
-                for (pt = parms[i]; pt != null; pt = nextpt)
-                    nextpt = pt.next;
+            for (i = 0; i < define.numparms; i++) for (pt = parms[i]; pt != null; pt = nextpt) nextpt = pt.next;
 
             return true;
         }
@@ -1297,12 +1049,7 @@ namespace System.NumericsX.OpenStack
         int FindDefineParm(Define define, string name)
         {
             var i = 0;
-            for (var p = define.parms; p != null; p = p.next)
-            {
-                if (p == name)
-                    return i;
-                i++;
-            }
+            for (var p = define.parms; p != null; p = p.next) { if (p == name) return i; i++; }
             return -1;
         }
 
@@ -1319,9 +1066,7 @@ namespace System.NumericsX.OpenStack
 
         static Define FindDefine(Define defines, string name)
         {
-            for (var d = defines; d != null; d = d.next)
-                if (d.name == name)
-                    return d;
+            for (var d = defines; d != null; d = d.next) if (d.name == name) return d;
             return null;
         }
 
@@ -1329,14 +1074,9 @@ namespace System.NumericsX.OpenStack
         {
             Parser src = new();
 
-            if (!src.LoadMemory(s, s.Length, "*defineString"))
-                return null;
+            if (!src.LoadMemory(s, s.Length, "*defineString")) return null;
             // create a define from the source
-            if (!src.Directive_define())
-            {
-                src.FreeSource();
-                return null;
-            }
+            if (!src.Directive_define()) { src.FreeSource(); return null; }
             var def = src.CopyFirstDefine();
             src.FreeSource();
             // if the define was created succesfully
@@ -1353,16 +1093,8 @@ namespace System.NumericsX.OpenStack
         {
             Lexer script; string path;
 
-            if (!ReadSourceToken(out var token))
-            {
-                Error("#include without file name");
-                return false;
-            }
-            if (token.linesCrossed > 0)
-            {
-                Error("#include without file name");
-                return false;
-            }
+            if (!ReadSourceToken(out var token)) { Error("#include without file name"); return false; }
+            if (token.linesCrossed > 0) { Error("#include without file name"); return false; }
             if (token.type == TT.STRING)
             {
                 script = new();
@@ -1376,8 +1108,7 @@ namespace System.NumericsX.OpenStack
                     {
                         // try from the include path
                         path = includepath + token;
-                        if (!script.LoadFile(path, osPath))
-                            script = null;
+                        if (!script.LoadFile(path, osPath)) script = null;
                     }
                 }
             }
@@ -1386,38 +1117,18 @@ namespace System.NumericsX.OpenStack
                 path = includepath;
                 while (ReadSourceToken(out token))
                 {
-                    if (token.linesCrossed > 0)
-                    {
-                        UnreadSourceToken(token);
-                        break;
-                    }
-                    if (token.type == TT.PUNCTUATION && token == ">")
-                        break;
+                    if (token.linesCrossed > 0) { UnreadSourceToken(token); break; }
+                    if (token.type == TT.PUNCTUATION && token == ">") break;
                     path += token;
                 }
-                if (token != ">")
-                    Warning("#include missing trailing >");
-                if (path.Length == 0)
-                {
-                    Error("#include without file name between < >");
-                    return false;
-                }
-                if ((flags & LEXFL.NOBASEINCLUDES) != 0)
-                    return true;
+                if (token != ">") Warning("#include missing trailing >");
+                if (path.Length == 0) { Error("#include without file name between < >"); return false; }
+                if ((flags & LEXFL.NOBASEINCLUDES) != 0) return true;
                 script = new Lexer();
-                if (!script.LoadFile(includepath + path, osPath))
-                    script = null;
+                if (!script.LoadFile(includepath + path, osPath)) script = null;
             }
-            else
-            {
-                Error("#include without file name");
-                return false;
-            }
-            if (script == null)
-            {
-                Error($"file '{path}' not found");
-                return false;
-            }
+            else { Error("#include without file name"); return false; }
+            if (script == null) { Error($"file '{path}' not found"); return false; }
             script.Flags = flags;
             script.SetPunctuations(punctuations);
             PushScript(script);
@@ -1426,21 +1137,11 @@ namespace System.NumericsX.OpenStack
 
         bool Directive_undef()
         {
-            if (!ReadLine(out var token))
-            {
-                Error("undef without name");
-                return false;
-            }
-            if (token.type != TT.NAME)
-            {
-                UnreadSourceToken(token);
-                Error($"expected name but found '{token}'");
-                return false;
-            }
+            if (!ReadLine(out var token)) { Error("undef without name"); return false; }
+            if (token.type != TT.NAME) { UnreadSourceToken(token); Error($"expected name but found '{token}'"); return false; }
             if (defines.TryGetValue(token, out var define))
             {
-                if ((define.flags & DEFINE_FIXED) != 0)
-                    Warning($"can't undef '{token}'");
+                if ((define.flags & DEFINE_FIXED) != 0) Warning($"can't undef '{token}'");
                 else defines.Remove(token);
             }
             return true;
@@ -1448,17 +1149,8 @@ namespace System.NumericsX.OpenStack
 
         bool Directive_if_def(int type)
         {
-            if (!ReadLine(out var token))
-            {
-                Error("#ifdef without name");
-                return false;
-            }
-            if (token.type != TT.NAME)
-            {
-                UnreadSourceToken(token);
-                Error($"expected name after #ifdef, found '{token}'");
-                return false;
-            }
+            if (!ReadLine(out var token)) { Error("#ifdef without name"); return false; }
+            if (token.type != TT.NAME) { UnreadSourceToken(token); Error($"expected name after #ifdef, found '{token}'"); return false; }
             var d = FindHashedDefine(defines, token);
             var skip = (type == INDENT_IFDEF) == (d == null) ? 1 : 0;
             PushIndent(type, skip);
@@ -1474,16 +1166,8 @@ namespace System.NumericsX.OpenStack
         bool Directive_else()
         {
             PopIndent(out var type, out var skip);
-            if (type == 0)
-            {
-                Error("misplaced #else");
-                return false;
-            }
-            if (type == INDENT_ELSE)
-            {
-                Error("#else after #else");
-                return false;
-            }
+            if (type == 0) { Error("misplaced #else"); return false; }
+            if (type == INDENT_ELSE) { Error("#else after #else"); return false; }
             PushIndent(INDENT_ELSE, skip == 0 ? 1 : 0);
             return true;
         }
@@ -1491,11 +1175,7 @@ namespace System.NumericsX.OpenStack
         bool Directive_endif()
         {
             PopIndent(out var type, out var skip);
-            if (type == 0)
-            {
-                Error("misplaced #endif");
-                return false;
-            }
+            if (type == 0) { Error("misplaced #endif"); return false; }
             return true;
         }
 
@@ -1559,12 +1239,7 @@ namespace System.NumericsX.OpenStack
 
             bool AllocValue(out Value val)
             {
-                if (numvalues >= MAX_VALUES)
-                {
-                    Error("out of value space\n");
-                    val = default;
-                    return false;
-                }
+                if (numvalues >= MAX_VALUES) { Error("out of value space\n"); val = default; return false; }
                 val = value_heap[numvalues++];
                 return true;
             }
@@ -1573,12 +1248,7 @@ namespace System.NumericsX.OpenStack
 
             bool AllocOperator(out Operator op)
             {
-                if (numoperators >= MAX_OPERATORS)
-                {
-                    Error("out of operator space\n");
-                    op = default;
-                    return false;
-                }
+                if (numoperators >= MAX_OPERATORS) { Error("out of operator space\n"); op = default; return false; }
                 op = operator_heap[numoperators++];
                 return true;
             }
@@ -1596,35 +1266,12 @@ namespace System.NumericsX.OpenStack
                 {
                     case TT.NAME:
                         {
-                            if (lastwasvalue || negativevalue)
-                            {
-                                Error("syntax error in #if/#elif");
-                                error = true;
-                                break;
-                            }
-                            if (t != "defined")
-                            {
-                                Error($"undefined name '{t}' in #if/#elif");
-                                error = true;
-                                break;
-                            }
+                            if (lastwasvalue || negativevalue) { Error("syntax error in #if/#elif"); error = true; break; }
+                            if (t != "defined") { Error($"undefined name '{t}' in #if/#elif"); error = true; break; }
                             t = t.next;
-                            if (t == "(")
-                            {
-                                brace = true;
-                                t = t.next;
-                            }
-                            if (t == null || t.type != TT.NAME)
-                            {
-                                Error("defined() without name in #if/#elif");
-                                error = true;
-                                break;
-                            }
-                            if (AllocValue(out v))
-                            {
-                                error = true;
-                                break;
-                            }
+                            if (t == "(") { brace = true; t = t.next; }
+                            if (t == null || t.type != TT.NAME) { Error("defined() without name in #if/#elif"); error = true; break; }
+                            if (AllocValue(out v)) { error = true; break; }
                             if (defines.ContainsKey(t)) { v.intvalue = 1; v.floatvalue = 1; }
                             else { v.intvalue = 0; v.floatvalue = 0; }
                             v.parentheses = parentheses;
@@ -1636,12 +1283,7 @@ namespace System.NumericsX.OpenStack
                             if (brace)
                             {
                                 t = t.next;
-                                if (t == null || t != ")")
-                                {
-                                    Error("defined missing ) in #if/#elif");
-                                    error = true;
-                                    break;
-                                }
+                                if (t == null || t != ")") { Error("defined missing ) in #if/#elif"); error = true; break; }
                             }
                             brace = false;
                             // defined() creates a value
@@ -1650,17 +1292,8 @@ namespace System.NumericsX.OpenStack
                         }
                     case TT.NUMBER:
                         {
-                            if (lastwasvalue)
-                            {
-                                Error("syntax error in #if/#elif");
-                                error = true;
-                                break;
-                            }
-                            if (AllocValue(out v))
-                            {
-                                error = true;
-                                break;
-                            }
+                            if (lastwasvalue) { Error("syntax error in #if/#elif"); error = true; break; }
+                            if (AllocValue(out v)) { error = true; break; }
                             if (negativevalue) { v.intvalue = -t.IntValue; v.floatvalue = -t.FloatValue; }
                             else { v.intvalue = t.IntValue; v.floatvalue = t.FloatValue; }
                             v.parentheses = parentheses;
@@ -1676,25 +1309,12 @@ namespace System.NumericsX.OpenStack
                         }
                     case TT.PUNCTUATION:
                         {
-                            if (negativevalue)
-                            {
-                                Error("misplaced minus sign in #if/#elif");
-                                error = true;
-                                break;
-                            }
-                            if (t.subtype == P_PARENTHESESOPEN)
-                            {
-                                parentheses++;
-                                break;
-                            }
+                            if (negativevalue) { Error("misplaced minus sign in #if/#elif"); error = true; break; }
+                            if (t.subtype == P_PARENTHESESOPEN) { parentheses++; break; }
                             else if (t.subtype == P_PARENTHESESCLOSE)
                             {
                                 parentheses--;
-                                if (parentheses < 0)
-                                {
-                                    Error("too many ) in #if/#elsif");
-                                    error = true;
-                                }
+                                if (parentheses < 0) { Error("too many ) in #if/#elsif"); error = true; }
                                 break;
                             }
                             // check for invalid operators on floating point values
@@ -1703,41 +1323,15 @@ namespace System.NumericsX.OpenStack
                                 if (t.subtype == P_BIN_NOT || t.subtype == P_MOD ||
                                     t.subtype == P_RSHIFT || t.subtype == P_LSHIFT ||
                                     t.subtype == P_BIN_AND || t.subtype == P_BIN_OR ||
-                                    t.subtype == P_BIN_XOR)
-                                {
-                                    Error($"illigal operator '{t}' on floating point operands\n");
-                                    error = true;
-                                    break;
-                                }
+                                    t.subtype == P_BIN_XOR) { Error($"illigal operator '{t}' on floating point operands\n"); error = true; break; }
                             }
                             switch (t.subtype)
                             {
                                 case P_LOGIC_NOT:
-                                case P_BIN_NOT:
-                                    {
-                                        if (lastwasvalue)
-                                        {
-                                            Error("! or ~ after value in #if/#elif");
-                                            error = true;
-                                            break;
-                                        }
-                                        break;
-                                    }
+                                case P_BIN_NOT: if (lastwasvalue) { Error("! or ~ after value in #if/#elif"); error = true; break; } break;
                                 case P_INC:
-                                case P_DEC:
-                                    {
-                                        Error("++ or -- used in #if/#elif");
-                                        break;
-                                    }
-                                case P_SUB:
-                                    {
-                                        if (!lastwasvalue)
-                                        {
-                                            negativevalue = true;
-                                            break;
-                                        }
-                                        goto case P_MUL;
-                                    }
+                                case P_DEC: Error("++ or -- used in #if/#elif"); break;
+                                case P_SUB: if (!lastwasvalue) { negativevalue = true; break; } goto case P_MUL;
 
                                 case P_MUL:
                                 case P_DIV:
@@ -1762,30 +1356,12 @@ namespace System.NumericsX.OpenStack
                                 case P_BIN_XOR:
 
                                 case P_COLON:
-                                case P_QUESTIONMARK:
-                                    {
-                                        if (!lastwasvalue)
-                                        {
-                                            Error($"operator '{t}' after operator in #if/#elif");
-                                            error = true;
-                                            break;
-                                        }
-                                        break;
-                                    }
-                                default:
-                                    {
-                                        Error("invalid operator '{t}' in #if/#elif");
-                                        error = true;
-                                        break;
-                                    }
+                                case P_QUESTIONMARK: if (!lastwasvalue) { Error($"operator '{t}' after operator in #if/#elif"); error = true; break; } break;
+                                default: Error("invalid operator '{t}' in #if/#elif"); error = true; break;
                             }
                             if (!error && !negativevalue)
                             {
-                                if (AllocOperator(out o))
-                                {
-                                    error = true;
-                                    break;
-                                }
+                                if (AllocOperator(out o)) { error = true; break; }
                                 o.op = t.subtype;
                                 o.priority = PC_OperatorPriority(t.subtype);
                                 o.parentheses = parentheses;
@@ -1798,28 +1374,14 @@ namespace System.NumericsX.OpenStack
                             }
                             break;
                         }
-                    default:
-                        {
-                            Error($"unknown '{t}' in #if/#elif");
-                            error = true;
-                            break;
-                        }
+                    default: Error($"unknown '{t}' in #if/#elif"); error = true; break;
                 }
-                if (error)
-                    break;
+                if (error) break;
             }
             if (!error)
             {
-                if (!lastwasvalue)
-                {
-                    Error("trailing operator in #if/#elif");
-                    error = true;
-                }
-                else if (parentheses != 0)
-                {
-                    Error("too many ( in #if/#elif");
-                    error = true;
-                }
+                if (!lastwasvalue) { Error("trailing operator in #if/#elif"); error = true; }
+                else if (parentheses != 0) { Error("too many ( in #if/#elif"); error = true; }
             }
             //
             gotquestmarkvalue = false; questmarkintvalue = 0; questmarkfloatvalue = 0;
@@ -1830,26 +1392,17 @@ namespace System.NumericsX.OpenStack
                 for (o = firstoperator; o.next != null; o = o.next)
                 {
                     // if the current operator is nested deeper in parentheses than the next operator
-                    if (o.parentheses > o.next.parentheses)
-                        break;
+                    if (o.parentheses > o.next.parentheses) break;
                     // if the current and next operator are nested equally deep in parentheses
                     if (o.parentheses == o.next.parentheses)
                         // if the priority of the current operator is equal or higher than the priority of the next operator
-                        if (o.priority >= o.next.priority)
-                            break;
+                        if (o.priority >= o.next.priority) break;
                     // if the arity of the operator isn't equal to 1
-                    if (o.op != P_LOGIC_NOT && o.op != P_BIN_NOT)
-                        v = v.next;
+                    if (o.op != P_LOGIC_NOT && o.op != P_BIN_NOT) v = v.next;
                     // if there's no value or no next value
-                    if (v == null)
-                    {
-                        Error("mising values in #if/#elif");
-                        error = true;
-                        break;
-                    }
+                    if (v == null) { Error("mising values in #if/#elif"); error = true; break; }
                 }
-                if (error)
-                    break;
+                if (error) break;
                 v1 = v;
                 v2 = v.next;
 #if DEBUG_EVAL
@@ -1876,21 +1429,11 @@ namespace System.NumericsX.OpenStack
                         v1.intvalue *= v2.intvalue;
                         v1.floatvalue *= v2.floatvalue; break;
                     case P_DIV:
-                        if (v2.intvalue == 0 || v2.floatvalue == 0)
-                        {
-                            Error("divide by zero in #if/#elif\n");
-                            error = true;
-                            break;
-                        }
+                        if (v2.intvalue == 0 || v2.floatvalue == 0) { Error("divide by zero in #if/#elif\n"); error = true; break; }
                         v1.intvalue /= v2.intvalue;
                         v1.floatvalue /= v2.floatvalue; break;
                     case P_MOD:
-                        if (v2.intvalue == 0)
-                        {
-                            Error("divide by zero in #if/#elif\n");
-                            error = true;
-                            break;
-                        }
+                        if (v2.intvalue == 0) { Error("divide by zero in #if/#elif\n"); error = true; break; }
                         v1.intvalue %= v2.intvalue; break;
                     case P_ADD:
                         v1.intvalue += v2.intvalue;
@@ -1938,52 +1481,36 @@ namespace System.NumericsX.OpenStack
                         v1.intvalue ^= v2.intvalue;
                         break;
                     case P_COLON:
+                        if (!gotquestmarkvalue) { Error(": without ? in #if/#elif"); error = true; break; }
+                        if (integer)
                         {
-                            if (!gotquestmarkvalue)
-                            {
-                                Error(": without ? in #if/#elif");
-                                error = true;
-                                break;
-                            }
-                            if (integer)
-                            {
-                                if (questmarkintvalue == 0)
-                                    v1.intvalue = v2.intvalue;
-                            }
-                            else
-                            {
-                                if (questmarkfloatvalue == 0d)
-                                    v1.floatvalue = v2.floatvalue;
-                            }
-                            gotquestmarkvalue = false;
-                            break;
+                            if (questmarkintvalue == 0)
+                                v1.intvalue = v2.intvalue;
                         }
+                        else
+                        {
+                            if (questmarkfloatvalue == 0d)
+                                v1.floatvalue = v2.floatvalue;
+                        }
+                        gotquestmarkvalue = false;
+                        break;
                     case P_QUESTIONMARK:
-                        {
-                            if (gotquestmarkvalue)
-                            {
-                                Error("? after ? in #if/#elif");
-                                error = true;
-                                break;
-                            }
-                            questmarkintvalue = v1.intvalue;
-                            questmarkfloatvalue = v1.floatvalue;
-                            gotquestmarkvalue = true;
-                            break;
-                        }
+                        if (gotquestmarkvalue) { Error("? after ? in #if/#elif"); error = true; break; }
+                        questmarkintvalue = v1.intvalue;
+                        questmarkfloatvalue = v1.floatvalue;
+                        gotquestmarkvalue = true;
+                        break;
                 }
 #if DEBUG_EVAL
                 if (integer) Console.Write($"result value = {v1.intvalue}");
                 else Console.Write($"result value = {v1.floatvalue}");
 #endif
-                if (error)
-                    break;
+                if (error) break;
                 // if not an operator with arity 1
                 if (o.op != P_LOGIC_NOT && o.op != P_BIN_NOT)
                 {
                     // remove the second value if not question mark operator
-                    if (o.op != P_QUESTIONMARK)
-                        v = v.next;
+                    if (o.op != P_QUESTIONMARK) v = v.next;
                     //
                     if (v.prev != null) v.prev.next = v.next;
                     else firstvalue = v.next;
@@ -1998,23 +1525,10 @@ namespace System.NumericsX.OpenStack
                 else lastoperator = o.prev;
                 FreeOperator(o);
             }
-            if (firstvalue != null)
-            {
-                intvalue = firstvalue.intvalue;
-                floatvalue = firstvalue.floatvalue;
-            }
-            for (o = firstoperator; o != null; o = lastoperator)
-            {
-                lastoperator = o.next;
-                FreeOperator(o);
-            }
-            for (v = firstvalue; v != null; v = lastvalue)
-            {
-                lastvalue = v.next;
-                FreeValue(v);
-            }
-            if (!error)
-                return true;
+            if (firstvalue != null) { intvalue = firstvalue.intvalue; floatvalue = firstvalue.floatvalue; }
+            for (o = firstoperator; o != null; o = lastoperator) { lastoperator = o.next; FreeOperator(o); }
+            for (v = firstvalue; v != null; v = lastvalue) { lastvalue = v.next; FreeValue(v); }
+            if (!error) return true;
             intvalue = 0;
             floatvalue = 0;
             return false;
@@ -2027,11 +1541,7 @@ namespace System.NumericsX.OpenStack
             intvalue = 0;
             floatvalue = 0;
             //
-            if (!ReadLine(out var token))
-            {
-                Error("no value after #if/#elif");
-                return false;
-            }
+            if (!ReadLine(out var token)) { Error("no value after #if/#elif"); return false; }
             firsttoken = null;
             lasttoken = null;
             do
@@ -2059,13 +1569,8 @@ namespace System.NumericsX.OpenStack
                     {
                         // then it must be a define
                         define = FindHashedDefine(defines, token);
-                        if (define == null)
-                        {
-                            Error($"can't Evaluate '{token}', not defined");
-                            return false;
-                        }
-                        if (!ExpandDefineIntoSource(token, define))
-                            return false;
+                        if (define == null) { Error($"can't Evaluate '{token}', not defined"); return false; }
+                        if (!ExpandDefineIntoSource(token, define)) return false;
                     }
                 }
                 // if the token is a number or a punctuation
@@ -2076,15 +1581,10 @@ namespace System.NumericsX.OpenStack
                     else firsttoken = t;
                     lasttoken = t;
                 }
-                else
-                {
-                    Error($"can't Evaluate '{token}'");
-                    return false;
-                }
+                else { Error($"can't Evaluate '{token}'"); return false; }
             } while (ReadLine(out token));
             //
-            if (!EvaluateTokens(firsttoken, out intvalue, out floatvalue, integer))
-                return false;
+            if (!EvaluateTokens(firsttoken, out intvalue, out floatvalue, integer)) return false;
 
 #if DEBUG_EVAL
             Console.Write("eval:");
@@ -2109,16 +1609,8 @@ namespace System.NumericsX.OpenStack
 
             intvalue = 0; floatvalue = 0d;
 
-            if (!ReadSourceToken(out var token))
-            {
-                Error("no leading ( after $evalint/$evalfloat");
-                return false;
-            }
-            if (!ReadSourceToken(out token))
-            {
-                Error("nothing to Evaluate");
-                return false;
-            }
+            if (!ReadSourceToken(out var token)) { Error("no leading ( after $evalint/$evalfloat"); return false; }
+            if (!ReadSourceToken(out token)) { Error("nothing to Evaluate"); return false; }
             indent = 1;
             firsttoken = null;
             lasttoken = null;
@@ -2147,13 +1639,8 @@ namespace System.NumericsX.OpenStack
                     {
                         //then it must be a define
                         define = FindHashedDefine(defines, token);
-                        if (define == null)
-                        {
-                            Warning($"can't Evaluate '{token}', not defined");
-                            return false;
-                        }
-                        if (!ExpandDefineIntoSource(token, define))
-                            return false;
+                        if (define == null) { Warning($"can't Evaluate '{token}', not defined"); return false; }
+                        if (!ExpandDefineIntoSource(token, define)) return false;
                     }
                 }
                 //if the token is a number or a punctuation
@@ -2161,22 +1648,16 @@ namespace System.NumericsX.OpenStack
                 {
                     if (token[0] == '(') indent++;
                     else if (token[0] == ')') indent--;
-                    if (indent <= 0)
-                        break;
+                    if (indent <= 0) break;
                     t = new Token(token) { next = null };
                     if (lasttoken != null) lasttoken.next = t;
                     else firsttoken = t;
                     lasttoken = t;
                 }
-                else
-                {
-                    Error($"can't Evaluate '{token}'");
-                    return false;
-                }
+                else { Error($"can't Evaluate '{token}'"); return false; }
             } while (ReadSourceToken(out token));
             //
-            if (!EvaluateTokens(firsttoken, out intvalue, out floatvalue, integer))
-                return false;
+            if (!EvaluateTokens(firsttoken, out intvalue, out floatvalue, integer)) return false;
 
 #if DEBUG_EVAL
             Console.Write("$eval:");
@@ -2199,31 +1680,17 @@ namespace System.NumericsX.OpenStack
         {
             Token last, t;
 
-            if (!ReadLine(out var token))
-            {
-                Error("#define without name");
-                return false;
-            }
-            if (token.type != TT.NAME)
-            {
-                UnreadSourceToken(token);
-                Error($"expected name after #define, found '{token}'");
-                return false;
-            }
+            if (!ReadLine(out var token)) { Error("#define without name"); return false; }
+            if (token.type != TT.NAME) { UnreadSourceToken(token); Error($"expected name after #define, found '{token}'"); return false; }
             // check if the define already exists
             var define = FindHashedDefine(defines, token);
             if (define != null)
             {
-                if ((define.flags & DEFINE_FIXED) != 0)
-                {
-                    Error($"can't redefine '{token}'");
-                    return false;
-                }
+                if ((define.flags & DEFINE_FIXED) != 0) { Error($"can't redefine '{token}'"); return false; }
                 Warning($"redefinition of '{token}'");
                 // unread the define name before executing the #undef directive
                 UnreadSourceToken(token);
-                if (!Directive_undef())
-                    return false;
+                if (!Directive_undef()) return false;
                 // if the define was not removed (define.flags & DEFINE_FIXED)
                 define = FindHashedDefine(defines, token);
             }
@@ -2232,8 +1699,7 @@ namespace System.NumericsX.OpenStack
             // add the define to the source
             AddDefineToHash(define, defines);
             // if nothing is defined, just return
-            if (!ReadLine(out token))
-                return true;
+            if (!ReadLine(out token)) return true;
             // if it is a define with parameters
             if (!token.WhiteSpaceBeforeToken && token == "(")
             {
@@ -2242,23 +1708,11 @@ namespace System.NumericsX.OpenStack
                 if (!CheckTokenString(")"))
                     while (true)
                     {
-                        if (!ReadLine(out token))
-                        {
-                            Error("expected define parameter");
-                            return false;
-                        }
+                        if (!ReadLine(out token)) { Error("expected define parameter"); return false; }
                         // if it isn't a name
-                        if (token.type != TT.NAME)
-                        {
-                            Error("invalid define parameter");
-                            return false;
-                        }
+                        if (token.type != TT.NAME) { Error("invalid define parameter"); return false; }
 
-                        if (FindDefineParm(define, token) >= 0)
-                        {
-                            Error("two the same define parameters");
-                            return false;
-                        }
+                        if (FindDefineParm(define, token) >= 0) { Error("two the same define parameters"); return false; }
                         // add the define parm
                         t = new Token(token);
                         t.ClearTokenWhiteSpace();
@@ -2268,34 +1722,20 @@ namespace System.NumericsX.OpenStack
                         last = t;
                         define.numparms++;
                         // read next token
-                        if (!ReadLine(out token))
-                        {
-                            Error("define parameters not terminated");
-                            return false;
-                        }
+                        if (!ReadLine(out token)) { Error("define parameters not terminated"); return false; }
 
-                        if (token == ")")
-                            break;
+                        if (token == ")") break;
                         // then it must be a comma
-                        if (token != ",")
-                        {
-                            Error("define not terminated");
-                            return false;
-                        }
+                        if (token != ",") { Error("define not terminated"); return false; }
                     }
-                if (!ReadLine(out token))
-                    return true;
+                if (!ReadLine(out token)) return true;
             }
             // read the defined stuff
             last = null;
             do
             {
                 t = new Token(token);
-                if (t.type == TT.NAME && t == define.name)
-                {
-                    t.flags |= TOKEN_FL_RECURSIVE_DEFINE;
-                    Warning("recursive define (removed recursion)");
-                }
+                if (t.type == TT.NAME && t == define.name) { t.flags |= TOKEN_FL_RECURSIVE_DEFINE; Warning("recursive define (removed recursion)"); }
                 t.ClearTokenWhiteSpace();
                 t.next = null;
                 if (last != null) last.next = t;
@@ -2305,24 +1745,15 @@ namespace System.NumericsX.OpenStack
 
             if (last != null)
                 // check for merge operators at the beginning or end
-                if (define.tokens == "##" || last == "##")
-                {
-                    Error("define with misplaced ##");
-                    return false;
-                }
+                if (define.tokens == "##" || last == "##") { Error("define with misplaced ##"); return false; }
             return true;
         }
 
         bool Directive_elif()
         {
             PopIndent(out var type, out var skip);
-            if (type == 0 || type == INDENT_ELSE)
-            {
-                Error("misplaced #elif");
-                return false;
-            }
-            if (!Evaluate(out var value, out var _, true))
-                return false;
+            if (type == 0 || type == INDENT_ELSE) { Error("misplaced #elif"); return false; }
+            if (!Evaluate(out var value, out var _, true)) return false;
             skip = value == 0 ? 1 : 0;
             PushIndent(INDENT_ELIF, skip);
             return true;
@@ -2330,8 +1761,7 @@ namespace System.NumericsX.OpenStack
 
         bool Directive_if()
         {
-            if (!Evaluate(out var value, out var _, true))
-                return false;
+            if (!Evaluate(out var value, out var _, true)) return false;
             var skip = value == 0 ? 1 : 0;
             PushIndent(INDENT_IF, skip);
             return true;
@@ -2346,22 +1776,14 @@ namespace System.NumericsX.OpenStack
 
         bool Directive_error()
         {
-            if (!ReadLine(out var token) || token.type != TT.STRING)
-            {
-                Error("#error without string");
-                return false;
-            }
+            if (!ReadLine(out var token) || token.type != TT.STRING) { Error("#error without string"); return false; }
             Error($"#error: {token}");
             return true;
         }
 
         bool Directive_warning()
         {
-            if (!ReadLine(out var token) || token.type != TT.STRING)
-            {
-                Warning("#warning without string");
-                return false;
-            }
+            if (!ReadLine(out var token) || token.type != TT.STRING) { Warning("#warning without string"); return false; }
             Warning($"#warning: {token}");
             return true;
         }
@@ -2391,8 +1813,7 @@ namespace System.NumericsX.OpenStack
 
         bool Directive_eval()
         {
-            if (!Evaluate(out var value, out var _, true))
-                return false;
+            if (!Evaluate(out var value, out var _, true)) return false;
 
             Token token = new();
             token.line = scriptstack.LineNum;
@@ -2404,15 +1825,13 @@ namespace System.NumericsX.OpenStack
             token.type = TT.NUMBER;
             token.subtype = TT_INTEGER | TT_LONG | TT_DECIMAL;
             UnreadSourceToken(token);
-            if (value < 0)
-                UnreadSignToken();
+            if (value < 0) UnreadSignToken();
             return true;
         }
 
         bool Directive_evalfloat()
         {
-            if (!Evaluate(out var _, out var value, false))
-                return false;
+            if (!Evaluate(out var _, out var value, false)) return false;
 
             Token token = new();
             token.line = scriptstack.LineNum;
@@ -2424,26 +1843,16 @@ namespace System.NumericsX.OpenStack
             token.type = TT.NUMBER;
             token.subtype = TT_FLOAT | TT_LONG | TT_DECIMAL;
             UnreadSourceToken(token);
-            if (value < 0)
-                UnreadSignToken();
+            if (value < 0) UnreadSignToken();
             return true;
         }
 
         bool ReadDirective()
         {
             //read the directive name
-            if (!ReadSourceToken(out var token))
-            {
-                Error("found '#' without name");
-                return false;
-            }
+            if (!ReadSourceToken(out var token)) { Error("found '#' without name"); return false; }
             // directive name must be on the same line
-            if (token.linesCrossed > 0)
-            {
-                UnreadSourceToken(token);
-                Error("found '#' at end of line");
-                return false;
-            }
+            if (token.linesCrossed > 0) { UnreadSourceToken(token); Error("found '#' at end of line"); return false; }
             // if if is a name
             if (token.type == TT.NAME)
             {
@@ -2478,8 +1887,7 @@ namespace System.NumericsX.OpenStack
 
         bool DollarDirective_evalint()
         {
-            if (!DollarEvaluate(out var value, out var _, true))
-                return false;
+            if (!DollarEvaluate(out var value, out var _, true)) return false;
 
             Token token = new();
             token.line = scriptstack.LineNum;
@@ -2493,15 +1901,13 @@ namespace System.NumericsX.OpenStack
             token.intvalue = (uint)Math.Abs(value);
             token.floatvalue = Math.Abs(value);
             UnreadSourceToken(token);
-            if (value < 0)
-                UnreadSignToken();
+            if (value < 0) UnreadSignToken();
             return true;
         }
 
         bool DollarDirective_evalfloat()
         {
-            if (!DollarEvaluate(out var _, out var value, false))
-                return false;
+            if (!DollarEvaluate(out var _, out var value, false)) return false;
 
             Token token = new();
             token.line = scriptstack.LineNum;
@@ -2515,26 +1921,16 @@ namespace System.NumericsX.OpenStack
             token.intvalue = (uint)MathX.Fabs(value);
             token.floatvalue = MathX.Fabs(value);
             UnreadSourceToken(token);
-            if (value < 0)
-                UnreadSignToken();
+            if (value < 0) UnreadSignToken();
             return true;
         }
 
         bool ReadDollarDirective()
         {
             // read the directive name
-            if (!ReadSourceToken(out var token))
-            {
-                Error("found '$' without name");
-                return false;
-            }
+            if (!ReadSourceToken(out var token)) { Error("found '$' without name"); return false; }
             // directive name must be on the same line
-            if (token.linesCrossed > 0)
-            {
-                UnreadSourceToken(token);
-                Error("found '$' at end of line");
-                return false;
-            }
+            if (token.linesCrossed > 0) { UnreadSourceToken(token); Error("found '$' at end of line"); return false; }
             // if if is a name
             if (token.type == TT.NAME)
             {

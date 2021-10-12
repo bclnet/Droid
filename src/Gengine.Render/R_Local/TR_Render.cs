@@ -1,316 +1,219 @@
+using System;
+using System.NumericsX;
+using WaveEngine.Bindings.OpenGLES;
+using static Gengine.Lib;
+using static Gengine.Render.QGL;
+using static System.NumericsX.OpenStack.OpenStack;
+
 namespace Gengine.Render
 {
-	partial class TRX
-	{
+    unsafe partial class TR
+    {
+        const DrawElementsType GlIndexType = DrawElementsType.UnsignedInt;
+        const float RB_overbright = 1;
 
+        static bool RB_DrawElementsWithCounters_Once = true;
+        public static void RB_DrawElementsWithCounters(DrawSurf surf)
+        {
+            backEnd.pc.c_drawElements++;
+            //backEnd.pc.c_drawIndexes += tri.numIndexes;
+            //backEnd.pc.c_drawVertexes += tri.numVerts;
+            if (surf.indexCache != null)
+            {
+                qglDrawElements(PrimitiveType.Triangles, surf.numIndexes, GlIndexType, vertexCache.Position(surf.indexCache));
+                backEnd.pc.c_vboIndexes += surf.numIndexes;
+            }
+            else if (RB_DrawElementsWithCounters_Once) { common.Warning("Attempting to draw without index caching. This is a bug.\n"); RB_DrawElementsWithCounters_Once = false; }
+        }
 
-		float RB_overbright = 1;
+        // May not use all the indexes in the surface if caps are skipped
+        static bool RB_DrawShadowElementsWithCounters_Once = true;
+        public static void RB_DrawShadowElementsWithCounters(DrawSurf surf, int numIndexes)
+        {
+            backEnd.pc.c_shadowElements++;
+            //backEnd.pc.c_shadowIndexes += numIndexes;
+            //backEnd.pc.c_shadowVertexes += tri.numVerts;
+            if (surf.indexCache != null)
+            {
+                qglDrawElements(PrimitiveType.Triangles, numIndexes, GlIndexType, vertexCache.Position(surf.indexCache));
+                backEnd.pc.c_vboIndexes += numIndexes;
+            }
+            else if (RB_DrawShadowElementsWithCounters_Once) { common.Warning("Attempting to draw without index caching. This is a bug.\n"); RB_DrawShadowElementsWithCounters_Once = false; }
+        }
 
-/*
-================
-RB_DrawElementsWithCounters
-================
-*/
-void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
+        public static void RB_GetShaderTextureMatrix(float* shaderRegisters, TextureStage texture, float[] matrix)
+        {
+            matrix[0] = shaderRegisters[texture.matrix[0][0]];
+            matrix[4] = shaderRegisters[texture.matrix[0][1]];
+            matrix[8] = 0f;
+            matrix[12] = shaderRegisters[texture.matrix[0][2]];
 
-	backEnd.pc.c_drawElements++;
-	//backEnd.pc.c_drawIndexes += tri->numIndexes;
-	//backEnd.pc.c_drawVertexes += tri->numVerts;
-/*
-	if ( tri->ambientSurface != NULL  ) {
-		if ( tri->indexes == surf->ambientSurface->indexes ) {
-			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
-		}
-		if ( tri->verts == surf->ambientSurface->verts ) {
-			backEnd.pc.c_drawRefVertexes += tri->numVerts;
-		}
-	}
-*/
-	if ( surf->indexCache ) {
-		qglDrawElements( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( surf->indexCache ) );
-		backEnd.pc.c_vboIndexes += surf->numIndexes;
-	} else {
-		static bool bOnce = true;
-		if (bOnce) {
-			common->Warning("Attempting to draw without index caching. This is a bug.\n");
-			bOnce = false;
-		}
-	}
-}
+            // we attempt to keep scrolls from generating incredibly large texture values, but center rotations and center scales can still generate offsets that need to be > 1
+            if (matrix[12] < -40f || matrix[12] > 40f) matrix[12] -= (int)matrix[12];
 
-/*
-================
-RB_DrawShadowElementsWithCounters
+            matrix[1] = shaderRegisters[texture.matrix[1][0]];
+            matrix[5] = shaderRegisters[texture.matrix[1][1]];
+            matrix[9] = 0f;
+            matrix[13] = shaderRegisters[texture.matrix[1][2]];
+            if (matrix[13] < -40f || matrix[13] > 40f) matrix[13] -= (int)matrix[13];
 
-May not use all the indexes in the surface if caps are skipped
-================
-*/
-void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf , int numIndexes ) {
-	backEnd.pc.c_shadowElements++;
-	/*
-	backEnd.pc.c_shadowIndexes += numIndexes;
-	backEnd.pc.c_shadowVertexes += tri->numVerts;
-*/
-	if ( surf->indexCache ) {
-		qglDrawElements( GL_TRIANGLES, numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( surf->indexCache ) );
-		backEnd.pc.c_vboIndexes += numIndexes;
-	} else {
-		static bool bOnce = true;
-		if (bOnce) {
-			common->Warning("Attempting to draw without index caching. This is a bug.\n");
-			bOnce = false;
-		}
-	}
-}
+            matrix[2] = 0f;
+            matrix[6] = 0f;
+            matrix[10] = 1f;
+            matrix[14] = 0f;
 
-/*
-======================
-RB_GetShaderTextureMatrix
-======================
-*/
-void RB_GetShaderTextureMatrix( const float *shaderRegisters,
-                                const textureStage_t *texture, float matrix[16] ) {
-	matrix[0] = shaderRegisters[ texture->matrix[0][0] ];
-	matrix[4] = shaderRegisters[ texture->matrix[0][1] ];
-	matrix[8] = 0;
-	matrix[12] = shaderRegisters[ texture->matrix[0][2] ];
+            matrix[3] = 0f;
+            matrix[7] = 0f;
+            matrix[11] = 0f;
+            matrix[15] = 1f;
+        }
 
-	// we attempt to keep scrolls from generating incredibly large texture values, but
-	// center rotations and center scales can still generate offsets that need to be > 1
-	if ( matrix[12] < -40 || matrix[12] > 40 ) {
-		matrix[12] -= (int)matrix[12];
-	}
+        // Handles generating a cinematic frame if needed
+        public static void RB_BindVariableStageImage(TextureStage texture, float* shaderRegisters)
+        {
+            if (texture.cinematic != null)
+            {
+                if (r_skipDynamicTextures.Bool) { globalImages.defaultImage.Bind(); return; }
 
-	matrix[1] = shaderRegisters[ texture->matrix[1][0] ];
-	matrix[5] = shaderRegisters[ texture->matrix[1][1] ];
-	matrix[9] = 0;
-	matrix[13] = shaderRegisters[ texture->matrix[1][2] ];
-	if ( matrix[13] < -40 || matrix[13] > 40 ) {
-		matrix[13] -= (int)matrix[13];
-	}
+                // For multithreading. Images will be 1 fame behind..oh well
+                if (texture.image != null)
+                {
+                    // The first time the image will be invalid so wont bind, so bind black image
+                    if (texture.image.Bind() == false) globalImages.blackImage.Bind();
+                    // Save time to display
+                    texture.image.cinmaticNextTime = (int)(1000 * (backEnd.viewDef.floatTime + backEnd.viewDef.renderView.shaderParms[11]));
+                    // Update next time
+                    globalImages.AddAllocList(texture.image);
+                }
 
-	matrix[2] = 0;
-	matrix[6] = 0;
-	matrix[10] = 1;
-	matrix[14] = 0;
+                //// offset time by shaderParm[7] (FIXME: make the time offset a parameter of the shader?)
+                //// We make no attempt to optimize for multiple identical cinematics being in view, or for cinematics going at a lower framerate than the renderer.
+                //CinData cin = texture.cinematic.ImageForTime((int)(1000 * (backEnd.viewDef.floatTime + backEnd.viewDef.renderView.shaderParms[11])));
+                //if (cin.image != null) globalImages.cinematicImage.UploadScratch(cin.image, cin.imageWidth, cin.imageHeight);
+                //else globalImages.blackImage.Bind();
+            }
+            //FIXME: see why image is invalid
+            else if (texture.image != null) texture.image.Bind();
+        }
 
-	matrix[3] = 0;
-	matrix[7] = 0;
-	matrix[11] = 0;
-	matrix[15] = 1;
-}
+        // Any mirrored or portaled views have already been drawn, so prepare to actually render the visible surfaces for this view
+        public static void RB_BeginDrawingView()
+        {
+            // set the window clipping
+            qglViewport(tr.viewportOffset[0] + backEnd.viewDef.viewport.x1,
+                         tr.viewportOffset[1] + backEnd.viewDef.viewport.y1,
+                         backEnd.viewDef.viewport.x2 + 1 - backEnd.viewDef.viewport.x1,
+                         backEnd.viewDef.viewport.y2 + 1 - backEnd.viewDef.viewport.y1);
 
-/*
-======================
-RB_BindVariableStageImage
+            // the scissor may be smaller than the viewport for subviews
+            qglScissor(tr.viewportOffset[0] + backEnd.viewDef.viewport.x1 + backEnd.viewDef.scissor.x1,
+                        tr.viewportOffset[1] + backEnd.viewDef.viewport.y1 + backEnd.viewDef.scissor.y1,
+                        backEnd.viewDef.scissor.x2 + 1 - backEnd.viewDef.scissor.x1,
+                        backEnd.viewDef.scissor.y2 + 1 - backEnd.viewDef.scissor.y1);
+            backEnd.currentScissor = backEnd.viewDef.scissor;
 
-Handles generating a cinematic frame if needed
-======================
-*/
-void RB_BindVariableStageImage( const textureStage_t *texture, const float *shaderRegisters ) {
-	if ( texture->cinematic ) {
-		cinData_t	cin;
+            // ensures that depth writes are enabled for the depth clear
+            GL_State(GLS_DEFAULT);
 
-		if ( r_skipDynamicTextures.GetBool() ) {
-			globalImages->defaultImage->Bind();
-			return;
-		}
+            // we don't have to clear the depth / stencil buffer for 2D rendering
+            if (backEnd.viewDef.viewEntitys!=null)
+            {
+                qglStencilMask(0xff);
+                // some cards may have 7 bit stencil buffers, so don't assume this should be 128
+                qglClearStencil(1 << (glConfig.stencilBits - 1));
+                qglClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+                qglEnable(GL_DEPTH_TEST);
+            }
+            else
+            {
+                qglDisable(GL_DEPTH_TEST);
+                qglDisable(GL_STENCIL_TEST);
+            }
 
-		// For multithreading. Images will be 1 fame behind..oh well
-		if (texture->image) {
-			// The first time the image will be invalid so wont bind, so bind black image
-			if(texture->image->Bind() == false)
-			{
-				globalImages->blackImage->Bind();
-			}
-			// Save time to display
-			texture->image->cinmaticNextTime = (int)(1000 * ( backEnd.viewDef->floatTime + backEnd.viewDef->renderView.shaderParms[11] ) );
-			// Update next time
-			globalImages->AddAllocList( texture->image );
-		}
+            backEnd.glState.faceCulling = -1;       // force face culling to set next time
+            GL_Cull(CT_FRONT_SIDED);
+        }
 
-/*
-		// offset time by shaderParm[7] (FIXME: make the time offset a parameter of the shader?)
-		// We make no attempt to optimize for multiple identical cinematics being in view, or
-		// for cinematics going at a lower framerate than the renderer.
-		cin = texture->cinematic->ImageForTime( (int)(1000 * ( backEnd.viewDef->floatTime + backEnd.viewDef->renderView.shaderParms[11] ) ) );
+        public static void RB_SetDrawInteraction(ShaderStage surfaceStage, float* surfaceRegs, ref Image image, Vector4[] matrix, float[] color)
+        {
+            image = surfaceStage.texture.image;
+            if (surfaceStage.texture.hasMatrix)
+            {
+                matrix[0].x = surfaceRegs[surfaceStage.texture.matrix[0][0]];
+                matrix[0].y = surfaceRegs[surfaceStage.texture.matrix[0][1]];
+                matrix[0].z = 0f;
+                matrix[0].w = surfaceRegs[surfaceStage.texture.matrix[0][2]];
 
-		if ( cin.image ) {
-			globalImages->cinematicImage->UploadScratch( cin.image, cin.imageWidth, cin.imageHeight );
-		} else {
-			globalImages->blackImage->Bind();
-		}
-*/
-	} else {
-		//FIXME: see why image is invalid
-		if (texture->image) {
-			texture->image->Bind();
-		}
-	}
-}
+                matrix[1].x = surfaceRegs[surfaceStage.texture.matrix[1][0]];
+                matrix[1].y = surfaceRegs[surfaceStage.texture.matrix[1][1]];
+                matrix[1].z = 0f;
+                matrix[1].w = surfaceRegs[surfaceStage.texture.matrix[1][2]];
 
-/*
-=================
-RB_BeginDrawingView
+                // we attempt to keep scrolls from generating incredibly large texture values, but center rotations and center scales can still generate offsets that need to be > 1
+                if (matrix[0].w < -40f || matrix[0].w > 40f) matrix[0].w -= (int)matrix[0].w;
+                if (matrix[1].w < -40f || matrix[1].w > 40f) matrix[1].w -= (int)matrix[1].w;
+            }
+            else
+            {
+                matrix[0].x = 1f;
+                matrix[0].y = 0f;
+                matrix[0].z = 0f;
+                matrix[0].w = 0f;
 
-Any mirrored or portaled views have already been drawn, so prepare
-to actually render the visible surfaces for this view
-=================
-*/
-void RB_BeginDrawingView (void) {
+                matrix[1].x = 0f;
+                matrix[1].y = 1f;
+                matrix[1].z = 0f;
+                matrix[1].w = 0f;
+            }
 
-	// set the window clipping
-	qglViewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,
-	             tr.viewportOffset[1] + backEnd.viewDef->viewport.y1,
-	             backEnd.viewDef->viewport.x2 + 1 - backEnd.viewDef->viewport.x1,
-	             backEnd.viewDef->viewport.y2 + 1 - backEnd.viewDef->viewport.y1 );
+            if (color != null)
+                for (var i = 0; i < 4; i++)
+                {
+                    color[i] = surfaceRegs[surfaceStage.color.registers[i]];
+                    // clamp here, so card with greater range don't look different. we could perform overbrighting like we do for lights, but it doesn't currently look worth it.
+                    if (color[i] < 0) color[i] = 0;
+                    else if (color[i] > 1.0) color[i] = 1.0f;
+                }
+        }
 
-	// the scissor may be smaller than the viewport for subviews
-	qglScissor( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1,
-	            tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1,
-	            backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
-	            backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
-	backEnd.currentScissor = backEnd.viewDef->scissor;
+        public static void RB_SubmitInteraction(DrawInteraction din, Action<DrawInteraction> drawInteraction)
+        {
+            if (din.bumpImage == null) return;
 
-	// ensures that depth writes are enabled for the depth clear
-	GL_State( GLS_DEFAULT );
+            if (din.diffuseImage == null || r_skipDiffuse.Bool) din.diffuseImage = globalImages.blackImage;
+            if (din.specularImage == null || r_skipSpecular.Bool || din.ambientLight != 0) din.specularImage = globalImages.blackImage;
+            if (din.bumpImage == null || r_skipBump.Bool) din.bumpImage = globalImages.flatNormalMap;
 
-	// we don't have to clear the depth / stencil buffer for 2D rendering
-	if ( backEnd.viewDef->viewEntitys ) {
-		qglStencilMask( 0xff );
-		// some cards may have 7 bit stencil buffers, so don't assume this
-		// should be 128
-		qglClearStencil( 1<<(glConfig.stencilBits-1) );
-		qglClear( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
-		qglEnable( GL_DEPTH_TEST );
-	} else {
-		qglDisable( GL_DEPTH_TEST );
-		qglDisable( GL_STENCIL_TEST );
-	}
+            // if we wouldn't draw anything, don't call the Draw function
+            if (
+                ((din.diffuseColor.x > 0f || din.diffuseColor.y > 0f || din.diffuseColor.z > 0f) && din.diffuseImage != globalImages.blackImage) ||
+                ((din.specularColor.x > 0f || din.specularColor.y > 0f || din.specularColor.z > 0f) && din.specularImage != globalImages.blackImage))
+            {
+                din.diffuseColor.x *= RB_overbright;
+                din.diffuseColor.y *= RB_overbright;
+                din.diffuseColor.z *= RB_overbright;
+                drawInteraction(din);
+            }
+        }
 
-	backEnd.glState.faceCulling = -1;		// force face culling to set next time
-	GL_Cull( CT_FRONT_SIDED );
-}
+        public static void RB_DrawView(DrawSurfsCommand data)
+        {
+            var cmd = data;
+            backEnd.viewDef = cmd.viewDef;
 
-/*
-==================
-RB_SetDrawInteractions
-==================
-*/
-void RB_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfaceRegs,
-                            idImage **image, idVec4 matrix[2], float color[4] ) {
-	*image = surfaceStage->texture.image;
-	if ( surfaceStage->texture.hasMatrix ) {
-		matrix[0][0] = surfaceRegs[surfaceStage->texture.matrix[0][0]];
-		matrix[0][1] = surfaceRegs[surfaceStage->texture.matrix[0][1]];
-		matrix[0][2] = 0;
-		matrix[0][3] = surfaceRegs[surfaceStage->texture.matrix[0][2]];
+            // we will need to do a new copyTexSubImage of the screen when a SS_POST_PROCESS material is used
+            backEnd.currentRenderCopied = false;
 
-		matrix[1][0] = surfaceRegs[surfaceStage->texture.matrix[1][0]];
-		matrix[1][1] = surfaceRegs[surfaceStage->texture.matrix[1][1]];
-		matrix[1][2] = 0;
-		matrix[1][3] = surfaceRegs[surfaceStage->texture.matrix[1][2]];
+            // if there aren't any drawsurfs, do nothing
+            if (backEnd.viewDef.numDrawSurfs == 0) return;
 
-		// we attempt to keep scrolls from generating incredibly large texture values, but
-		// center rotations and center scales can still generate offsets that need to be > 1
-		if ( matrix[0][3] < -40 || matrix[0][3] > 40 ) {
-			matrix[0][3] -= (int)matrix[0][3];
-		}
-		if ( matrix[1][3] < -40 || matrix[1][3] > 40 ) {
-			matrix[1][3] -= (int)matrix[1][3];
-		}
-	} else {
-		matrix[0][0] = 1;
-		matrix[0][1] = 0;
-		matrix[0][2] = 0;
-		matrix[0][3] = 0;
+            // skip render bypasses everything that has models, assuming them to be 3D views, but leaves 2D rendering visible
+            if (r_skipRender.Bool && backEnd.viewDef.viewEntitys != null) return;
 
-		matrix[1][0] = 0;
-		matrix[1][1] = 1;
-		matrix[1][2] = 0;
-		matrix[1][3] = 0;
-	}
+            backEnd.pc.c_surfaces += backEnd.viewDef.numDrawSurfs;
 
-	if ( color ) {
-		for ( int i = 0 ; i < 4 ; i++ ) {
-			color[i] = surfaceRegs[surfaceStage->color.registers[i]];
-			// clamp here, so card with greater range don't look different.
-			// we could perform overbrighting like we do for lights, but
-			// it doesn't currently look worth it.
-			if ( color[i] < 0 ) {
-				color[i] = 0;
-			} else if ( color[i] > 1.0 ) {
-				color[i] = 1.0;
-			}
-		}
-	}
-}
-
-/*
-=================
-RB_SubmittInteraction
-=================
-*/
-void RB_SubmittInteraction( drawInteraction_t *din, void (*DrawInteraction)(const drawInteraction_t *) ) {
-	if ( !din->bumpImage ) {
-		return;
-	}
-
-	if ( !din->diffuseImage || r_skipDiffuse.GetBool() ) {
-		din->diffuseImage = globalImages->blackImage;
-	}
-	if ( !din->specularImage || r_skipSpecular.GetBool() || din->ambientLight ) {
-		din->specularImage = globalImages->blackImage;
-	}
-	if ( !din->bumpImage || r_skipBump.GetBool() ) {
-		din->bumpImage = globalImages->flatNormalMap;
-	}
-
-	// if we wouldn't draw anything, don't call the Draw function
-	if (
-	    ( ( din->diffuseColor[0] > 0 ||
-	        din->diffuseColor[1] > 0 ||
-	        din->diffuseColor[2] > 0 ) && din->diffuseImage != globalImages->blackImage )
-	    || ( ( din->specularColor[0] > 0 ||
-	           din->specularColor[1] > 0 ||
-	           din->specularColor[2] > 0 ) && din->specularImage != globalImages->blackImage ) ) {
-
-	            din->diffuseColor[0] *= RB_overbright;
-	            din->diffuseColor[1] *= RB_overbright;
-	            din->diffuseColor[2] *= RB_overbright;
-		DrawInteraction( din );
-	}
-}
-
-/*
-=============
-RB_DrawView
-=============
-*/
-void RB_DrawView( const void *data ) {
-	const drawSurfsCommand_t	*cmd;
-
-	cmd = (const drawSurfsCommand_t *)data;
-
-	backEnd.viewDef = cmd->viewDef;
-
-	// we will need to do a new copyTexSubImage of the screen
-	// when a SS_POST_PROCESS material is used
-	backEnd.currentRenderCopied = false;
-
-	// if there aren't any drawsurfs, do nothing
-	if ( !backEnd.viewDef->numDrawSurfs ) {
-		return;
-	}
-
-	// skip render bypasses everything that has models, assuming
-	// them to be 3D views, but leaves 2D rendering visible
-	if ( r_skipRender.GetBool() && backEnd.viewDef->viewEntitys ) {
-		return;
-	}
-
-	backEnd.pc.c_surfaces += backEnd.viewDef->numDrawSurfs;
-
-	// render the scene, jumping to the hardware specific interaction renderers
-	RB_RenderView();
+            // render the scene, jumping to the hardware specific interaction renderers
+            RB_RenderView();
+        }
+    }
 }

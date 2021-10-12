@@ -248,18 +248,13 @@ namespace System.NumericsX.OpenStack
         // load a script from the given file at the given offset with the given length
         public bool LoadFile(string filename, bool osPath = false)
         {
-            if (loaded)
-            {
-                Error("Lexer::LoadFile: another script already loaded");
-                return false;
-            }
+            if (loaded) { Error("Lexer::LoadFile: another script already loaded"); return false; }
 
             var pathname = !osPath && (baseFolder[0] != '\0') ? $"{baseFolder}/{filename}" : filename;
             var fp = osPath
                 ? fileSystem.OpenExplicitFileRead(pathname)
                 : fileSystem.OpenFileRead(pathname);
-            if (fp == null)
-                return false;
+            if (fp == null) return false;
 
             var length = fp.Length;
             var buf = new byte[length + 1];
@@ -335,12 +330,7 @@ namespace System.NumericsX.OpenStack
             if (!loaded) { Error("Lexer::ReadToken: no file loaded"); return false; }
 
             // if there is a token available (from unreadToken)
-            if (tokenavailable)
-            {
-                tokenavailable = false;
-                token = this.token;
-                return true;
-            }
+            if (tokenavailable) { tokenavailable = false; token = this.token; return true; }
             // save script pointer
             lastScript_p = script_p;
             // save line counter
@@ -351,8 +341,7 @@ namespace System.NumericsX.OpenStack
             whiteSpaceStart_p = script_p;
             token.whiteSpaceStart_p = script_p;
             // read white space before token
-            if (!ReadWhiteSpace())
-                return false;
+            if (!ReadWhiteSpace()) return false;
             // end of the white space
             this.whiteSpaceEnd_p = script_p;
             token.whiteSpaceEnd_p = script_p;
@@ -498,8 +487,7 @@ namespace System.NumericsX.OpenStack
         {
             if (!ReadToken(out token)) return false;
             // if the type matches
-            if (token.type == type && (token.subtype & subtype) == subtype)
-                return true;
+            if (token.type == type && (token.subtype & subtype) == subtype) return true;
             // unread token
             script_p = lastScript_p;
             line = lastline;
@@ -550,9 +538,7 @@ namespace System.NumericsX.OpenStack
         /// <returns></returns>
         public bool SkipUntilString(string s)
         {
-            while (ReadToken(out var token))
-                if (token == s)
-                    return true;
+            while (ReadToken(out var token)) if (token == s) return true;
             return false;
         }
 
@@ -601,8 +587,7 @@ namespace System.NumericsX.OpenStack
         /// <param name="token">The token.</param>
         public void UnreadToken(Token token)
         {
-            if (tokenavailable)
-                FatalError("Lexer::unreadToken, unread token twice\n");
+            if (tokenavailable) FatalError("Lexer::unreadToken, unread token twice\n");
             this.token = token;
             tokenavailable = true;
         }
@@ -614,15 +599,9 @@ namespace System.NumericsX.OpenStack
         /// <returns></returns>
         public bool ReadTokenOnLine(out Token token)
         {
-            if (!ReadToken(out token))
-            {
-                script_p = lastScript_p;
-                line = lastline;
-                return false;
-            }
+            if (!ReadToken(out token)) { script_p = lastScript_p; line = lastline; return false; }
             // if no lines were crossed before this token
-            if (token.linesCrossed == 0)
-                return true;
+            if (token.linesCrossed == 0) return true;
             // restore our position
             script_p = lastScript_p;
             line = lastline;
@@ -716,32 +695,28 @@ namespace System.NumericsX.OpenStack
         public unsafe bool Parse2DMatrix(int y, int x, float* m)
         {
             if (!ExpectTokenString("(")) return false;
-            for (var i = 0; i < y; i++)
-                if (!Parse1DMatrix(x, m + i * x)) return false;
+            for (var i = 0; i < y; i++) if (!Parse1DMatrix(x, m + i * x)) return false;
             if (!ExpectTokenString(")")) return false;
             return true;
         }
         public bool Parse2DMatrix(int y, int x, float[] m, int offset = 0)
         {
             if (!ExpectTokenString("(")) return false;
-            for (var i = 0; i < y; i++)
-                if (!Parse1DMatrix(x, m, i * x)) return false;
+            for (var i = 0; i < y; i++) if (!Parse1DMatrix(x, m, i * x)) return false;
             if (!ExpectTokenString(")")) return false;
             return true;
         }
         public unsafe bool Parse3DMatrix(int z, int y, int x, float* m)
         {
             if (!ExpectTokenString("(")) return false;
-            for (var i = 0; i < z; i++)
-                if (!Parse2DMatrix(y, x, m + i * x * y)) return false;
+            for (var i = 0; i < z; i++) if (!Parse2DMatrix(y, x, m + i * x * y)) return false;
             if (!ExpectTokenString(")")) return false;
             return true;
         }
         public bool Parse3DMatrix(int z, int y, int x, float[] m, int offset = 0)
         {
             if (!ExpectTokenString("(")) return false;
-            for (var i = 0; i < z; i++)
-                if (!Parse2DMatrix(y, x, m, i * x * y)) return false;
+            for (var i = 0; i < z; i++) if (!Parse2DMatrix(y, x, m, i * x * y)) return false;
             if (!ExpectTokenString(")")) return false;
             return true;
         }
@@ -756,8 +731,7 @@ namespace System.NumericsX.OpenStack
         public string ParseBracedSection(out string o)
         {
             o = string.Empty;
-            if (!ExpectTokenString("{"))
-                return o;
+            if (!ExpectTokenString("{")) return o;
 
             o = "{";
             var depth = 1;
@@ -766,8 +740,7 @@ namespace System.NumericsX.OpenStack
                 if (!ReadToken(out var token)) { Error("missing closing brace"); return o; }
 
                 // if the token is on a new line
-                for (var i = 0; i < token.linesCrossed; i++)
-                    o += "\r\n";
+                for (var i = 0; i < token.linesCrossed; i++) o += "\r\n";
 
                 if (token.type == TT.PUNCTUATION)
                 {
@@ -793,8 +766,7 @@ namespace System.NumericsX.OpenStack
         public string ParseBracedSectionExact(out string o, int tabs = -1)
         {
             o = string.Empty;
-            if (!ExpectTokenString("{"))
-                return o;
+            if (!ExpectTokenString("{")) return o;
 
             o = "{";
             var depth = 1;
@@ -855,8 +827,7 @@ namespace System.NumericsX.OpenStack
         public int GetLastWhiteSpace(out string whiteSpace)
         {
             whiteSpace = string.Empty;
-            for (var p = whiteSpaceStart_p; p < whiteSpaceEnd_p; p++)
-                whiteSpace += buffer[p];
+            for (var p = whiteSpaceStart_p; p < whiteSpaceEnd_p; p++) whiteSpace += buffer[p];
             return whiteSpace.Length;
         }
 
@@ -889,9 +860,7 @@ namespace System.NumericsX.OpenStack
         /// <returns></returns>
         public string GetPunctuationFromId(int id)
         {
-            for (var i = 0; i < punctuations.Length; i++)
-                if (punctuations[i].n == id)
-                    return punctuations[i].p;
+            for (var i = 0; i < punctuations.Length; i++) if (punctuations[i].n == id) return punctuations[i].p;
             return "unknown punctuation";
         }
 
@@ -902,9 +871,7 @@ namespace System.NumericsX.OpenStack
         /// <returns></returns>
         public int GetPunctuationId(string p)
         {
-            for (var i = 0; i < punctuations.Length; i++)
-                if (punctuations[i].p == p)
-                    return punctuations[i].n;
+            for (var i = 0; i < punctuations.Length; i++) if (punctuations[i].p == p) return punctuations[i].n;
             return 0;
         }
 
@@ -987,8 +954,7 @@ namespace System.NumericsX.OpenStack
         public void Error(string str)
         {
             hadError = true;
-            if ((flags & LEXFL.NOERRORS) != 0)
-                return;
+            if ((flags & LEXFL.NOERRORS) != 0) return;
 
             var text = str;
             if ((flags & LEXFL.NOFATALERRORS) != 0) Warning($"file {filename}, line {line}: {text}");
@@ -1001,8 +967,7 @@ namespace System.NumericsX.OpenStack
         /// <param name="str">The string.</param>
         public void Warning(string str)
         {
-            if ((flags & LEXFL.NOWARNINGS) != 0)
-                return;
+            if ((flags & LEXFL.NOWARNINGS) != 0) return;
 
             var text = str;
             Warning($"file {filename}, line {line}: {text}");
@@ -1028,15 +993,13 @@ namespace System.NumericsX.OpenStack
             {
                 punctuationtable = default_punctuationtable;
                 nextpunctuation = default_nextpunctuation;
-                if (default_setup)
-                    return;
+                if (default_setup) return;
                 default_setup = true;
                 //i = default_punctuations.Length; //: opt
             }
             else
             {
-                if (punctuationtable == null || punctuationtable == default_punctuationtable)
-                    punctuationtable = new int[256];
+                if (punctuationtable == null || punctuationtable == default_punctuationtable) punctuationtable = new int[256];
                 i = punctuations.Length;
                 nextpunctuation = new int[i];
             }
@@ -1084,10 +1047,8 @@ namespace System.NumericsX.OpenStack
                 // skip white space
                 while (buffer[script_p] <= ' ')
                 {
-                    if (buffer[script_p] == 0)
-                        return false;
-                    if (buffer[script_p] == '\n')
-                        line++;
+                    if (buffer[script_p] == 0) return false;
+                    if (buffer[script_p] == '\n') line++;
                     script_p++;
                 }
                 // skip comments
@@ -1100,14 +1061,12 @@ namespace System.NumericsX.OpenStack
                         do
                         {
                             script_p++;
-                            if (buffer[script_p] == 0)
-                                return false;
+                            if (buffer[script_p] == 0) return false;
                         }
                         while (buffer[script_p] != '\n');
                         line++;
                         script_p++;
-                        if (buffer[script_p] == 0)
-                            return false;
+                        if (buffer[script_p] == 0) return false;
                         continue;
                     }
                     // comments /* */
@@ -1117,24 +1076,18 @@ namespace System.NumericsX.OpenStack
                         while (true)
                         {
                             script_p++;
-                            if (buffer[script_p] == 0)
-                                return false;
-                            if (buffer[script_p] == '\n')
-                                line++;
+                            if (buffer[script_p] == 0) return false;
+                            if (buffer[script_p] == '\n') line++;
                             else if (buffer[script_p] == '/')
                             {
-                                if (buffer[script_p] == '*')
-                                    break;
-                                if (buffer[script_p] == '*')
-                                    Warning("nested comment");
+                                if (buffer[script_p] == '*') break;
+                                if (buffer[script_p] == '*') Warning("nested comment");
                             }
                         }
                         script_p++;
-                        if (buffer[script_p] == 0)
-                            return false;
+                        if (buffer[script_p] == 0) return false;
                         script_p++;
-                        if (buffer[script_p] == 0)
-                            return false;
+                        if (buffer[script_p] == 0) return false;
                         continue;
                     }
                 }
@@ -1221,8 +1174,7 @@ namespace System.NumericsX.OpenStack
                 // if there is an escape character and escape characters are allowed
                 if (buffer[script_p] == '\\' && (flags & LEXFL.NOSTRINGESCAPECHARS) == 0)
                 {
-                    if (!ReadEscapeCharacter(out var ch))
-                        return false;
+                    if (!ReadEscapeCharacter(out var ch)) return false;
                     token.AppendDirty(ch);
                 }
                 // if a trailing quote
@@ -1231,8 +1183,7 @@ namespace System.NumericsX.OpenStack
                     // step over the quote
                     script_p++;
                     // if consecutive strings should not be concatenated
-                    if ((flags & LEXFL.NOSTRINGCONCAT) != 0 && ((flags & LEXFL.ALLOWBACKSLASHSTRINGCONCAT) == 0 || quote != '\"'))
-                        break;
+                    if ((flags & LEXFL.NOSTRINGCONCAT) != 0 && ((flags & LEXFL.ALLOWBACKSLASHSTRINGCONCAT) == 0 || quote != '\"')) break;
 
                     tmpscript_p = script_p;
                     tmpline = line;
@@ -1263,8 +1214,7 @@ namespace System.NumericsX.OpenStack
 
             if (token.type == TT.LITERAL)
             {
-                if ((flags & LEXFL.ALLOWMULTICHARLITERALS) == 0 && token.val.Length != 1)
-                    Warning("literal is not one character long");
+                if ((flags & LEXFL.ALLOWMULTICHARLITERALS) == 0 && token.val.Length != 1) Warning("literal is not one character long");
                 token.subtype = token.val[0];
             }
             // the sub type is the length of the string
@@ -1458,9 +1408,7 @@ namespace System.NumericsX.OpenStack
 
         bool CheckString(string str)
         {
-            for (var i = 0; i < str.Length; i++)
-                if (buffer[script_p + i] != str[i])
-                    return false;
+            for (var i = 0; i < str.Length; i++) if (buffer[script_p + i] != str[i]) return false;
             return true;
         }
 

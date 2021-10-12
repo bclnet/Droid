@@ -32,16 +32,8 @@ namespace System.NumericsX
             }
             else
             {
-                if (other.hashSize != hashSize || hash == INVALID_INDEX)
-                {
-                    hashSize = other.hashSize;
-                    hash = new int[hashSize];
-                }
-                if (other.indexSize != indexSize || indexChain == INVALID_INDEX)
-                {
-                    indexSize = other.indexSize;
-                    indexChain = new int[indexSize];
-                }
+                if (other.hashSize != hashSize || hash == INVALID_INDEX) { hashSize = other.hashSize; hash = new int[hashSize]; }
+                if (other.indexSize != indexSize || indexChain == INVALID_INDEX) { indexSize = other.indexSize; indexChain = new int[indexSize]; }
                 hash = other.hash;
                 indexChain = other.indexChain;
             }
@@ -65,10 +57,8 @@ namespace System.NumericsX
             int h;
 
             Debug.Assert(index >= 0);
-            if (hash == INVALID_INDEX)
-                Allocate(hashSize, index >= indexSize ? index + 1 : indexSize);
-            else if (index >= indexSize)
-                ResizeIndex(index + 1);
+            if (hash == INVALID_INDEX) Allocate(hashSize, index >= indexSize ? index + 1 : indexSize);
+            else if (index >= indexSize) ResizeIndex(index + 1);
             h = key & hashMask;
             indexChain[index] = hash[h];
             hash[h] = index;
@@ -79,17 +69,10 @@ namespace System.NumericsX
         {
             var k = key & hashMask;
 
-            if (hash == INVALID_INDEX)
-                return;
-            if (hash[k] == index)
-                hash[k] = indexChain[index];
+            if (hash == INVALID_INDEX) return;
+            if (hash[k] == index) hash[k] = indexChain[index];
             else
-                for (var i = hash[k]; i != -1; i = indexChain[i])
-                    if (indexChain[i] == index)
-                    {
-                        indexChain[i] = indexChain[index];
-                        break;
-                    }
+                for (var i = hash[k]; i != -1; i = indexChain[i]) if (indexChain[i] == index) { indexChain[i] = indexChain[index]; break; }
             indexChain[index] = -1;
         }
 
@@ -112,24 +95,10 @@ namespace System.NumericsX
             if (hash != INVALID_INDEX)
             {
                 max = index;
-                for (i = 0; i < hashSize; i++)
-                    if (hash[i] >= index)
-                    {
-                        hash[i]++;
-                        if (hash[i] > max)
-                            max = hash[i];
-                    }
-                for (i = 0; i < indexSize; i++)
-                    if (indexChain[i] >= index)
-                    {
-                        indexChain[i]++;
-                        if (indexChain[i] > max)
-                            max = indexChain[i];
-                    }
-                if (max >= indexSize)
-                    ResizeIndex(max + 1);
-                for (i = max; i > index; i--)
-                    indexChain[i] = indexChain[i - 1];
+                for (i = 0; i < hashSize; i++) if (hash[i] >= index) { hash[i]++; if (hash[i] > max) max = hash[i]; }
+                for (i = 0; i < indexSize; i++) if (indexChain[i] >= index) { indexChain[i]++; if (indexChain[i] > max) max = indexChain[i]; }
+                if (max >= indexSize) ResizeIndex(max + 1);
+                for (i = max; i > index; i--) indexChain[i] = indexChain[i - 1];
                 indexChain[index] = -1;
             }
             Add(key, index);
@@ -144,22 +113,9 @@ namespace System.NumericsX
             if (hash != INVALID_INDEX)
             {
                 max = index;
-                for (i = 0; i < hashSize; i++)
-                    if (hash[i] >= index)
-                    {
-                        if (hash[i] > max)
-                            max = hash[i];
-                        hash[i]--;
-                    }
-                for (i = 0; i < indexSize; i++)
-                    if (indexChain[i] >= index)
-                    {
-                        if (indexChain[i] > max)
-                            max = indexChain[i];
-                        indexChain[i]--;
-                    }
-                for (i = index; i < max; i++)
-                    indexChain[i] = indexChain[i + 1];
+                for (i = 0; i < hashSize; i++) if (hash[i] >= index) { if (hash[i] > max) max = hash[i]; hash[i]--; }
+                for (i = 0; i < indexSize; i++) if (indexChain[i] >= index) { if (indexChain[i] > max) max = indexChain[i]; indexChain[i]--; }
+                for (i = index; i < max; i++) indexChain[i] = indexChain[i + 1];
                 indexChain[max] = -1;
             }
         }
@@ -168,9 +124,7 @@ namespace System.NumericsX
         public unsafe void Clear()
         {
             // only clear the hash table because clearing the indexChain is not really needed
-            if (hash != INVALID_INDEX)
-                fixed (void* hash_ = hash)
-                    Unsafe.InitBlock(hash_, 0xff, (uint)(hashSize * sizeof(int)));
+            if (hash != INVALID_INDEX) fixed (void* hash_ = hash) Unsafe.InitBlock(hash_, 0xff, (uint)(hashSize * sizeof(int)));
         }
 
         // clear and resize
@@ -184,10 +138,8 @@ namespace System.NumericsX
         // free allocated memory
         public void Free()
         {
-            if (hash != INVALID_INDEX)
-                hash = INVALID_INDEX;
-            if (indexChain != INVALID_INDEX)
-                indexChain = INVALID_INDEX;
+            if (hash != INVALID_INDEX) hash = INVALID_INDEX;
+            if (indexChain != INVALID_INDEX) indexChain = INVALID_INDEX;
             lookupMask = 0;
         }
 
@@ -211,17 +163,12 @@ namespace System.NumericsX
         {
             int[] oldIndexChain; int mod, newSize;
 
-            if (newIndexSize <= indexSize)
-                return;
+            if (newIndexSize <= indexSize) return;
 
             mod = newIndexSize % granularity;
             newSize = mod == 0 ? newIndexSize : newIndexSize + granularity - mod;
 
-            if (indexChain == INVALID_INDEX)
-            {
-                indexSize = newSize;
-                return;
-            }
+            if (indexChain == INVALID_INDEX) { indexSize = newSize; return; }
 
             oldIndexChain = indexChain;
             indexChain = new int[newSize];
@@ -239,28 +186,24 @@ namespace System.NumericsX
         {
             int i, index, totalItems, average, error, e;
 
-            if (hash == INVALID_INDEX)
-                return 100;
+            if (hash == INVALID_INDEX) return 100;
 
             totalItems = 0;
             var numHashItems = new int[hashSize];
             for (i = 0; i < hashSize; i++)
             {
                 numHashItems[i] = 0;
-                for (index = hash[i]; index >= 0; index = indexChain[index])
-                    numHashItems[i]++;
+                for (index = hash[i]; index >= 0; index = indexChain[index]) numHashItems[i]++;
                 totalItems += numHashItems[i];
             }
             // if no items in hash
-            if (totalItems <= 1)
-                return 100;
+            if (totalItems <= 1) return 100;
             average = totalItems / hashSize;
             error = 0;
             for (i = 0; i < hashSize; i++)
             {
                 e = Math.Abs(numHashItems[i] - average);
-                if (e > 1)
-                    error += e - 1;
+                if (e > 1) error += e - 1;
             }
             return 100 - (error * 100 / totalItems);
         }
@@ -299,12 +242,10 @@ namespace System.NumericsX
             Free();
             hashSize = newHashSize;
             hash = new int[hashSize];
-            fixed (void* hash_ = hash)
-                Unsafe.InitBlock(hash_, 0xff, (uint)(hashSize * sizeof(int)));
+            fixed (void* hash_ = hash) Unsafe.InitBlock(hash_, 0xff, (uint)(hashSize * sizeof(int)));
             indexSize = newIndexSize;
             indexChain = new int[indexSize];
-            fixed (void* indexChain_ = indexChain)
-                Unsafe.InitBlock(indexChain_, 0xff, (uint)(indexSize * sizeof(int)));
+            fixed (void* indexChain_ = indexChain) Unsafe.InitBlock(indexChain_, 0xff, (uint)(indexSize * sizeof(int)));
             hashMask = hashSize - 1;
             lookupMask = -1;
         }

@@ -30,6 +30,7 @@ namespace System.NumericsX
 
     public struct Plane
     {
+        public const int ALLOC16 = 1;
         public static Plane origin = new(0f, 0f, 0f, 0f);
 
         public const float ON_EPSILON = 0.1f;
@@ -74,11 +75,7 @@ namespace System.NumericsX
         public unsafe float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (float* p = &a)
-                    return p[index];
-            }
+            get { fixed (float* p = &a) return p[index]; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -143,8 +140,7 @@ namespace System.NumericsX
         public float Normalize(bool fixDegenerate = true)  // only normalizes the plane normal, does not adjust d
         {
             var length = reinterpret.cast_vec3(this).Normalize();
-            if (fixDegenerate)
-                FixDegenerateNormal();
+            if (fixDegenerate) FixDegenerateNormal();
             return length;
         }
 
@@ -157,9 +153,7 @@ namespace System.NumericsX
         {
             var fixedNormal = FixDegenerateNormal();
             // only fix dist if the normal was degenerate
-            if (fixedNormal)
-                if (MathX.Fabs(d - MathX.Rint(d)) < distEpsilon)
-                    d = MathX.Rint(d);
+            if (fixedNormal && MathX.Fabs(d - MathX.Rint(d)) < distEpsilon) d = MathX.Rint(d);
             return fixedNormal;
         }
 
@@ -195,8 +189,7 @@ namespace System.NumericsX
         public bool FromPoints(in Vector3 p1, in Vector3 p2, in Vector3 p3, bool fixDegenerate = true)
         {
             Normal = (p1 - p2).Cross(p3 - p2);
-            if (Normalize(fixDegenerate) == 0f)
-                return false;
+            if (Normalize(fixDegenerate) == 0f) return false;
             d = -(Normal * p2);
             return true;
         }
@@ -205,8 +198,7 @@ namespace System.NumericsX
         public bool FromVecs(in Vector3 dir1, in Vector3 dir2, in Vector3 p, bool fixDegenerate = true)
         {
             Normal = dir1.Cross(dir2);
-            if (Normalize(fixDegenerate) == 0f)
-                return false;
+            if (Normalize(fixDegenerate) == 0f) return false;
             d = -(Normal * p);
             return true;
         }
@@ -240,8 +232,7 @@ namespace System.NumericsX
             }
 
             sum.Zero();
-            for (i = 0; i < numPoints; i++)
-                sum += points[i];
+            for (i = 0; i < numPoints; i++) sum += points[i];
             average = sum / numPoints;
 
             for (i = 0; i < numPoints; i++)
@@ -255,8 +246,7 @@ namespace System.NumericsX
             }
 
             Matrix2x2 m = new(sumXX, sumXY, sumXY, sumYY);
-            if (!m.InverseSelf())
-                return false;
+            if (!m.InverseSelf()) return false;
 
             a = -sumXZ * m.mat0.x - sumYZ * m.mat0.y;
             b = -sumXZ * m.mat1.x - sumYZ * m.mat1.y;
@@ -328,11 +318,7 @@ namespace System.NumericsX
 
             d1 = Normal * start + d;
             d2 = Normal * dir;
-            if (d2 == 0f)
-            {
-                scale = 0;
-                return false;
-            }
+            if (d2 == 0f) { scale = 0; return false; }
             scale = -(d1 / d2);
             return true;
         }
@@ -346,11 +332,7 @@ namespace System.NumericsX
             n11 = plane.Normal.LengthSqr;
             det = n00 * n11 - n01 * n01;
 
-            if (MathX.Fabs(det) < 1e-6f)
-            {
-                start = dir = default;
-                return false;
-            }
+            if (MathX.Fabs(det) < 1e-6f) { start = dir = default; return false; }
 
             invDet = 1f / det;
             f0 = (n01 * plane.d - n11 * d) * invDet;
@@ -370,15 +352,13 @@ namespace System.NumericsX
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
-        //    fixed (float* _ = &a)
-        //        return callback(_);
+        //    fixed (float* _ = &a) return callback(_);
         //}
 
         public unsafe string ToString(int precision = 2)
         {
             var dimension = Dimension;
-            fixed (float* _ = &a)
-                return FloatArrayToString(_, dimension, precision);
+            fixed (float* _ = &a) return FloatArrayToString(_, dimension, precision);
         }
     }
 }

@@ -46,6 +46,9 @@ namespace System.NumericsX
 
         #region List
 
+        public static ref T Ref<T>(this List<T> source, int index)
+            => ref ((T[])ItemsField.GetValue(source))[index];
+
         public static int Add_<T>(this List<T> source, T item)
         {
             source.Add(item);
@@ -55,13 +58,14 @@ namespace System.NumericsX
         public static int AddUnique<T>(this List<T> source, T item)
         {
             var index = source.FindIndex(x => x.Equals(item));
-            if (index < 0)
-                index = source.Add_(item);
+            if (index < 0) index = source.Add_(item);
             return index;
         }
 
-        public static void SetNum<T>(this List<T> source, int newNum, bool resize = true)
+        public static T[] SetNum<T>(this List<T> source, int newNum, bool resize = true)
         {
+            source.Capacity = newNum;
+            return (T[])ItemsField.GetValue(source);
         }
 
         public static void SetGranularity<T>(this List<T> source, int granularity)

@@ -151,8 +151,7 @@ namespace System.NumericsX
         {
             float s;
 
-            if ((a < 0f) || (a >= TWO_PI))
-                a -= (float)Math.Floor(a / TWO_PI) * TWO_PI;
+            if ((a < 0f) || (a >= TWO_PI)) a -= (float)Math.Floor(a / TWO_PI) * TWO_PI;
 #if true
             if (a < PI)
             {
@@ -165,8 +164,7 @@ namespace System.NumericsX
             }
 #else
             a = PI - a;
-            if (Math.Fabs(a) >= HALF_PI)
-                a = ((a < 0f) ? -PI : PI) - a;
+            if (Math.Fabs(a) >= HALF_PI) a = ((a < 0f) ? -PI : PI) - a;
 #endif
             s = a * a;
             return a * (((((-2.39e-08f * s + 2.7526e-06f) * s - 1.98409e-04f) * s + 8.3333315e-03f) * s - 1.666666664e-01f) * s + 1f);
@@ -183,8 +181,7 @@ namespace System.NumericsX
         {
             float s, d;
 
-            if ((a < 0f) || (a >= TWO_PI))
-                a -= (float)Math.Floor(a / TWO_PI) * TWO_PI;
+            if ((a < 0f) || (a >= TWO_PI)) a -= (float)Math.Floor(a / TWO_PI) * TWO_PI;
 #if true
             if (a < PI)
             {
@@ -378,7 +375,7 @@ namespace System.NumericsX
                 a = 1f / a;
                 s = a * a;
                 s = -(((((((((0.0028662257f * s - 0.0161657367f) * s + 0.0429096138f) * s - 0.0752896400f)
-                        * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s) + 1f) * a;
+                    * s + 0.1065626393f) * s - 0.1420889944f) * s + 0.1999355085f) * s - 0.3333314528f) * s) + 1f) * a;
                 if (FLOATSIGNBITSET(a)) return s - HALF_PI;
                 else return s + HALF_PI;
             }
@@ -450,17 +447,12 @@ namespace System.NumericsX
             i = ((m >> (IEEE_FLT_MANTISSA_BITS - e)) & ~(e >> 31)) ^ s;
 #else
             i = (int)x;
-            if (x < 0f)
-                i--;
+            if (x < 0f) i--;
 #endif
             exponent = (i + IEEE_FLT_EXPONENT_BIAS) << IEEE_FLT_MANTISSA_BITS;
             y = reinterpret.cast_float(exponent);
             x -= i;
-            if (x >= 0.5f)
-            {
-                x -= 0.5f;
-                y *= 1.4142135623730950488f;    // multiply with sqrt( 2 )
-            }
+            if (x >= 0.5f) { x -= 0.5f; y *= 1.4142135623730950488f; } // multiply with sqrt( 2 )
             x2 = x * x;
             p = x * (7.2152891511493f + x2 * 0.0576900723731f);
             q = 20.8189237930062f + x2;
@@ -569,21 +561,21 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Abs(int x)              // returns the absolute value of the integer value (for reference only)
         {
-            int y = x >> 31;
+            var y = x >> 31;
             return (x ^ y) - y;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Fabs(float f)         // returns the absolute value of the floating point value
         {
-            int tmp = reinterpret.cast_int(f);
+            var tmp = reinterpret.cast_int(f);
             tmp &= 0x7FFFFFFF;
             return reinterpret.cast_float(tmp);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Fabs(double f)         // returns the absolute value of the floating point value
         {
-            int tmp = reinterpret.cast_int((float)f);
+            var tmp = reinterpret.cast_int((float)f);
             tmp &= 0x7FFFFFFF;
             return reinterpret.cast_float(tmp);
         }
@@ -671,8 +663,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float AngleNormalize360(float angle)
         {
-            if ((angle >= 360f) || (angle < 0f))
-                angle -= (float)Math.Floor(angle / 360f) * 360f;
+            if ((angle >= 360f) || (angle < 0f)) angle -= (float)Math.Floor(angle / 360f) * 360f;
             return angle;
         }
 
@@ -680,8 +671,7 @@ namespace System.NumericsX
         public static float AngleNormalize180(float angle)
         {
             angle = AngleNormalize360(angle);
-            if (angle > 180f)
-                angle -= 360f;
+            if (angle > 180f) angle -= 360f;
             return angle;
         }
 
@@ -695,11 +685,11 @@ namespace System.NumericsX
             Debug.Assert(exponentBits >= 2 && exponentBits <= 8);
             Debug.Assert(mantissaBits >= 2 && mantissaBits <= 23);
 
-            int maxBits = (((1 << (exponentBits - 1)) - 1) << mantissaBits) | ((1 << mantissaBits) - 1);
-            int minBits = (((1 << exponentBits) - 2) << mantissaBits) | 1;
+            var maxBits = (((1 << (exponentBits - 1)) - 1) << mantissaBits) | ((1 << mantissaBits) - 1);
+            var minBits = (((1 << exponentBits) - 2) << mantissaBits) | 1;
 
-            float max = BitsToFloat(maxBits, exponentBits, mantissaBits);
-            float min = BitsToFloat(minBits, exponentBits, mantissaBits);
+            var max = BitsToFloat(maxBits, exponentBits, mantissaBits);
+            var min = BitsToFloat(minBits, exponentBits, mantissaBits);
 
             if (f >= 0f)
             {
@@ -746,8 +736,7 @@ namespace System.NumericsX
             //const int* ptr;
 
             //ptr = reinterpret_cast_int(array);
-            //for (i = 0; i < numFloats; i++)
-            //    hash ^= ptr[i];
+            //for (i = 0; i < numFloats; i++) hash ^= ptr[i];
             //return hash;
         }
 
@@ -780,7 +769,9 @@ namespace System.NumericsX
 
         // Old 3D vector macros, should no longer be used.
 
-        //#define DotProduct( a, b)			((a)[0]*(b)[0]+(a)[1]*(b)[1]+(a)[2]*(b)[2])
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float DotProduct(in Vector3 a, Span<float> b) => a.x * b[0] + a.y * b[1] + a.z * b[2];
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float DotProduct(in Plane a, Span<float> b) => a.a * b[0] + a.b * b[1] + a.c * b[2];
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorSubtract(in Vector3 a, Span<float> b, ref Vector3 c) { c.x = a.x - b[0]; c.y = a.y - b[1]; c.z = a.z - b[2]; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorSubtract(in Vector3 a, in Vector3 b, float[] c) { c[0] = a.x - b.x; c[1] = a.y - b.y; c[2] = a.z - b.z; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorSubtract(in Vector3 a, in Vector3 b, float* c) { c[0] = a.x - b.x; c[1] = a.y - b.y; c[2] = a.z - b.z; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorAdd(in Vector3 a, in Vector3 b, float[] c) { c[0] = a.x + b.x; c[1] = a.y + b.y; c[2] = a.z + b.z; }

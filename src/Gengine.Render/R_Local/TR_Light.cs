@@ -1,14 +1,13 @@
 using System;
 using System.NumericsX;
 using static Gengine.Lib;
-using static Gengine.Render.Lib;
 using static System.NumericsX.OpenStack.OpenStack;
 using static System.NumericsX.Platform;
 using GlIndex = System.Int32;
 
 namespace Gengine.Render
 {
-    unsafe partial class TRX
+    unsafe partial class TR
     {
         const float CHECK_BOUNDS_EPSILON = 1f;
 
@@ -361,7 +360,7 @@ namespace Gengine.Render
 
         //===============================================================================================================
 
-        static void R_LinkLightSurf(ref DrawSurf link, SrfTriangles tri, ViewEntity space, RenderLightLocal light, Material shader, ScreenRect scissor, bool viewInsideShadow)
+        public static void R_LinkLightSurf(ref DrawSurf link, SrfTriangles tri, ViewEntity space, RenderLightLocal light, Material shader, ScreenRect scissor, bool viewInsideShadow)
         {
             DrawSurf drawSurf;
 
@@ -517,11 +516,9 @@ namespace Gengine.Render
         }
 
         // Calc the light shader values, removing any light from the viewLight list if it is determined to not have any visible effect due to being flashed off or turned off.
-        // Adds entities to the viewEntity list if they are needed for shadow casting.
-        // Add any precomputed shadow volumes.
-        // Removes lights from the viewLights list if they are completely turned off, or completely off screen.
-        // Create any new interactions needed between the viewLights and the viewEntitys due to game movement
-        static void R_AddLightSurfaces()
+        // Adds entities to the viewEntity list if they are needed for shadow casting. Add any precomputed shadow volumes.
+        // Removes lights from the viewLights list if they are completely turned off, or completely off screen. Create any new interactions needed between the viewLights and the viewEntitys due to game movement
+        public static void R_AddLightSurfaces()
         {
             ViewLight vLight;
             RenderLightLocal light;
@@ -660,7 +657,7 @@ namespace Gengine.Render
 
         //===============================================================================================================
 
-        static bool R_IssueEntityDefCallback(RenderEntityLocal def)
+        public static bool R_IssueEntityDefCallback(RenderEntityLocal def)
         {
             bool update;
             Bounds oldBounds;
@@ -687,7 +684,7 @@ namespace Gengine.Render
         }
 
         // Issues a deferred entity callback if necessary. If the model isn't dynamic, it returns the original. Returns the cached dynamic model if present, otherwise creates it and any necessary overlays
-        IRenderModel R_EntityDefDynamicModel(RenderEntityLocal def)
+        public static IRenderModel R_EntityDefDynamicModel(RenderEntityLocal def)
         {
             // allow deferred entities to construct themselves
             var callbackUpdate = def.parms.callback != null ? R_IssueEntityDefCallback(def) : false;
@@ -744,7 +741,7 @@ namespace Gengine.Render
         }
 
         static float R_AddDrawSurf_refRegs[MAX_EXPRESSION_REGISTERS];  // don't put on stack, or VC++ will do a page touch
-        static void R_AddDrawSurf(SrfTriangles tri, ViewEntity space, RenderEntity renderEntity, Material shader, ScreenRect scissor)
+        public static void R_AddDrawSurf(SrfTriangles tri, ViewEntity space, RenderEntity renderEntity, Material shader, ScreenRect scissor)
         {
             float[] shaderParms;
             float[] generatedShaderParms[MAX_ENTITY_SHADER_PARMS];
@@ -972,7 +969,7 @@ namespace Gengine.Render
 
         // Here is where dynamic models actually get instantiated, and necessary interactions get created.  This is all done on a sort-by-model basis
         // to keep source data in cache (most likely L2) as any interactions and shadows are generated, since dynamic models will typically be lit by two or more lights.
-        static void R_AddModelSurfaces()
+        public static void R_AddModelSurfaces()
         {
             ViewEntity vEntity;
             Interaction inter, next;
@@ -1060,7 +1057,7 @@ namespace Gengine.Render
             }
         }
 
-        static void R_RemoveUnecessaryViewLights()
+        public static void R_RemoveUnecessaryViewLights()
         {
             ViewLight vLight;
 

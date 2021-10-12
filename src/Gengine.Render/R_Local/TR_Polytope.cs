@@ -3,12 +3,12 @@ using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Render
 {
-    unsafe partial class TRX
+    unsafe partial class TR
     {
         const int MAX_POLYTOPE_PLANES = 6;
 
         // Generate vertexes and indexes for a polytope, and optionally returns the polygon windings. The positive sides of the planes will be visible.
-        static SrfTriangles R_PolytopeSurface(int numPlanes, Plane[] planes, Winding[] windings)
+        public static SrfTriangles R_PolytopeSurface(int numPlanes, Plane[] planes, Winding[] windings)
         {
             int i, j;
             SrfTriangles tri;

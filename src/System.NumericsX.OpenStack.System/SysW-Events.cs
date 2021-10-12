@@ -265,8 +265,7 @@ namespace System.NumericsX.OpenStack.System
         static int GetEvent_eventIndex = 0;
         public static SysEvent GetEvent()
         {
-            if (event_list.Count > GetEvent_eventIndex)
-                return event_list[GetEvent_eventIndex++];
+            if (event_list.Count > GetEvent_eventIndex) return event_list[GetEvent_eventIndex++];
 
             // nothing left in the list, so clear
             GetEvent_eventIndex = 0;
@@ -287,12 +286,10 @@ namespace System.NumericsX.OpenStack.System
         public static void GenerateEvents()
         {
             var s = SysW.ConsoleInput();
-            if (s != null)
-                PushConsoleEvent(s);
+            if (s != null) PushConsoleEvent(s);
 
             //var cmd = Android_GetCommand();
-            //if (cmd)
-            //    cmdSystem.BufferCommandText(CMD_EXEC_NOW, cmd);
+            //if (cmd) cmdSystem.BufferCommandText(CMD_EXEC_NOW, cmd);
         }
 
         #endregion
@@ -304,11 +301,7 @@ namespace System.NumericsX.OpenStack.System
 
         public static bool ReturnKeyboardInputEvent(int n, out int key, out bool state)
         {
-            if (n >= kbd_polls.Count)
-            {
-                key = default; state = default;
-                return false;
-            }
+            if (n >= kbd_polls.Count) { key = default; state = default; return false; }
 
             key = kbd_polls[n].key;
             state = kbd_polls[n].state;
@@ -327,11 +320,7 @@ namespace System.NumericsX.OpenStack.System
 
         public static bool ReturnMouseInputEvent(int n, out int action, out int value)
         {
-            if (n >= mouse_polls.Count)
-            {
-                action = value = default;
-                return false;
-            }
+            if (n >= mouse_polls.Count) { action = value = default; return false; }
 
             action = mouse_polls[n].action;
             value = mouse_polls[n].value;

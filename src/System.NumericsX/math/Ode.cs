@@ -27,8 +27,7 @@ namespace System.NumericsX
         {
             derive(t0, userData, state, derivatives);
             var delta = t1 - t0;
-            for (var i = 0; i < dimension; i++)
-                newState[i] = state[i] + delta * derivatives[i];
+            for (var i = 0; i < dimension; i++) newState[i] = state[i] + delta * derivatives[i];
             return delta;
         }
     }
@@ -54,12 +53,10 @@ namespace System.NumericsX
             var halfDelta = delta * 0.5F;
             // first step
             derive(t0, userData, state, derivatives);
-            for (i = 0; i < dimension; i++)
-                tmpState[i] = state[i] + halfDelta * derivatives[i];
+            for (i = 0; i < dimension; i++) tmpState[i] = state[i] + halfDelta * derivatives[i];
             // second step
             derive(t0 + halfDelta, userData, tmpState, derivatives);
-            for (i = 0; i < dimension; i++)
-                newState[i] = state[i] + delta * derivatives[i];
+            for (i = 0; i < dimension; i++) newState[i] = state[i] + delta * derivatives[i];
             return delta;
         }
     }
@@ -90,21 +87,17 @@ namespace System.NumericsX
             var halfDelta = delta * 0.5F;
             // first step
             derive(t0, userData, state, d1);
-            for (i = 0; i < dimension; i++)
-                tmpState[i] = state[i] + halfDelta * d1[i];
+            for (i = 0; i < dimension; i++) tmpState[i] = state[i] + halfDelta * d1[i];
             // second step
             derive(t0 + halfDelta, userData, tmpState, d2);
-            for (i = 0; i < dimension; i++)
-                tmpState[i] = state[i] + halfDelta * d2[i];
+            for (i = 0; i < dimension; i++) tmpState[i] = state[i] + halfDelta * d2[i];
             // third step
             derive(t0 + halfDelta, userData, tmpState, d3);
-            for (i = 0; i < dimension; i++)
-                tmpState[i] = state[i] + delta * d3[i];
+            for (i = 0; i < dimension; i++) tmpState[i] = state[i] + delta * d3[i];
             // fourth step
             derive(t0 + delta, userData, tmpState, d4);
             var sixthDelta = delta * (1.0F / 6.0F);
-            for (i = 0; i < dimension; i++)
-                newState[i] = state[i] + sixthDelta * (d1[i] + 2.0F * (d2[i] + d3[i]) + d4[i]);
+            for (i = 0; i < dimension; i++) newState[i] = state[i] + sixthDelta * (d1[i] + 2.0F * (d2[i] + d3[i]) + d4[i]);
             return delta;
         }
     }
@@ -146,56 +139,44 @@ namespace System.NumericsX
                 float sixthDelta;
                 // first step of first half delta
                 derive(t0, userData, state, d1);
-                for (i = 0; i < dimension; i++)
-                    tmpState[i] = state[i] + fourthDelta * d1[i];
+                for (i = 0; i < dimension; i++) tmpState[i] = state[i] + fourthDelta * d1[i];
                 // second step of first half delta
                 derive(t0 + fourthDelta, userData, tmpState, d2);
-                for (i = 0; i < dimension; i++)
-                    tmpState[i] = state[i] + fourthDelta * d2[i];
+                for (i = 0; i < dimension; i++) tmpState[i] = state[i] + fourthDelta * d2[i];
                 // third step of first half delta
                 derive(t0 + fourthDelta, userData, tmpState, d3);
-                for (i = 0; i < dimension; i++)
-                    tmpState[i] = state[i] + halfDelta * d3[i];
+                for (i = 0; i < dimension; i++) tmpState[i] = state[i] + halfDelta * d3[i];
                 // fourth step of first half delta
                 derive(t0 + halfDelta, userData, tmpState, d4);
                 sixthDelta = halfDelta * (1.0F / 6.0F);
-                for (i = 0; i < dimension; i++)
-                    tmpState[i] = state[i] + sixthDelta * (d1[i] + 2.0F * (d2[i] + d3[i]) + d4[i]);
+                for (i = 0; i < dimension; i++) tmpState[i] = state[i] + sixthDelta * (d1[i] + 2.0F * (d2[i] + d3[i]) + d4[i]);
 
                 // first step of second half delta
                 derive(t0 + halfDelta, userData, tmpState, d1half);
-                for (i = 0; i < dimension; i++)
-                    tmpState[i] = state[i] + fourthDelta * d1half[i];
+                for (i = 0; i < dimension; i++) tmpState[i] = state[i] + fourthDelta * d1half[i];
                 // second step of second half delta
                 derive(t0 + halfDelta + fourthDelta, userData, tmpState, d2);
-                for (i = 0; i < dimension; i++)
-                    tmpState[i] = state[i] + fourthDelta * d2[i];
+                for (i = 0; i < dimension; i++) tmpState[i] = state[i] + fourthDelta * d2[i];
                 // third step of second half delta
                 derive(t0 + halfDelta + fourthDelta, userData, tmpState, d3);
-                for (i = 0; i < dimension; i++)
-                    tmpState[i] = state[i] + halfDelta * d3[i];
+                for (i = 0; i < dimension; i++) tmpState[i] = state[i] + halfDelta * d3[i];
                 // fourth step of second half delta
                 derive(t0 + delta, userData, tmpState, d4);
                 sixthDelta = halfDelta * (1.0F / 6.0F);
-                for (i = 0; i < dimension; i++)
-                    newState[i] = state[i] + sixthDelta * (d1[i] + 2.0F * (d2[i] + d3[i]) + d4[i]);
+                for (i = 0; i < dimension; i++) newState[i] = state[i] + sixthDelta * (d1[i] + 2.0F * (d2[i] + d3[i]) + d4[i]);
 
                 // first step of full delta
-                for (i = 0; i < dimension; i++)
-                    tmpState[i] = state[i] + halfDelta * d1[i];
+                for (i = 0; i < dimension; i++) tmpState[i] = state[i] + halfDelta * d1[i];
                 // second step of full delta
                 derive(t0 + halfDelta, userData, tmpState, d2);
-                for (i = 0; i < dimension; i++)
-                    tmpState[i] = state[i] + halfDelta * d2[i];
+                for (i = 0; i < dimension; i++) tmpState[i] = state[i] + halfDelta * d2[i];
                 // third step of full delta
                 derive(t0 + halfDelta, userData, tmpState, d3);
-                for (i = 0; i < dimension; i++)
-                    tmpState[i] = state[i] + delta * d3[i];
+                for (i = 0; i < dimension; i++) tmpState[i] = state[i] + delta * d3[i];
                 // fourth step of full delta
                 derive(t0 + delta, userData, tmpState, d4);
                 sixthDelta = delta * (1.0F / 6.0F);
-                for (i = 0; i < dimension; i++)
-                    tmpState[i] = state[i] + sixthDelta * (d1[i] + 2.0F * (d2[i] + d3[i]) + d4[i]);
+                for (i = 0; i < dimension; i++) tmpState[i] = state[i] + sixthDelta * (d1[i] + 2.0F * (d2[i] + d3[i]) + d4[i]);
 
                 // get max estimated error
                 max = 0.0F;
@@ -215,8 +196,7 @@ namespace System.NumericsX
 
         void SetMaxError(float err)
         {
-            if (err > 0.0f)
-                maxError = err;
+            if (err > 0.0f) maxError = err;
         }
     }
 }

@@ -31,11 +31,7 @@ namespace System.NumericsX
         public unsafe ref Vector3 this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (Vector3* _ = &b0)
-                    return ref _[index];
-            }
+            get { fixed (Vector3* _ = &b0) return ref _[index]; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -193,9 +189,9 @@ namespace System.NumericsX
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Bounds Expand(float d)                  // return bounds expanded in all directions with the given value
-        => new(
-        new Vector3(b0.x - d, b0.y - d, b0.z - d),
-        new Vector3(b1.x + d, b1.y + d, b1.z + d));
+            => new(
+            new Vector3(b0.x - d, b0.y - d, b0.z - d),
+            new Vector3(b1.x + d, b1.y + d, b1.z + d));
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Bounds ExpandSelf(float d)                  // expand bounds in all directions with the given value
         {
@@ -263,15 +259,15 @@ namespace System.NumericsX
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool ContainsPoint(in Vector3 p)           // includes touching
-        =>
-        p.x >= b0.x && p.y >= b0.y && p.z >= b0.z &&
-        p.x <= b1.x && p.y <= b1.y && p.z <= b1.z; //: opt
+            =>
+            p.x >= b0.x && p.y >= b0.y && p.z >= b0.z &&
+            p.x <= b1.x && p.y <= b1.y && p.z <= b1.z;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IntersectsBounds(in Bounds a) // includes touching
-        =>
-        a.b1.x >= b0.x && a.b1.y >= b0.y && a.b1.z >= b0.z &&
-        a.b0.x <= b1.x && a.b0.y <= b1.y && a.b0.z <= b1.z; //: opt
+            =>
+            a.b1.x >= b0.x && a.b1.y >= b0.y && a.b1.z >= b0.z &&
+            a.b0.x <= b1.x && a.b0.y <= b1.y && a.b0.z <= b1.z;
 
         // Returns true if the line intersects the bounds between the start and end point.
         public bool LineIntersection(in Vector3 start, in Vector3 end)
@@ -305,27 +301,14 @@ namespace System.NumericsX
             {
                 if (start[i] < b0[i]) side = 0;
                 else if (start[i] > b1[i]) side = 1;
-                else
-                {
-                    inside++;
-                    continue;
-                }
-                if (dir[i] == 0f)
-                    continue;
+                else { inside++; continue; }
+                if (dir[i] == 0f) continue;
                 var f = start[i] - (side == 0 ? b0[i] : b1[i]);
-                if (ax0 < 0 || MathX.Fabs(f) > MathX.Fabs(scale * dir[i]))
-                {
-                    scale = -(f / dir[i]);
-                    ax0 = i;
-                }
+                if (ax0 < 0 || MathX.Fabs(f) > MathX.Fabs(scale * dir[i])) { scale = -(f / dir[i]); ax0 = i; }
             }
 
-            if (ax0 < 0)
-            {
-                scale = 0f;
-                // return true if the start point is inside the bounds
-                return inside == 3;
-            }
+            // return true if the start point is inside the bounds
+            if (ax0 < 0) { scale = 0f; return inside == 3; }
 
             var ax1 = (ax0 + 1) % 3;
             var ax2 = (ax0 + 2) % 3;
@@ -364,8 +347,7 @@ namespace System.NumericsX
         // most tight bounds for a point set
         public unsafe void FromPoints(Vector3[] points, int numPoints)
         {
-            fixed (Vector3* _ = points)
-                Simd.MinMax3(out b0, out b1, _, numPoints);
+            fixed (Vector3* _ = points) Simd.MinMax3(out b0, out b1, _, numPoints);
         }
 
         // Most tight bounds for the translational movement of the given point.
@@ -382,13 +364,8 @@ namespace System.NumericsX
         // Most tight bounds for the translational movement of the given bounds.
         public void FromBoundsTranslation(in Bounds bounds, in Vector3 origin, in Matrix3x3 axis, in Vector3 translation)
         {
-            if (axis.IsRotated())
-                FromTransformedBounds(bounds, origin, axis);
-            else
-            {
-                b0 = bounds[0] + origin;
-                b1 = bounds[1] + origin;
-            }
+            if (axis.IsRotated()) FromTransformedBounds(bounds, origin, axis);
+            else { b0 = bounds[0] + origin; b1 = bounds[1] + origin; }
             if (translation.x < 0f) b0.x += translation.x;
             else b1.x += translation.x; //: unroll
             if (translation.y < 0f) b0.y += translation.y;
@@ -409,33 +386,14 @@ namespace System.NumericsX
 
             Bounds bounds = new();
             for (var i = 0; i < 3; i++)
-            {
                 // if the derivative changes sign along this axis during the rotation from start to end
                 if ((v1[i] > 0f && v2[i] < 0f) || (v1[i] < 0f && v2[i] > 0f))
                 {
-                    if ((0.5f * (start[i] + end[i]) - origin[i]) > 0f)
-                    {
-                        bounds[0][i] = Math.Min(start[i], end[i]);
-                        bounds[1][i] = origin[i] + MathX.Sqrt(radiusSqr * (1f - axis[i] * axis[i]));
-                    }
-                    else
-                    {
-                        bounds[0][i] = origin[i] - MathX.Sqrt(radiusSqr * (1f - axis[i] * axis[i]));
-                        bounds[1][i] = Math.Max(start[i], end[i]);
-                    }
+                    if ((0.5f * (start[i] + end[i]) - origin[i]) > 0f) { bounds[0][i] = Math.Min(start[i], end[i]); bounds[1][i] = origin[i] + MathX.Sqrt(radiusSqr * (1f - axis[i] * axis[i])); }
+                    else { bounds[0][i] = origin[i] - MathX.Sqrt(radiusSqr * (1f - axis[i] * axis[i])); bounds[1][i] = Math.Max(start[i], end[i]); }
                 }
-
-                else if (start[i] > end[i])
-                {
-                    bounds[0][i] = end[i];
-                    bounds[1][i] = start[i];
-                }
-                else
-                {
-                    bounds[0][i] = start[i];
-                    bounds[1][i] = end[i];
-                }
-            }
+                else if (start[i] > end[i]) { bounds[0][i] = end[i]; bounds[1][i] = start[i]; }
+                else { bounds[0][i] = start[i]; bounds[1][i] = end[i]; }
 
             return bounds;
         }
@@ -443,8 +401,7 @@ namespace System.NumericsX
         // Most tight bounds for the rotational movement of the given point.
         public void FromPointRotation(in Vector3 point, in Rotation rotation)
         {
-            if (MathX.Fabs(rotation.Angle) < 180f)
-                this = BoundsForPointRotation(point, rotation);
+            if (MathX.Fabs(rotation.Angle) < 180f) this = BoundsForPointRotation(point, rotation);
             else
             {
                 var radius = (point - rotation.Origin).Length;

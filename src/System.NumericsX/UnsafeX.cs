@@ -46,8 +46,7 @@ namespace System.NumericsX
 
             var valueref = __makeref(value);
             var valuePtr = (byte*)*((IntPtr*)&valueref);
-            for (var i = 0; i < sizeOfT; ++i)
-                bytePtr[i] = valuePtr[i];
+            for (var i = 0; i < sizeOfT; ++i) bytePtr[i] = valuePtr[i];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -59,8 +58,7 @@ namespace System.NumericsX
             var resultRef = __makeref(result);
             var resultPtr = (byte*)*((IntPtr*)&resultRef);
 
-            for (var i = 0; i < sizeOfT; ++i)
-                resultPtr[i] = bytePtr[i];
+            for (var i = 0; i < sizeOfT; ++i) resultPtr[i] = bytePtr[i];
 
             return result;
         }

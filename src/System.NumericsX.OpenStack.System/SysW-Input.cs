@@ -116,8 +116,7 @@ namespace System.NumericsX.OpenStack.System
         public static void InitScanTable()
         {
             var lang = cvarSystem.GetCVarString("sys_lang");
-            if (lang.Length == 0)
-                lang = "english";
+            if (lang.Length == 0) lang = "english";
             // the only reason that english right alt binds as K_ALT is so that users who were using right-alt before the patch don't suddenly find that only left-alt is working.
             if (string.Equals(lang, "english", StringComparison.OrdinalIgnoreCase)) { keyScanTable = s_scantokey; rightAltKey = K_ALT; }
             else if (string.Equals(lang, "spanish", StringComparison.OrdinalIgnoreCase)) { keyScanTable = s_scantokey_spanish; rightAltKey = K_RIGHT_ALT; }
@@ -133,8 +132,7 @@ namespace System.NumericsX.OpenStack.System
         public static Key Win_MapKey(int key)
         {
             var modified = (key >> 16) & 255;
-            if (modified > 127)
-                return 0;
+            if (modified > 127) return 0;
 
             // Check for certain extended character codes. The specific case we are testing is the numpad / is not being translated properly for localized builds.
             var is_extended = ((key & (1 << 24)) != 0);

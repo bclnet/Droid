@@ -60,11 +60,7 @@ namespace System.NumericsX.OpenStack
         public int Cursor
         {
             get => cursor;
-            set
-            {
-                Debug.Assert(value <= MAX_EDIT_LINE);
-                cursor = value;
-            }
+            set { Debug.Assert(value <= MAX_EDIT_LINE); cursor = value; }
         }
 
         public void ClearAutoComplete()
@@ -72,8 +68,7 @@ namespace System.NumericsX.OpenStack
             if (autoComplete.length > 0 && autoComplete.length <= buffer.Length)
             {
                 buffer.Clear();
-                if (cursor > autoComplete.length)
-                    cursor = autoComplete.length;
+                if (cursor > autoComplete.length) cursor = autoComplete.length;
             }
             autoComplete.length = 0;
             autoComplete.valid = false;
@@ -96,8 +91,7 @@ namespace System.NumericsX.OpenStack
                 autoComplete.matchIndex = 0;
                 autoComplete.currentMatch = string.Empty;
 
-                if (autoComplete.completionString.Length == 0)
-                    return;
+                if (autoComplete.completionString.Length == 0) return;
 
                 globalAutoComplete = autoComplete;
 
@@ -106,8 +100,7 @@ namespace System.NumericsX.OpenStack
 
                 autoComplete = globalAutoComplete;
 
-                if (autoComplete.matchCount == 0)
-                    return; // no matches
+                if (autoComplete.matchCount == 0) return; // no matches
 
                 // when there's only one match or there's an argument
                 buffer.Clear();
@@ -164,8 +157,7 @@ namespace System.NumericsX.OpenStack
             {
                 // get the next match and show instead
                 autoComplete.matchIndex++;
-                if (autoComplete.matchIndex == autoComplete.matchCount)
-                    autoComplete.matchIndex = 0;
+                if (autoComplete.matchIndex == autoComplete.matchCount) autoComplete.matchIndex = 0;
                 autoComplete.findMatchIndex = 0;
 
                 globalAutoComplete = autoComplete;
@@ -179,25 +171,18 @@ namespace System.NumericsX.OpenStack
 
                 // and print it
                 buffer.Append(autoComplete.currentMatch);
-                if (autoComplete.length > buffer.Length)
-                    autoComplete.length = buffer.Length;
+                if (autoComplete.length > buffer.Length) autoComplete.length = buffer.Length;
                 Cursor = autoComplete.length;
             }
         }
 
         public void CharEvent(char c)
         {
-            if (c == 'v' - 'a' + 1)
-            {   // ctrl-v is paste
-                Paste();
-                return;
-            }
+            // ctrl-v is paste
+            if (c == 'v' - 'a' + 1) { Paste(); return; }
 
-            if (c == 'c' - 'a' + 1)
-            {   // ctrl-c clears the field
-                Clear();
-                return;
-            }
+            // ctrl-c clears the field
+            if (c == 'c' - 'a' + 1) { Clear(); return; }
 
             var len = buffer.Length;
 
@@ -207,51 +192,36 @@ namespace System.NumericsX.OpenStack
                 {
                     buffer.Remove(cursor, len + 1 - cursor);
                     cursor--;
-                    if (cursor < scroll)
-                        scroll--;
+                    if (cursor < scroll) scroll--;
                 }
                 return;
             }
 
-            if (c == 'a' - 'a' + 1)
-            {   // ctrl-a is home
-                cursor = 0;
-                scroll = 0;
-                return;
-            }
+            // ctrl-a is home
+            if (c == 'a' - 'a' + 1) { cursor = 0; scroll = 0; return; }
 
-            if (c == 'e' - 'a' + 1)
-            {   // ctrl-e is end
-                cursor = len;
-                scroll = cursor - widthInChars;
-                return;
-            }
+            // ctrl-e is end
+            if (c == 'e' - 'a' + 1) { cursor = len; scroll = cursor - widthInChars; return; }
 
-            //
             // ignore any other non printable chars
-            if (c < 32)
-                return;
+            if (c < 32) return;
 
             if (KeyInput.OverstrikeMode)
             {
-                if (cursor == MAX_EDIT_LINE - 1)
-                    return;
+                if (cursor == MAX_EDIT_LINE - 1) return;
                 buffer[cursor] = c;
                 cursor++;
             }
             else
             {   // insert mode
-                if (len == MAX_EDIT_LINE - 1)
-                    return; // all full
+                if (len == MAX_EDIT_LINE - 1) return; // all full
                 buffer.Insert(cursor, c);
                 cursor++;
             }
 
-            if (cursor >= widthInChars)
-                scroll++;
+            if (cursor >= widthInChars) scroll++;
 
-            if (cursor == len + 1)
-                buffer[cursor] = '\0';
+            if (cursor == len + 1) buffer[cursor] = '\0';
         }
 
         public void KeyDownEvent(Key key)
@@ -259,21 +229,14 @@ namespace System.NumericsX.OpenStack
             int len;
 
             // shift-insert is paste
-            if ((key == K_INS || key == K_KP_INS) && KeyInput.IsDown(K_SHIFT))
-            {
-                ClearAutoComplete();
-                Paste();
-                return;
-            }
+            if ((key == K_INS || key == K_KP_INS) && KeyInput.IsDown(K_SHIFT)) { ClearAutoComplete(); Paste(); return; }
 
             len = buffer.Length;
 
             if (key == K_DEL)
             {
-                if (autoComplete.length != 0)
-                    ClearAutoComplete();
-                else if (cursor < len)
-                    buffer.Remove(cursor, len - cursor);
+                if (autoComplete.length != 0) ClearAutoComplete();
+                else if (cursor < len) buffer.Remove(cursor, len - cursor);
                 return;
             }
 
@@ -287,14 +250,9 @@ namespace System.NumericsX.OpenStack
                 }
                 else cursor++;
 
-                if (cursor > len)
-                    cursor = len;
-
-                if (cursor >= scroll + widthInChars)
-                    scroll = cursor - widthInChars + 1;
-
-                if (autoComplete.length > 0)
-                    autoComplete.length = cursor;
+                if (cursor > len) cursor = len;
+                if (cursor >= scroll + widthInChars) scroll = cursor - widthInChars + 1;
+                if (autoComplete.length > 0) autoComplete.length = cursor;
                 return;
             }
 
@@ -308,13 +266,9 @@ namespace System.NumericsX.OpenStack
                 }
                 else cursor--;
 
-                if (cursor < 0)
-                    cursor = 0;
-                if (cursor < scroll)
-                    scroll = cursor;
-
-                if (autoComplete.length != 0)
-                    autoComplete.length = cursor;
+                if (cursor < 0) cursor = 0;
+                if (cursor < scroll) scroll = cursor;
+                if (autoComplete.length != 0) autoComplete.length = cursor;
                 return;
             }
 
@@ -322,24 +276,15 @@ namespace System.NumericsX.OpenStack
             {
                 cursor = 0;
                 scroll = 0;
-                if (autoComplete.length != 0)
-                {
-                    autoComplete.length = cursor;
-                    autoComplete.valid = false;
-                }
+                if (autoComplete.length != 0) { autoComplete.length = cursor; autoComplete.valid = false; }
                 return;
             }
 
             if (key == K_END || (char.ToLowerInvariant((char)key) == 'e' && KeyInput.IsDown(K_CTRL)))
             {
                 cursor = len;
-                if (cursor >= scroll + widthInChars)
-                    scroll = cursor - widthInChars + 1;
-                if (autoComplete.length != 0)
-                {
-                    autoComplete.length = cursor;
-                    autoComplete.valid = false;
-                }
+                if (cursor >= scroll + widthInChars) scroll = cursor - widthInChars + 1;
+                if (autoComplete.length != 0) { autoComplete.length = cursor; autoComplete.valid = false; }
                 return;
             }
 
@@ -350,20 +295,17 @@ namespace System.NumericsX.OpenStack
             }
 
             // clear autocompletion buffer on normal key input
-            if (key != K_CAPSLOCK && key != K_ALT && key != K_CTRL && key != K_SHIFT)
-                ClearAutoComplete();
+            if (key != K_CAPSLOCK && key != K_ALT && key != K_CTRL && key != K_SHIFT) ClearAutoComplete();
         }
 
         public void Paste()
         {
-            var cbd = Sys_GetClipboardData(); //: sky
-            if (cbd == null)
-                return;
+            var cbd = Sys_GetClipboardData();
+            if (cbd == null) return;
 
             // send as if typed, so insert / overstrike works properly
             var pasteLen = cbd.Length;
-            for (var i = 0; i < pasteLen; i++)
-                CharEvent(cbd[i]);
+            for (var i = 0; i < pasteLen; i++) CharEvent(cbd[i]);
         }
 
         public StringBuilder Buffer
@@ -394,31 +336,25 @@ namespace System.NumericsX.OpenStack
             len = buffer.Length + 1;
 
             // guarantee that cursor will be visible
-            if (len <= drawLen)
-                prestep = 0;
+            if (len <= drawLen) prestep = 0;
             else
             {
                 if (scroll + drawLen > len)
                 {
                     scroll = len - drawLen;
-                    if (scroll < 0)
-                        scroll = 0;
+                    if (scroll < 0) scroll = 0;
                 }
                 prestep = scroll;
 
                 // Skip color code
-                if (stringX.IsColor(buffer, prestep))
-                    prestep += 2;
-                if (prestep > 0 && stringX.IsColor(buffer, prestep - 1))
-                    prestep++;
+                if (stringX.IsColor(buffer, prestep)) prestep += 2;
+                if (prestep > 0 && stringX.IsColor(buffer, prestep - 1)) prestep++;
             }
 
-            if (prestep + drawLen > len)
-                drawLen = len - prestep;
+            if (prestep + drawLen > len) drawLen = len - prestep;
 
             // extract <drawLen> characters from the field at <prestep>
-            if (drawLen >= MAX_EDIT_LINE)
-                Error("drawLen >= MAX_EDIT_LINE");
+            if (drawLen >= MAX_EDIT_LINE) Error("drawLen >= MAX_EDIT_LINE");
 
             str = buffer.ToString(prestep, drawLen);
 
@@ -426,17 +362,14 @@ namespace System.NumericsX.OpenStack
             drawSmallStringExt(x, y, str, colorWhite, false);
 
             // draw the cursor
-            if (!showCursor)
-                return;
+            if (!showCursor) return;
 
-            if (((com_ticNumber >> 4) & 1) != 0)
-                return;     // off blink
+            if (((com_ticNumber >> 4) & 1) != 0) return;     // off blink
 
             cursorChar = KeyInput.OverstrikeMode ? 11 : 10;
 
             // Move the cursor back to account for color codes
-            for (var i = 0; i < cursor; i++)
-                if (stringX.IsColor(str, i)) { i++; prestep += 2; }
+            for (var i = 0; i < cursor; i++) if (stringX.IsColor(str, i)) { i++; prestep += 2; }
 
             drawSmallChar(x + (cursor - prestep) * size, y, cursorChar);
         }
@@ -445,44 +378,31 @@ namespace System.NumericsX.OpenStack
 
         static void FindMatches(string s)
         {
-            if (!string.Equals(s[0..globalAutoComplete.completionString.Length], globalAutoComplete.completionString, StringComparison.OrdinalIgnoreCase))
-                return;
+            if (!string.Equals(s[0..globalAutoComplete.completionString.Length], globalAutoComplete.completionString, StringComparison.OrdinalIgnoreCase)) return;
             globalAutoComplete.matchCount++;
-            if (globalAutoComplete.matchCount == 1)
-            {
-                globalAutoComplete.currentMatch = s;
-                return;
-            }
+            if (globalAutoComplete.matchCount == 1) { globalAutoComplete.currentMatch = s; return; }
 
             // cut currentMatch to the amount common with s
             int i;
-            for (i = 0; i < s.Length; i++)
-                if (char.ToLowerInvariant(globalAutoComplete.currentMatch[i]) != char.ToLowerInvariant(s[i]))
-                    break;
+            for (i = 0; i < s.Length; i++) if (char.ToLowerInvariant(globalAutoComplete.currentMatch[i]) != char.ToLowerInvariant(s[i])) break;
             globalAutoComplete.currentMatch.Remove(i + 1); //: sky
         }
 
         static void FindIndexMatch(string s)
         {
-            if (!string.Equals(s[0..globalAutoComplete.completionString.Length], globalAutoComplete.completionString, StringComparison.OrdinalIgnoreCase))
-                return;
-
-            if (globalAutoComplete.findMatchIndex == globalAutoComplete.matchIndex)
-                globalAutoComplete.currentMatch = s;
-
+            if (!string.Equals(s[0..globalAutoComplete.completionString.Length], globalAutoComplete.completionString, StringComparison.OrdinalIgnoreCase)) return;
+            if (globalAutoComplete.findMatchIndex == globalAutoComplete.matchIndex) globalAutoComplete.currentMatch = s;
             globalAutoComplete.findMatchIndex++;
         }
 
         static void PrintMatches(string s)
         {
-            if (string.Equals(s[0..globalAutoComplete.currentMatch.Length], globalAutoComplete.currentMatch, StringComparison.OrdinalIgnoreCase))
-                Printf($"    {s}\n");
+            if (string.Equals(s[0..globalAutoComplete.currentMatch.Length], globalAutoComplete.currentMatch, StringComparison.OrdinalIgnoreCase)) Printf($"    {s}\n");
         }
 
         static void PrintCvarMatches(string s)
         {
-            if (string.Equals(s[0..globalAutoComplete.currentMatch.Length], globalAutoComplete.currentMatch, StringComparison.OrdinalIgnoreCase))
-                Printf($"    {s}{S_COLOR_WHITE} = \"{cvarSystem.GetCVarString(s)}\"\n");
+            if (string.Equals(s[0..globalAutoComplete.currentMatch.Length], globalAutoComplete.currentMatch, StringComparison.OrdinalIgnoreCase)) Printf($"    {s}{S_COLOR_WHITE} = \"{cvarSystem.GetCVarString(s)}\"\n");
         }
     }
 }

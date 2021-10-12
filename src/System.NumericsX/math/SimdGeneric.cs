@@ -181,7 +181,7 @@ namespace System.NumericsX
             }
         }
         // dst[i] = constant * src[i].xyz;
-        public static void Dotcd(float* dst, Vector3 constant, Span<DrawVert> src, int count)
+        public static void Dotcd(float* dst, Vector3 constant, DrawVert* src, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
@@ -205,7 +205,7 @@ namespace System.NumericsX
             }
         }
         // dst[i] = constant.Normal() * src[i].xyz + constant[3];
-        public static void Dotpd(float* dst, Plane constant, Span<DrawVert> src, int count)
+        public static void Dotpd(float* dst, Plane constant, DrawVert* src, int count)
         {
             int _IX; for (_IX = 0; _IX < count; _IX++)
             {
@@ -402,7 +402,7 @@ namespace System.NumericsX
                 if (v.z > max.z) { max.z = v.z; }
             }
         }
-        public static void MinMaxd(out Vector3 min, out Vector3 max, Span<DrawVert> src, int count)
+        public static void MinMaxd(out Vector3 min, out Vector3 max, DrawVert* src, int count)
         {
             min.x = min.y = min.z = MathX.INFINITY; max.x = max.y = max.z = -MathX.INFINITY;
             int _IX; for (_IX = 0; _IX < count; _IX++)
@@ -416,7 +416,7 @@ namespace System.NumericsX
                 if (v.z > max.z) { max.z = v.z; }
             }
         }
-        public static void MinMaxdi(out Vector3 min, out Vector3 max, Span<DrawVert> src, int* indexes, int count)
+        public static void MinMaxdi(out Vector3 min, out Vector3 max, DrawVert* src, int* indexes, int count)
         {
             min.x = min.y = min.z = MathX.INFINITY; max.x = max.y = max.z = -MathX.INFINITY;
             int _IX; for (_IX = 0; _IX < count; _IX++)
@@ -430,7 +430,7 @@ namespace System.NumericsX
                 if (v.z > max.z) { max.z = v.z; }
             }
         }
-        public static void MinMaxds(out Vector3 min, out Vector3 max, Span<DrawVert> src, short* indexes, int count)
+        public static void MinMaxds(out Vector3 min, out Vector3 max, DrawVert* src, short* indexes, int count)
         {
             min.x = min.y = min.z = MathX.INFINITY; max.x = max.y = max.z = -MathX.INFINITY;
             int _IX; for (_IX = 0; _IX < count; _IX++)
@@ -1598,7 +1598,6 @@ namespace System.NumericsX
                         break;
                     default:
                         for (i = 0; i < k; i++)
-                        {
                             for (j = 0; j < l; j++)
                             {
                                 m1Ptr = m1F + i;
@@ -1612,7 +1611,6 @@ namespace System.NumericsX
                                 }
                                 *dstPtr++ = (float)sum;
                             }
-                        }
                         break;
                 }
             }
@@ -1685,10 +1683,7 @@ namespace System.NumericsX
                     case 0: x[0] = b[0]; goto case 1;
                     case 1: x[1] = b[1] - lptr[1 * nc + 0] * x[0]; goto case 2;
                     case 2: x[2] = b[2] - lptr[2 * nc + 0] * x[0] - lptr[2 * nc + 1] * x[1]; goto case 3;
-                    case 3:
-                        x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2];
-                        skip = 4;
-                        break;
+                    case 3: x[3] = b[3] - lptr[3 * nc + 0] * x[0] - lptr[3 * nc + 1] * x[1] - lptr[3 * nc + 2] * x[2]; skip = 4; break;
                 }
 
                 lptr = LF + skip;
@@ -1792,8 +1787,7 @@ namespace System.NumericsX
                             x[1] = b[1] - lptr[6 * nc + 1] * x[6] - lptr[5 * nc + 1] * x[5] - lptr[4 * nc + 1] * x[4] - lptr[3 * nc + 1] * x[3] - lptr[2 * nc + 1] * x[2];
                             x[0] = b[0] - lptr[6 * nc + 0] * x[6] - lptr[5 * nc + 0] * x[5] - lptr[4 * nc + 0] * x[4] - lptr[3 * nc + 0] * x[3] - lptr[2 * nc + 0] * x[2] - lptr[1 * nc + 0] * x[1];
                             return;
-                        default:
-                            return;
+                        default: return;
                     }
 
                 int i, j; float* xptr; double s0, s1, s2, s3; //: register
@@ -1849,8 +1843,7 @@ namespace System.NumericsX
                 {
                     s0 = b[i];
                     lptr = LF + i;
-                    for (j = i + 1; j < n; j++)
-                        s0 -= lptr[j * nc] * x[j];
+                    for (j = i + 1; j < n; j++) s0 -= lptr[j * nc] * x[j];
                     x[i] = (float)s0;
                 }
             }
@@ -1868,21 +1861,18 @@ namespace System.NumericsX
             {
                 nc = mat.NumColumns;
 
-                if (n <= 0)
-                    return true;
+                if (n <= 0) return true;
 
                 var mptr = matF;
 
                 sum = mptr[0];
 
-                if (sum == 0f)
-                    return false;
+                if (sum == 0f) return false;
 
                 diag[0] = (float)sum;
                 invDiag[0] = (float)(d = 1f / sum);
 
-                if (n <= 1)
-                    return true;
+                if (n <= 1) return true;
 
                 mptr = matF + 0;
                 for (j = 1; j < n; j++)
@@ -1893,15 +1883,13 @@ namespace System.NumericsX
                 v[0] = diag[0] * mptr[0]; s0 = v[0] * mptr[0];
                 sum = mptr[1] - s0;
 
-                if (sum == 0f)
-                    return false;
+                if (sum == 0f) return false;
 
                 mat[1][1] = (float)sum;
                 diag[1] = (float)sum;
                 invDiag[1] = (float)(d = 1f / sum);
 
-                if (n <= 2)
-                    return true;
+                if (n <= 2) return true;
 
                 mptr = matF + 0;
                 for (j = 2; j < n; j++)
@@ -1913,15 +1901,13 @@ namespace System.NumericsX
                 v[1] = diag[1] * mptr[1]; s1 = v[1] * mptr[1];
                 sum = mptr[2] - s0 - s1;
 
-                if (sum == 0f)
-                    return false;
+                if (sum == 0f) return false;
 
                 mat[2][2] = (float)sum;
                 diag[2] = (float)sum;
                 invDiag[2] = (float)(d = 1f / sum);
 
-                if (n <= 3)
-                    return true;
+                if (n <= 3) return true;
 
                 mptr = matF + 0;
                 for (j = 3; j < n; j++)
@@ -1934,15 +1920,13 @@ namespace System.NumericsX
                 v[2] = diag[2] * mptr[2]; s2 = v[2] * mptr[2];
                 sum = mptr[3] - s0 - s1 - s2;
 
-                if (sum == 0f)
-                    return false;
+                if (sum == 0f) return false;
 
                 mat[3][3] = (float)sum;
                 diag[3] = (float)sum;
                 invDiag[3] = (float)(d = 1f / sum);
 
-                if (n <= 4)
-                    return true;
+                if (n <= 4) return true;
 
                 mptr = matF + 0;
                 for (j = 4; j < n; j++)
@@ -1977,15 +1961,13 @@ namespace System.NumericsX
                     sum += s0;
                     sum = mptr[i] - sum;
 
-                    if (sum == 0f)
-                        return false;
+                    if (sum == 0f) return false;
 
                     mat[i][i] = (float)sum;
                     diag[i] = (float)sum;
                     invDiag[i] = (float)(d = 1f / sum);
 
-                    if (i + 1 >= n)
-                        return true;
+                    if (i + 1 >= n) return true;
 
                     mptr = matF + i + 1;
                     for (j = i + 1; j < n; j++)
@@ -2070,7 +2052,7 @@ namespace System.NumericsX
                 jointMats[i] /= jointMats[parents[i]];
             }
         }
-        public static void TransformVerts(Span<DrawVert> verts, int numVerts, JointMat* joints, Vector4* weights, int* index, int numWeights)
+        public static void TransformVerts(DrawVert* verts, int numVerts, JointMat* joints, Vector4* weights, int* index, int numWeights)
         {
             for (int j = 0, i = 0; i < numVerts; i++)
             {
@@ -2081,7 +2063,7 @@ namespace System.NumericsX
                 verts[i].xyz = v;
             }
         }
-        public static void TracePointCull(byte* cullBits, out byte totalOr, float radius, Plane* planes, Span<DrawVert> verts, int numVerts)
+        public static void TracePointCull(byte* cullBits, out byte totalOr, float radius, Plane* planes, DrawVert* verts, int numVerts)
         {
             var tOr = (byte)0;
 
@@ -2113,7 +2095,7 @@ namespace System.NumericsX
 
             totalOr = tOr;
         }
-        public static void DecalPointCull(byte* cullBits, Plane* planes, Span<DrawVert> verts, int numVerts)
+        public static void DecalPointCull(byte* cullBits, Plane* planes, DrawVert* verts, int numVerts)
         {
             for (var i = 0; i < numVerts; i++)
             {
@@ -2137,7 +2119,7 @@ namespace System.NumericsX
                 cullBits[i] = (byte)(bits ^ 0x3F);      // flip lower 6 bits
             }
         }
-        public static void OverlayPointCull(byte* cullBits, Vector2* texCoords, Plane* planes, Span<DrawVert> verts, int numVerts)
+        public static void OverlayPointCull(byte* cullBits, Vector2* texCoords, Plane* planes, DrawVert* verts, int numVerts)
         {
             for (var i = 0; i < numVerts; i++)
             {
@@ -2158,7 +2140,7 @@ namespace System.NumericsX
             }
         }
         // Derives a plane equation for each triangle.
-        public static void DeriveTriPlanesi(Plane* planes, Span<DrawVert> verts, int numVerts, int* indexes, int numIndexes)
+        public static void DeriveTriPlanesi(Plane* planes, DrawVert* verts, int numVerts, int* indexes, int numIndexes)
         {
             for (var i = 0; i < numIndexes; i += 3)
             {
@@ -2192,7 +2174,7 @@ namespace System.NumericsX
             }
         }
         // Derives a plane equation for each triangle.
-        public static void DeriveTriPlaness(Plane* planes, Span<DrawVert> verts, int numVerts, short* indexes, int numIndexes)
+        public static void DeriveTriPlaness(Plane* planes, DrawVert* verts, int numVerts, short* indexes, int numIndexes)
         {
             for (var i = 0; i < numIndexes; i += 3)
             {
@@ -2228,7 +2210,7 @@ namespace System.NumericsX
         // Derives the normal and orthogonal tangent vectors for the triangle vertices.
         // For each vertex the normal and tangent vectors are derived from all triangles using the vertex which results in smooth tangents across the mesh.
         // In the process the triangle planes are calculated as well.
-        public static void DeriveTangentsi(Plane* planes, Span<DrawVert> verts, int numVerts, int* indexes, int numIndexes)
+        public static void DeriveTangentsi(Plane* planes, DrawVert* verts, int numVerts, int* indexes, int numIndexes)
         {
             var used = stackalloc bool[numVerts];
             Unsafe.InitBlock(used, 0, (uint)(numVerts * sizeof(bool)));
@@ -2348,7 +2330,7 @@ namespace System.NumericsX
         // Derives the normal and orthogonal tangent vectors for the triangle vertices.
         // For each vertex the normal and tangent vectors are derived from all triangles using the vertex which results in smooth tangents across the mesh.
         // In the process the triangle planes are calculated as well.
-        public static void DeriveTangentss(Plane* planes, Span<DrawVert> verts, int numVerts, short* indexes, int numIndexes)
+        public static void DeriveTangentss(Plane* planes, DrawVert* verts, int numVerts, short* indexes, int numIndexes)
         {
             var used = stackalloc bool[numVerts];
             Unsafe.InitBlock(used, 0, (uint)(numVerts * sizeof(bool)));
@@ -2467,7 +2449,7 @@ namespace System.NumericsX
         }
         // Derives the normal and orthogonal tangent vectors for the triangle vertices.
         // For each vertex the normal and tangent vectors are derived from a single dominant triangle.
-        public static void DeriveUnsmoothedTangents(Span<DrawVert> verts, DominantTri* dominantTris, int numVerts)
+        public static void DeriveUnsmoothedTangents(DrawVert* verts, DominantTri* dominantTris, int numVerts)
         {
             for (var i = 0; i < numVerts; i++)
             {
@@ -2540,7 +2522,7 @@ namespace System.NumericsX
             }
         }
         // Normalizes each vertex normal and projects and normalizes the tangent vectors onto the plane orthogonal to the vertex normal.
-        public static void NormalizeTangents(Span<DrawVert> verts, int numVerts)
+        public static void NormalizeTangents(DrawVert* verts, int numVerts)
         {
             for (var i = 0; i < numVerts; i++)
             {
@@ -2562,7 +2544,7 @@ namespace System.NumericsX
         // Calculates light vectors in texture space for the given triangle vertices.
         // For each vertex the direction towards the light origin is projected onto texture space.
         // The light vectors are only calculated for the vertices referenced by the indexes.
-        public static void CreateTextureSpaceLightVectors(Vector3* lightVectors, Vector3 lightOrigin, Span<DrawVert> verts, int numVerts, int* indexes, int numIndexes)
+        public static void CreateTextureSpaceLightVectors(Vector3* lightVectors, Vector3 lightOrigin, DrawVert* verts, int numVerts, int* indexes, int numIndexes)
         {
             var used = stackalloc bool[numVerts];
             Unsafe.InitBlock(used, 0, (uint)(numVerts * sizeof(bool)));
@@ -2571,8 +2553,7 @@ namespace System.NumericsX
 
             for (var i = 0; i < numVerts; i++)
             {
-                if (!used[i])
-                    continue;
+                if (!used[i]) continue;
 
                 ref DrawVert v = ref verts[i];
                 var lightDir = lightOrigin - v.xyz;
@@ -2585,7 +2566,7 @@ namespace System.NumericsX
         // For each vertex the normalized direction towards the light origin is added to the
         // normalized direction towards the view origin and the result is projected onto texture space.
         // The texture coordinates are only calculated for the vertices referenced by the indexes.
-        public static void CreateSpecularTextureCoords(Vector4* texCoords, Vector3 lightOrigin, Vector3 viewOrigin, Span<DrawVert> verts, int numVerts, int* indexes, int numIndexes)
+        public static void CreateSpecularTextureCoords(Vector4* texCoords, Vector3 lightOrigin, Vector3 viewOrigin, DrawVert* verts, int numVerts, int* indexes, int numIndexes)
         {
             var used = stackalloc bool[numVerts];
             Unsafe.InitBlock(used, 0, (uint)(numVerts * sizeof(bool)));
@@ -2619,15 +2600,14 @@ namespace System.NumericsX
                 texCoords[i].w = 1f;
             }
         }
-        public static int CreateShadowCache(Vector4* vertexCache, int* vertRemap, Vector3 lightOrigin, Span<DrawVert> verts, int numVerts)
+        public static int CreateShadowCache(Vector4* vertexCache, int* vertRemap, Vector3 lightOrigin, DrawVert* verts, int numVerts)
         {
             var outVerts = 0;
 
             for (var i = 0; i < numVerts; i++)
             {
-                if (vertRemap[i] != 0)
-                    continue;
-                fixed (float* v = &verts[i].xyz.x)
+                if (vertRemap[i] != 0) continue;
+                float* v = &verts[i].xyz.x;
                 {
                     vertexCache[outVerts + 0][0] = v[0];
                     vertexCache[outVerts + 0][1] = v[1];
@@ -2646,20 +2626,20 @@ namespace System.NumericsX
             }
             return outVerts;
         }
-        public static int CreateVertexProgramShadowCache(Vector4* vertexCache, Span<DrawVert> verts, int numVerts)
+        public static int CreateVertexProgramShadowCache(Vector4* vertexCache, DrawVert* verts, int numVerts)
         {
             for (var i = 0; i < numVerts; i++)
-                fixed (float* v = &verts[i].xyz.x)
-                {
-                    vertexCache[i * 2 + 0][0] = v[0];
-                    vertexCache[i * 2 + 1][0] = v[0];
-                    vertexCache[i * 2 + 0][1] = v[1];
-                    vertexCache[i * 2 + 1][1] = v[1];
-                    vertexCache[i * 2 + 0][2] = v[2];
-                    vertexCache[i * 2 + 1][2] = v[2];
-                    vertexCache[i * 2 + 0][3] = 1f;
-                    vertexCache[i * 2 + 1][3] = 0f;
-                }
+            {
+                var v = &verts[i].xyz.x;
+                vertexCache[i * 2 + 0][0] = v[0];
+                vertexCache[i * 2 + 1][0] = v[0];
+                vertexCache[i * 2 + 0][1] = v[1];
+                vertexCache[i * 2 + 1][1] = v[1];
+                vertexCache[i * 2 + 0][2] = v[2];
+                vertexCache[i * 2 + 1][2] = v[2];
+                vertexCache[i * 2 + 0][3] = 1f;
+                vertexCache[i * 2 + 1][3] = 0f;
+            }
             return numVerts * 2;
         }
 

@@ -124,9 +124,7 @@ namespace System.NumericsX.OpenStack
                 //{
                 //    var p_ip = (ulong)ip[0];
                 //    var ip = ntohl(p_ip);
-                //    for (var i = 0; i < num_interfaces; i++)
-                //        if ((netint[i].ip & netint[i].mask) == (ip & netint[i].mask))
-                //            return true;
+                //    for (var i = 0; i < num_interfaces; i++) if ((netint[i].ip & netint[i].mask) == (ip & netint[i].mask)) return true;
                 //}
                 return false;
             }

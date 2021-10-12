@@ -98,13 +98,8 @@ namespace System.NumericsX.OpenStack
             cvar.InternalVar = cvar;
 
             var local = FindLocal(cvar.Name);
-            if (local != null)
-                local.Update(cvar);
-            else
-            {
-                local = new CVarLocal(cvar);
-                cvars[local.nameString] = local;
-            }
+            if (local != null) local.Update(cvar);
+            else { local = new CVarLocal(cvar); cvars[local.nameString] = local; }
 
             cvar.InternalVar = local;
         }
@@ -124,15 +119,13 @@ namespace System.NumericsX.OpenStack
         public bool Command(CmdArgs args)
         {
             var local = FindLocal(args[0]);
-            if (local == null)
-                return false;
+            if (local == null) return false;
 
             if (args.Count == 1)
             {
                 // print the variable
                 Printf($"\"{local.nameString}\" is:\"{local.valueString}\"{S_COLOR_WHITE} default:\"{local.resetString}\"\n");
-                if (local.Description.Length > 0)
-                    Printf($"{S_COLOR_WHITE}{local.Description}\n");
+                if (local.Description.Length > 0) Printf($"{S_COLOR_WHITE}{local.Description}\n");
             }
             // set the value
             else local.Set(args.Args(), false, false);
@@ -152,13 +145,8 @@ namespace System.NumericsX.OpenStack
 
             foreach (var cvar in cvars.Values)
             {
-                if (cvar.valueCompletion == null)
-                    continue;
-                if (string.Equals(args[0], cvar.nameString, StringComparison.OrdinalIgnoreCase))
-                {
-                    cvar.valueCompletion(args, callback);
-                    break;
-                }
+                if (cvar.valueCompletion == null) continue;
+                if (string.Equals(args[0], cvar.nameString, StringComparison.OrdinalIgnoreCase)) { cvar.valueCompletion(args, callback); break; }
             }
         }
 
@@ -168,31 +156,23 @@ namespace System.NumericsX.OpenStack
 
         public void ResetFlaggedVariables(CVAR flags)
         {
-            foreach (var cvar in cvars.Values)
-                if ((cvar.Flags & flags) != 0)
-                    cvar.Set(null, true, true);
+            foreach (var cvar in cvars.Values) if ((cvar.Flags & flags) != 0) cvar.Set(null, true, true);
         }
 
         public void RemoveFlaggedAutoCompletion(CVAR flags)
         {
-            foreach (var cvar in cvars.Values)
-                if ((cvar.Flags & flags) != 0)
-                    cvar.valueCompletion = null;
+            foreach (var cvar in cvars.Values) if ((cvar.Flags & flags) != 0) cvar.valueCompletion = null;
         }
 
         public void WriteFlaggedVariables(CVAR flags, string setCmd, VFile f)
         {
-            foreach (var cvar in cvars.Values)
-                if ((cvar.Flags & flags) != 0)
-                    Printf($"{setCmd} {cvar.Name} \"{cvar.String}\"\n");
+            foreach (var cvar in cvars.Values) if ((cvar.Flags & flags) != 0) Printf($"{setCmd} {cvar.Name} \"{cvar.String}\"\n");
         }
 
         public Dictionary<string, string> MoveCVarsToDict(CVAR flags)
         {
             moveCVarsToDict.Clear();
-            foreach (var cvar in cvars.Values)
-                if ((cvar.Flags & flags) != 0)
-                    moveCVarsToDict[cvar.Name] = cvar.String;
+            foreach (var cvar in cvars.Values) if ((cvar.Flags & flags) != 0) moveCVarsToDict[cvar.Name] = cvar.String;
             return moveCVarsToDict;
         }
 
@@ -201,8 +181,7 @@ namespace System.NumericsX.OpenStack
             foreach (var kv in dict)
             {
                 var local = FindLocal(kv.Key);
-                if (local != null)
-                    local.InternalServerSetString(kv.Value);
+                if (local != null) local.InternalServerSetString(kv.Value);
             }
         }
 
@@ -214,17 +193,8 @@ namespace System.NumericsX.OpenStack
         public void SetInternal(string name, string value, CVAR flags)
         {
             var local = FindLocal(name);
-            if (local != null)
-            {
-                local.InternalSetString(value);
-                local.flags |= flags & ~CVAR.STATIC;
-                local.UpdateCheat();
-            }
-            else
-            {
-                local = new CVarLocal(name, value, flags);
-                cvars[local.nameString] = local;
-            }
+            if (local != null) { local.InternalSetString(value); local.flags |= flags & ~CVAR.STATIC; local.UpdateCheat(); }
+            else { local = new CVarLocal(name, value, flags); cvars[local.nameString] = local; }
         }
 
         bool initialized;
@@ -249,20 +219,14 @@ namespace System.NumericsX.OpenStack
 
             var cvar = cvarSystemLocal.FindLocal(args[1]);
 
-            if (cvar == null)
-            {
-                Warning($"Toggle_f: cvar \"{args[1]}\" not found");
-                return;
-            }
+            if (cvar == null) { Warning($"Toggle_f: cvar \"{args[1]}\" not found"); return; }
 
             if (argc > 3)
             {
                 // cycle through multiple values
                 text = cvar.String;
-                for (i = 2; i < argc; i++)
-                    if (string.Equals(text, args[i], StringComparison.OrdinalIgnoreCase)) { i++; break; } // point to next value
-                if (i >= argc)
-                    i = 2;
+                for (i = 2; i < argc; i++) if (string.Equals(text, args[i], StringComparison.OrdinalIgnoreCase)) { i++; break; } // point to next value
+                if (i >= argc) i = 2;
 
                 Printf($"set {args[1]} = {args[i]}\n");
                 cvar.Set(args[i], false, false);
@@ -288,8 +252,7 @@ namespace System.NumericsX.OpenStack
         {
             Set_f(args);
             var cvar = cvarSystemLocal.FindLocal(args[1]);
-            if (cvar == null)
-                return;
+            if (cvar == null) return;
             cvar.flags |= CVAR.SERVERINFO | CVAR.ARCHIVE;
         }
 
@@ -297,8 +260,7 @@ namespace System.NumericsX.OpenStack
         {
             Set_f(args);
             var cvar = cvarSystemLocal.FindLocal(args[1]);
-            if (cvar == null)
-                return;
+            if (cvar == null) return;
             cvar.flags |= CVAR.USERINFO | CVAR.ARCHIVE;
         }
 
@@ -306,8 +268,7 @@ namespace System.NumericsX.OpenStack
         {
             Set_f(args);
             var cvar = cvarSystemLocal.FindLocal(args[1]);
-            if (cvar == null)
-                return;
+            if (cvar == null) return;
             cvar.flags |= CVAR.TOOL;
         }
 
@@ -315,8 +276,7 @@ namespace System.NumericsX.OpenStack
         {
             Set_f(args);
             var cvar = cvarSystemLocal.FindLocal(args[1]);
-            if (cvar == null)
-                return;
+            if (cvar == null) return;
 
             // FIXME: enable this for ship, so mods can store extra data but during development we don't want obsolete cvars to continue to be saved
             //	cvar.flags |= CVAR.ARCHIVE;
@@ -324,14 +284,9 @@ namespace System.NumericsX.OpenStack
 
         static void Reset_f(CmdArgs args)
         {
-            if (args.Count != 2)
-            {
-                Printf("usage: reset <variable>\n");
-                return;
-            }
+            if (args.Count != 2) { Printf("usage: reset <variable>\n"); return; }
             var cvar = cvarSystemLocal.FindLocal(args[1]);
-            if (cvar == null)
-                return;
+            if (cvar == null) return;
 
             cvar.Reset();
         }
@@ -353,39 +308,19 @@ namespace System.NumericsX.OpenStack
 
             if (string.Equals(args[argNum], "-", StringComparison.OrdinalIgnoreCase) || string.Equals(args[argNum], "/", StringComparison.OrdinalIgnoreCase))
             {
-                if (string.Equals(args[argNum + 1], "help", StringComparison.OrdinalIgnoreCase) || string.Equals(args[argNum + 1], "?", StringComparison.OrdinalIgnoreCase))
-                {
-                    argNum = 3;
-                    show = SHOW.DESCRIPTION;
-                }
-                else if (string.Equals(args[argNum + 1], "type", StringComparison.OrdinalIgnoreCase) || string.Equals(args[argNum + 1], "range", StringComparison.OrdinalIgnoreCase))
-                {
-                    argNum = 3;
-                    show = SHOW.TYPE;
-                }
-                else if (string.Equals(args[argNum + 1], "flags", StringComparison.OrdinalIgnoreCase))
-                {
-                    argNum = 3;
-                    show = SHOW.FLAGS;
-                }
+                if (string.Equals(args[argNum + 1], "help", StringComparison.OrdinalIgnoreCase) || string.Equals(args[argNum + 1], "?", StringComparison.OrdinalIgnoreCase)) { argNum = 3; show = SHOW.DESCRIPTION; }
+                else if (string.Equals(args[argNum + 1], "type", StringComparison.OrdinalIgnoreCase) || string.Equals(args[argNum + 1], "range", StringComparison.OrdinalIgnoreCase)) { argNum = 3; show = SHOW.TYPE; }
+                else if (string.Equals(args[argNum + 1], "flags", StringComparison.OrdinalIgnoreCase)) { argNum = 3; show = SHOW.FLAGS; }
             }
 
             string match;
-            if (args.Count > argNum)
-            {
-                match = args.Args(argNum, -1);
-                match = match.Replace(" ", "");
-            }
+            if (args.Count > argNum) { match = args.Args(argNum, -1); match = match.Replace(" ", ""); }
             else match = string.Empty;
 
             foreach (var cvar in cvarSystemLocal.cvars.Values)
             {
-                if ((cvar.Flags & flags) == 0)
-                    continue;
-
-                if (match.Length != 0 && !cvar.nameString.Filter(match, false))
-                    continue;
-
+                if ((cvar.Flags & flags) == 0) continue;
+                if (match.Length != 0 && !cvar.nameString.Filter(match, false)) continue;
                 cvarList.Add(cvar);
             }
 
@@ -399,24 +334,21 @@ namespace System.NumericsX.OpenStack
             {
                 case SHOW.VALUE:
                     {
-                        foreach (var cvar in cvarList)
-                            Printf($"{cvar.nameString:-32}{S_COLOR_WHITE} \"{cvar.valueString}\"\n");
+                        foreach (var cvar in cvarList) Printf($"{cvar.nameString:-32}{S_COLOR_WHITE} \"{cvar.valueString}\"\n");
                         break;
                     }
                 case SHOW.DESCRIPTION:
                     {
                         var indent = "\n" + new string(' ', NUM_NAME_CHARS);
                         var b = new StringBuilder();
-                        foreach (var cvar in cvarList)
-                            Printf($"{cvar.nameString:-32}{S_COLOR_WHITE}{CreateColumn(cvar.Description, NUM_DESCRIPTION_CHARS, indent, b)}\n");
+                        foreach (var cvar in cvarList) Printf($"{cvar.nameString:-32}{S_COLOR_WHITE}{CreateColumn(cvar.Description, NUM_DESCRIPTION_CHARS, indent, b)}\n");
                         break;
                     }
                 case SHOW.TYPE:
                     {
                         foreach (var cvar in cvarList)
                         {
-                            if ((cvar.Flags & CVAR.BOOL) != 0)
-                                Printf($"{cvar.Name:-32}{S_COLOR_CYAN}bool\n");
+                            if ((cvar.Flags & CVAR.BOOL) != 0) Printf($"{cvar.Name:-32}{S_COLOR_CYAN}bool\n");
                             else if ((cvar.Flags & CVAR.INTEGER) != 0)
                             {
                                 if (cvar.MinValue < cvar.MaxValue) Printf($"{cvar.Name:-32}{S_COLOR_GREEN}int {S_COLOR_WHITE}[{(int)cvar.MinValue}, {(int)cvar.MaxValue}]\n");
@@ -473,9 +405,9 @@ namespace System.NumericsX.OpenStack
 
             Printf($"\n{cvarList.Count} cvars listed\n\n");
             Printf("listCvar [search string]          = list cvar values\n"
-                          + "listCvar -help [search string]    = list cvar descriptions\n"
-                          + "listCvar -type [search string]    = list cvar types\n"
-                          + "listCvar -flags [search string]   = list cvar flags\n");
+                + "listCvar -help [search string]    = list cvar descriptions\n"
+                + "listCvar -type [search string]    = list cvar types\n"
+                + "listCvar -flags [search string]   = list cvar flags\n");
         }
 
         static void List_f(CmdArgs args)
@@ -488,16 +420,10 @@ namespace System.NumericsX.OpenStack
                 var cvar = cvarSystemLocal.cvars.Values.ElementAt(i);
 
                 // don't mess with rom values
-                if ((cvar.flags & (CVAR.ROM | CVAR.INIT)) != 0)
-                    continue;
+                if ((cvar.flags & (CVAR.ROM | CVAR.INIT)) != 0) continue;
 
                 // throw out any variables the user created
-                if ((cvar.flags & CVAR.STATIC) == 0)
-                {
-                    cvarSystemLocal.cvars.Remove(cvar.nameString);
-                    i--;
-                    continue;
-                }
+                if ((cvar.flags & CVAR.STATIC) == 0) { cvarSystemLocal.cvars.Remove(cvar.nameString); i--; continue; }
 
                 cvar.Reset();
             }

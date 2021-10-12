@@ -172,8 +172,7 @@ namespace System.NumericsX.OpenStack
 
             do
             {
-                if (src.CheckTokenString("}"))
-                    break;
+                if (src.CheckTokenString("}")) break;
 
                 side = new MapBrushSide();
                 sides.Add(side);
@@ -213,8 +212,7 @@ namespace System.NumericsX.OpenStack
             } while (true);
 
             var brush = new MapBrush();
-            for (i = 0; i < sides.Count; i++)
-                brush.AddSide(sides[i]);
+            for (i = 0; i < sides.Count; i++) brush.AddSide(sides[i]);
 
             brush.epairs = epairs;
 
@@ -228,8 +226,7 @@ namespace System.NumericsX.OpenStack
             fp.WriteFloatString($"// primitive {primitiveNum}\n{{\n brushDef3\n {{\n");
 
             // write brush epairs
-            foreach (var epair in epairs)
-                fp.WriteFloatString($"  \"{epair.Key}\" \"{epair.Value}\"\n");
+            foreach (var epair in epairs) fp.WriteFloatString($"  \"{epair.Key}\" \"{epair.Value}\"\n");
 
             // write brush sides
             for (i = 0; i < NumSides; i++)
@@ -254,8 +251,7 @@ namespace System.NumericsX.OpenStack
                 for (var i = 0; i < NumSides; i++)
                 {
                     var mapSide = GetSide(i);
-                    for (var j = 0; j < 4; j++)
-                        crc ^= Compute.FloatCRC(mapSide.Plane[j]);
+                    for (var j = 0; j < 4; j++) crc ^= Compute.FloatCRC(mapSide.Plane[j]);
                     crc ^= Compute.StringCRC(mapSide.Material);
                 }
                 return crc;
@@ -438,14 +434,12 @@ namespace System.NumericsX.OpenStack
         {
             MapPatch mapPatch; MapBrush mapBrush;
 
-            if (!src.ReadToken(out var token))
-                return null;
+            if (!src.ReadToken(out var token)) return null;
 
             if (token != "{") { src.Error($"MapEntity::Parse: {{ not found, found {token}"); return null; }
 
             var mapEnt = new MapEntity();
-            if (worldSpawn)
-                mapEnt.primitives.Resize(1024, 256);
+            if (worldSpawn) mapEnt.primitives.Resize(1024, 256);
 
             var origin = new Vector3();
             var worldent = false;
@@ -457,23 +451,20 @@ namespace System.NumericsX.OpenStack
                 {
                     // parse a brush or patch
                     if (!src.ReadToken(out token)) { src.Error("MapEntity::Parse: unexpected EOF"); return null; }
-                    if (worldent)
-                        origin.Zero();
+                    if (worldent) origin.Zero();
                     // if is it a brush: brush, brushDef, brushDef2, brushDef3
                     var tokenS = (string)token;
                     if (tokenS.StartsWith("brush", StringComparison.OrdinalIgnoreCase))
                     {
                         mapBrush = MapBrush.Parse(src, origin, (string.Equals(token, "brushDef2", StringComparison.OrdinalIgnoreCase) || string.Equals(token, "brushDef3", StringComparison.OrdinalIgnoreCase)), version);
-                        if (mapBrush == null)
-                            return null;
+                        if (mapBrush == null) return null;
                         mapEnt.AddPrimitive(mapBrush);
                     }
                     // if is it a patch: patchDef2, patchDef3
                     else if (tokenS.StartsWith("patch", StringComparison.OrdinalIgnoreCase))
                     {
                         mapPatch = MapPatch.Parse(src, origin, string.Equals(token, "patchDef3", StringComparison.OrdinalIgnoreCase), version);
-                        if (mapPatch == null)
-                            return null;
+                        if (mapPatch == null) return null;
                         mapEnt.AddPrimitive(mapPatch);
                     }
                     // assume it's a brush in Q3 or older style
@@ -481,8 +472,7 @@ namespace System.NumericsX.OpenStack
                     {
                         src.UnreadToken(token);
                         mapBrush = MapBrush.ParseQ3(src, origin);
-                        if (mapBrush == null)
-                            return null;
+                        if (mapBrush == null) return null;
                         mapEnt.AddPrimitive(mapBrush);
                     }
                 }
@@ -507,8 +497,7 @@ namespace System.NumericsX.OpenStack
                         origin.y = (float)v2;
                         origin.z = (float)v3;
                     }
-                    else if (string.Equals(key, "classname", StringComparison.OrdinalIgnoreCase) && string.Equals(value, "worldspawn", StringComparison.OrdinalIgnoreCase))
-                        worldent = true;
+                    else if (string.Equals(key, "classname", StringComparison.OrdinalIgnoreCase) && string.Equals(value, "worldspawn", StringComparison.OrdinalIgnoreCase)) worldent = true;
                 }
             } while (true);
 
@@ -519,8 +508,7 @@ namespace System.NumericsX.OpenStack
             fp.WriteFloatString($"// entity {entityNum}\n{{\n");
 
             // write entity epairs
-            foreach (var epair in epairs)
-                fp.WriteFloatString($"\"{epair.Key}\" \"{epair.Value}\"\n");
+            foreach (var epair in epairs) fp.WriteFloatString($"\"{epair.Key}\" \"{epair.Value}\"\n");
 
             epairs.TryGetVector("origin", "0 0 0", out var origin);
 
@@ -616,8 +604,7 @@ namespace System.NumericsX.OpenStack
                 fullName = PathX.SetFileExtension(fullName, "map");
                 src.LoadFile(fullName, osPath);
                 // didn't get anything at all
-                if (!src.IsLoaded)
-                    return false;
+                if (!src.IsLoaded) return false;
             }
 
             version = OLD_MAP_VERSION;
@@ -633,8 +620,7 @@ namespace System.NumericsX.OpenStack
             while (true)
             {
                 mapEnt = MapEntity.Parse(src, entities.Count == 0, version);
-                if (mapEnt == null)
-                    break;
+                if (mapEnt == null) break;
                 entities.Add(mapEnt);
             }
 
@@ -674,8 +660,7 @@ namespace System.NumericsX.OpenStack
                     for (i = 1; i < entities.Count; i++)
                     {
                         mapEnt = entities[i];
-                        if (!mapEnt.epairs.ContainsKey("name"))
-                            mapEnt.epairs["name"] = $"{mapEnt.epairs.GetString("classname", "forcedName")}{i}";
+                        if (!mapEnt.epairs.ContainsKey("name")) mapEnt.epairs["name"] = $"{mapEnt.epairs.GetString("classname", "forcedName")}{i}";
                     }
 
                 // move the primitives of any func_group entities to the worldspawn
@@ -704,16 +689,11 @@ namespace System.NumericsX.OpenStack
             var fp = fromBasePath
                 ? fileSystem.OpenFileWrite(qpath, "fs_devpath")
                 : fileSystem.OpenExplicitFileWrite(qpath);
-            if (fp == null)
-            {
-                common.Warning($"Couldn't open {qpath}\n");
-                return false;
-            }
+            if (fp == null) { common.Warning($"Couldn't open {qpath}\n"); return false; }
 
             fp.WriteFloatString($"Version {(float)CURRENT_MAP_VERSION}\n");
 
-            for (var i = 0; i < entities.Count; i++)
-                entities[i].Write(fp, i);
+            for (var i = 0; i < entities.Count; i++) entities[i].Write(fp, i);
 
             fileSystem.CloseFile(fp);
 
@@ -723,8 +703,7 @@ namespace System.NumericsX.OpenStack
         void SetGeometryCRC()
         {
             var geometryCRC = 0U;
-            for (var i = 0; i < entities.Count; i++)
-                geometryCRC ^= entities[i].GeometryCRC;
+            for (var i = 0; i < entities.Count; i++) geometryCRC ^= entities[i].GeometryCRC;
         }
 
         // get the number of entities in the map
@@ -748,8 +727,7 @@ namespace System.NumericsX.OpenStack
             for (var i = 0; i < entities.Count; i++)
             {
                 var ent = entities[i];
-                if (string.Equals(ent.epairs.GetString("name"), name, StringComparison.OrdinalIgnoreCase))
-                    return ent;
+                if (string.Equals(ent.epairs.GetString("name"), name, StringComparison.OrdinalIgnoreCase)) return ent;
             }
             return null;
         }
@@ -760,11 +738,7 @@ namespace System.NumericsX.OpenStack
             for (var i = 0; i < entities.Count; i++)
             {
                 var ent = entities[i];
-                if (string.Equals(ent.epairs.GetString("classname"), classname, StringComparison.OrdinalIgnoreCase))
-                {
-                    entities.RemoveAt(i);
-                    i--;
-                }
+                if (string.Equals(ent.epairs.GetString("classname"), classname, StringComparison.OrdinalIgnoreCase)) { entities.RemoveAt(i); i--; }
             }
         }
         public void RemoveAllEntities()
@@ -791,8 +765,7 @@ namespace System.NumericsX.OpenStack
         public static uint StringCRC(string str)
         {
             var crc = 0U;
-            for (var i = 0; i < str.Length; i++)
-                crc ^= (uint)(str[i] << (i & 3));
+            for (var i = 0; i < str.Length; i++) crc ^= (uint)(str[i] << (i & 3));
             return crc;
         }
 

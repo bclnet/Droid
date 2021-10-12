@@ -65,14 +65,8 @@ namespace System.NumericsX
         public DynamicElement<T> Resize(DynamicElement<T> ptr, int num)
         {
             numResizes++;
-            if (ptr == null)
-                return Alloc(num);
-
-            if (num <= 0)
-            {
-                Free(ptr);
-                return default;
-            }
+            if (ptr == null) return Alloc(num);
+            if (num <= 0) { Free(ptr); return default; }
 
             Debug.Assert(false);
             return ptr;
@@ -81,8 +75,7 @@ namespace System.NumericsX
         public void Free(DynamicElement<T> ptr)
         {
             numFrees++;
-            if (ptr == null)
-                return;
+            if (ptr == null) return;
             if (ptr is IDisposable ptr1) ptr1.Dispose();
         }
 

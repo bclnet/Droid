@@ -74,11 +74,7 @@ namespace System.NumericsX
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => vec;
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set
-            {
-                vec = value;
-                axisValid = false;
-            }
+            set { vec = value; axisValid = false; }
         }
 
         public float Angle
@@ -86,11 +82,7 @@ namespace System.NumericsX
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => angle;
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set
-            {
-                angle = value;
-                axisValid = false;
-            }
+            set { angle = value; axisValid = false; }
         }
 
         /// <summary>
@@ -139,8 +131,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 operator *(in Rotation _, in Vector3 v)
         {
-            if (!_.axisValid)
-                _.ToMat3();
+            if (!_.axisValid) _.ToMat3();
             return (v - _.origin) * _.axis + _.origin;
         }
         /// <summary>
@@ -178,8 +169,7 @@ namespace System.NumericsX
 
         public ref Matrix3x3 ToMat3()
         {
-            if (axisValid)
-                return ref axis;
+            if (axisValid) return ref axis;
 
             var a = angle * (MathX.M_DEG2RAD * 0.5f);
             MathX.SinCos(a, out var s, out var c);
@@ -207,8 +197,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RotatePoint(ref Vector3 point)
         {
-            if (!axisValid)
-                ToMat3();
+            if (!axisValid) ToMat3();
             point = (point - origin) * axis + origin;
         }
 

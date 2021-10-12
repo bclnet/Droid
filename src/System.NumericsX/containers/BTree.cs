@@ -67,9 +67,7 @@ namespace System.NumericsX
                     node.key = key;
 
                 // find the first child with a key larger equal to the key of the new node
-                for (child = node.firstChild; child.next != null; child = child.next)
-                    if (key.CompareTo(child.key) <= 0)
-                        break;
+                for (child = node.firstChild; child.next != null; child = child.next) if (key.CompareTo(child.key) <= 0) break;
 
                 if (child.value != null)
                 {
@@ -106,8 +104,7 @@ namespace System.NumericsX
                 if (child.numChildren >= maxChildrenPerNode)
                 {
                     SplitNode(child);
-                    if (key.CompareTo(child.prev.key) <= 0)
-                        child = child.prev;
+                    if (key.CompareTo(child.prev.key) <= 0) child = child.prev;
                 }
             }
 
@@ -145,19 +142,12 @@ namespace System.NumericsX
                 else if (parent.prev != null) parent = MergeNodes(parent.prev, parent);
 
                 // a parent may not use a key higher than the key of it's last child
-                if (parent.key.CompareTo(parent.lastChild.key) > 0)
-                    parent.key = parent.lastChild.key;
+                if (parent.key.CompareTo(parent.lastChild.key) > 0) parent.key = parent.lastChild.key;
 
-                if (parent.numChildren > maxChildrenPerNode)
-                {
-                    SplitNode(parent);
-                    break;
-                }
+                if (parent.numChildren > maxChildrenPerNode) { SplitNode(parent); break; }
             }
-            for (; parent != null && parent.lastChild != null; parent = parent.parent)
-                // a parent may not use a key higher than the key of it's last child
-                if (parent.key.CompareTo(parent.lastChild.key) > 0)
-                    parent.key = parent.lastChild.key;
+            // a parent may not use a key higher than the key of it's last child
+            for (; parent != null && parent.lastChild != null; parent = parent.parent) if (parent.key.CompareTo(parent.lastChild.key) > 0) parent.key = parent.lastChild.key;
 
             // free the node
             FreeNode(node);
@@ -180,12 +170,7 @@ namespace System.NumericsX
         {
             for (var node = root.firstChild; node != null; node = node.firstChild)
             {
-                while (node.next != null)
-                {
-                    if (node.key.CompareTo(key) >= 0)
-                        break;
-                    node = node.next;
-                }
+                while (node.next != null) { if (node.key.CompareTo(key) >= 0) break; node = node.next; }
                 if (node.value != null)
                 {
                     if (node.key.CompareTo(key) == 0) return node.value;
@@ -199,12 +184,7 @@ namespace System.NumericsX
         {
             for (var node = root.firstChild; node != null; node = node.firstChild)
             {
-                while (node.next != null)
-                {
-                    if (node.key.CompareTo(key) >= 0)
-                        break;
-                    node = node.next;
-                }
+                while (node.next != null) { if (node.key.CompareTo(key) >= 0) break; node = node.next; }
                 if (node.value != null)
                 {
                     if (node.key.CompareTo(key) >= 0) return node.value;
@@ -218,12 +198,7 @@ namespace System.NumericsX
         {
             for (var node = root.lastChild; node != null; node = node.lastChild)
             {
-                while (node.prev != null)
-                {
-                    if (node.key.CompareTo(key) <= 0)
-                        break;
-                    node = node.prev;
-                }
+                while (node.prev != null) { if (node.key.CompareTo(key) <= 0) break; node = node.prev; }
                 if (node.value != null)
                 {
                     if (node.key.CompareTo(key) <= 0) return node.value;
@@ -242,8 +217,7 @@ namespace System.NumericsX
             if (node.firstChild != null) return node.firstChild;
             else
             {
-                while (node != null && node.next == null)
-                    node = node.parent;
+                while (node != null && node.next == null) node = node.parent;
                 return node;
             }
         }
@@ -252,19 +226,16 @@ namespace System.NumericsX
         {
             if (node.firstChild != null)
             {
-                while (node.firstChild != null)
-                    node = node.firstChild;
+                while (node.firstChild != null) node = node.firstChild;
                 return node;
             }
             else
             {
-                while (node != null && node.next == null)
-                    node = node.parent;
+                while (node != null && node.next == null) node = node.parent;
                 if (node != null)
                 {
                     node = node.next;
-                    while (node.firstChild != null)
-                        node = node.firstChild;
+                    while (node.firstChild != null) node = node.firstChild;
                     return node;
                 }
                 else return null;
@@ -299,11 +270,7 @@ namespace System.NumericsX
             // divide the children over the two nodes
             child = node.firstChild;
             child.parent = newNode;
-            for (i = 3; i < node.numChildren; i += 2)
-            {
-                child = child.next;
-                child.parent = newNode;
-            }
+            for (i = 3; i < node.numChildren; i += 2) { child = child.next; child.parent = newNode; }
 
             newNode.key = child.key;
             newNode.numChildren = node.numChildren / 2;
@@ -337,8 +304,7 @@ namespace System.NumericsX
             Debug.Assert(node1.value == null && node2.value == null);
             Debug.Assert(node1.numChildren >= 1 && node2.numChildren >= 1);
 
-            for (child = node1.firstChild; child.next != null; child = child.next)
-                child.parent = node2;
+            for (child = node1.firstChild; child.next != null; child = child.next) child.parent = node2;
             child.parent = node2;
             child.next = node2.firstChild;
             node2.firstChild.prev = child;
@@ -394,9 +360,7 @@ namespace System.NumericsX
 
             // all the leaf nodes should be ordered
             lastNode = GetNextLeaf(Root);
-            if (lastNode != null)
-                for (node = GetNextLeaf(lastNode); node != null; lastNode = node, node = GetNextLeaf(node))
-                    Debug.Assert(lastNode.key.CompareTo(node.key) <= 0);
+            if (lastNode != null) for (node = GetNextLeaf(lastNode); node != null; lastNode = node, node = GetNextLeaf(node)) Debug.Assert(lastNode.key.CompareTo(node.key) <= 0);
         }
     }
 }

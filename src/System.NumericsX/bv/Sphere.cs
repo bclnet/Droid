@@ -27,11 +27,7 @@ namespace System.NumericsX
         public unsafe float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (float* p = &origin.x)
-                    return p[index];
-            }
+            get { fixed (float* p = &origin.x) return p[index]; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -96,12 +92,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool AddPoint(in Vector3 p)                    // add the point, returns true if the sphere expanded
         {
-            if (radius < 0f)
-            {
-                origin = p;
-                radius = 0f;
-                return true;
-            }
+            if (radius < 0f) { origin = p; radius = 0f; return true; }
             else
             {
                 var r = (p - origin).LengthSqr;
@@ -119,12 +110,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool AddSphere(in Sphere s)                    // add the sphere, returns true if the sphere expanded
         {
-            if (radius < 0f)
-            {
-                origin = s.origin;
-                radius = s.radius;
-                return true;
-            }
+            if (radius < 0f) { origin = s.origin; radius = s.radius; return true; }
             else
             {
                 var r = (s.origin - origin).LengthSqr;
@@ -195,11 +181,7 @@ namespace System.NumericsX
             var a = -s * r;
             if (a <= 0) return s * s < radius * radius;
             else if (a >= r * r) return e * e < radius * radius;
-            else
-            {
-                r = s + (a / (r * r)) * r;
-                return r * r < radius * radius;
-            }
+            else { r = s + (a / (r * r)) * r; return r * r < radius * radius; }
         }
 
         // Returns true if the ray intersects the sphere.
@@ -214,11 +196,7 @@ namespace System.NumericsX
             var c = p * p - radius * radius; //: double
             var d = b * b - c * a; //: double
 
-            if (d < 0f)
-            {
-                scale1 = scale2 = default;
-                return false;
-            }
+            if (d < 0f) { scale1 = scale2 = default; return false; }
 
             var sqrtd = MathX.Sqrt(d); //: double
             a = 1f / a;
@@ -233,8 +211,7 @@ namespace System.NumericsX
         public unsafe void FromPoints(Vector3[] points, int numPoints)
         {
             Vector3 mins, maxs;
-            fixed (Vector3* pointsF = points)
-                Simd.MinMax3(out mins, out maxs, pointsF, numPoints);
+            fixed (Vector3* pointsF = points) Simd.MinMax3(out mins, out maxs, pointsF, numPoints);
 
             var origin = (mins + maxs) * 0.5f;
 
@@ -242,8 +219,7 @@ namespace System.NumericsX
             for (var i = 0; i < numPoints; i++)
             {
                 var dist = (points[i] - origin).LengthSqr;
-                if (dist > radiusSqr)
-                    radiusSqr = dist;
+                if (dist > radiusSqr) radiusSqr = dist;
             }
             radius = MathX.Sqrt(radiusSqr);
         }

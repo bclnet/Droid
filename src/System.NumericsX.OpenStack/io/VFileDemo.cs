@@ -49,8 +49,7 @@ namespace System.NumericsX.OpenStack
         public void SetLog(bool b, string p)
         {
             log = b;
-            if (p != null)
-                logStr = p;
+            if (p != null) logStr = p;
         }
 
         public void Log(string p)
@@ -70,8 +69,7 @@ namespace System.NumericsX.OpenStack
             Close();
 
             f = fileSystem.OpenFileRead(fileName);
-            if (f == null)
-                return false;
+            if (f == null) return false;
 
             fileLength = f.Length;
 
@@ -83,8 +81,7 @@ namespace System.NumericsX.OpenStack
                 f = new VFile_Memory($"preloaded({fileName})", fileImage, fileLength);
             }
 
-            if (com_logDemos.Bool)
-                fLog = fileSystem.OpenFileWrite("demoread.log");
+            if (com_logDemos.Bool) fLog = fileSystem.OpenFileWrite("demoread.log");
 
             writing = false;
 
@@ -104,11 +101,9 @@ namespace System.NumericsX.OpenStack
             Close();
 
             f = fileSystem.OpenFileWrite(fileName);
-            if (f == null)
-                return false;
+            if (f == null) return false;
 
-            if (com_logDemos.Bool)
-                fLog = fileSystem.OpenFileWrite("demowrite.log");
+            if (com_logDemos.Bool) fLog = fileSystem.OpenFileWrite("demowrite.log");
 
             writing = true;
 
@@ -124,23 +119,12 @@ namespace System.NumericsX.OpenStack
 
         public void Close()
         {
-            if (writing && compressor != null)
-                compressor.FinishCompress();
+            if (writing && compressor != null) compressor.FinishCompress();
 
-            if (f != null)
-            {
-                fileSystem.CloseFile(f);
-                f = null;
-            }
-            if (fLog != null)
-            {
-                fileSystem.CloseFile(fLog);
-                fLog = null;
-            }
-            if (fileImage != null)
-                fileImage = null;
-            if (compressor != null)
-                compressor = null;
+            if (f != null) { fileSystem.CloseFile(f); f = null; }
+            if (fLog != null) { fileSystem.CloseFile(fLog); fLog = null; }
+            if (fileImage != null) fileImage = null;
+            if (compressor != null) compressor = null;
 
             demoStrings.Clear();
         }
@@ -163,11 +147,7 @@ namespace System.NumericsX.OpenStack
                 return str;
             }
 
-            if (index < -1 || index >= demoStrings.Count)
-            {
-                Close();
-                Error("demo hash index out of range");
-            }
+            if (index < -1 || index >= demoStrings.Count) { Close(); Error("demo hash index out of range"); }
 
             return demoStrings[index];
         }
@@ -197,8 +177,7 @@ namespace System.NumericsX.OpenStack
         {
             dict.Clear();
             ReadInt(out var c);
-            for (var i = 0; i < c; i++)
-                dict[ReadHashString()] = ReadHashString();
+            for (var i = 0; i < c; i++) dict[ReadHashString()] = ReadHashString();
         }
 
         public void WriteDict(Dictionary<string, string> dict)
@@ -215,8 +194,7 @@ namespace System.NumericsX.OpenStack
         public override int Read(byte[] buffer, int len)
         {
             var read = compressor.Read(buffer, len);
-            if (read == 0 && len >= 4)
-                throw new NotImplementedException(); //*(DemoSystem)buffer = DS_FINISHED;
+            if (read == 0 && len >= 4) throw new NotImplementedException(); //*(DemoSystem)buffer = DS_FINISHED;
             return read;
         }
 

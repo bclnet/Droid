@@ -154,8 +154,7 @@ namespace System.NumericsX
         {
             var vec = new Vector3 { x = x, y = y, z = z };
             var angle = MathX.ACos(w);
-            if (angle == 0f)
-                vec.Set(0f, 0f, 1f);
+            if (angle == 0f) vec.Set(0f, 0f, 1f);
             else
             {
                 vec.Normalize();
@@ -196,12 +195,7 @@ namespace System.NumericsX
 
         public Vector3 ToAngularVelocity()
         {
-            var vec = new Vector3
-            {
-                x = x,
-                y = y,
-                z = z
-            };
+            var vec = new Vector3 { x = x, y = y, z = z };
             vec.Normalize();
             return vec * MathX.ACos(w);
         }
@@ -209,14 +203,12 @@ namespace System.NumericsX
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
-        //    fixed (float* _ = &x)
-        //        return callback(_);
+        //    fixed (float* _ = &x) return callback(_);
         //}
 
         public unsafe string ToString(int precision = 2)
         {
-            fixed (float* _ = &x)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = &x) return FloatArrayToString(_, Dimension, precision);
         }
 
         /// <summary>
@@ -285,17 +277,9 @@ namespace System.NumericsX
         public unsafe float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (float* p = &x)
-                    return p[index];
-            }
+            get { fixed (float* p = &x) return p[index]; }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set
-            {
-                fixed (float* p = &x)
-                    p[index] = value;
-            }
+            set { fixed (float* p = &x) p[index] = value; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -338,14 +322,12 @@ namespace System.NumericsX
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
-        //    fixed (float* _ = &x)
-        //        return callback(_);
+        //    fixed (float* _ = &x) return callback(_);
         //}
 
         public unsafe string ToString(int precision = 2)
         {
-            fixed (float* _ = &x)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = &x) return FloatArrayToString(_, Dimension, precision);
         }
     }
 }

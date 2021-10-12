@@ -29,16 +29,8 @@ namespace System.NumericsX
         {
             numPoints = allocedSize = 0;
             p = null;
-            if (!EnsureAlloced(n))
-            {
-                numPoints = 0;
-                return;
-            }
-            for (var i = 0; i < n; i++)
-            {
-                p[i].ToVec3() = verts[i];
-                p[i].s = p[i].t = 0f;
-            }
+            if (!EnsureAlloced(n)) { numPoints = 0; return; }
+            for (var i = 0; i < n; i++) { p[i].ToVec3() = verts[i]; p[i].s = p[i].t = 0f; }
             numPoints = n;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -58,13 +50,8 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Winding(in Winding winding)
         {
-            if (!EnsureAlloced(winding.NumPoints))
-            {
-                numPoints = 0;
-                return;
-            }
-            for (var i = 0; i < winding.NumPoints; i++)
-                p[i] = winding[i];
+            if (!EnsureAlloced(winding.NumPoints)) { numPoints = 0; return; }
+            for (var i = 0; i < winding.NumPoints; i++) p[i] = winding[i];
             numPoints = winding.NumPoints;
         }
 
@@ -91,16 +78,14 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddPoint(in Vector3 v)
         {
-            if (!EnsureAlloced(numPoints + 1, true))
-                return;
+            if (!EnsureAlloced(numPoints + 1, true)) return;
             p[numPoints] = reinterpret.cast_vec5(v);
             numPoints++;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddPoint(in Vector5 v)
         {
-            if (!EnsureAlloced(numPoints + 1, true))
-                return;
+            if (!EnsureAlloced(numPoints + 1, true)) return;
             p[numPoints] = v;
             numPoints++;
         }
@@ -113,8 +98,7 @@ namespace System.NumericsX
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
-                if (!EnsureAlloced(value, true))
-                    return;
+                if (!EnsureAlloced(value, true)) return;
                 numPoints = value;
             }
         }
@@ -137,14 +121,10 @@ namespace System.NumericsX
 
             EnsureAlloced(4);
             numPoints = 4;
-            p[0].ToVec3() = org - vright + vup;
-            p[0].s = p[0].t = 0f;
-            p[1].ToVec3() = org + vright + vup;
-            p[1].s = p[1].t = 0f;
-            p[2].ToVec3() = org + vright - vup;
-            p[2].s = p[2].t = 0f;
-            p[3].ToVec3() = org - vright - vup;
-            p[3].s = p[3].t = 0f;
+            p[0].ToVec3() = org - vright + vup; p[0].s = p[0].t = 0f;
+            p[1].ToVec3() = org + vright + vup; p[1].s = p[1].t = 0f;
+            p[2].ToVec3() = org + vright - vup; p[2].s = p[2].t = 0f;
+            p[3].ToVec3() = org - vright - vup; p[3].s = p[3].t = 0f;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void BaseForPlane(in Plane plane)
@@ -166,9 +146,7 @@ namespace System.NumericsX
             for (i = 0; i < numPoints; i++)
             {
                 dists[i] = dot = plane.Distance(p[i].ToVec3());
-                sides[i] = (byte)(dot > epsilon ? SIDE_FRONT
-                    : dot < -epsilon ? SIDE_BACK
-                    : SIDE_ON); //: opt
+                sides[i] = (byte)(dot > epsilon ? SIDE_FRONT : dot < -epsilon ? SIDE_BACK : SIDE_ON);
                 counts[sides[i]]++;
             }
             sides[i] = sides[0];
@@ -180,29 +158,13 @@ namespace System.NumericsX
             if (counts[SIDE_FRONT] == 0 && counts[SIDE_BACK] == 0)
             {
                 GetPlane(out var windingPlane);
-                if (windingPlane.Normal * plane.Normal > 0f)
-                {
-                    front = Copy();
-                    return SIDE_FRONT;
-                }
-                else
-                {
-                    back = Copy();
-                    return SIDE_BACK;
-                }
+                if (windingPlane.Normal * plane.Normal > 0f) { front = Copy(); return SIDE_FRONT; }
+                else { back = Copy(); return SIDE_BACK; }
             }
             // if nothing at the front of the clipping plane
-            if (counts[SIDE_FRONT] == 0)
-            {
-                back = Copy();
-                return SIDE_BACK;
-            }
+            if (counts[SIDE_FRONT] == 0) { back = Copy(); return SIDE_BACK; }
             // if nothing at the back of the clipping plane
-            if (counts[SIDE_BACK] == 0)
-            {
-                front = Copy();
-                return SIDE_FRONT;
-            }
+            if (counts[SIDE_BACK] == 0) { front = Copy(); return SIDE_FRONT; }
 
             maxpts = numPoints + 4; // cant use counts[0]+2 because of fp grouping errors
 
@@ -214,35 +176,15 @@ namespace System.NumericsX
                 {
                     p1 = &p[i];
 
-                    if (sides[i] == SIDE_ON)
-                    {
-                        f.p[f.numPoints] = *p1;
-                        f.numPoints++;
-                        b.p[b.numPoints] = *p1;
-                        b.numPoints++;
-                        continue;
-                    }
-
-                    if (sides[i] == SIDE_FRONT)
-                    {
-                        f.p[f.numPoints] = *p1;
-                        f.numPoints++;
-                    }
-
-                    if (sides[i] == SIDE_BACK)
-                    {
-                        b.p[b.numPoints] = *p1;
-                        b.numPoints++;
-                    }
-
-                    if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])
-                        continue;
+                    if (sides[i] == SIDE_ON) { f.p[f.numPoints] = *p1; f.numPoints++; b.p[b.numPoints] = *p1; b.numPoints++; continue; }
+                    if (sides[i] == SIDE_FRONT) { f.p[f.numPoints] = *p1; f.numPoints++; }
+                    if (sides[i] == SIDE_BACK) { b.p[b.numPoints] = *p1; b.numPoints++; }
+                    if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) continue;
 
                     // generate a split point
                     p2 = &p[(i + 1) % numPoints];
 
-                    // always calculate the split going from the same side
-                    // or minor epsilon issues can happen
+                    // always calculate the split going from the same side or minor epsilon issues can happen
                     if (sides[i] == SIDE_FRONT)
                     {
                         dot = dists[i] / (dists[i] - dists[i + 1]);
@@ -250,7 +192,7 @@ namespace System.NumericsX
                             // avoid round off error when possible
                             mid[j] = plane.Normal[j] == 1f ? plane.Dist
                                 : plane.Normal[j] == -1f ? -plane.Dist
-                                : (*p1)[j] + dot * ((*p2)[j] - (*p1)[j]); //: opt
+                                : (*p1)[j] + dot * ((*p2)[j] - (*p1)[j]);
                         mid.s = p1->s + dot * (p2->s - p1->s);
                         mid.t = p1->t + dot * (p2->t - p1->t);
                     }
@@ -268,14 +210,11 @@ namespace System.NumericsX
                         mid.t = p2->t + dot * (p1->t - p2->t);
                     }
 
-                    f.p[f.numPoints] = mid;
-                    f.numPoints++;
-                    b.p[b.numPoints] = mid;
-                    b.numPoints++;
+                    f.p[f.numPoints] = mid; f.numPoints++;
+                    b.p[b.numPoints] = mid; b.numPoints++;
                 }
 
-            if (f.numPoints > maxpts || b.numPoints > maxpts)
-                FatalError("Winding::Split: points exceeded estimate.");
+            if (f.numPoints > maxpts || b.numPoints > maxpts) FatalError("Winding::Split: points exceeded estimate.");
 
             return SIDE_CROSS;
         }
@@ -296,23 +235,18 @@ namespace System.NumericsX
             for (i = 0; i < numPoints; i++)
             {
                 dists[i] = dot = plane.Distance(p[i].ToVec3());
-                sides[i] = (byte)(dot > epsilon ? SIDE_FRONT
-                    : dot < -epsilon ? SIDE_BACK
-                    : SIDE_ON); //: opt
+                sides[i] = (byte)(dot > epsilon ? SIDE_FRONT : dot < -epsilon ? SIDE_BACK : SIDE_ON);
                 counts[sides[i]]++;
             }
             sides[i] = sides[0];
             dists[i] = dists[0];
 
             // if the winding is on the plane and we should keep it
-            if (keepOn && counts[SIDE_FRONT] == 0 && counts[SIDE_BACK] == 0)
-                return this;
+            if (keepOn && counts[SIDE_FRONT] == 0 && counts[SIDE_BACK] == 0) return this;
             // if nothing at the front of the clipping plane
-            if (counts[SIDE_FRONT] == 0)
-                return null;
+            if (counts[SIDE_FRONT] == 0) return null;
             // if nothing at the back of the clipping plane
-            if (counts[SIDE_BACK] == 0)
-                return this;
+            if (counts[SIDE_BACK] == 0) return this;
 
             maxpts = numPoints + 4;     // cant use counts[0]+2 because of fp grouping errors
 
@@ -325,27 +259,11 @@ namespace System.NumericsX
                 {
                     p1 = &p[i];
 
-                    if (newNumPoints + 1 > maxpts)
-                        return this;        // can't split -- fall back to original
-
-                    if (sides[i] == SIDE_ON)
-                    {
-                        newPoints[newNumPoints] = *p1;
-                        newNumPoints++;
-                        continue;
-                    }
-
-                    if (sides[i] == SIDE_FRONT)
-                    {
-                        newPoints[newNumPoints] = *p1;
-                        newNumPoints++;
-                    }
-
-                    if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])
-                        continue;
-
-                    if (newNumPoints + 1 > maxpts)
-                        return this;        // can't split -- fall back to original
+                    if (newNumPoints + 1 > maxpts) return this;        // can't split -- fall back to original
+                    if (sides[i] == SIDE_ON) { newPoints[newNumPoints] = *p1; newNumPoints++; continue; }
+                    if (sides[i] == SIDE_FRONT) { newPoints[newNumPoints] = *p1; newNumPoints++; }
+                    if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) continue;
+                    if (newNumPoints + 1 > maxpts) return this;        // can't split -- fall back to original
 
                     // generate a split point
                     p2 = &p[(i + 1) % numPoints];
@@ -363,8 +281,7 @@ namespace System.NumericsX
                     newNumPoints++;
                 }
 
-                if (!EnsureAlloced(newNumPoints, false))
-                    return this;
+                if (!EnsureAlloced(newNumPoints, false)) return this;
 
                 numPoints = newNumPoints;
                 Unsafe.CopyBlock(p, newPoints, (uint)(newNumPoints * sizeof(Vector5)));
@@ -387,26 +304,18 @@ namespace System.NumericsX
             for (i = 0; i < numPoints; i++)
             {
                 dists[i] = dot = plane.Distance(p[i].ToVec3());
-                sides[i] = (byte)(dot > epsilon ? SIDE_FRONT
-                    : dot < -epsilon ? SIDE_BACK
-                    : SIDE_ON);
+                sides[i] = (byte)(dot > epsilon ? SIDE_FRONT : dot < -epsilon ? SIDE_BACK : SIDE_ON);
                 counts[sides[i]]++;
             }
             sides[i] = sides[0];
             dists[i] = dists[0];
 
             // if the winding is on the plane and we should keep it
-            if (keepOn && counts[SIDE_FRONT] == 0 && counts[SIDE_BACK] == 0)
-                return true;
+            if (keepOn && counts[SIDE_FRONT] == 0 && counts[SIDE_BACK] == 0) return true;
             // if nothing at the front of the clipping plane
-            if (counts[SIDE_FRONT] == 0)
-            {
-                numPoints = 0;
-                return false;
-            }
+            if (counts[SIDE_FRONT] == 0) { numPoints = 0; return false; }
             // if nothing at the back of the clipping plane
-            if (counts[SIDE_BACK] == 0)
-                return true;
+            if (counts[SIDE_BACK] == 0) return true;
 
             maxpts = numPoints + 4;     // cant use counts[0]+2 because of fp grouping errors
 
@@ -419,27 +328,11 @@ namespace System.NumericsX
                 {
                     p1 = &p[i];
 
-                    if (newNumPoints + 1 > maxpts)
-                        return true;        // can't split -- fall back to original
-
-                    if (sides[i] == SIDE_ON)
-                    {
-                        newPoints[newNumPoints] = *p1;
-                        newNumPoints++;
-                        continue;
-                    }
-
-                    if (sides[i] == SIDE_FRONT)
-                    {
-                        newPoints[newNumPoints] = *p1;
-                        newNumPoints++;
-                    }
-
-                    if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])
-                        continue;
-
-                    if (newNumPoints + 1 > maxpts)
-                        return true;        // can't split -- fall back to original
+                    if (newNumPoints + 1 > maxpts) return true;        // can't split -- fall back to original
+                    if (sides[i] == SIDE_ON) { newPoints[newNumPoints] = *p1; newNumPoints++; continue; }
+                    if (sides[i] == SIDE_FRONT) { newPoints[newNumPoints] = *p1; newNumPoints++; }
+                    if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) continue;
+                    if (newNumPoints + 1 > maxpts) return true;        // can't split -- fall back to original
 
                     // generate a split point
                     p2 = &p[(i + 1) % numPoints];
@@ -457,8 +350,7 @@ namespace System.NumericsX
                     newNumPoints++;
                 }
 
-                if (!EnsureAlloced(newNumPoints, false))
-                    return true;
+                if (!EnsureAlloced(newNumPoints, false)) return true;
 
                 numPoints = newNumPoints;
                 Unsafe.CopyBlock(p, newPoints, (uint)(newNumPoints * sizeof(Vector5)));
@@ -469,19 +361,15 @@ namespace System.NumericsX
         // returns a copy of the winding
         public unsafe Winding Copy()
         {
-            var w = new Winding(numPoints);
-            w.numPoints = numPoints;
-            fixed (void* w_p = w.p, p = this.p)
-                Unsafe.CopyBlock(w_p, p, (uint)(numPoints * sizeof(Vector5)));
+            var w = new Winding(numPoints) { numPoints = numPoints };
+            fixed (void* w_p = w.p, p = this.p) Unsafe.CopyBlock(w_p, p, (uint)(numPoints * sizeof(Vector5)));
             return w;
         }
 
         public Winding Reverse()
         {
-            var w = new Winding(numPoints);
-            w.numPoints = numPoints;
-            for (var i = 0; i < numPoints; i++)
-                w.p[numPoints - i - 1] = p[i];
+            var w = new Winding(numPoints) { numPoints = numPoints };
+            for (var i = 0; i < numPoints; i++) w.p[numPoints - i - 1] = p[i];
             return w;
         }
 
@@ -503,11 +391,9 @@ namespace System.NumericsX
 
             for (i = 0; i < numPoints; i++)
             {
-                if ((p[i].ToVec3() - p[(i + numPoints - 1) % numPoints].ToVec3()).LengthSqr >= MathX.Square(epsilon))
-                    continue;
+                if ((p[i].ToVec3() - p[(i + numPoints - 1) % numPoints].ToVec3()).LengthSqr >= MathX.Square(epsilon)) continue;
                 numPoints--;
-                for (j = i; j < numPoints; j++)
-                    p[j] = p[j + 1];
+                for (j = i; j < numPoints; j++) p[j] = p[j + 1];
                 i--;
             }
         }
@@ -516,8 +402,7 @@ namespace System.NumericsX
         {
             int i, j; float dist; Vector3 edgeNormal;
 
-            if (numPoints <= 3)
-                return;
+            if (numPoints <= 3) return;
 
             for (i = 0; i < numPoints; i++)
             {
@@ -526,23 +411,18 @@ namespace System.NumericsX
                 edgeNormal.Normalize();
                 dist = edgeNormal * p[i].ToVec3();
 
-                if (MathX.Fabs(edgeNormal * p[(i + 1) % numPoints].ToVec3() - dist) > epsilon)
-                    continue;
+                if (MathX.Fabs(edgeNormal * p[(i + 1) % numPoints].ToVec3() - dist) > epsilon) continue;
 
                 numPoints--;
-                for (j = i; j < numPoints; j++)
-                    p[j] = p[j + 1];
+                for (j = i; j < numPoints; j++) p[j] = p[j + 1];
                 i--;
             }
         }
 
         public unsafe void RemovePoint(int point)
         {
-            if (point < 0 || point >= numPoints)
-                FatalError("Winding::removePoint: point out of range");
-            if (point < numPoints - 1)
-                fixed (Vector5* p = this.p)
-                    UnsafeX.MoveBlock(&p[point], &p[point + 1], (uint)((numPoints - point - 1) * sizeof(Vector5)));
+            if (point < 0 || point >= numPoints) FatalError("Winding::removePoint: point out of range");
+            if (point < numPoints - 1) fixed (Vector5* p = this.p) UnsafeX.MoveBlock(&p[point], &p[point + 1], (uint)((numPoints - point - 1) * sizeof(Vector5)));
             numPoints--;
         }
 
@@ -550,15 +430,11 @@ namespace System.NumericsX
         {
             int i;
 
-            if (spot > numPoints)
-                FatalError("Winding::insertPoint: spot > numPoints");
-
-            if (spot < 0)
-                FatalError("Winding::insertPoint: spot < 0");
+            if (spot > numPoints) FatalError("Winding::insertPoint: spot > numPoints");
+            if (spot < 0) FatalError("Winding::insertPoint: spot < 0");
 
             EnsureAlloced(numPoints + 1, true);
-            for (i = numPoints; i > spot; i--)
-                p[i] = p[i - 1];
+            for (i = numPoints; i > spot; i--) p[i] = p[i - 1];
             p[spot] = reinterpret.cast_vec5(point);
             numPoints++;
         }
@@ -568,8 +444,7 @@ namespace System.NumericsX
             int i; float dist, dot; Vector3 normal;
 
             // point may not be too far from the winding plane
-            if (MathX.Fabs(plane.Distance(point)) > epsilon)
-                return false;
+            if (MathX.Fabs(plane.Distance(point)) > epsilon) return false;
 
             for (i = 0; i < numPoints; i++)
             {
@@ -578,31 +453,20 @@ namespace System.NumericsX
                 normal.Normalize();
                 dist = normal * p[i].ToVec3();
 
-                if (MathX.Fabs(normal * point - dist) > epsilon)
-                    continue;
+                if (MathX.Fabs(normal * point - dist) > epsilon) continue;
 
                 normal = plane.Normal.Cross(normal);
                 dot = normal * point;
 
                 dist = dot - normal * p[i].ToVec3();
 
-                if (dist < epsilon)
-                {
-                    // if the winding already has the point
-                    if (dist > -epsilon)
-                        return false;
-                    continue;
-                }
+                // if the winding already has the point
+                if (dist < epsilon) { if (dist > -epsilon) return false; continue; }
 
                 dist = dot - normal * p[(i + 1) % numPoints].ToVec3();
 
-                if (dist > -epsilon)
-                {
-                    // if the winding already has the point
-                    if (dist < epsilon)
-                        return false;
-                    continue;
-                }
+                // if the winding already has the point
+                if (dist > -epsilon) { if (dist < epsilon) return false; continue; }
 
                 InsertPoint(point, i + 1);
                 return true;
@@ -617,13 +481,11 @@ namespace System.NumericsX
         {
             int i, j, k, maxPts, numNewHullPoints; float d; Vector3 dir; bool outside;
 
-            if (winding == null)
-                return;
+            if (winding == null) return;
 
             maxPts = numPoints + winding.numPoints;
 
-            if (!EnsureAlloced(maxPts, true))
-                return;
+            if (!EnsureAlloced(maxPts, true)) return;
 
             var newHullPoints = stackalloc Vector5[maxPts];
             var hullDirs = stackalloc Vector3[maxPts];
@@ -647,22 +509,17 @@ namespace System.NumericsX
                 {
                     dir = p1.ToVec3() - p[j].ToVec3();
                     d = dir * hullDirs[j];
-                    if (d >= epsilon)
-                        outside = true;
+                    if (d >= epsilon) outside = true;
 
                     hullSide[j] = d >= -epsilon; //: opt
                 }
 
                 // if the point is effectively inside, do nothing
-                if (!outside)
-                    continue;
+                if (!outside) continue;
 
                 // find the back side to front side transition
-                for (j = 0; j < numPoints; j++)
-                    if (!hullSide[j] && hullSide[(j + 1) % numPoints])
-                        break;
-                if (j >= numPoints)
-                    continue;
+                for (j = 0; j < numPoints; j++) if (!hullSide[j] && hullSide[(j + 1) % numPoints]) break;
+                if (j >= numPoints) continue;
 
                 // insert the point here
                 newHullPoints[0] = p1;
@@ -672,15 +529,13 @@ namespace System.NumericsX
                 j = (j + 1) % numPoints;
                 for (k = 0; k < numPoints; k++)
                 {
-                    if (hullSide[(j + k) % numPoints] && hullSide[(j + k + 1) % numPoints])
-                        continue;
+                    if (hullSide[(j + k) % numPoints] && hullSide[(j + k + 1) % numPoints]) continue;
                     newHullPoints[numNewHullPoints] = p[(j + k + 1) % numPoints];
                     numNewHullPoints++;
                 }
 
                 numPoints = numNewHullPoints;
-                fixed (Vector5* p = this.p)
-                    Unsafe.CopyBlock(p, newHullPoints, (uint)(numNewHullPoints * sizeof(Vector5)));
+                fixed (Vector5* p = this.p) Unsafe.CopyBlock(p, newHullPoints, (uint)(numNewHullPoints * sizeof(Vector5)));
             }
         }
 
@@ -693,55 +548,28 @@ namespace System.NumericsX
 
             switch (numPoints)
             {
-                case 0:
-                    {
-                        p[0] = reinterpret.cast_vec5(point);
-                        numPoints++;
-                        return;
-                    }
-                case 1:
-                    {
-                        // don't add the same point second
-                        if (p[0].ToVec3().Compare(point, epsilon))
-                            return;
-                        p[1].ToVec3() = point;
-                        numPoints++;
-                        return;
-                    }
+                case 0: p[0] = reinterpret.cast_vec5(point); numPoints++; return;
+                // don't add the same point second
+                case 1: if (p[0].ToVec3().Compare(point, epsilon)) return; p[1].ToVec3() = point; numPoints++; return;
                 case 2:
-                    {
-                        // don't add a point if it already exists
-                        if (p[0].ToVec3().Compare(point, epsilon) || p[1].ToVec3().Compare(point, epsilon))
-                            return;
-                        // if only two points make sure we have the right ordering according to the normal
-                        dir = point - p[0].ToVec3();
-                        dir = dir.Cross(p[1].ToVec3() - p[0].ToVec3());
-                        if (dir[0] == 0f && dir[1] == 0f && dir[2] == 0f)
-                        {
-                            // points don't make a plane
-                            return;
-                        }
-                        if (dir * normal > 0f)
-                            p[2].ToVec3() = point;
-                        else
-                        {
-                            p[2] = p[1];
-                            p[1].ToVec3() = point;
-                        }
-                        numPoints++;
-                        return;
-                    }
+                    // don't add a point if it already exists
+                    if (p[0].ToVec3().Compare(point, epsilon) || p[1].ToVec3().Compare(point, epsilon)) return;
+                    // if only two points make sure we have the right ordering according to the normal
+                    dir = point - p[0].ToVec3();
+                    dir = dir.Cross(p[1].ToVec3() - p[0].ToVec3());
+                    // points don't make a plane
+                    if (dir[0] == 0f && dir[1] == 0f && dir[2] == 0f) return;
+                    if (dir * normal > 0f) p[2].ToVec3() = point;
+                    else { p[2] = p[1]; p[1].ToVec3() = point; }
+                    numPoints++;
+                    return;
             }
 
             var hullDirs = stackalloc Vector3[numPoints];
             var hullSide = stackalloc bool[numPoints];
 
             // calculate hull edge vectors
-            for (j = 0; j < numPoints; j++)
-            {
-                dir = p[(j + 1) % numPoints].ToVec3() - p[j].ToVec3();
-                hullDirs[j] = normal.Cross(dir);
-            }
+            for (j = 0; j < numPoints; j++) { dir = p[(j + 1) % numPoints].ToVec3() - p[j].ToVec3(); hullDirs[j] = normal.Cross(dir); }
 
             // calculate side for each hull edge
             outside = false;
@@ -749,21 +577,16 @@ namespace System.NumericsX
             {
                 dir = point - p[j].ToVec3();
                 d = dir * hullDirs[j];
-                if (d >= epsilon)
-                    outside = true;
+                if (d >= epsilon) outside = true;
                 hullSide[j] = d >= -epsilon; //: opt
             }
 
             // if the point is effectively inside, do nothing
-            if (!outside)
-                return;
+            if (!outside) return;
 
             // find the back side to front side transition
-            for (j = 0; j < numPoints; j++)
-                if (!hullSide[j] && hullSide[(j + 1) % numPoints])
-                    break;
-            if (j >= numPoints)
-                return;
+            for (j = 0; j < numPoints; j++) if (!hullSide[j] && hullSide[(j + 1) % numPoints]) break;
+            if (j >= numPoints) return;
 
             var hullPoints = stackalloc Vector5[numPoints + 1];
 
@@ -775,17 +598,14 @@ namespace System.NumericsX
             j = (j + 1) % numPoints;
             for (k = 0; k < numPoints; k++)
             {
-                if (hullSide[(j + k) % numPoints] && hullSide[(j + k + 1) % numPoints])
-                    continue;
+                if (hullSide[(j + k) % numPoints] && hullSide[(j + k + 1) % numPoints]) continue;
                 hullPoints[numHullPoints] = p[(j + k + 1) % numPoints];
                 numHullPoints++;
             }
 
-            if (!EnsureAlloced(numHullPoints, false))
-                return;
+            if (!EnsureAlloced(numHullPoints, false)) return;
             numPoints = numHullPoints;
-            fixed (Vector5* p = this.p)
-                Unsafe.CopyBlock(p, hullPoints, (uint)(numHullPoints * sizeof(Vector5)));
+            fixed (Vector5* p = this.p) Unsafe.CopyBlock(p, hullPoints, (uint)(numHullPoints * sizeof(Vector5)));
         }
 
         // tries to merge 'this' with the given winding, returns null if merge fails, both 'this' and 'w' stay intact 'keep' tells if the contacting points should stay even if they create colinear edges
@@ -810,25 +630,17 @@ namespace System.NumericsX
                     p4 = f2.p[(j + 1) % f2.numPoints].ToVec3();
                     for (k = 0; k < 3; k++)
                     {
-                        if (MathX.Fabs(p1[k] - p4[k]) > 0.1f)
-                            break;
-                        if (MathX.Fabs(p2[k] - p3[k]) > 0.1f)
-                            break;
+                        if (MathX.Fabs(p1[k] - p4[k]) > 0.1f) break;
+                        if (MathX.Fabs(p2[k] - p3[k]) > 0.1f) break;
                     }
-                    if (k == 3)
-                        break;
+                    if (k == 3) break;
                 }
-                if (j < f2.numPoints)
-                    break;
+                if (j < f2.numPoints) break;
             }
 
-            if (i == f1.numPoints)
-                return null;            // no matching edges
+            if (i == f1.numPoints) return null;            // no matching edges
 
-            //
-            // check slope of connected lines
-            // if the slopes are colinear, the point can be removed
-            //
+            // check slope of connected lines. if the slopes are colinear, the point can be removed
             back = f1.p[(i + f1.numPoints - 1) % f1.numPoints].ToVec3();
             delta = p1 - back;
             normal2 = normal.Cross(delta);
@@ -837,8 +649,7 @@ namespace System.NumericsX
             back = f2.p[(j + 2) % f2.numPoints].ToVec3();
             delta = back - p1;
             dot = delta * normal2;
-            if (dot > CONTINUOUS_EPSILON)
-                return null;            // not a convex polygon
+            if (dot > CONTINUOUS_EPSILON) return null;            // not a convex polygon
 
             keep1 = dot < -CONTINUOUS_EPSILON;
 
@@ -850,21 +661,17 @@ namespace System.NumericsX
             back = f2.p[(j + f2.numPoints - 1) % f2.numPoints].ToVec3();
             delta = back - p2;
             dot = delta * normal2;
-            if (dot > CONTINUOUS_EPSILON)
-                return null;            // not a convex polygon
+            if (dot > CONTINUOUS_EPSILON) return null;            // not a convex polygon
 
             keep2 = dot < -CONTINUOUS_EPSILON;
 
-            //
             // build the new polygon
-            //
             newf = new Winding(f1.numPoints + f2.numPoints);
 
             // copy first polygon
             for (k = (i + 1) % f1.numPoints; k != i; k = (k + 1) % f1.numPoints)
             {
-                if (!keep && k == (i + 1) % f1.numPoints && !keep2)
-                    continue;
+                if (!keep && k == (i + 1) % f1.numPoints && !keep2) continue;
 
                 newf.p[newf.numPoints] = f1.p[k];
                 newf.numPoints++;
@@ -873,8 +680,7 @@ namespace System.NumericsX
             // copy second polygon
             for (l = (j + 1) % f2.numPoints; l != j; l = (l + 1) % f2.numPoints)
             {
-                if (!keep && l == (j + 1) % f2.numPoints && !keep1)
-                    continue;
+                if (!keep && l == (j + 1) % f2.numPoints && !keep1) continue;
                 newf.p[newf.numPoints] = f2.p[l];
                 newf.numPoints++;
             }
@@ -888,20 +694,10 @@ namespace System.NumericsX
             int i, j; float area, d, edgedist;
             Vector3 dir, edgenormal; Plane plane;
 
-            if (numPoints < 3)
-            {
-                if (print)
-                    Printf($"Winding::Check: only {numPoints} points.");
-                return false;
-            }
+            if (numPoints < 3) { if (print) Printf($"Winding::Check: only {numPoints} points."); return false; }
 
             area = Area;
-            if (area < 1f)
-            {
-                if (print)
-                    Printf($"Winding::Check: tiny area: {area}");
-                return false;
-            }
+            if (area < 1f) { if (print) Printf($"Winding::Check: tiny area: {area}"); return false; }
 
             GetPlane(out plane);
 
@@ -910,35 +706,19 @@ namespace System.NumericsX
                 var p1 = p[i].ToVec3();
 
                 // check if the winding is huge
-                for (j = 0; j < 3; j++)
-                    if (p1[j] >= MAX_WORLD_COORD || p1[j] <= MIN_WORLD_COORD)
-                    {
-                        if (print)
-                            Printf($"Winding::Check: point {i} outside world {'X' + j}-axis: {p1[j]}");
-                        return false;
-                    }
+                for (j = 0; j < 3; j++) if (p1[j] >= MAX_WORLD_COORD || p1[j] <= MIN_WORLD_COORD) { if (print) Printf($"Winding::Check: point {i} outside world {'X' + j}-axis: {p1[j]}"); return false; }
 
                 j = i + 1 == numPoints ? 0 : i + 1;
 
                 // check if the point is on the face plane
                 d = p1 * plane.Normal + plane[3];
-                if (d < -ON_EPSILON || d > ON_EPSILON)
-                {
-                    if (print)
-                        Printf($"Winding::Check: point {i} off plane.");
-                    return false;
-                }
+                if (d < -ON_EPSILON || d > ON_EPSILON) { if (print) Printf($"Winding::Check: point {i} off plane."); return false; }
 
                 // check if the edge isn't degenerate
                 var p2 = p[j].ToVec3();
                 dir = p2 - p1;
 
-                if (dir.Length < ON_EPSILON)
-                {
-                    if (print)
-                        Printf($"Winding::Check: edge {i} is degenerate.");
-                    return false;
-                }
+                if (dir.Length < ON_EPSILON) { if (print) Printf($"Winding::Check: edge {i} is degenerate."); return false; }
 
                 // check if the winding is convex
                 edgenormal = plane.Normal.Cross(dir);
@@ -949,15 +729,9 @@ namespace System.NumericsX
                 // all other points must be on front side
                 for (j = 0; j < numPoints; j++)
                 {
-                    if (j == i)
-                        continue;
+                    if (j == i) continue;
                     d = p[j].ToVec3() * edgenormal;
-                    if (d > edgedist)
-                    {
-                        if (print)
-                            Printf("Winding::Check: non-convex.");
-                        return false;
-                    }
+                    if (d > edgedist) { if (print) Printf("Winding::Check: non-convex."); return false; }
                 }
             }
             return true;
@@ -985,8 +759,7 @@ namespace System.NumericsX
             {
                 Vector3 center = new();
                 center.Zero();
-                for (var i = 0; i < numPoints; i++)
-                    center += p[i].ToVec3();
+                for (var i = 0; i < numPoints; i++) center += p[i].ToVec3();
                 center *= (1f / numPoints);
                 return center;
             }
@@ -999,8 +772,7 @@ namespace System.NumericsX
             {
                 var dir = p[i].ToVec3() - center;
                 var r = dir * dir;
-                if (r > radius)
-                    radius = r;
+                if (r > radius) radius = r;
             }
             return MathX.Sqrt(radius);
         }
@@ -1008,12 +780,7 @@ namespace System.NumericsX
         public void GetPlane(out Vector3 normal, out float dist)
         {
             normal = new();
-            if (numPoints < 3)
-            {
-                normal.Zero();
-                dist = 0f;
-                return;
-            }
+            if (numPoints < 3) { normal.Zero(); dist = 0f; return; }
 
             var center = Center;
             var v1 = p[0].ToVec3() - center;
@@ -1026,11 +793,7 @@ namespace System.NumericsX
         public void GetPlane(out Plane plane)
         {
             plane = new();
-            if (numPoints < 3)
-            {
-                plane.Zero();
-                return;
-            }
+            if (numPoints < 3) { plane.Zero(); return; }
 
             var center = Center;
             var v1 = p[0].ToVec3() - center;
@@ -1043,11 +806,7 @@ namespace System.NumericsX
         public void GetBounds(out Bounds bounds)
         {
             bounds = new();
-            if (numPoints == 0)
-            {
-                bounds.Clear();
-                return;
-            }
+            if (numPoints == 0) { bounds.Clear(); return; }
 
             bounds[0] = bounds[1] = p[0].ToVec3();
             for (var i = 1; i < numPoints; i++)
@@ -1071,9 +830,7 @@ namespace System.NumericsX
                 {
                     var delta = p[(i + 1) % numPoints].ToVec3() - p[i].ToVec3();
                     var len = delta.Length;
-                    if (len > EDGE_LENGTH)
-                        if (++edges == 3)
-                            return false;
+                    if (len > EDGE_LENGTH) if (++edges == 3) return false;
                 }
                 return true;
             }
@@ -1082,17 +839,13 @@ namespace System.NumericsX
         {
             get
             {
-                for (var i = 0; i < numPoints; i++)
-                    for (var j = 0; j < 3; j++)
-                        if (p[i][j] <= MIN_WORLD_COORD || p[i][j] >= MAX_WORLD_COORD)
-                            return true;
+                for (var i = 0; i < numPoints; i++) for (var j = 0; j < 3; j++) if (p[i][j] <= MIN_WORLD_COORD || p[i][j] >= MAX_WORLD_COORD) return true;
                 return false;
             }
         }
         public void Print()
         {
-            for (var i = 0; i < numPoints; i++)
-                Printf($"({p[i].x:5.1}, {p[i].y:5.1}, {p[i].z:5.1})\n");
+            for (var i = 0; i < numPoints; i++) Printf($"({p[i].x:5.1}, {p[i].y:5.1}, {p[i].z:5.1})\n");
         }
 
         public float PlaneDistance(in Plane plane)
@@ -1102,18 +855,8 @@ namespace System.NumericsX
             for (var i = 0; i < numPoints; i++)
             {
                 var d = plane.Distance(p[i].ToVec3());
-                if (d < min)
-                {
-                    min = d;
-                    if (MathX.FLOATSIGNBITSET(min) & MathX.FLOATSIGNBITNOTSET(max))
-                        return 0f;
-                }
-                if (d > max)
-                {
-                    max = d;
-                    if (MathX.FLOATSIGNBITSET(min) & MathX.FLOATSIGNBITNOTSET(max))
-                        return 0f;
-                }
+                if (d < min) { min = d; if (MathX.FLOATSIGNBITSET(min) & MathX.FLOATSIGNBITNOTSET(max)) return 0f; }
+                if (d > max) { max = d; if (MathX.FLOATSIGNBITSET(min) & MathX.FLOATSIGNBITNOTSET(max)) return 0f; }
             }
             if (MathX.FLOATSIGNBITNOTSET(min)) return min;
             if (MathX.FLOATSIGNBITSET(max)) return max;
@@ -1127,22 +870,9 @@ namespace System.NumericsX
             for (var i = 0; i < numPoints; i++)
             {
                 var d = plane.Distance(p[i].ToVec3());
-                if (d < -epsilon)
-                {
-                    if (front)
-                        return SIDE_CROSS;
-                    back = true;
-                    continue;
-                }
-                else if (d > epsilon)
-                {
-                    if (back)
-                        return SIDE_CROSS;
-                    front = true;
-                    continue;
-                }
+                if (d < -epsilon) { if (front) return SIDE_CROSS; back = true; continue; }
+                else if (d > epsilon) { if (back) return SIDE_CROSS; front = true; continue; }
             }
-
             if (back) return SIDE_BACK;
             if (front) return SIDE_FRONT;
             return SIDE_ON;
@@ -1154,14 +884,9 @@ namespace System.NumericsX
             int i;
 
             // check if one of the points of winding 1 is at the back of the plane of winding 2
-            for (i = 0; i < numPoints; i++)
-                if (normal2 * p[i].ToVec3() - dist2 > WCONVEX_EPSILON)
-                    return true;
+            for (i = 0; i < numPoints; i++) if (normal2 * p[i].ToVec3() - dist2 > WCONVEX_EPSILON) return true;
             // check if one of the points of winding 2 is at the back of the plane of winding 1
-            for (i = 0; i < w2.numPoints; i++)
-                if (normal1 * w2.p[i].ToVec3() - dist1 > WCONVEX_EPSILON)
-                    return true;
-
+            for (i = 0; i < w2.numPoints; i++) if (normal1 * w2.p[i].ToVec3() - dist1 > WCONVEX_EPSILON) return true;
             return false;
         }
 
@@ -1171,11 +896,8 @@ namespace System.NumericsX
             {
                 var dir = p[(i + 1) % numPoints].ToVec3() - p[i].ToVec3();
                 var pointvec = point - p[i].ToVec3();
-
                 var n = dir.Cross(normal);
-
-                if (pointvec * n < -epsilon)
-                    return false;
+                if (pointvec * n < -epsilon) return false;
             }
             return true;
         }
@@ -1187,20 +909,14 @@ namespace System.NumericsX
             var back = windingPlane.Distance(end);
 
             // if both points at the same side of the plane
-            if (front < 0f && back < 0f)
-                return false;
-
-            if (front > 0f && back > 0f)
-                return false;
-
+            if (front < 0f && back < 0f) return false;
+            if (front > 0f && back > 0f) return false;
             // if back face culled
-            if (backFaceCull && front < 0f)
-                return false;
+            if (backFaceCull && front < 0f) return false;
 
             // get point of intersection with winding plane
             Vector3 mid;
-            if (MathX.Fabs(front - back) < 0.0001f)
-                mid = end;
+            if (MathX.Fabs(front - back) < 0.0001f) mid = end;
             else
             {
                 var frac = front / (front - back);
@@ -1223,15 +939,10 @@ namespace System.NumericsX
             {
                 pl2.FromLine(p[i].ToVec3(), p[(i + 1) % numPoints].ToVec3());
                 side = pl1.PermutedInnerProduct(pl2) > 0f;
-                if (i != 0 && side != lastside)
-                    return false;
+                if (i != 0 && side != lastside) return false;
                 lastside = side;
             }
-            if (!backFaceCull || lastside)
-            {
-                windingPlane.RayIntersection(start, dir, out scale);
-                return true;
-            }
+            if (!backFaceCull || lastside) { windingPlane.RayIntersection(start, dir, out scale); return true; }
             return false;
         }
 
@@ -1252,14 +963,8 @@ namespace System.NumericsX
             var oldP = p;
             n = (n + 3) & ~3;   // align up to multiple of four
             p = new Vector5[n];
-            if (oldP != null)
-            {
-                if (keep)
-                    fixed (Vector5* p = this.p, oldP_ = oldP)
-                        Unsafe.CopyBlock(p, oldP_, (uint)(numPoints * sizeof(Vector5)));
-            }
+            if (oldP != null && keep) fixed (Vector5* p = this.p, oldP_ = oldP) Unsafe.CopyBlock(p, oldP_, (uint)(numPoints * sizeof(Vector5)));
             allocedSize = n;
-
             return true;
         }
     }
@@ -1290,16 +995,8 @@ namespace System.NumericsX
             numPoints = 0;
             p = data;
             allocedSize = MAX_POINTS_ON_WINDING;
-            if (!EnsureAlloced(n))
-            {
-                numPoints = 0;
-                return;
-            }
-            for (var i = 0; i < n; i++)
-            {
-                p[i].ToVec3() = verts[i];
-                p[i].s = p[i].t = 0;
-            }
+            if (!EnsureAlloced(n)) { numPoints = 0; return; }
+            for (var i = 0; i < n; i++) { p[i].ToVec3() = verts[i]; p[i].s = p[i].t = 0; }
             numPoints = n;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1323,13 +1020,8 @@ namespace System.NumericsX
         {
             p = data;
             allocedSize = MAX_POINTS_ON_WINDING;
-            if (!EnsureAlloced(winding.NumPoints))
-            {
-                numPoints = 0;
-                return;
-            }
-            for (var i = 0; i < winding.NumPoints; i++)
-                p[i] = winding[i];
+            if (!EnsureAlloced(winding.NumPoints)) { numPoints = 0; return; }
+            for (var i = 0; i < winding.NumPoints; i++) p[i] = winding[i];
             numPoints = winding.NumPoints;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1337,13 +1029,8 @@ namespace System.NumericsX
         {
             p = data;
             allocedSize = MAX_POINTS_ON_WINDING;
-            if (!EnsureAlloced(winding.NumPoints))
-            {
-                numPoints = 0;
-                return;
-            }
-            for (var i = 0; i < winding.NumPoints; i++)
-                p[i] = winding[i];
+            if (!EnsureAlloced(winding.NumPoints)) { numPoints = 0; return; }
+            for (var i = 0; i < winding.NumPoints; i++) p[i] = winding[i];
             numPoints = winding.NumPoints;
         }
 
@@ -1368,19 +1055,12 @@ namespace System.NumericsX
             for (i = 0; i < numPoints; i++)
             {
                 dists[i] = dot = plane.Distance(p[i].ToVec3());
-                sides[i] = (byte)(dot > epsilon ? SIDE_FRONT
-                    : dot < -epsilon ? SIDE_BACK
-                    : SIDE_ON); //: opt
+                sides[i] = (byte)(dot > epsilon ? SIDE_FRONT : dot < -epsilon ? SIDE_BACK : SIDE_ON); //: opt
                 counts[sides[i]]++;
             }
 
-            if (counts[SIDE_BACK] == 0)
-                return counts[SIDE_FRONT] == 0
-                    ? SIDE_ON
-                    : SIDE_FRONT;
-
-            if (counts[SIDE_FRONT] == 0)
-                return SIDE_BACK;
+            if (counts[SIDE_BACK] == 0) return counts[SIDE_FRONT] == 0 ? SIDE_ON : SIDE_FRONT;
+            if (counts[SIDE_FRONT] == 0) return SIDE_BACK;
 
             sides[i] = sides[0];
             dists[i] = dists[0];
@@ -1394,10 +1074,8 @@ namespace System.NumericsX
                 {
                     p1 = &p[i];
 
-                    if (!winding.EnsureAlloced(winding.numPoints + 1, true))
-                        return SIDE_FRONT;      // can't split -- fall back to original
-                    if (!back.EnsureAlloced(back.numPoints + 1, true))
-                        return SIDE_FRONT;      // can't split -- fall back to original
+                    if (!winding.EnsureAlloced(winding.numPoints + 1, true)) return SIDE_FRONT;      // can't split -- fall back to original
+                    if (!back.EnsureAlloced(back.numPoints + 1, true)) return SIDE_FRONT;      // can't split -- fall back to original
 
                     if (sides[i] == SIDE_ON)
                     {
@@ -1408,25 +1086,12 @@ namespace System.NumericsX
                         continue;
                     }
 
-                    if (sides[i] == SIDE_FRONT)
-                    {
-                        winding.p[winding.numPoints] = *p1;
-                        winding.numPoints++;
-                    }
-                    if (sides[i] == SIDE_BACK)
-                    {
-                        back.p[back.numPoints] = *p1;
-                        back.numPoints++;
-                    }
+                    if (sides[i] == SIDE_FRONT) { winding.p[winding.numPoints] = *p1; winding.numPoints++; }
+                    if (sides[i] == SIDE_BACK) { back.p[back.numPoints] = *p1; back.numPoints++; }
 
-                    if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])
-                        continue;
-
-                    if (!winding.EnsureAlloced(winding.numPoints + 1, true))
-                        return SIDE_FRONT;      // can't split -- fall back to original
-
-                    if (!back.EnsureAlloced(back.numPoints + 1, true))
-                        return SIDE_FRONT;      // can't split -- fall back to original
+                    if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) continue;
+                    if (!winding.EnsureAlloced(winding.numPoints + 1, true)) return SIDE_FRONT;      // can't split -- fall back to original
+                    if (!back.EnsureAlloced(back.numPoints + 1, true)) return SIDE_FRONT;      // can't split -- fall back to original
 
                     // generate a split point
                     j = i + 1;
@@ -1437,7 +1102,7 @@ namespace System.NumericsX
                         // avoid round off error when possible
                         mid[j] = plane.Normal[j] == 1f ? plane.Dist
                             : plane.Normal[j] == -1f ? -plane.Dist
-                            : (*p1)[j] + dot * ((*p2)[j] - (*p1)[j]); //: opt
+                            : (*p1)[j] + dot * ((*p2)[j] - (*p1)[j]);
                     mid.s = p1->s + dot * (p2->s - p1->s);
                     mid.t = p1->t + dot * (p2->t - p1->t);
 
@@ -1446,8 +1111,7 @@ namespace System.NumericsX
                     back.p[back.numPoints] = mid;
                     back.numPoints++;
                 }
-                for (i = 0; i < winding.numPoints; i++)
-                    p[i] = winding.p[i];
+                for (i = 0; i < winding.numPoints; i++) p[i] = winding.p[i];
                 numPoints = winding.numPoints;
             }
 
@@ -1458,11 +1122,7 @@ namespace System.NumericsX
         {
             Debug.Assert(n <= MAX_POINTS_ON_WINDING);
 
-            if (n > MAX_POINTS_ON_WINDING)
-            {
-                Printf("WARNING: FixedWinding . MAX_POINTS_ON_WINDING overflowed\n");
-                return false;
-            }
+            if (n > MAX_POINTS_ON_WINDING) { Printf("WARNING: FixedWinding . MAX_POINTS_ON_WINDING overflowed\n"); return false; }
             return true;
         }
     }

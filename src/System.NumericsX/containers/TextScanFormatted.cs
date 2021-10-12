@@ -417,8 +417,7 @@ namespace System.NumericsX
             // Extract token
             if (input.Position > start)
             {
-                if (!spec.NoResult)
-                    add(Unsigned(input.Extract(start, input.Position), spec.Modifier, 16));
+                if (!spec.NoResult) add(Unsigned(input.Extract(start, input.Position), spec.Modifier, 16));
                 return true;
             }
             return false;
@@ -446,8 +445,7 @@ namespace System.NumericsX
             // Extract token
             if (input.Position > start)
             {
-                if (!spec.NoResult)
-                    add(Unsigned(input.Extract(start, input.Position), spec.Modifier, 8));
+                if (!spec.NoResult) add(Unsigned(input.Extract(start, input.Position), spec.Modifier, 8));
                 return true;
             }
             return false;
@@ -474,8 +472,7 @@ namespace System.NumericsX
             // Extract token
             if (input.Position > start)
             {
-                if (!spec.NoResult)
-                    add(input.Extract(start, input.Position));
+                if (!spec.NoResult) add(input.Extract(start, input.Position));
                 return true;
             }
             return false;
@@ -503,8 +500,7 @@ namespace System.NumericsX
             // Extract token
             if (input.Position > start)
             {
-                if (!spec.NoResult)
-                    add(input.Extract(start, input.Position));
+                if (!spec.NoResult) add(input.Extract(start, input.Position));
                 return true;
             }
             return false;

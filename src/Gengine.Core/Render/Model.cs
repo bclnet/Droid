@@ -85,7 +85,7 @@ namespace Gengine.Render
 
         public ShadowCache[] shadowVertexes;    // these will be copied to shadowCache when it is going to be drawn. these are NULL when vertex programs are available
 
-        public SrfTriangles[] ambientSurface;       // for light interactions, point back at the original surface that generated the interaction, which we will get the ambientCache from
+        public SrfTriangles ambientSurface;       // for light interactions, point back at the original surface that generated the interaction, which we will get the ambientCache from
 
         public SrfTriangles nextDeferredFree;       // chain of tris to free next frame
 

@@ -10,7 +10,7 @@ namespace Droid.Render
     unsafe partial class TRX
     {
         // Modifies the shaderParms on all the lights so the level designers can easily test different color schemes
-        void R_ModulateLights_f(CmdArgs args)
+        public static void R_ModulateLights_f(CmdArgs args)
         {
             if (!tr.primaryWorld) return;
             if (args.Count != 4) { common.Printf("usage: modulateLights <redFloat> <greenFloat> <blueFloat>\n"); return; }
@@ -37,7 +37,7 @@ namespace Droid.Render
         //======================================================================================
 
         // Creates all needed model references in portal areas, chaining them to both the area and the entityDef. Bumps tr.viewCount.
-        void R_CreateEntityRefs(RenderEntityLocal def)
+        public static void R_CreateEntityRefs(RenderEntityLocal def)
         {
             int i; Vector3 v; var transformed = stackalloc Vector3[8];
 
@@ -76,7 +76,7 @@ namespace Droid.Render
         // All values are reletive to the origin
         // Assumes that right and up are not normalized
         // This is also called by dmap during map processing.
-        static void R_SetLightProject(Plane[] lightProject, in Vector3 origin, in Vector3 target, in Vector3 rightVector, in Vector3 upVector, in Vector3 start, in Vector3 stop)
+        public static void R_SetLightProject(Plane[] lightProject, in Vector3 origin, in Vector3 targetPoint, in Vector3 rightVector, in Vector3 upVector, in Vector3 start, in Vector3 stop)
         {
             float dist;
             float scale;
@@ -95,7 +95,7 @@ namespace Droid.Render
             //normal = right.Cross( up );
             normal.Normalize();
 
-            dist = target * normal; //  - ( origin * normal );
+            dist = targetPoint * normal; //  - ( origin * normal );
             if (dist < 0) { dist = -dist; normal = -normal; }
 
             scale = (0.5f * dist) / rLen;
@@ -108,7 +108,7 @@ namespace Droid.Render
             lightProject[1] = up; lightProject[1].d = -(origin * lightProject[1].Normal);
 
             // now offset to center
-            targetGlobal.ToVec3() = target + origin;
+            targetGlobal.ToVec3() = targetPoint + origin;
             targetGlobal[3] = 1;
             ofs = 0.5f - (targetGlobal * lightProject[0].ToVec4()) / (targetGlobal * lightProject[2].ToVec4());
             lightProject[0].ToVec4() += ofs * lightProject[2].ToVec4();
@@ -157,7 +157,7 @@ namespace Droid.Render
         }
 
         // Fills everything in based on light.parms
-        static void R_DeriveLightData(RenderLightLocal light)
+        public static void R_DeriveLightData(RenderLightLocal light)
         {
             int i;
 
@@ -217,7 +217,7 @@ namespace Droid.Render
         }
 
         const int MAX_LIGHT_VERTS = 40;
-        static void R_CreateLightRefs(RenderLightLocal light)
+        public static void R_CreateLightRefs(RenderLightLocal light)
         {
             int i; SrfTriangles tri; var points = stackalloc Vector3[MAX_LIGHT_VERTS];
 
@@ -279,7 +279,7 @@ namespace Droid.Render
         }
 
         // When a fog light is created or moved, see if it completely encloses any portals, which may allow them to be fogged closed.
-        static void R_CreateLightDefFogPortals(RenderLightLocal ldef)
+        public static void R_CreateLightDefFogPortals(RenderLightLocal ldef)
         {
             AreaReference lref;
             PortalArea area;
@@ -313,7 +313,7 @@ namespace Droid.Render
         }
 
         // Frees all references and lit surfaces from the light
-        static void R_FreeLightDefDerivedData(RenderLightLocal ldef)
+        public static void R_FreeLightDefDerivedData(RenderLightLocal ldef)
         {
             AreaReference lref, nextRef;
 
@@ -341,7 +341,7 @@ namespace Droid.Render
         }
 
         // Used by both RE_FreeEntityDef and RE_UpdateEntityDef Does not actually free the entityDef.
-        static void R_FreeEntityDefDerivedData(RenderEntityLocal def, bool keepDecals, bool keepCachedDynamicModel)
+        public static void R_FreeEntityDefDerivedData(RenderEntityLocal def, bool keepDecals, bool keepCachedDynamicModel)
         {
             int i;
             AreaReference next;
@@ -384,7 +384,7 @@ namespace Droid.Render
         }
 
         // If we know the reference bounds stays the same, we only need to do this on entity update, not the full R_FreeEntityDefDerivedData
-        static void R_ClearEntityDefDynamicModel(RenderEntityLocal def)
+        public static void R_ClearEntityDefDynamicModel(RenderEntityLocal def)
         {
             // free all the interaction surfaces
             for (var inter = def.firstInteraction; inter != null && !inter.IsEmpty; inter = inter.entityNext) inter.FreeSurfaces();
@@ -393,7 +393,7 @@ namespace Droid.Render
             if (def.dynamicModel != null) def.dynamicModel = null;
         }
 
-        static void R_FreeEntityDefDecals(RenderEntityLocal def)
+        public static void R_FreeEntityDefDecals(RenderEntityLocal def)
         {
             while (def.decals != null)
             {
@@ -403,17 +403,17 @@ namespace Droid.Render
             }
         }
 
-        static void R_FreeEntityDefFadedDecals(RenderEntityLocal def, int time)
+        public static void R_FreeEntityDefFadedDecals(RenderEntityLocal def, int time)
             => def.decals = RenderModelDecal.RemoveFadedDecals(def.decals, time);
 
-        static void R_FreeEntityDefOverlay(RenderEntityLocal def)
+        public static void R_FreeEntityDefOverlay(RenderEntityLocal def)
         {
             if (def.overlay != null) { RenderModelOverlay.Free(def.overlay); def.overlay = null; }
         }
 
         // ReloadModels and RegenerateWorld call this
         // FIXME: need to do this for all worlds
-        static void R_FreeDerivedData()
+        public static void R_FreeDerivedData()
         {
             int i, j;
             RenderWorldLocal rw;
@@ -440,7 +440,7 @@ namespace Droid.Render
             }
         }
 
-        static void R_CheckForEntityDefsUsingModel(IRenderModel model)
+        public static void R_CheckForEntityDefsUsingModel(IRenderModel model)
         {
             int i, j;
             RenderWorldLocal rw;
@@ -459,9 +459,8 @@ namespace Droid.Render
             }
         }
 
-        // ReloadModels and RegenerateWorld call this
-        // FIXME: need to do this for all worlds
-        static void R_ReCreateWorldReferences()
+        // ReloadModels and RegenerateWorld call this. FIXME: need to do this for all worlds
+        public static void R_ReCreateWorldReferences()
         {
             int i, j;
             RenderWorldLocal rw;
@@ -495,7 +494,7 @@ namespace Droid.Render
         }
 
         // Frees and regenerates all references and interactions, which must be done when switching between display list mode and immediate mode
-        static void R_RegenerateWorld_f(CmdArgs args)
+        public static void R_RegenerateWorld_f(CmdArgs args)
         {
             R_FreeDerivedData();
             // watch how much memory we allocate

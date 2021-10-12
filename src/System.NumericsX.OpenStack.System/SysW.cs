@@ -38,12 +38,9 @@ namespace System.NumericsX.OpenStack.System
             {
                 dwOSVersionInfoSize = Marshal.SizeOf<OSVERSIONINFOEX>(),
             };
-            if (!GetVersionEx(ref osversion))
-                Error("Couldn't get OS info");
-            if (osversion.dwMajorVersion < 4)
-                Error($"{PlatformW.GAME_NAME} requires Windows version 4 (NT) or greater");
-            if (osversion.dwPlatformId == VER_PLATFORM_WIN32s)
-                Error($"{PlatformW.GAME_NAME} doesn't run on Win32s");
+            if (!GetVersionEx(ref osversion)) Error("Couldn't get OS info");
+            if (osversion.dwMajorVersion < 4) Error($"{PlatformW.GAME_NAME} requires Windows version 4 (NT) or greater");
+            if (osversion.dwPlatformId == VER_PLATFORM_WIN32s) Error($"{PlatformW.GAME_NAME} doesn't run on Win32s");
 
             common.Printf($"{SystemRam} MB System Memory\n");
         }
@@ -74,11 +71,7 @@ namespace System.NumericsX.OpenStack.System
             // wait for the user to quit
             while (true)
             {
-                if (GetMessage(out var msg, IntPtr.Zero, 0, 0) == 0)
-                {
-                    common.Quit();
-                    break;
-                }
+                if (GetMessage(out var msg, IntPtr.Zero, 0, 0) == 0) { common.Quit(); break; }
                 TranslateMessage(ref msg);
                 DispatchMessage(ref msg);
             }
@@ -124,24 +117,17 @@ namespace System.NumericsX.OpenStack.System
             // allocate memory block
             //HMem = GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, (UIntPtr)(s != null ? s.Length + 1 : 0));
             HMem = Marshal.AllocHGlobal(sBytes.Length);
-            if (HMem == IntPtr.Zero)
-                return;
+            if (HMem == IntPtr.Zero) return;
             // lock allocated memory and obtain a pointer
             PMem = GlobalLock(HMem);
-            if (PMem == IntPtr.Zero)
-                return;
+            if (PMem == IntPtr.Zero) return;
             // copy text into allocated memory block
             //lstrcpy(PMem, s);
             Marshal.Copy(sBytes, 0, PMem, sBytes.Length);
             // unlock allocated memory
             GlobalUnlock(HMem);
             // open Clipboard
-            if (!OpenClipboard(IntPtr.Zero))
-            {
-                //GlobalFree(HMem);
-                Marshal.FreeHGlobal(HMem);
-                return;
-            }
+            if (!OpenClipboard(IntPtr.Zero)) { /*GlobalFree(HMem);*/ Marshal.FreeHGlobal(HMem); return; }
             // remove current Clipboard contents
             EmptyClipboard();
             // supply the memory handle to the Clipboard
@@ -156,10 +142,8 @@ namespace System.NumericsX.OpenStack.System
         {
             if (args != null) fmt = string.Format(fmt, args);
             Console.Write(fmt);
-            if (win_outputDebugString.Bool)
-                OutputDebugString(fmt);
-            if (win_outputEditString.Bool)
-                ConW.AppendText(fmt);
+            if (win_outputDebugString.Bool) OutputDebugString(fmt);
+            if (win_outputEditString.Bool) ConW.AppendText(fmt);
         }
 
         // guaranteed to be thread-safe
@@ -184,10 +168,7 @@ namespace System.NumericsX.OpenStack.System
         {
             get
             {
-                var statex = new MEMORYSTATUSEX
-                {
-                    dwLength = (uint)sizeof(MEMORYSTATUSEX)
-                };
+                var statex = new MEMORYSTATUSEX { dwLength = (uint)sizeof(MEMORYSTATUSEX) };
                 GlobalMemoryStatusEx(ref statex);
                 var physRam = (int)(statex.ullTotalPhys / (1024 * 1024));
                 physRam = (physRam + 8) & ~15;
@@ -236,8 +217,7 @@ namespace System.NumericsX.OpenStack.System
 
         public static void DLL_Unload(IntPtr dllHandle)
         {
-            if (dllHandle == IntPtr.Zero)
-                return;
+            if (dllHandle == IntPtr.Zero) return;
             if (!FreeLibrary(dllHandle))
             {
                 var lastError = Marshal.GetLastWin32Error();
@@ -269,14 +249,9 @@ namespace System.NumericsX.OpenStack.System
             string GetRegistryPath(string subkey, string name)
             {
                 var sam = 0x0001 | (Environment.Is64BitProcess ? 0x0200 : 0);
-                if (RegOpenKeyEx((UIntPtr)HKEY_LOCAL_MACHINE, subkey, 0, sam, out var res) != 0)
-                    return null;
+                if (RegOpenKeyEx((UIntPtr)HKEY_LOCAL_MACHINE, subkey, 0, sam, out var res) != 0) return null;
                 var w = new StringBuilder(); var len = 0U;
-                if (RegQueryValueEx(res, name, 0, out var type, w, ref len) != 0)
-                {
-                    RegCloseKey(res);
-                    return null;
-                }
+                if (RegQueryValueEx(res, name, 0, out var type, w, ref len) != 0) { RegCloseKey(res); return null; }
                 RegCloseKey(res);
                 return type != 1UL ? string.Empty : w.ToString();
             }
@@ -296,20 +271,12 @@ namespace System.NumericsX.OpenStack.System
 
                         s = Path.Combine(path, Config.BASE_GAMEDIR);
                         st = new FileInfo(s);
-                        if (st.Exists && (st.Attributes & FileAttributes.Directory) != 0)
-                        {
-                            common.Warning($"using path of executable: {path}");
-                            return true;
-                        }
+                        if (st.Exists && (st.Attributes & FileAttributes.Directory) != 0) { common.Warning($"using path of executable: {path}"); return true; }
                         else
                         {
                             s = $"{path}/demo/demo00.pk4";
                             st = new FileInfo(s);
-                            if (st.Exists && (st.Attributes & FileAttributes.Directory) == 0)
-                            {
-                                common.Warning($"using path of executable (seems to contain demo game data): {path}");
-                                return true;
-                            }
+                            if (st.Exists && (st.Attributes & FileAttributes.Directory) == 0) { common.Warning($"using path of executable (seems to contain demo game data): {path}"); return true; }
                         }
 
                         common.Warning($"base path '{s}' does not exist");
@@ -319,11 +286,7 @@ namespace System.NumericsX.OpenStack.System
 
                     // fallback to vanilla doom3 cd install
                     buf = GetRegistryPath("SOFTWARE\\id\\Doom 3", "InstallPath");
-                    if (buf != null)
-                    {
-                        path = buf;
-                        return true;
-                    }
+                    if (buf != null) { path = buf; return true; }
 
                     // fallback to steam doom3 install
                     buf = GetRegistryPath("SOFTWARE\\Valve\\Steam", "InstallPath");
@@ -331,8 +294,7 @@ namespace System.NumericsX.OpenStack.System
                     {
                         path = Path.Combine(buf, "steamapps\\common\\doom 3");
                         st = new FileInfo(path);
-                        if (st.Exists && (st.Attributes & FileAttributes.Directory) != 0)
-                            return true;
+                        if (st.Exists && (st.Attributes & FileAttributes.Directory) != 0) return true;
                     }
 
                     common.Warning("vanilla doom3 path not found either");
@@ -341,12 +303,7 @@ namespace System.NumericsX.OpenStack.System
                 case PATH.CONFIG:
                 case PATH.SAVE:
                     buf = GetHomeDir();
-                    if (buf == null)
-                    {
-                        Error("ERROR: Couldn't get dir to home path");
-                        path = default;
-                        return false;
-                    }
+                    if (buf == null) { Error("ERROR: Couldn't get dir to home path"); path = default; return false; }
 
                     path = buf;
                     return true;
@@ -365,18 +322,12 @@ namespace System.NumericsX.OpenStack.System
         // returns -1 if directory was not found (the list is cleared)
         public static int ListFiles(string directory, string extension, List<string> list)
         {
-            if (extension == null)
-                extension = "*";
+            if (extension == null) extension = "*";
 
             // passing a slash as extension will find directories
             bool flag;
-            if (extension[0] == '/' && extension[1] == 0)
-            {
-                extension = "*";
-                flag = false;
-            }
-            else
-                flag = true;
+            if (extension[0] == '/' && extension[1] == 0) { extension = "*"; flag = false; }
+            else flag = true;
 
             // search
             list.Clear();
@@ -391,8 +342,7 @@ namespace System.NumericsX.OpenStack.System
             // if "viewlog" has been modified, show or hide the log console
             if (win_viewlog.IsModified)
             {
-                if (!com_skipRenderer.Bool && net_serverDedicated.Integer != 1)
-                    ShowConsole(win_viewlog.Integer, false);
+                if (!com_skipRenderer.Bool && net_serverDedicated.Integer != 1) ShowConsole(win_viewlog.Integer, false);
                 win_viewlog.ClearModified();
             }
         }
@@ -452,11 +402,7 @@ namespace System.NumericsX.OpenStack.System
             {
 #if ID_DEDICATED
                 // Since this is a Dedicated Server, process all Windowing Messages Now.
-                while (PeekMessage(out var msg, IntPtr.Zero, 0, 0, PM_REMOVE))
-                {
-                    TranslateMessage(ref msg);
-                    DispatchMessage(ref msg);
-                }
+                while (PeekMessage(out var msg, IntPtr.Zero, 0, 0, PM_REMOVE)) { TranslateMessage(ref msg); DispatchMessage(ref msg); }
 
                 // Give the OS a little time to recuperate.
                 Sleep(10);

@@ -34,10 +34,8 @@ namespace System.NumericsX
 
                 if (i3 > 0)
                 {
-                    for (i2 = 0; i2 <= i3; i2++)
-                        scale += MathX.Fabs(this[i0][i2]);
-                    if (scale == 0)
-                        subd[i0] = this[i0][i3];
+                    for (i2 = 0; i2 <= i3; i2++) scale += MathX.Fabs(this[i0][i2]);
+                    if (scale == 0) subd[i0] = this[i0][i3];
                     else
                     {
                         invScale = 1f / scale;
@@ -48,8 +46,7 @@ namespace System.NumericsX
                         }
                         f = this[i0][i3];
                         g = MathX.Sqrt(h);
-                        if (f > 0f)
-                            g = -g;
+                        if (f > 0f) g = -g;
                         subd[i0] = scale * g;
                         h -= f * g;
                         this[i0][i3] = f - g;
@@ -59,10 +56,8 @@ namespace System.NumericsX
                         {
                             this[i1][i0] = this[i0][i1] * invH;
                             g = 0f;
-                            for (i2 = 0; i2 <= i1; i2++)
-                                g += this[i1][i2] * this[i0][i2];
-                            for (i2 = i1 + 1; i2 <= i3; i2++)
-                                g += this[i2][i1] * this[i0][i2];
+                            for (i2 = 0; i2 <= i1; i2++) g += this[i1][i2] * this[i0][i2];
+                            for (i2 = i1 + 1; i2 <= i3; i2++) g += this[i2][i1] * this[i0][i2];
                             subd[i1] = g * invH;
                             f += subd[i1] * this[i0][i1];
                         }
@@ -72,13 +67,11 @@ namespace System.NumericsX
                             f = this[i0][i1];
                             g = subd[i1] - halfFdivH * f;
                             subd[i1] = g;
-                            for (i2 = 0; i2 <= i1; i2++)
-                                this[i1][i2] -= f * subd[i2] + g * this[i0][i2];
+                            for (i2 = 0; i2 <= i1; i2++) this[i1][i2] -= f * subd[i2] + g * this[i0][i2];
                         }
                     }
                 }
-                else
-                    subd[i0] = this[i0][i3];
+                else subd[i0] = this[i0][i3];
 
                 diag[i0] = h;
             }
@@ -91,10 +84,8 @@ namespace System.NumericsX
                     for (i1 = 0; i1 <= i3; i1++)
                     {
                         sum = 0f;
-                        for (i2 = 0; i2 <= i3; i2++)
-                            sum += this[i0][i2] * this[i2][i1];
-                        for (i2 = 0; i2 <= i3; i2++)
-                            this[i2][i1] -= sum * this[i2][i0];
+                        for (i2 = 0; i2 <= i3; i2++) sum += this[i0][i2] * this[i2][i1];
+                        for (i2 = 0; i2 <= i3; i2++) this[i2][i1] -= sum * this[i2][i0];
                     }
                 diag[i0] = this[i0][i0];
                 this[i0][i0] = 1f;
@@ -106,8 +97,7 @@ namespace System.NumericsX
             }
 
             // re-order
-            for (i0 = 1, i3 = 0; i0 < numRows; i0++, i3++)
-                subd[i3] = subd[i0];
+            for (i0 = 1, i3 = 0; i0 < numRows; i0++, i3++) subd[i3] = subd[i0];
             subd[numRows - 1] = 0f;
         }
 
@@ -134,15 +124,13 @@ namespace System.NumericsX
                     for (i2 = i0; i2 <= numRows - 2; i2++)
                     {
                         a = MathX.Fabs(diag[i2]) + MathX.Fabs(diag[i2 + 1]);
-                        if (MathX.Fabs(subd[i2]) + a == a)
-                            break;
+                        if (MathX.Fabs(subd[i2]) + a == a) break;
                     }
-                    if (i2 == i0)
-                        break;
+                    if (i2 == i0) break;
 
                     g = (diag[i0 + 1] - diag[i0]) / (2f * subd[i0]);
                     r = MathX.Sqrt(g * g + 1f);
-                    g = diag[i2] - diag[i0] + subd[i0] / (g < 0f ? g - r : g + r); //: opt
+                    g = diag[i2] - diag[i0] + subd[i0] / (g < 0f ? g - r : g + r);
 
                     s = 1f;
                     c = 1f;
@@ -184,8 +172,7 @@ namespace System.NumericsX
                     subd[i0] = g;
                     subd[i2] = 0f;
                 }
-                if (i1 == maxIter)
-                    return false;
+                if (i1 == maxIter) return false;
             }
             return true;
         }
@@ -204,8 +191,7 @@ namespace System.NumericsX
             for (m = low + 1; m <= high - 1; m++)
             {
                 scale = 0f;
-                for (i = m; i <= high; i++)
-                    scale += MathX.Fabs(H[i][m - 1]);
+                for (i = m; i <= high; i++) scale += MathX.Fabs(H[i][m - 1]);
                 if (scale != 0f)
                 {
                     // compute Householder transformation.
@@ -216,30 +202,21 @@ namespace System.NumericsX
                         h += v[i] * v[i];
                     }
                     g = MathX.Sqrt(h);
-                    if (v[m] > 0f)
-                        g = -g;
-                    h -= v[m] * g; //: opt
+                    if (v[m] > 0f) g = -g;
+                    h -= v[m] * g;
                     v[m] = v[m] - g;
 
                     // apply Householder similarity transformation, H = (I-u*u'/h)*H*(I-u*u')/h)
                     for (j = m; j < numRows; j++)
                     {
-                        f = 0f;
-                        for (i = high; i >= m; i--)
-                            f += v[i] * H[i][j];
-                        f /= h; //: opt
-                        for (i = m; i <= high; i++)
-                            H[i][j] -= f * v[i];
+                        f = 0f; for (i = high; i >= m; i--) f += v[i] * H[i][j];
+                        f /= h; for (i = m; i <= high; i++) H[i][j] -= f * v[i];
                     }
 
                     for (i = 0; i <= high; i++)
                     {
-                        f = 0f;
-                        for (j = high; j >= m; j--)
-                            f += v[j] * H[i][j];
-                        f /= h; //: opt
-                        for (j = m; j <= high; j++)
-                            H[i][j] -= f * v[j];
+                        f = 0f; for (j = high; j >= m; j--) f += v[j] * H[i][j];
+                        f /= h; for (j = m; j <= high; j++) H[i][j] -= f * v[j];
                     }
                     v[m] = scale * v[m];
                     H[m][m - 1] = scale * g;
@@ -251,17 +228,12 @@ namespace System.NumericsX
             for (m = high - 1; m >= low + 1; m--)
                 if (H[m][m - 1] != 0f)
                 {
-                    for (i = m + 1; i <= high; i++)
-                        v[i] = H[i][m - 1];
+                    for (i = m + 1; i <= high; i++) v[i] = H[i][m - 1];
                     for (j = m; j <= high; j++)
                     {
-                        g = 0f;
-                        for (i = m; i <= high; i++)
-                            g += v[i] * this[i][j];
+                        g = 0f; for (i = m; i <= high; i++) g += v[i] * this[i][j];
                         // float division to avoid possible underflow
-                        g = g / v[m] / H[m][m - 1];
-                        for (i = m; i <= high; i++)
-                            this[i][j] += g * v[i];
+                        g = g / v[m] / H[m][m - 1]; for (i = m; i <= high; i++) this[i][j] += g * v[i];
                     }
                 }
         }
@@ -316,8 +288,7 @@ namespace System.NumericsX
                     realEigenValues[i] = H[i][i];
                     imaginaryEigenValues[i] = 0f;
                 }
-                for (j = Math.Max(i - 1, 0); j < numRows; j++)
-                    norm += MathX.Fabs(H[i][j]);
+                for (j = Math.Max(i - 1, 0); j < numRows; j++) norm += MathX.Fabs(H[i][j]);
             }
 
             var iter = 0;
@@ -328,10 +299,8 @@ namespace System.NumericsX
                 while (l > low)
                 {
                     s = MathX.Fabs(H[l - 1][l - 1]) + MathX.Fabs(H[l][l]);
-                    if (s == 0f)
-                        s = norm;
-                    if (MathX.Fabs(H[l][l - 1]) < eps * s)
-                        break;
+                    if (s == 0f) s = norm;
+                    if (MathX.Fabs(H[l][l - 1]) < eps * s) break;
                     l--;
                 }
 
@@ -356,13 +325,10 @@ namespace System.NumericsX
 
                     if (q >= 0f)
                     {   // real pair
-                        z = p >= 0f
-                            ? p + z
-                            : p - z; //: opt
+                        z = p >= 0f ? p + z : p - z;
                         realEigenValues[n - 1] = x + z;
                         realEigenValues[n] = realEigenValues[n - 1];
-                        if (z != 0f)
-                            realEigenValues[n] = x - w / z;
+                        if (z != 0f) realEigenValues[n] = x - w / z;
                         imaginaryEigenValues[n - 1] = 0f;
                         imaginaryEigenValues[n] = 0f;
                         x = H[n][n - 1];
@@ -370,8 +336,8 @@ namespace System.NumericsX
                         p = x / s;
                         q = z / s;
                         r = MathX.Sqrt(p * p + q * q);
-                        p /= r; //: opt
-                        q /= r; //: opt
+                        p /= r;
+                        q /= r;
 
                         // modify row
                         for (j = n - 1; j < numRows; j++)
@@ -424,8 +390,7 @@ namespace System.NumericsX
                     if (iter == 10)
                     {
                         exshift += x;
-                        for (i = low; i <= n; i++)
-                            H[i][i] -= x;
+                        for (i = low; i <= n; i++) H[i][i] -= x;
                         s = MathX.Fabs(H[n][n - 1]) + MathX.Fabs(H[n - 1][n - 2]);
                         x = y = 0.75f * s;
                         w = -0.4375f * s * s;
@@ -439,11 +404,9 @@ namespace System.NumericsX
                         if (s > 0)
                         {
                             s = MathX.Sqrt(s);
-                            if (y < x)
-                                s = -s;
+                            if (y < x) s = -s;
                             s = x - w / ((y - x) / 2f + s);
-                            for (i = low; i <= n; i++)
-                                H[i][i] -= s;
+                            for (i = low; i <= n; i++) H[i][i] -= s;
                             exshift += s;
                             x = y = w = 0.964f;
                         }
@@ -462,18 +425,16 @@ namespace System.NumericsX
                         q = H[m + 1][m + 1] - z - r - s;
                         r = H[m + 2][m + 1];
                         s = MathX.Fabs(p) + MathX.Fabs(q) + MathX.Fabs(r);
-                        p /= s; //: opt
-                        q /= s; //: opt
-                        r /= s; //: opt
-                        if (m == l || MathX.Fabs(H[m][m - 1]) * (MathX.Fabs(q) + MathX.Fabs(r)) < eps * (MathX.Fabs(p) * (MathX.Fabs(H[m - 1][m - 1]) + MathX.Fabs(z) + MathX.Fabs(H[m + 1][m + 1])))) //: opt
-                            break;
+                        p /= s;
+                        q /= s;
+                        r /= s;
+                        if (m == l || MathX.Fabs(H[m][m - 1]) * (MathX.Fabs(q) + MathX.Fabs(r)) < eps * (MathX.Fabs(p) * (MathX.Fabs(H[m - 1][m - 1]) + MathX.Fabs(z) + MathX.Fabs(H[m + 1][m + 1])))) break;
                     }
 
                     for (i = m + 2; i <= n; i++)
                     {
                         H[i][i - 2] = 0f;
-                        if (i > m + 2)
-                            H[i][i - 3] = 0f;
+                        if (i > m + 2) H[i][i - 3] = 0f;
                     }
 
                     // double QR step involving rows l:n and columns m:n
@@ -488,28 +449,24 @@ namespace System.NumericsX
                             x = MathX.Fabs(p) + MathX.Fabs(q) + MathX.Fabs(r);
                             if (x != 0f)
                             {
-                                p /= x; //: opt
-                                q /= x; //: opt
-                                r /= x; //: opt
+                                p /= x;
+                                q /= x;
+                                r /= x;
                             }
                         }
-                        if (x == 0f)
-                            break;
+                        if (x == 0f) break;
                         s = MathX.Sqrt(p * p + q * q + r * r);
-                        if (p < 0f)
-                            s = -s;
+                        if (p < 0f) s = -s;
                         if (s != 0f)
                         {
-                            if (k != m)
-                                H[k][k - 1] = -s * x;
-                            else if (l != m)
-                                H[k][k - 1] = -H[k][k - 1];
-                            p += s; //: opt
+                            if (k != m) H[k][k - 1] = -s * x;
+                            else if (l != m) H[k][k - 1] = -H[k][k - 1];
+                            p += s;
                             x = p / s;
                             y = q / s;
                             z = r / s;
-                            q /= p; //: opt
-                            r /= p; //: opt
+                            q /= p;
+                            r /= p;
 
                             // modify row
                             for (j = k; j < numRows; j++)
@@ -517,7 +474,7 @@ namespace System.NumericsX
                                 p = H[k][j] + q * H[k + 1][j];
                                 if (notlast)
                                 {
-                                    p += r * H[k + 2][j]; //: opt
+                                    p += r * H[k + 2][j];
                                     H[k + 2][j] = H[k + 2][j] - p * z;
                                 }
                                 H[k][j] = H[k][j] - p * x;
@@ -530,7 +487,7 @@ namespace System.NumericsX
                                 p = x * H[i][k] + y * H[i][k + 1];
                                 if (notlast)
                                 {
-                                    p += z * H[i][k + 2]; //: opt
+                                    p += z * H[i][k + 2];
                                     H[i][k + 2] = H[i][k + 2] - p * r;
                                 }
                                 H[i][k] = H[i][k] - p;
@@ -543,7 +500,7 @@ namespace System.NumericsX
                                 p = x * this[i][k] + y * this[i][k + 1];
                                 if (notlast)
                                 {
-                                    p += z * this[i][k + 2]; //: opt
+                                    p += z * this[i][k + 2];
                                     this[i][k + 2] = this[i][k + 2] - p * r;
                                 }
                                 this[i][k] = this[i][k] - p;
@@ -555,8 +512,7 @@ namespace System.NumericsX
             }
 
             // backsubstitute to find vectors of upper triangular form
-            if (norm == 0f)
-                return false;
+            if (norm == 0f) return false;
 
             for (n = numRows - 1; n >= 0; n--)
             {
@@ -571,20 +527,12 @@ namespace System.NumericsX
                     {
                         w = H[i][i] - p;
                         r = 0f;
-                        for (j = l; j <= n; j++)
-                            r += H[i][j] * H[j][n];
-                        if (imaginaryEigenValues[i] < 0f)
-                        {
-                            z = w;
-                            s = r;
-                        }
+                        for (j = l; j <= n; j++) r += H[i][j] * H[j][n];
+                        if (imaginaryEigenValues[i] < 0f) { z = w; s = r; }
                         else
                         {
                             l = i;
-                            if (imaginaryEigenValues[i] == 0f)
-                                H[i][n] = w != 0f
-                                    ? -r / w
-                                    : -r / (eps * norm); //: opt
+                            if (imaginaryEigenValues[i] == 0f) H[i][n] = w != 0f ? -r / w : -r / (eps * norm);
                             else
                             {   // solve real equations
                                 x = H[i][i + 1];
@@ -592,16 +540,12 @@ namespace System.NumericsX
                                 q = (realEigenValues[i] - p) * (realEigenValues[i] - p) + imaginaryEigenValues[i] * imaginaryEigenValues[i];
                                 t = (x * s - z * r) / q;
                                 H[i][n] = t;
-                                H[i + 1][n] = MathX.Fabs(x) > MathX.Fabs(z)
-                                    ? (-r - w * t) / x
-                                    : (-s - y * t) / z; //: opt
+                                H[i + 1][n] = MathX.Fabs(x) > MathX.Fabs(z) ? (-r - w * t) / x : (-s - y * t) / z;
                             }
 
                             // overflow control
                             t = MathX.Fabs(H[i][n]);
-                            if (eps * t * t > 1)
-                                for (j = i; j <= n; j++)
-                                    H[j][n] = H[j][n] / t;
+                            if (eps * t * t > 1) for (j = i; j <= n; j++) H[j][n] = H[j][n] / t;
                         }
                     }
                 }
@@ -615,8 +559,7 @@ namespace System.NumericsX
                         H[n - 1][n - 1] = q / H[n][n - 1];
                         H[n - 1][n] = -(H[n][n] - p) / H[n][n - 1];
                     }
-                    else
-                        ComplexDivision(0f, -H[n - 1][n], H[n - 1][n - 1] - p, q, ref H[n - 1][n - 1], ref H[n - 1][n]);
+                    else ComplexDivision(0f, -H[n - 1][n], H[n - 1][n - 1] - p, q, ref H[n - 1][n - 1], ref H[n - 1][n]);
                     H[n][n - 1] = 0f;
                     H[n][n] = 1f;
                     for (i = n - 2; i >= 0; i--)
@@ -626,22 +569,16 @@ namespace System.NumericsX
                         sa = 0f;
                         for (j = l; j <= n; j++)
                         {
-                            ra += H[i][j] * H[j][n - 1]; //: opt
-                            sa += H[i][j] * H[j][n]; //: opt
+                            ra += H[i][j] * H[j][n - 1];
+                            sa += H[i][j] * H[j][n];
                         }
                         w = H[i][i] - p;
 
-                        if (imaginaryEigenValues[i] < 0f)
-                        {
-                            z = w;
-                            r = ra;
-                            s = sa;
-                        }
+                        if (imaginaryEigenValues[i] < 0f) { z = w; r = ra; s = sa; }
                         else
                         {
                             l = i;
-                            if (imaginaryEigenValues[i] == 0f)
-                                ComplexDivision(-ra, -sa, w, q, ref H[i][n - 1], ref H[i][n]);
+                            if (imaginaryEigenValues[i] == 0f) ComplexDivision(-ra, -sa, w, q, ref H[i][n - 1], ref H[i][n]);
                             else
                             {
                                 // solve complex equations
@@ -649,16 +586,14 @@ namespace System.NumericsX
                                 y = H[i + 1][i];
                                 vr = (realEigenValues[i] - p) * (realEigenValues[i] - p) + imaginaryEigenValues[i] * imaginaryEigenValues[i] - q * q;
                                 vi = (realEigenValues[i] - p) * 2f * q;
-                                if (vr == 0f && vi == 0f)
-                                    vr = eps * norm * (MathX.Fabs(w) + MathX.Fabs(q) + MathX.Fabs(x) + MathX.Fabs(y) + MathX.Fabs(z));
+                                if (vr == 0f && vi == 0f) vr = eps * norm * (MathX.Fabs(w) + MathX.Fabs(q) + MathX.Fabs(x) + MathX.Fabs(y) + MathX.Fabs(z));
                                 ComplexDivision(x * r - z * ra + q * sa, x * s - z * sa - q * ra, vr, vi, ref H[i][n - 1], ref H[i][n]);
                                 if (MathX.Fabs(x) > (MathX.Fabs(z) + MathX.Fabs(q)))
                                 {
                                     H[i + 1][n - 1] = (-ra - w * H[i][n - 1] + q * H[i][n]) / x;
                                     H[i + 1][n] = (-sa - w * H[i][n] - q * H[i][n - 1]) / x;
                                 }
-                                else
-                                    ComplexDivision(-r - y * H[i][n - 1], -s - y * H[i][n], z, q, ref H[i + 1][n - 1], ref H[i + 1][n]);
+                                else ComplexDivision(-r - y * H[i][n - 1], -s - y * H[i][n], z, q, ref H[i + 1][n - 1], ref H[i + 1][n]);
                             }
 
                             // overflow control
@@ -675,18 +610,14 @@ namespace System.NumericsX
             }
 
             // vectors of isolated roots
-            for (i = 0; i < numRows; i++)
-                if (i < low || i > high)
-                    for (j = i; j < numRows; j++)
-                        this[i][j] = H[i][j];
+            for (i = 0; i < numRows; i++) if (i < low || i > high) for (j = i; j < numRows; j++) this[i][j] = H[i][j];
 
             // back transformation to get eigenvectors of original matrix
             for (j = numRows - 1; j >= low; j--)
                 for (i = low; i <= high; i++)
                 {
                     z = 0f;
-                    for (k = low; k <= Math.Min(j, high); k++)
-                        z += this[i][k] * H[k][j];
+                    for (k = low; k <= Math.Min(j, high); k++) z += this[i][k] * H[k][j];
                     this[i][j] = z;
                 }
 
@@ -713,8 +644,7 @@ namespace System.NumericsX
             for (i = 0; i < numRows; i++)
             {
                 s = alpha * v[i];
-                for (j = 0; j < numColumns; j++)
-                    this[i][j] += s * w[j];
+                for (j = 0; j < numColumns; j++) this[i][j] += s * w[j];
             }
         }
 
@@ -733,8 +663,7 @@ namespace System.NumericsX
             for (i = 0; i < numRows; i++)
             {
                 s = alpha * v[i];
-                for (j = 0; j < numColumns; j++)
-                    this[i][j] += s * v[j];
+                for (j = 0; j < numColumns; j++) this[i][j] += s * v[j];
             }
         }
 
@@ -757,10 +686,8 @@ namespace System.NumericsX
             Debug.Assert(v.Size >= numColumns);
             Debug.Assert(w.Size >= numRows);
 
-            for (i = 0; i < numRows; i++)
-                this[i][r] += v[i];
-            for (i = 0; i < numColumns; i++)
-                this[r][i] += w[i];
+            for (i = 0; i < numRows; i++) this[i][r] += v[i];
+            for (i = 0; i < numColumns; i++) this[r][i] += w[i];
         }
 
         /// <summary>
@@ -781,17 +708,9 @@ namespace System.NumericsX
             Debug.Assert(numRows == numColumns);
             Debug.Assert(v.Size >= numRows);
 
-            for (i = 0; i < r; i++)
-            {
-                this[i][r] += v[i];
-                this[r][i] += v[i];
-            }
+            for (i = 0; i < r; i++) { this[i][r] += v[i]; this[r][i] += v[i]; }
             this[r][r] += v[r];
-            for (i = r + 1; i < numRows; i++)
-            {
-                this[i][r] += v[i];
-                this[r][i] += v[i];
-            }
+            for (i = r + 1; i < numRows; i++) { this[i][r] += v[i]; this[r][i] += v[i]; }
         }
 
         /// <summary>
@@ -814,10 +733,8 @@ namespace System.NumericsX
 
             ChangeSize(numRows + 1, numColumns + 1, false);
 
-            for (i = 0; i < numRows; i++)
-                this[i][numColumns - 1] = v[i];
-            for (i = 0; i < numColumns - 1; i++)
-                this[numRows - 1][i] = w[i];
+            for (i = 0; i < numRows; i++) this[i][numColumns - 1] = v[i];
+            for (i = 0; i < numColumns - 1; i++) this[numRows - 1][i] = w[i];
         }
 
         /// <summary>
@@ -838,10 +755,8 @@ namespace System.NumericsX
 
             ChangeSize(numRows + 1, numColumns + 1, false);
 
-            for (i = 0; i < numRows - 1; i++)
-                this[i][numColumns - 1] = v[i];
-            for (i = 0; i < numColumns; i++)
-                this[numRows - 1][i] = v[i];
+            for (i = 0; i < numRows - 1; i++) this[i][numColumns - 1] = v[i];
+            for (i = 0; i < numColumns; i++) this[numRows - 1][i] = v[i];
         }
 
         /// <summary>
@@ -883,23 +798,16 @@ namespace System.NumericsX
                             if (!pivot[k])
                             {
                                 d = MathX.Fabs(this[j][k]);
-                                if (d > max)
-                                {
-                                    max = d;
-                                    r = j;
-                                    c = k;
-                                }
+                                if (d > max) { max = d; r = j; c = k; }
                             }
 
-                if (max == 0f)
-                    // matrix is not invertible
-                    return false;
+                // matrix is not invertible
+                if (max == 0f) return false;
 
                 pivot[c] = true;
 
                 // swap rows such that entry (c,c) has the pivot entry
-                if (r != c)
-                    SwapRows(r, c);
+                if (r != c) SwapRows(r, c);
 
                 // keep track of the row permutation
                 rowIndex[i] = r;
@@ -908,8 +816,7 @@ namespace System.NumericsX
                 // scale the row to make the pivot entry equal to 1
                 d = 1f / this[c][c];
                 this[c][c] = 1f;
-                for (k = 0; k < numRows; k++)
-                    this[c][k] *= d;
+                for (k = 0; k < numRows; k++) this[c][k] *= d;
 
                 // zero out the pivot column entries in the other rows
                 for (j = 0; j < numRows; j++)
@@ -917,8 +824,7 @@ namespace System.NumericsX
                     {
                         d = this[j][c];
                         this[j][c] = 0f;
-                        for (k = 0; k < numRows; k++)
-                            this[j][k] -= this[c][k] * d;
+                        for (k = 0; k < numRows; k++) this[j][k] -= this[c][k] * d;
                     }
             }
 
@@ -956,16 +862,14 @@ namespace System.NumericsX
             TransposeMultiply(z, w);
             beta = 1f + (w * y);
 
-            if (beta == 0f)
-                return false;
+            if (beta == 0f) return false;
 
             alpha /= beta;
 
             for (i = 0; i < numRows; i++)
             {
                 s = y[i] * alpha;
-                for (j = 0; j < numColumns; j++)
-                    this[i][j] -= s * z[j];
+                for (j = 0; j < numColumns; j++) this[i][j] -= s * z[j];
             }
             return true;
         }
@@ -996,8 +900,7 @@ namespace System.NumericsX
             s.Zero();
             s[r] = 1f;
 
-            return Inverse_UpdateRankOne(v, s, 1f)
-                && Inverse_UpdateRankOne(s, w, 1f); //: opt
+            return Inverse_UpdateRankOne(v, s, 1f) && Inverse_UpdateRankOne(s, w, 1f);
         }
 
         /// <summary>
@@ -1053,8 +956,7 @@ namespace System.NumericsX
             v1[r] += 1f;
             w1[r] = 0f;
 
-            if (!Inverse_UpdateRowColumn(v1, w1, r))
-                return false;
+            if (!Inverse_UpdateRowColumn(v1, w1, r)) return false;
 
             // physically remove the row and column
             Update_Decrement(r);
@@ -1097,9 +999,7 @@ namespace System.NumericsX
             int i, j, k, newi, min; double s, t, d, w;
 
             // if partial pivoting should be used
-            if (index != null)
-                for (i = 0; i < numRows; i++)
-                    index[i] = i;
+            if (index != null) for (i = 0; i < numRows; i++) index[i] = i;
 
             w = 1f;
             min = Math.Min(numRows, numColumns);
@@ -1120,8 +1020,7 @@ namespace System.NumericsX
                         }
                     }
 
-                if (s == 0f)
-                    return false;
+                if (s == 0f) return false;
 
                 if (newi != i)
                 {
@@ -1144,22 +1043,19 @@ namespace System.NumericsX
                 if (i < numRows)
                 {
                     d = 1f / this[i][i];
-                    for (j = i + 1; j < numRows; j++)
-                        this[j][i] = (float)(this[j][i] * d); //: open
+                    for (j = i + 1; j < numRows; j++) this[j][i] = (float)(this[j][i] * d); //: open
                 }
 
                 if (i < min - 1)
                     for (j = i + 1; j < numRows; j++)
                     {
                         d = this[j][i];
-                        for (k = i + 1; k < numColumns; k++)
-                            this[j][k] = (float)(this[j][k] - (d * this[i][k])); //: open
+                        for (k = i + 1; k < numColumns; k++) this[j][k] = (float)(this[j][k] - (d * this[i][k])); //: open
                     }
             }
             if (det != null)
             {
-                for (i = 0; i < numRows; i++)
-                    w *= this[i][i];
+                for (i = 0; i < numRows; i++) w *= this[i][i];
                 det((float)w);
             }
 
@@ -1183,15 +1079,10 @@ namespace System.NumericsX
             var y = stackalloc float[v.Size + floatX.ALLOC16]; y = (float*)_alloca16(y);
             var z = stackalloc float[w.Size + floatX.ALLOC16]; z = (float*)_alloca16(z);
 
-            if (index != null)
-                for (i = 0; i < numRows; i++)
-                    y[i] = alpha * v[index[i]];
-            else
-                for (i = 0; i < numRows; i++)
-                    y[i] = alpha * v[i];
+            if (index != null) for (i = 0; i < numRows; i++) y[i] = alpha * v[index[i]];
+            else for (i = 0; i < numRows; i++) y[i] = alpha * v[i];
 
-            fixed (float* _ = &w.p[w.pi])
-                Unsafe.CopyBlock(z, _, (uint)w.Size * sizeof(float));
+            fixed (float* _ = &w.p[w.pi]) Unsafe.CopyBlock(z, _, (uint)w.Size * sizeof(float));
 
             max = Math.Min(numRows, numColumns);
             for (i = 0; i < max; i++)
@@ -1202,8 +1093,7 @@ namespace System.NumericsX
                 p1 = z[i];
                 diag += p0 * p1;
 
-                if (diag == 0f)
-                    return false;
+                if (diag == 0f) return false;
 
                 beta = p1 / diag;
 
@@ -1261,20 +1151,13 @@ namespace System.NumericsX
 
             if (index != null)
             {
-                for (i = 0; i < numRows; i++)
-                    y0[i] = v[index[i]];
+                for (i = 0; i < numRows; i++) y0[i] = v[index[i]];
                 rp = r;
-                for (i = 0; i < numRows; i++)
-                    if (index[i] == r)
-                    {
-                        rp = i;
-                        break;
-                    }
+                for (i = 0; i < numRows; i++) if (index[i] == r) { rp = i; break; }
             }
             else
             {
-                fixed (float* _ = &v.p[v.pi])
-                    Unsafe.CopyBlock(y0, _, (uint)v.Size * sizeof(float));
+                fixed (float* _ = &v.p[v.pi]) Unsafe.CopyBlock(y0, _, (uint)v.Size * sizeof(float));
                 rp = r;
             }
 
@@ -1285,8 +1168,7 @@ namespace System.NumericsX
 
             z0[r] = 1f;
 
-            fixed (float* _ = &w.p[v.pi])
-                Unsafe.CopyBlock(z1, _, (uint)w.Size * sizeof(float));
+            fixed (float* _ = &w.p[v.pi]) Unsafe.CopyBlock(z1, _, (uint)w.Size * sizeof(float));
 
             // update the beginning of the to be updated row and column
             min = Math.Min(r, rp);
@@ -1296,10 +1178,8 @@ namespace System.NumericsX
                 beta1 = z1[i] / this[i][i];
 
                 this[i][r] = (float)(this[i][r] + p0); //: open
-                for (j = i + 1; j < numColumns; j++)
-                    z1[j] = (float)(z1[j] - (beta1 * this[i][j])); //: open
-                for (j = i + 1; j < numRows; j++)
-                    y0[j] = (float)(y0[j] - (p0 * this[j][i])); //: open
+                for (j = i + 1; j < numColumns; j++) z1[j] = (float)(z1[j] - (beta1 * this[i][j])); //: open
+                for (j = i + 1; j < numRows; j++) y0[j] = (float)(y0[j] - (p0 * this[j][i])); //: open
                 this[rp][i] = (float)(this[rp][i] + beta1); //: open
             }
 
@@ -1313,8 +1193,7 @@ namespace System.NumericsX
                 p1 = z0[i];
                 diag += p0 * p1;
 
-                if (diag == 0f)
-                    return false;
+                if (diag == 0f) return false;
 
                 beta0 = p1 / diag;
 
@@ -1322,8 +1201,7 @@ namespace System.NumericsX
                 q1 = z1[i];
                 diag += q0 * q1;
 
-                if (diag == 0f)
-                    return false;
+                if (diag == 0f) return false;
 
                 beta1 = q1 / diag;
 
@@ -1383,8 +1261,7 @@ namespace System.NumericsX
             for (i = 0; i < numRows - 1; i++)
             {
                 sum = w[i];
-                for (j = 0; j < i; j++)
-                    sum -= this[numRows - 1][j] * this[j][i];
+                for (j = 0; j < i; j++) sum -= this[numRows - 1][j] * this[j][i];
                 this[numRows - 1][i] = sum / this[i][i];
             }
 
@@ -1395,9 +1272,8 @@ namespace System.NumericsX
             // add column to U
             for (i = 0; i < numRows; i++)
             {
-                sum = v[index != null ? index[i] : i]; //: opt
-                for (j = 0; j < i; j++)
-                    sum -= this[i][j] * this[j][numRows - 1];
+                sum = v[index != null ? index[i] : i];
+                for (j = 0; j < i; j++) sum -= this[i][j] * this[j][numRows - 1];
                 this[i][numRows - 1] = sum;
             }
 
@@ -1429,12 +1305,7 @@ namespace System.NumericsX
             if (index != null)
             {
                 // find the pivot row
-                for (p = i = 0; i < numRows; i++)
-                    if (index[i] == r)
-                    {
-                        p = i;
-                        break;
-                    }
+                for (p = i = 0; i < numRows; i++) if (index[i] == r) { p = i; break; }
 
                 // update the row and column to identity
                 v1 = -v;
@@ -1442,42 +1313,35 @@ namespace System.NumericsX
 
                 if (p != r)
                 {
-                    {
-                        int index_r = index[r], index_p = index[p];
-                        var c = v1[index_r];
-                        v1[index_r] = v1[index_p];
-                        v1[index_p] = c;
-                    }; //: open
+                    int index_r = index[r], index_p = index[p];
+                    var c = v1[index_r];
+                    v1[index_r] = v1[index_p];
+                    v1[index_p] = c;
+                    //: open
                     UnsafeX.Swap(ref index[r], ref index[p]);
                 }
 
                 v1[r] += 1f;
                 w1[r] = 0f;
 
-                if (!LU_UpdateRowColumn(v1, w1, r, index))
-                    return false;
+                if (!LU_UpdateRowColumn(v1, w1, r, index)) return false;
 
                 if (p != r)
                 {
-                    if (MathX.Fabs(u[p]) < 1e-4f)
-                    { // NOTE: an additional row interchange is required for numerical stability
-                    }
+                    // NOTE: an additional row interchange is required for numerical stability
+                    if (MathX.Fabs(u[p]) < 1e-4f) { }
 
                     // move row index[r] of the original matrix to row index[p] of the original matrix
                     v1.Zero();
                     v1[index[p]] = 1f;
                     w1 = u - w;
 
-                    if (!LU_UpdateRankOne(v1, w1, 1f, index))
-                        return false;
+                    if (!LU_UpdateRankOne(v1, w1, 1f, index)) return false;
                 }
 
                 // remove the row from the permutation index
-                for (i = r; i < numRows - 1; i++)
-                    index[i] = index[i + 1];
-                for (i = 0; i < numRows - 1; i++)
-                    if (index[i] > r)
-                        index[i]--;
+                for (i = r; i < numRows - 1; i++) index[i] = index[i + 1];
+                for (i = 0; i < numRows - 1; i++) if (index[i] > r) index[i]--;
             }
             else
             {
@@ -1486,8 +1350,7 @@ namespace System.NumericsX
                 v1[r] += 1f;
                 w1[r] = 0f;
 
-                if (!LU_UpdateRowColumn(v1, w1, r, index))
-                    return false;
+                if (!LU_UpdateRowColumn(v1, w1, r, index)) return false;
             }
 
             // physically remove the row and column
@@ -1511,9 +1374,8 @@ namespace System.NumericsX
             // solve L
             for (i = 0; i < numRows; i++)
             {
-                sum = b[index != null ? index[i] : i]; //: opt
-                for (j = 0; j < i; j++)
-                    sum -= this[i][j] * x[j];
+                sum = b[index != null ? index[i] : i];
+                for (j = 0; j < i; j++) sum -= this[i][j] * x[j];
                 x[i] = (float)sum;
             }
 
@@ -1521,8 +1383,7 @@ namespace System.NumericsX
             for (i = numRows - 1; i >= 0; i--)
             {
                 sum = x[i];
-                for (j = i + 1; j < numRows; j++)
-                    sum -= this[i][j] * x[j];
+                for (j = i + 1; j < numRows; j++) sum -= this[i][j] * x[j];
                 x[i] = (float)(sum / this[i][i]);
             }
         }
@@ -1547,8 +1408,7 @@ namespace System.NumericsX
             {
                 b[i] = 1f;
                 LU_Solve(ref x, b, index);
-                for (j = 0; j < numRows; j++)
-                    inv[j][i] = x[j];
+                for (j = 0; j < numRows; j++) inv[j][i] = x[j];
                 b[i] = 0f;
             }
         }
@@ -1567,11 +1427,9 @@ namespace System.NumericsX
             U.Zero(numRows, numColumns);
             for (i = 0; i < numRows; i++)
             {
-                for (j = 0; j < i; j++)
-                    L[i][j] = this[i][j];
+                for (j = 0; j < i; j++) L[i][j] = this[i][j];
                 L[i][i] = 1f;
-                for (j = i; j < numColumns; j++)
-                    U[i][j] = this[i][j];
+                for (j = i; j < numColumns; j++) U[i][j] = this[i][j];
             }
         }
 
@@ -1589,14 +1447,13 @@ namespace System.NumericsX
 
             for (r = 0; r < numRows; r++)
             {
-                rp = index != null ? index[r] : r; //: opt
+                rp = index != null ? index[r] : r;
 
                 // calculate row of matrix
                 for (i = 0; i < numColumns; i++)
                 {
-                    sum = i >= r ? this[r][i] : 0f; //: opt
-                    for (j = 0; j <= i && j < r; j++)
-                        sum += this[r][j] * this[j][i];
+                    sum = i >= r ? this[r][i] : 0f;
+                    for (j = 0; j <= i && j < r; j++) sum += this[r][j] * this[j][i];
                     m[rp][i] = (float)sum;
                 }
             }
@@ -1627,30 +1484,19 @@ namespace System.NumericsX
                 for (i = k; i < numRows; i++)
                 {
                     s = MathX.Fabs(this[i][k]);
-                    if (s > scale)
-                        scale = s;
+                    if (s > scale) scale = s;
                 }
-                if (scale == 0f)
-                {
-                    singular = true;
-                    c[k] = d[k] = 0f;
-                }
+                if (scale == 0f) { singular = true; c[k] = d[k] = 0f; }
                 else
                 {
                     s = 1f / scale;
-                    for (i = k; i < numRows; i++)
-                        this[i][k] = (float)(this[i][k] * s); //: open
+                    for (i = k; i < numRows; i++) this[i][k] = (float)(this[i][k] * s); //: open
 
                     sum = 0f;
-                    for (i = k; i < numRows; i++)
-                    {
-                        s = this[i][k];
-                        sum += s * s;
-                    }
+                    for (i = k; i < numRows; i++) { s = this[i][k]; sum += s * s; }
 
                     s = MathX.Sqrt((float)sum);
-                    if (this[k][k] < 0f)
-                        s = -s;
+                    if (this[k][k] < 0f) s = -s;
                     this[k][k] = (float)(this[k][k] + s); //: open
                     c[k] = (float)(s * this[k][k]);
                     d[k] = (float)(-scale * s);
@@ -1658,17 +1504,14 @@ namespace System.NumericsX
                     for (j = k + 1; j < numRows; j++)
                     {
                         sum = 0f;
-                        for (i = k; i < numRows; i++)
-                            sum += this[i][k] * this[i][j];
+                        for (i = k; i < numRows; i++) sum += this[i][k] * this[i][j];
                         t = sum / c[k];
-                        for (i = k; i < numRows; i++)
-                            this[i][j] = (float)(this[i][j] - (t * this[i][k])); //: open
+                        for (i = k; i < numRows; i++) this[i][j] = (float)(this[i][j] - (t * this[i][k])); //: open
                     }
                 }
             }
             d[numRows - 1] = this[numRows - 1][numRows - 1];
-            if (d[numRows - 1] == 0f)
-                singular = true;
+            if (d[numRows - 1] == 0f) singular = true;
 
             return !singular;
         }
@@ -1694,16 +1537,14 @@ namespace System.NumericsX
             {
                 f = b / a;
                 c = MathX.Fabs(1f / MathX.Sqrt(1f + f * f));
-                if (a < 0f)
-                    c = -c;
+                if (a < 0f) c = -c;
                 s = f * c;
             }
             else
             {
                 f = a / b;
                 s = MathX.Fabs(1f / MathX.Sqrt(1f + f * f));
-                if (b < 0f)
-                    s = -s;
+                if (b < 0f) s = -s;
                 c = f * s;
             }
             for (j = i; j < numRows; j++)
@@ -1740,14 +1581,11 @@ namespace System.NumericsX
             TransposeMultiply(u, v);
             u *= alpha;
 
-            for (k = v.Size - 1; k > 0; k--)
-                if (u[k] != 0f)
-                    break;
+            for (k = v.Size - 1; k > 0; k--) if (u[k] != 0f) break;
             for (i = k - 1; i >= 0; i--)
             {
                 QR_Rotate(ref R, i, u[i], -u[i + 1]);
-                if (u[i] == 0f)
-                    u[i] = MathX.Fabs(u[i + 1]);
+                if (u[i] == 0f) u[i] = MathX.Fabs(u[i + 1]);
                 else if (MathX.Fabs(u[i]) > MathX.Fabs(u[i + 1]))
                 {
                     f = u[i + 1] / u[i];
@@ -1759,10 +1597,8 @@ namespace System.NumericsX
                     u[i] = MathX.Fabs(u[i + 1]) * MathX.Sqrt(1f + f * f);
                 }
             }
-            for (i = 0; i < v.Size; i++)
-                R[0][i] += u[0] * w[i];
-            for (i = 0; i < k; i++)
-                QR_Rotate(ref R, i, -R[i][i], R[i + 1][i]);
+            for (i = 0; i < v.Size; i++) R[0][i] += u[0] * w[i];
+            for (i = 0; i < k; i++) QR_Rotate(ref R, i, -R[i][i], R[i + 1][i]);
             return true;
         }
 
@@ -1792,8 +1628,7 @@ namespace System.NumericsX
             s.Zero();
             s[r] = 1f;
 
-            return QR_UpdateRankOne(ref R, v, s, 1f)
-                && QR_UpdateRankOne(ref R, s, w, 1f); //: opt
+            return QR_UpdateRankOne(ref R, v, s, 1f) && QR_UpdateRankOne(ref R, s, w, 1f);
         }
 
         /// <summary>
@@ -1854,8 +1689,7 @@ namespace System.NumericsX
             v1[r] += 1f;
             w1[r] = 0f;
 
-            if (!QR_UpdateRowColumn(ref R, v1, w1, r))
-                return false;
+            if (!QR_UpdateRowColumn(ref R, v1, w1, r)) return false;
 
             // physically remove the row and column
             Update_Decrement(r);
@@ -1878,26 +1712,22 @@ namespace System.NumericsX
             Debug.Assert(x.Size >= numRows && b.Size >= numRows);
             Debug.Assert(c.Size >= numRows && d.Size >= numRows);
 
-            for (i = 0; i < numRows; i++)
-                x[i] = b[i];
+            for (i = 0; i < numRows; i++) x[i] = b[i];
 
             // multiply b with transpose of Q
             for (i = 0; i < numRows - 1; i++)
             {
                 sum = 0f;
-                for (j = i; j < numRows; j++)
-                    sum += this[j][i] * x[j];
+                for (j = i; j < numRows; j++) sum += this[j][i] * x[j];
                 t = sum / c[i];
-                for (j = i; j < numRows; j++)
-                    x[j] = (float)(x[j] - (t * this[j][i])); //: open
+                for (j = i; j < numRows; j++) x[j] = (float)(x[j] - (t * this[j][i])); //: open
             }
 
             // backsubstitution with R
             for (i = numRows - 1; i >= 0; i--)
             {
                 sum = x[i];
-                for (j = i + 1; j < numRows; j++)
-                    sum -= this[i][j] * x[j];
+                for (j = i + 1; j < numRows; j++) sum -= this[i][j] * x[j];
                 x[i] = (float)(sum / d[i]);
             }
         }
@@ -1921,8 +1751,7 @@ namespace System.NumericsX
             for (i = numRows - 1; i >= 0; i--)
             {
                 sum = x[i];
-                for (j = i + 1; j < numRows; j++)
-                    sum -= R[i][j] * x[j];
+                for (j = i + 1; j < numRows; j++) sum -= R[i][j] * x[j];
                 x[i] = (float)(sum / R[i][i]);
             }
         }
@@ -1948,8 +1777,7 @@ namespace System.NumericsX
             {
                 b[i] = 1f;
                 QR_Solve(ref x, b, c, d);
-                for (j = 0; j < numRows; j++)
-                    inv[j][i] = x[j];
+                for (j = 0; j < numRows; j++) inv[j][i] = x[j];
                 b[i] = 0f;
             }
         }
@@ -1969,16 +1797,13 @@ namespace System.NumericsX
             Q.Identity(numRows, numColumns);
             for (i = 0; i < numColumns - 1; i++)
             {
-                if (c[i] == 0f)
-                    continue;
+                if (c[i] == 0f) continue;
                 for (j = 0; j < numRows; j++)
                 {
                     sum = 0f;
-                    for (k = i; k < numColumns; k++)
-                        sum += this[k][i] * Q[j][k];
+                    for (k = i; k < numColumns; k++) sum += this[k][i] * Q[j][k];
                     sum /= c[i];
-                    for (k = i; k < numColumns; k++)
-                        Q[j][k] = (float)(Q[j][k] - (sum * this[k][i])); //: open
+                    for (k = i; k < numColumns; k++) Q[j][k] = (float)(Q[j][k] - (sum * this[k][i])); //: open
                 }
             }
 
@@ -1986,8 +1811,7 @@ namespace System.NumericsX
             for (i = 0; i < numRows; i++)
             {
                 R[i][i] = d[i];
-                for (j = i + 1; j < numColumns; j++)
-                    R[i][j] = this[i][j];
+                for (j = i + 1; j < numColumns; j++) R[i][j] = this[i][j];
             }
         }
 
@@ -2005,16 +1829,13 @@ namespace System.NumericsX
             Q.Identity(numRows, numColumns);
             for (i = 0; i < numColumns - 1; i++)
             {
-                if (c[i] == 0f)
-                    continue;
+                if (c[i] == 0f) continue;
                 for (j = 0; j < numRows; j++)
                 {
                     sum = 0f;
-                    for (k = i; k < numColumns; k++)
-                        sum += this[k][i] * Q[j][k];
+                    for (k = i; k < numColumns; k++) sum += this[k][i] * Q[j][k];
                     sum /= c[i];
-                    for (k = i; k < numColumns; k++)
-                        Q[j][k] = (float)(Q[j][k] - (sum * this[k][i])); //: open
+                    for (k = i; k < numColumns; k++) Q[j][k] = (float)(Q[j][k] - (sum * this[k][i])); //: open
                 }
             }
 
@@ -2022,8 +1843,7 @@ namespace System.NumericsX
                 for (j = 0; j < numColumns; j++)
                 {
                     sum = Q[i][j] * d[i];
-                    for (k = 0; k < i; k++)
-                        sum += Q[i][k] * this[j][k];
+                    for (k = 0; k < i; k++) sum += Q[i][k] * this[j][k];
                     m[i][j] = (float)sum;
                 }
         }
@@ -2061,7 +1881,7 @@ namespace System.NumericsX
             int i, j, k, l; double f, h, r, g, s, scale;
 
             anorm = 0f;
-            g = scale = 0f; //: opt
+            g = scale = 0f;
             for (i = 0; i < numColumns; i++)
             {
                 l = i + 1;
@@ -2069,8 +1889,7 @@ namespace System.NumericsX
                 g = s = scale = 0f;
                 if (i < numRows)
                 {
-                    for (k = i; k < numRows; k++)
-                        scale += MathX.Fabs(this[k][i]);
+                    for (k = i; k < numRows; k++) scale += MathX.Fabs(this[k][i]);
                     if (scale != 0f)
                     {
                         for (k = i; k < numRows; k++)
@@ -2080,29 +1899,24 @@ namespace System.NumericsX
                         }
                         f = this[i][i];
                         g = MathX.Sqrt((float)s);
-                        if (f >= 0f)
-                            g = -g;
+                        if (f >= 0f) g = -g;
                         h = f * g - s;
                         this[i][i] = (float)(f - g);
                         if (i != (numColumns - 1))
                             for (j = l; j < numColumns; j++)
                             {
-                                for (s = 0f, k = i; k < numRows; k++)
-                                    s += this[k][i] * this[k][j];
+                                for (s = 0f, k = i; k < numRows; k++) s += this[k][i] * this[k][j];
                                 f = s / h;
-                                for (k = i; k < numRows; k++)
-                                    this[k][j] = (float)(this[k][j] + (f * this[k][i])); //: open
+                                for (k = i; k < numRows; k++) this[k][j] = (float)(this[k][j] + (f * this[k][i])); //: open
                             }
-                        for (k = i; k < numRows; k++)
-                            this[k][i] = (float)(this[k][i] * scale); //: open
+                        for (k = i; k < numRows; k++) this[k][i] = (float)(this[k][i] * scale); //: open
                     }
                 }
                 w[i] = (float)(scale * g);
                 g = s = scale = 0f;
                 if (i < numRows && i != (numColumns - 1))
                 {
-                    for (k = l; k < numColumns; k++)
-                        scale += MathX.Fabs(this[i][k]);
+                    for (k = l; k < numColumns; k++) scale += MathX.Fabs(this[i][k]);
                     if (scale != 0f)
                     {
                         for (k = l; k < numColumns; k++)
@@ -2112,27 +1926,21 @@ namespace System.NumericsX
                         }
                         f = this[i][l];
                         g = MathX.Sqrt((float)s);
-                        if (f >= 0f)
-                            g = -g;
+                        if (f >= 0f) g = -g;
                         h = 1f / (f * g - s);
                         this[i][l] = (float)(f - g);
-                        for (k = l; k < numColumns; k++)
-                            rv1[k] = (float)(this[i][k] * h);
+                        for (k = l; k < numColumns; k++) rv1[k] = (float)(this[i][k] * h);
                         if (i != (numRows - 1))
                             for (j = l; j < numRows; j++)
                             {
-                                for (s = 0f, k = l; k < numColumns; k++)
-                                    s += this[j][k] * this[i][k];
-                                for (k = l; k < numColumns; k++)
-                                    this[j][k] = (float)(this[j][k] + (s * rv1[k])); //: open
+                                for (s = 0f, k = l; k < numColumns; k++) s += this[j][k] * this[i][k];
+                                for (k = l; k < numColumns; k++) this[j][k] = (float)(this[j][k] + (s * rv1[k])); //: open
                             }
-                        for (k = l; k < numColumns; k++)
-                            this[i][k] = (float)(this[i][k] * scale); //: open
+                        for (k = l; k < numColumns; k++) this[i][k] = (float)(this[i][k] * scale); //: open
                     }
                 }
                 r = MathX.Fabs(w[i]) + MathX.Fabs(rv1[i]);
-                if (r > anorm)
-                    anorm = (float)r;
+                if (r > anorm) anorm = (float)r;
             }
         }
 
@@ -2148,19 +1956,15 @@ namespace System.NumericsX
                 {
                     if (g != 0f)
                     {
-                        for (j = l; j < numColumns; j++)
-                            V[j][i] = (float)(this[i][j] / this[i][l] / g);
+                        for (j = l; j < numColumns; j++) V[j][i] = (float)(this[i][j] / this[i][l] / g);
                         // double division to reduce underflow
                         for (j = l; j < numColumns; j++)
                         {
-                            for (s = 0f, k = l; k < numColumns; k++)
-                                s += this[i][k] * V[k][j];
-                            for (k = l; k < numColumns; k++)
-                                V[k][j] = (float)(V[k][j] + (s * V[k][i])); //: open
+                            for (s = 0f, k = l; k < numColumns; k++) s += this[i][k] * V[k][j];
+                            for (k = l; k < numColumns; k++) V[k][j] = (float)(V[k][j] + (s * V[k][i])); //: open
                         }
                     }
-                    for (j = l; j < numColumns; j++)
-                        V[i][j] = V[j][i] = 0f;
+                    for (j = l; j < numColumns; j++) V[i][j] = V[j][i] = 0f;
                 }
                 V[i][i] = 1f;
                 g = rv1[i];
@@ -2169,27 +1973,20 @@ namespace System.NumericsX
             {
                 l = i + 1;
                 g = w[i];
-                if (i < (numColumns - 1))
-                    for (j = l; j < numColumns; j++)
-                        this[i][j] = 0f;
+                if (i < (numColumns - 1)) for (j = l; j < numColumns; j++) this[i][j] = 0f;
                 if (g != 0f)
                 {
                     g = 1f / g;
                     if (i != (numColumns - 1))
                         for (j = l; j < numColumns; j++)
                         {
-                            for (s = 0f, k = l; k < numRows; k++)
-                                s += this[k][i] * this[k][j];
+                            for (s = 0f, k = l; k < numRows; k++) s += this[k][i] * this[k][j];
                             f = s / this[i][i] * g;
-                            for (k = i; k < numRows; k++)
-                                this[k][j] = (float)(this[k][j] + (f * this[k][i])); //: open
+                            for (k = i; k < numRows; k++) this[k][j] = (float)(this[k][j] + (f * this[k][i])); //: open
                         }
-                    for (j = i; j < numRows; j++)
-                        this[j][i] = (float)(this[j][i] * g); //: open
+                    for (j = i; j < numRows; j++) this[j][i] = (float)(this[j][i] * g); //: open
                 }
-                else
-                    for (j = i; j < numRows; j++)
-                        this[j][i] = 0f;
+                else for (j = i; j < numRows; j++) this[j][i] = 0f;
                 this[i][i] += 1f;
             }
         }
@@ -2208,8 +2005,7 @@ namespace System.NumericsX
         {
             int flag, i, its, j, jj, k, l, nm; double c, f, h, s, x, y, z, r, g; float anorm = 0f; VectorX rv1 = new();
 
-            if (numRows < numColumns)
-                return false;
+            if (numRows < numColumns) return false;
 
             rv1.SetData(numColumns, VectorX.VECX_ALLOCA(numColumns));
             rv1.Zero();
@@ -2227,17 +2023,12 @@ namespace System.NumericsX
                     for (l = k; l >= 0; l--)
                     {
                         nm = l - 1;
-                        if ((MathX.Fabs(rv1[l]) + anorm) == anorm) //: MathX.Fabs(rv1[l]) < MathX.FLT_EPSILON
-                        {
-                            flag = 0;
-                            break;
-                        }
-                        if ((MathX.Fabs(w[nm]) + anorm) == anorm) //: MathX.Fabs(w[nm]) < MathX.FLT_EPSILON
-                            break;
+                        if ((MathX.Fabs(rv1[l]) + anorm) == anorm) { flag = 0; break; } //: MathX.Fabs(rv1[l]) < MathX.FLT_EPSILON
+                        if ((MathX.Fabs(w[nm]) + anorm) == anorm) break; //: MathX.Fabs(w[nm]) < MathX.FLT_EPSILON
                     }
                     if (flag != 0f)
                     {
-                        //c = 0f; //: opt
+                        //c = 0f; 
                         s = 1f;
                         for (i = l; i <= k; i++)
                         {
@@ -2267,13 +2058,11 @@ namespace System.NumericsX
                         if (z < 0f)
                         {
                             w[k] = (float)-z;
-                            for (j = 0; j < numColumns; j++)
-                                V[j][k] = -V[j][k];
+                            for (j = 0; j < numColumns; j++) V[j][k] = -V[j][k];
                         }
                         break;
                     }
-                    if (its == 30)
-                        return false;       // no convergence
+                    if (its == 30) return false;       // no convergence
                     x = w[l];
                     nm = k - 1;
                     y = w[nm];
@@ -2298,7 +2087,7 @@ namespace System.NumericsX
                         f = x * c + g * s;
                         g = g * c - x * s;
                         h = y * s;
-                        y *= c; //: opt
+                        y *= c;
                         for (jj = 0; jj < numColumns; jj++)
                         {
                             x = V[jj][j];
@@ -2354,8 +2143,7 @@ namespace System.NumericsX
                 sum = 0f;
                 if (w[i] >= MathX.FLT_EPSILON)
                 {
-                    for (j = 0; j < numRows; j++)
-                        sum += this[j][i] * b[j];
+                    for (j = 0; j < numRows; j++) sum += this[j][i] * b[j];
                     sum /= w[i];
                 }
                 tmp[i] = (float)sum;
@@ -2363,8 +2151,7 @@ namespace System.NumericsX
             for (i = 0; i < numColumns; i++)
             {
                 sum = 0f;
-                for (j = 0; j < numColumns; j++)
-                    sum += V[i][j] * tmp[j];
+                for (j = 0; j < numColumns; j++) sum += V[i][j] * tmp[j];
                 x[i] = (float)sum;
             }
         }
@@ -2388,8 +2175,7 @@ namespace System.NumericsX
             {
                 wi = w[i];
                 wi = wi < MathX.FLT_EPSILON ? 0f : 1f / wi;
-                for (j = 0; j < numColumns; j++)
-                    V2[j][i] = (float)(V2[j][i] * wi); //: open
+                for (j = 0; j < numColumns; j++) V2[j][i] = (float)(V2[j][i] * wi); //: open
             }
 
             // V * [diag(1/w[i])] * Ut
@@ -2397,8 +2183,7 @@ namespace System.NumericsX
                 for (j = 0; j < numColumns; j++)
                 {
                     sum = V2[i][0] * this[j][0];
-                    for (k = 1; k < numColumns; k++)
-                        sum += V2[i][k] * this[j][k];
+                    for (k = 1; k < numColumns; k++) sum += V2[i][k] * this[j][k];
                     inv[i][j] = (float)sum;
                 }
         }
@@ -2422,13 +2207,10 @@ namespace System.NumericsX
                     for (i = 0; i < V.NumRows; i++)
                     {
                         sum = 0f;
-                        for (j = 0; j < numColumns; j++)
-                            sum += this[r][j] * V[i][j];
+                        for (j = 0; j < numColumns; j++) sum += this[r][j] * V[i][j];
                         m[r][i] = (float)(sum * w[r]);
                     }
-                else
-                    for (i = 0; i < V.NumRows; i++)
-                        m[r][i] = 0f;
+                else for (i = 0; i < V.NumRows; i++) m[r][i] = 0f;
         }
 
         #endregion
@@ -2454,17 +2236,14 @@ namespace System.NumericsX
                 for (j = 0; j < i; j++)
                 {
                     sum = this[i][j];
-                    for (k = 0; k < j; k++)
-                        sum -= this[i][k] * this[j][k];
+                    for (k = 0; k < j; k++) sum -= this[i][k] * this[j][k];
                     this[i][j] = (float)(sum * invSqrt[j]);
                 }
 
                 sum = this[i][i];
-                for (k = 0; k < i; k++)
-                    sum -= this[i][k] * this[i][k];
+                for (k = 0; k < i; k++) sum -= this[i][k] * this[i][k];
 
-                if (sum <= 0f)
-                    return false;
+                if (sum <= 0f) return false;
 
                 invSqrt[i] = MathX.InvSqrt((float)sum);
                 this[i][i] = (float)(invSqrt[i] * sum);
@@ -2498,8 +2277,7 @@ namespace System.NumericsX
                 diagSqr = diag * diag;
                 newDiagSqr = diagSqr + alpha * p * p;
 
-                if (newDiagSqr <= 0f)
-                    return false;
+                if (newDiagSqr <= 0f) return false;
 
                 this[i][i] = (float)(newDiag = MathX.Sqrt((float)newDiagSqr));
 
@@ -2549,13 +2327,11 @@ namespace System.NumericsX
                     sum = this[0][0];
                     sum *= sum;
                     sum += v0;
-                    if (sum <= 0f)
-                        return false;
+                    if (sum <= 0f) return false;
                     this[0][0] = MathX.Sqrt((float)sum);
                     return true;
                 }
-                for (i = 0; i < numColumns; i++)
-                    addSub[i] = v[i];
+                for (i = 0; i < numColumns; i++) addSub[i] = v[i];
             }
             else
             {
@@ -2565,8 +2341,7 @@ namespace System.NumericsX
                 for (i = 0; i < numRows; i++)
                 {
                     sum = 0f;
-                    for (j = 0; j <= i; j++)
-                        sum += this[r][j] * this[i][j];
+                    for (j = 0; j <= i; j++) sum += this[r][j] * this[i][j];
                     original[i] = (float)sum;
                 }
 
@@ -2574,8 +2349,7 @@ namespace System.NumericsX
                 for (i = 0; i < r; i++)
                 {
                     sum = original[i] + v[i];
-                    for (j = 0; j < i; j++)
-                        sum -= this[r][j] * this[i][j];
+                    for (j = 0; j < i; j++) sum -= this[r][j] * this[i][j];
                     this[r][i] = (float)(sum / this[i][i]);
                 }
 
@@ -2584,10 +2358,8 @@ namespace System.NumericsX
                 {
                     // only calculate new diagonal
                     sum = original[r] + v[r];
-                    for (j = 0; j < r; j++)
-                        sum -= this[r][j] * this[r][j];
-                    if (sum <= 0f)
-                        return false;
+                    for (j = 0; j < r; j++) sum -= this[r][j] * this[r][j];
+                    if (sum <= 0f) return false;
                     this[r][r] = MathX.Sqrt((float)sum);
                     return true;
                 }
@@ -2596,8 +2368,7 @@ namespace System.NumericsX
                 for (i = r; i < numColumns; i++)
                 {
                     sum = 0f;
-                    for (j = 0; j <= r; j++)
-                        sum += this[r][j] * this[i][j];
+                    for (j = 0; j <= r; j++) sum += this[r][j] * this[i][j];
                     addSub[i] = (float)(v[i] - (sum - original[i]));
                 }
             }
@@ -2613,8 +2384,7 @@ namespace System.NumericsX
             d = MathX.SQRT_1OVER2;
             v1[r] = (float)((0.5f * addSub[r] + 1f) * d);
             v2[r] = (float)((0.5f * addSub[r] - 1f) * d);
-            for (i = r + 1; i < numColumns; i++)
-                v1[i] = v2[i] = (float)(addSub[i] * d);
+            for (i = r + 1; i < numColumns; i++) v1[i] = v2[i] = (float)(addSub[i] * d);
 
             alpha1 = 1f;
             alpha2 = -1f;
@@ -2628,8 +2398,7 @@ namespace System.NumericsX
                 diagSqr = diag * diag;
                 newDiagSqr = diagSqr + alpha1 * p1 * p1;
 
-                if (newDiagSqr <= 0f)
-                    return false;
+                if (newDiagSqr <= 0f) return false;
 
                 alpha1 /= newDiagSqr;
                 beta1 = p1 * alpha1;
@@ -2639,8 +2408,7 @@ namespace System.NumericsX
                 diagSqr = newDiagSqr;
                 newDiagSqr = diagSqr + alpha2 * p2 * p2;
 
-                if (newDiagSqr <= 0f)
-                    return false;
+                if (newDiagSqr <= 0f) return false;
 
                 this[i][i] = (float)(newDiag = MathX.Sqrt((float)newDiagSqr));
 
@@ -2689,8 +2457,7 @@ namespace System.NumericsX
             for (i = 0; i < numRows - 1; i++)
             {
                 sum = v[i];
-                for (j = 0; j < i; j++)
-                    sum -= this[i][j] * x[j];
+                for (j = 0; j < i; j++) sum -= this[i][j] * x[j];
                 x[i] = (float)(sum / this[i][i]);
             }
 
@@ -2702,8 +2469,7 @@ namespace System.NumericsX
                 sum -= x[i] * x[i];
             }
 
-            if (sum <= 0f)
-                return false;
+            if (sum <= 0f) return false;
 
             // store the diagonal entry
             this[numRows - 1][numRows - 1] = MathX.Sqrt((float)sum);
@@ -2733,12 +2499,10 @@ namespace System.NumericsX
 
             // NOTE: msvc compiler bug: the this pointer stored in edi is expected to stay untouched when calling Cholesky_UpdateRowColumn in the if statement
 #if false //: check
-            if (!Cholesky_UpdateRowColumn(v1, r))
-                return false;
+            if (!Cholesky_UpdateRowColumn(v1, r)) return false;
 #else
             var ret = Cholesky_UpdateRowColumn(v1, r);
-            if (!ret)
-                return false;
+            if (!ret) return false;
 #endif
 
             // physically remove the row and column
@@ -2763,8 +2527,7 @@ namespace System.NumericsX
             for (i = 0; i < numRows; i++)
             {
                 sum = b[i];
-                for (j = 0; j < i; j++)
-                    sum -= this[i][j] * x[j];
+                for (j = 0; j < i; j++) sum -= this[i][j] * x[j];
                 x[i] = (float)(sum / this[i][i]);
             }
 
@@ -2772,8 +2535,7 @@ namespace System.NumericsX
             for (i = numRows - 1; i >= 0; i--)
             {
                 sum = x[i];
-                for (j = i + 1; j < numRows; j++)
-                    sum -= this[j][i] * x[j];
+                for (j = i + 1; j < numRows; j++) sum -= this[j][i] * x[j];
                 x[i] = (float)(sum / this[i][i]);
             }
         }
@@ -2797,8 +2559,7 @@ namespace System.NumericsX
             {
                 b[i] = 1f;
                 Cholesky_Solve(ref x, b);
-                for (j = 0; j < numRows; j++)
-                    inv[j][i] = x[j];
+                for (j = 0; j < numRows; j++) inv[j][i] = x[j];
                 b[i] = 0f;
             }
         }
@@ -2815,16 +2576,13 @@ namespace System.NumericsX
             m.SetSize(numRows, numColumns);
 
             for (r = 0; r < numRows; r++)
-            {
                 // calculate row of matrix
                 for (i = 0; i < numRows; i++)
                 {
                     sum = 0f;
-                    for (j = 0; j <= i && j <= r; j++)
-                        sum += this[r][j] * this[i][j];
+                    for (j = 0; j <= i && j <= r; j++) sum += this[r][j] * this[i][j];
                     m[r][i] = (float)sum;
                 }
-            }
         }
 
         #endregion
@@ -2857,8 +2615,7 @@ namespace System.NumericsX
                     sum -= v[j] * d;
                 }
 
-                if (sum == 0f)
-                    return false;
+                if (sum == 0f) return false;
 
                 this[i][i] = (float)sum;
                 d = 1f / sum;
@@ -2866,8 +2623,7 @@ namespace System.NumericsX
                 for (j = i + 1; j < numRows; j++)
                 {
                     sum = this[j][i];
-                    for (k = 0; k < i; k++)
-                        sum -= this[j][k] * v[k];
+                    for (k = 0; k < i; k++) sum -= this[j][k] * v[k];
                     this[j][i] = (float)(sum * d);
                 }
             }
@@ -2899,8 +2655,7 @@ namespace System.NumericsX
                 diag = this[i][i];
                 this[i][i] = (float)(newDiag = diag + alpha * p * p);
 
-                if (newDiag == 0f)
-                    return false;
+                if (newDiag == 0f) return false;
 
                 alpha = (float)(alpha / newDiag); //: open
                 beta = p * alpha;
@@ -2943,13 +2698,8 @@ namespace System.NumericsX
 
             if (r == 0)
             {
-                if (numColumns == 1)
-                {
-                    this[0][0] += v[0];
-                    return true;
-                }
-                for (i = 0; i < numColumns; i++)
-                    addSub[i] = v[i];
+                if (numColumns == 1) { this[0][0] += v[0]; return true; }
+                for (i = 0; i < numColumns; i++) addSub[i] = v[i];
             }
             else
             {
@@ -2957,15 +2707,13 @@ namespace System.NumericsX
                 var y = stackalloc float[numColumns + floatX.ALLOC16]; y = (float*)_alloca16(y);
 
                 // calculate original row/column of matrix
-                for (i = 0; i < r; i++)
-                    y[i] = this[r][i] * this[i][i];
+                for (i = 0; i < r; i++) y[i] = this[r][i] * this[i][i];
                 for (i = 0; i < numColumns; i++)
                 {
                     sum = i < r ? this[i][i] * this[r][i]
                         : i == r ? this[r][r]
-                        : this[r][r] * this[i][r]; //: opt
-                    for (j = 0; j < i && j < r; j++)
-                        sum += this[i][j] * y[j];
+                        : this[r][r] * this[i][r];
+                    for (j = 0; j < i && j < r; j++) sum += this[i][j] * y[j];
                     original[i] = (float)sum;
                 }
 
@@ -2973,37 +2721,30 @@ namespace System.NumericsX
                 for (i = 0; i < r; i++)
                 {
                     sum = original[i] + v[i];
-                    for (j = 0; j < i; j++)
-                        sum -= this[i][j] * y[j];
+                    for (j = 0; j < i; j++) sum -= this[i][j] * y[j];
                     y[i] = (float)sum;
                 }
 
                 // calculate new row of L
-                for (i = 0; i < r; i++)
-                    this[r][i] = y[i] / this[i][i];
+                for (i = 0; i < r; i++) this[r][i] = y[i] / this[i][i];
 
                 // if the last row/column of the matrix is updated
                 if (r == numColumns - 1)
                 {
                     // only calculate new diagonal
                     sum = original[r] + v[r];
-                    for (j = 0; j < r; j++)
-                        sum -= this[r][j] * y[j];
-                    if (sum == 0f)
-                        return false;
+                    for (j = 0; j < r; j++) sum -= this[r][j] * y[j];
+                    if (sum == 0f) return false;
                     this[r][r] = (float)sum;
                     return true;
                 }
 
                 // calculate the row/column to be added to the lower right sub matrix starting at (r, r)
-                for (i = 0; i < r; i++)
-                    y[i] = this[r][i] * this[i][i];
+                for (i = 0; i < r; i++) y[i] = this[r][i] * this[i][i];
                 for (i = r; i < numColumns; i++)
                 {
-                    sum = i == r ? this[r][r]
-                        : this[r][r] * this[i][r]; //: opt
-                    for (j = 0; j < r; j++)
-                        sum += this[i][j] * y[j];
+                    sum = i == r ? this[r][r] : this[r][r] * this[i][r];
+                    for (j = 0; j < r; j++) sum += this[i][j] * y[j];
                     addSub[i] = (float)(v[i] - (sum - original[i]));
                 }
             }
@@ -3017,8 +2758,7 @@ namespace System.NumericsX
             d = MathX.SQRT_1OVER2;
             v1[r] = (float)((0.5f * addSub[r] + 1f) * d);
             v2[r] = (float)((0.5f * addSub[r] - 1f) * d);
-            for (i = r + 1; i < numColumns; i++)
-                v1[i] = v2[i] = (float)(addSub[i] * d);
+            for (i = r + 1; i < numColumns; i++) v1[i] = v2[i] = (float)(addSub[i] * d);
 
             alpha1 = 1f;
             alpha2 = -1f;
@@ -3030,8 +2770,7 @@ namespace System.NumericsX
                 p1 = v1[i];
                 newDiag = diag + alpha1 * p1 * p1;
 
-                if (newDiag == 0f)
-                    return false;
+                if (newDiag == 0f) return false;
 
                 alpha1 /= newDiag;
                 beta1 = p1 * alpha1;
@@ -3041,8 +2780,7 @@ namespace System.NumericsX
                 p2 = v2[i];
                 newDiag = diag + alpha2 * p2 * p2;
 
-                if (newDiag == 0f)
-                    return false;
+                if (newDiag == 0f) return false;
 
                 alpha2 /= newDiag;
                 beta2 = p2 * alpha2;
@@ -3091,8 +2829,7 @@ namespace System.NumericsX
             for (i = 0; i < numRows - 1; i++)
             {
                 sum = v[i];
-                for (j = 0; j < i; j++)
-                    sum -= this[i][j] * x[j];
+                for (j = 0; j < i; j++) sum -= this[i][j] * x[j];
                 x[i] = (float)sum;
             }
 
@@ -3104,8 +2841,7 @@ namespace System.NumericsX
                 sum -= d * x[i];
             }
 
-            if (sum == 0f)
-                return false;
+            if (sum == 0f) return false;
 
             // store the diagonal entry
             this[numRows - 1][numRows - 1] = (float)sum;
@@ -3135,12 +2871,10 @@ namespace System.NumericsX
 
             // NOTE:	msvc compiler bug: the this pointer stored in edi is expected to stay untouched when calling LDLT_UpdateRowColumn in the if statement
 #if false //: check
-            if (!LDLT_UpdateRowColumn(v1, r))
-                return false;
+            if (!LDLT_UpdateRowColumn(v1, r)) return false;
 #else
             var ret = LDLT_UpdateRowColumn(v1, r);
-            if (!ret)
-                return false;
+            if (!ret) return false;
 #endif
 
             // physically remove the row and column
@@ -3165,21 +2899,18 @@ namespace System.NumericsX
             for (i = 0; i < numRows; i++)
             {
                 sum = b[i];
-                for (j = 0; j < i; j++)
-                    sum -= this[i][j] * x[j];
+                for (j = 0; j < i; j++) sum -= this[i][j] * x[j];
                 x[i] = (float)sum;
             }
 
             // solve D
-            for (i = 0; i < numRows; i++)
-                x[i] /= this[i][i];
+            for (i = 0; i < numRows; i++) x[i] /= this[i][i];
 
             // solve Lt
             for (i = numRows - 2; i >= 0; i--)
             {
                 sum = x[i];
-                for (j = i + 1; j < numRows; j++)
-                    sum -= this[j][i] * x[j];
+                for (j = i + 1; j < numRows; j++) sum -= this[j][i] * x[j];
                 x[i] = (float)sum;
             }
         }
@@ -3203,8 +2934,7 @@ namespace System.NumericsX
             {
                 b[i] = 1f;
                 LDLT_Solve(ref x, b);
-                for (j = 0; j < numRows; j++)
-                    inv[j][i] = x[j];
+                for (j = 0; j < numRows; j++) inv[j][i] = x[j];
                 b[i] = 0f;
             }
         }
@@ -3223,8 +2953,7 @@ namespace System.NumericsX
             D.Zero(numRows, numColumns);
             for (i = 0; i < numRows; i++)
             {
-                for (j = 0; j < i; j++)
-                    L[i][j] = this[i][j];
+                for (j = 0; j < i; j++) L[i][j] = this[i][j];
                 L[i][i] = 1f;
                 D[i][i] = this[i][i];
             }
@@ -3245,15 +2974,13 @@ namespace System.NumericsX
             for (r = 0; r < numRows; r++)
             {
                 // calculate row of matrix
-                for (i = 0; i < r; i++)
-                    v[i] = this[r][i] * this[i][i];
+                for (i = 0; i < r; i++) v[i] = this[r][i] * this[i][i];
                 for (i = 0; i < numColumns; i++)
                 {
                     sum = i < r ? this[i][i] * this[r][i]
                         : i == r ? this[r][r]
-                        : this[r][r] * this[i][r]; //: opt
-                    for (j = 0; j < i && j < r; j++)
-                        sum += this[i][j] * v[j];
+                        : this[r][r] * this[i][r];
+                    for (j = 0; j < i && j < r; j++) sum += this[i][j] * v[j];
                     m[r][i] = (float)sum;
                 }
             }
@@ -3268,12 +2995,7 @@ namespace System.NumericsX
             int i, j;
             Debug.Assert(numRows == numColumns);
 
-            for (i = 0; i < numRows - 2; i++)
-                for (j = i + 2; j < numColumns; j++)
-                {
-                    this[i][j] = 0f;
-                    this[j][i] = 0f;
-                }
+            for (i = 0; i < numRows - 2; i++) for (j = i + 2; j < numColumns; j++) { this[i][j] = 0f; this[j][i] = 0f; }
         }
 
         /// <summary>
@@ -3291,21 +3013,18 @@ namespace System.NumericsX
             tmp.SetData(numRows, VectorX.VECX_ALLOCA(numRows));
 
             d = this[0][0];
-            if (d == 0f)
-                return false;
+            if (d == 0f) return false;
             d = 1f / d;
             x[0] = b[0] * d;
             for (i = 1; i < numRows; i++)
             {
                 tmp[i] = this[i - 1][i] * d;
                 d = this[i][i] - this[i][i - 1] * tmp[i];
-                if (d == 0f)
-                    return false;
+                if (d == 0f) return false;
                 d = 1f / d;
                 x[i] = (b[i] - this[i][i - 1] * x[i - 1]) * d;
             }
-            for (i = numRows - 2; i >= 0; i--)
-                x[i] -= tmp[i + 1] * x[i + 1];
+            for (i = numRows - 2; i >= 0; i--) x[i] -= tmp[i + 1] * x[i + 1];
             return true;
         }
 
@@ -3328,8 +3047,7 @@ namespace System.NumericsX
             {
                 b[i] = 1f;
                 TriDiagonal_Solve(ref x, b);
-                for (j = 0; j < numRows; j++)
-                    inv[j][i] = x[j];
+                for (j = 0; j < numRows; j++) inv[j][i] = x[j];
                 b[i] = 0f;
             }
         }

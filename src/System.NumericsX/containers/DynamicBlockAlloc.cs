@@ -73,9 +73,7 @@ namespace System.NumericsX
         {
             DynamicBlock<T> block;
 
-            for (block = firstBlock; block != null; block = block.next)
-                if (block.node == null)
-                    FreeInternal(block);
+            for (block = firstBlock; block != null; block = block.next) if (block.node == null) FreeInternal(block);
 
             for (block = firstBlock; block != null; block = firstBlock)
             {
@@ -163,11 +161,9 @@ namespace System.NumericsX
                 return null;
 
             var block = AllocInternal(num);
-            if (block == null)
-                return null;
+            if (block == null) return null;
             block = ResizeInternal(block, num);
-            if (block == null)
-                return null;
+            if (block == null) return null;
 
 #if DYNAMIC_BLOCK_ALLOC_CHECK
             CheckMemory();
@@ -183,22 +179,14 @@ namespace System.NumericsX
         {
             numResizes++;
 
-            if (ptr == null)
-                return Alloc(num);
-
-            if (num <= 0)
-            {
-                Free(ptr);
-                return null;
-            }
+            if (ptr == null) return Alloc(num);
+            if (num <= 0) { Free(ptr); return null; }
 
             var block = (DynamicBlock<T>)ptr;
-
             usedBlockMemory -= block.Size;
 
             block = ResizeInternal(block, num);
-            if (block == null)
-                return null;
+            if (block == null) return null;
 
 #if DYNAMIC_BLOCK_ALLOC_CHECK
             CheckMemory();
@@ -212,11 +200,9 @@ namespace System.NumericsX
         public void Free(DynamicElement<T> ptr)
         {
             numFrees++;
-            if (ptr == null)
-                return;
+            if (ptr == null) return;
 
             var block = (DynamicBlock<T>)ptr;
-
             numUsedBlocks--;
             usedBlockMemory -= block.Size;
 
@@ -229,11 +215,9 @@ namespace System.NumericsX
 
         public string CheckMemory(DynamicElement<T> ptr)
         {
-            if (ptr == null)
-                return null;
+            if (ptr == null) return null;
 
             var block = (DynamicBlock<T>)ptr;
-
             if (block.node != null) return "memory has been freed";
 #if DYNAMIC_BLOCK_ALLOC_CHECK
             if (block.id[0] != 0x11111111 || block.id[1] != 0x22222222 || block.id[2] != 0x33333333) return "memory has invalid id";
@@ -253,9 +237,7 @@ namespace System.NumericsX
             get
             {
                 var numEmptyBaseBlocks = 0;
-                for (var block = firstBlock; block != null; block = block.next)
-                    if (block.IsBaseBlock && block.node != null && (block.next == null || block.next.IsBaseBlock))
-                        numEmptyBaseBlocks++;
+                for (var block = firstBlock; block != null; block = block.next) if (block.IsBaseBlock && block.node != null && (block.next == null || block.next.IsBaseBlock)) numEmptyBaseBlocks++;
                 return numEmptyBaseBlocks;
             }
         }
@@ -288,8 +270,7 @@ namespace System.NumericsX
             var alignedBytes = (num * sizeofT + 15) & ~15;
 
             var block = freeTree.FindSmallestLargerEqual(alignedBytes);
-            if (block != null)
-                UnlinkFreeInternal(block);
+            if (block != null) UnlinkFreeInternal(block);
             else if (allowAllocs)
             {
                 var allocSize = Math.Max(baseBlockSize, alignedBytes);
@@ -342,16 +323,14 @@ namespace System.NumericsX
                     // allocate a new block and copy
                     var oldBlock = block;
                     block = AllocInternal(num);
-                    if (block == null)
-                        return null;
+                    if (block == null) return null;
                     Array.Copy(oldBlock.Value, block.Value, oldBlock.Size);
                     FreeInternal(oldBlock);
                 }
             }
 
             // if the unused space at the end of this block is large enough to hold a block with at least one element
-            if (block.Size - alignedBytes < Math.Max(minBlockSize, sizeofT))
-                return block;
+            if (block.Size - alignedBytes < Math.Max(minBlockSize, sizeofT)) return block;
 
             var newBlock = new DynamicBlock<T> { Value = block.Value, Memory = block.Value.AsMemory(alignedBytes) };
 #if DYNAMIC_BLOCK_ALLOC_CHECK

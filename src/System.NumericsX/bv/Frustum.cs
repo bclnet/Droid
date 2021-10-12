@@ -279,25 +279,21 @@ namespace System.NumericsX
             var r = sphere.Radius;
 
             // test near plane
-            if (dNear - center.x > r)
-                return true;
+            if (dNear - center.x > r) return true;
 
             // test far plane
-            if (center.x - dFar > r)
-                return true;
+            if (center.x - dFar > r) return true;
 
             var rs = r * r;
             var sFar = dFar * dFar;
 
             // test left/right planes
             var d = dFar * MathX.Fabs(center.y) - dLeft * center.x;
-            if ((d * d) > rs * (sFar + dLeft * dLeft))
-                return true;
+            if ((d * d) > rs * (sFar + dLeft * dLeft)) return true;
 
             // test up/down planes
             d = dFar * MathX.Fabs(center.z) - dUp * center.x;
-            if ((d * d) > rs * (sFar + dUp * dUp))
-                return true;
+            if ((d * d) > rs * (sFar + dUp * dUp)) return true;
 
             return false;
         }
@@ -323,8 +319,7 @@ namespace System.NumericsX
             var pointCull = stackalloc int[winding.NumPoints + intX.ALLOC16]; pointCull = (int*)_alloca16(pointCull);
 
             var transpose = axis.Transpose();
-            for (var i = 0; i < winding.NumPoints; i++)
-                localPoints[i] = (winding[i].ToVec3() - origin) * transpose;
+            for (var i = 0; i < winding.NumPoints; i++) localPoints[i] = (winding[i].ToVec3() - origin) * transpose;
 
             return CullLocalWinding(localPoints, winding.NumPoints, pointCull);
         }
@@ -341,24 +336,20 @@ namespace System.NumericsX
             var localOrigin = (center - origin) * axis.Transpose();
             var localAxis = axis.Transpose();
 
-            if (CullLocalBox(localOrigin, extents, localAxis))
-                return false;
+            if (CullLocalBox(localOrigin, extents, localAxis)) return false;
 
             ToIndexPointsAndCornerVecs(out var indexPoints, out var cornerVecs);
 
-            if (BoundsCullLocalFrustum(bounds, this, indexPoints, cornerVecs))
-                return false;
+            if (BoundsCullLocalFrustum(bounds, this, indexPoints, cornerVecs)) return false;
 
             UnsafeX.Swap(ref indexPoints[2], ref indexPoints[3]);
             UnsafeX.Swap(ref indexPoints[6], ref indexPoints[7]);
 
-            if (LocalFrustumIntersectsBounds(indexPoints, bounds))
-                return true;
+            if (LocalFrustumIntersectsBounds(indexPoints, bounds)) return true;
 
             BoxToPoints(localOrigin, extents, localAxis, out indexPoints);
 
-            if (LocalFrustumIntersectsFrustum(indexPoints, true))
-                return true;
+            if (LocalFrustumIntersectsFrustum(indexPoints, true)) return true;
 
             return false;
         }
@@ -368,27 +359,23 @@ namespace System.NumericsX
             var localOrigin = (box.Center - origin) * axis.Transpose();
             var localAxis = box.Axis * axis.Transpose();
 
-            if (CullLocalBox(localOrigin, box.Extents, localAxis))
-                return false;
+            if (CullLocalBox(localOrigin, box.Extents, localAxis)) return false;
 
             Frustum localFrustum = new(this);
             localFrustum.origin = (origin - box.Center) * box.Axis.Transpose();
             localFrustum.axis = axis * box.Axis.Transpose();
             localFrustum.ToIndexPointsAndCornerVecs(out var indexPoints, out var cornerVecs);
 
-            if (BoundsCullLocalFrustum(new Bounds(-box.Extents, box.Extents), localFrustum, indexPoints, cornerVecs))
-                return false;
+            if (BoundsCullLocalFrustum(new Bounds(-box.Extents, box.Extents), localFrustum, indexPoints, cornerVecs)) return false;
 
             UnsafeX.Swap(ref indexPoints[2], ref indexPoints[3]);
             UnsafeX.Swap(ref indexPoints[6], ref indexPoints[7]);
 
-            if (LocalFrustumIntersectsBounds(indexPoints, new Bounds(-box.Extents, box.Extents)))
-                return true;
+            if (LocalFrustumIntersectsBounds(indexPoints, new Bounds(-box.Extents, box.Extents))) return true;
 
             BoxToPoints(localOrigin, box.Extents, localAxis, out indexPoints);
 
-            if (LocalFrustumIntersectsFrustum(indexPoints, true))
-                return true;
+            if (LocalFrustumIntersectsFrustum(indexPoints, true)) return true;
 
             return false;
         }
@@ -424,8 +411,7 @@ namespace System.NumericsX
 
         public bool IntersectsSphere(in Sphere sphere)
         {
-            if (CullSphere(sphere))
-                return false;
+            if (CullSphere(sphere)) return false;
 
             int x = 0, y = 0, z = 0;
             Vector3 dir = new();
@@ -459,8 +445,7 @@ namespace System.NumericsX
                 if (p.x < dNear + (scale - p.y) * scale * invFar)
                 {
                     scale = dUp * dNear * invFar;
-                    if (p.x < dNear + (scale - p.z) * scale * invFar)
-                        x = 1;
+                    if (p.x < dNear + (scale - p.z) * scale * invFar) x = 1;
                 }
             }
             else
@@ -519,28 +504,24 @@ namespace System.NumericsX
             localFrustum2.axis = frustum.axis * axis.Transpose();
             localFrustum2.ToIndexPointsAndCornerVecs(out var indexPoints2, out var cornerVecs2);
 
-            if (CullLocalFrustum(localFrustum2, indexPoints2, cornerVecs2))
-                return false;
+            if (CullLocalFrustum(localFrustum2, indexPoints2, cornerVecs2)) return false;
 
             Frustum localFrustum1 = new(this);
             localFrustum1.origin = (origin - frustum.origin) * frustum.axis.Transpose();
             localFrustum1.axis = axis * frustum.axis.Transpose();
             localFrustum1.ToIndexPointsAndCornerVecs(out var indexPoints1, out var cornerVecs1);
 
-            if (frustum.CullLocalFrustum(localFrustum1, indexPoints1, cornerVecs1))
-                return false;
+            if (frustum.CullLocalFrustum(localFrustum1, indexPoints1, cornerVecs1)) return false;
 
             UnsafeX.Swap(ref indexPoints2[2], ref indexPoints2[3]);
             UnsafeX.Swap(ref indexPoints2[6], ref indexPoints2[7]);
 
-            if (LocalFrustumIntersectsFrustum(indexPoints2, (localFrustum2.dNear > 0f)))
-                return true;
+            if (LocalFrustumIntersectsFrustum(indexPoints2, localFrustum2.dNear > 0f)) return true;
 
             UnsafeX.Swap(ref indexPoints1[2], ref indexPoints1[3]);
             UnsafeX.Swap(ref indexPoints1[6], ref indexPoints1[7]);
 
-            if (frustum.LocalFrustumIntersectsFrustum(indexPoints1, (localFrustum1.dNear > 0f)))
-                return true;
+            if (frustum.LocalFrustumIntersectsFrustum(indexPoints1, localFrustum1.dNear > 0f)) return true;
 
             return false;
         }
@@ -552,12 +533,10 @@ namespace System.NumericsX
             var pointCull = stackalloc int[winding.NumPoints + intX.ALLOC16]; pointCull = (int*)_alloca16(pointCull);
 
             var transpose = axis.Transpose();
-            for (i = 0; i < winding.NumPoints; i++)
-                localPoints[i] = (winding[i].ToVec3() - origin) * transpose;
+            for (i = 0; i < winding.NumPoints; i++) localPoints[i] = (winding[i].ToVec3() - origin) * transpose;
 
             // if the winding is culled
-            if (CullLocalWinding(localPoints, winding.NumPoints, pointCull))
-                return false;
+            if (CullLocalWinding(localPoints, winding.NumPoints, pointCull)) return false;
 
             winding.GetPlane(out var plane);
 
@@ -565,32 +544,22 @@ namespace System.NumericsX
             AxisProjection(indexPoints, cornerVecs, plane.Normal, out var min, out var max);
 
             // if the frustum does not cross the winding plane
-            if (min + plane[3] > 0f || max + plane[3] < 0f)
-                return false;
+            if (min + plane[3] > 0f || max + plane[3] < 0f) return false;
 
             // test if any of the winding edges goes through the frustum
             for (i = 0; i < winding.NumPoints; i++)
             {
                 j = (i + 1) % winding.NumPoints;
-                if ((pointCull[i] & pointCull[j]) == 0)
-                    if (LocalLineIntersection(localPoints[i], localPoints[j]))
-                        return true;
+                if ((pointCull[i] & pointCull[j]) == 0) if (LocalLineIntersection(localPoints[i], localPoints[j])) return true;
             }
 
             UnsafeX.Swap(ref indexPoints[2], ref indexPoints[3]);
             UnsafeX.Swap(ref indexPoints[6], ref indexPoints[7]);
 
             // test if any edges of the frustum intersect the winding
-            for (i = 0; i < 4; i++)
-                if (winding.LineIntersection(plane, indexPoints[i], indexPoints[4 + i]))
-                    return true;
-            if (dNear > 0f)
-                for (i = 0; i < 4; i++)
-                    if (winding.LineIntersection(plane, indexPoints[i], indexPoints[(i + 1) & 3]))
-                        return true;
-            for (i = 0; i < 4; i++)
-                if (winding.LineIntersection(plane, indexPoints[4 + i], indexPoints[4 + ((i + 1) & 3)]))
-                    return true;
+            for (i = 0; i < 4; i++) if (winding.LineIntersection(plane, indexPoints[i], indexPoints[4 + i])) return true;
+            if (dNear > 0f) for (i = 0; i < 4; i++) if (winding.LineIntersection(plane, indexPoints[i], indexPoints[(i + 1) & 3])) return true;
+            for (i = 0; i < 4; i++) if (winding.LineIntersection(plane, indexPoints[4 + i], indexPoints[4 + ((i + 1) & 3)])) return true;
 
             return false;
         }
@@ -623,19 +592,14 @@ namespace System.NumericsX
             this.dNear = this.dFar = this.invFar = 0f;
 
             var dir = box.Center - projectionOrigin;
-            if (dir.Normalize() == 0f)
-                return false;
+            if (dir.Normalize() == 0f) return false;
 
             var bestAxis = 0;
             var bestValue = MathX.Fabs(box.Axis[0] * dir);
             for (i = 1; i < 3; i++)
             {
                 value = MathX.Fabs(box.Axis[i] * dir);
-                if (value * box.Extents[bestAxis] * box.Extents[bestAxis] < bestValue * box.Extents[i] * box.Extents[i])
-                {
-                    bestValue = value;
-                    bestAxis = i;
-                }
+                if (value * box.Extents[bestAxis] * box.Extents[bestAxis] < bestValue * box.Extents[i] * box.Extents[i]) { bestValue = value; bestAxis = i; }
             }
 
 #if true
@@ -651,8 +615,7 @@ namespace System.NumericsX
 
                 BoxToPoints((box.Center - projectionOrigin) * axis.Transpose(), box.Extents, box.Axis * axis.Transpose(), out points);
 
-                if (points[0].x <= 1f)
-                    return false;
+                if (points[0].x <= 1f) return false;
 
                 minX = minY = maxY = minZ = maxZ = 0;
                 for (i = 1; i < 8; i++)
@@ -695,8 +658,7 @@ namespace System.NumericsX
                 for (i = 0; i < 8; i++)
                 {
                     x = points[i].x;
-                    if (x <= 1f)
-                        return false;
+                    if (x <= 1f) return false;
                     f = 1f / x;
                     points[i].y *= f;
                     points[i].z *= f;
@@ -732,8 +694,7 @@ namespace System.NumericsX
                     MathX.Fabs(box.Extents[2] * (axis[i] * box.Axis[2]));
 
             dist[0] = axis[0] * (box.Center - projectionOrigin) - dist[0];
-            if (dist[0] <= 1f)
-                return false;
+            if (dist[0] <= 1f) return false;
             float invDist = 1f / dist[0];
 
             this.origin = projectionOrigin;
@@ -754,11 +715,7 @@ namespace System.NumericsX
             var d = dir.Normalize();
             var r = sphere.Radius;
 
-            if (d <= r + 1f)
-            {
-                this.dNear = this.dFar = this.invFar = 0f;
-                return false;
-            }
+            if (d <= r + 1f) { this.dNear = this.dFar = this.invFar = 0f; return false; }
 
             origin = projectionOrigin;
             axis = dir.ToMat3();
@@ -782,11 +739,7 @@ namespace System.NumericsX
         {
             bounds.AxisProjection(axis[0], out var min, out var max);
             var newdFar = max - axis[0] * origin;
-            if (newdFar <= dNear)
-            {
-                MoveFarDistance(dNear + 1f);
-                return false;
-            }
+            if (newdFar <= dNear) { MoveFarDistance(dNear + 1f); return false; }
             MoveFarDistance(newdFar);
             return true;
         }
@@ -796,11 +749,7 @@ namespace System.NumericsX
         {
             box.AxisProjection(axis[0], out var min, out var max);
             var newdFar = max - axis[0] * origin;
-            if (newdFar <= dNear)
-            {
-                MoveFarDistance(dNear + 1f);
-                return false;
-            }
+            if (newdFar <= dNear) { MoveFarDistance(dNear + 1f); return false; }
             MoveFarDistance(newdFar);
             return true;
         }
@@ -810,11 +759,7 @@ namespace System.NumericsX
         {
             sphere.AxisProjection(axis[0], out var min, out var max);
             var newdFar = max - axis[0] * origin;
-            if (newdFar <= dNear)
-            {
-                MoveFarDistance(dNear + 1f);
-                return false;
-            }
+            if (newdFar <= dNear) { MoveFarDistance(dNear + 1f); return false; }
             MoveFarDistance(newdFar);
             return true;
         }
@@ -824,11 +769,7 @@ namespace System.NumericsX
         {
             frustum.AxisProjection(axis[0], out var min, out var max);
             var newdFar = max - axis[0] * origin;
-            if (newdFar <= dNear)
-            {
-                MoveFarDistance(dNear + 1f);
-                return false;
-            }
+            if (newdFar <= dNear) { MoveFarDistance(dNear + 1f); return false; }
             MoveFarDistance(newdFar);
             return true;
         }
@@ -842,10 +783,10 @@ namespace System.NumericsX
             planes[1].Normal = axis[0];
             planes[1].Dist = dFar;
 
-            Vector3[] scaled = new Vector3[2];
+            var scaled = new Vector3[2];
             scaled[0] = axis[1] * dLeft;
             scaled[1] = axis[2] * dUp;
-            Vector3[] points = new Vector3[4];
+            var points = new Vector3[4];
             points[0] = scaled[0] + scaled[1];
             points[1] = -scaled[0] + scaled[1];
             points[2] = -scaled[0] - scaled[1];
@@ -1019,10 +960,7 @@ namespace System.NumericsX
             Vector3 p; float d1, d2, fstart, fend, lstart, lend, f; int cull1, cull2;
 
 #if FRUSTUM_DEBUG
-            if (LibX.r_showInteractionScissors_0() > 1)
-            {
-                //    session.rw.DebugLine(colorGreen, origin + start * axis, origin + end * axis);
-            }
+            if (r_showInteractionScissors_0() > 1) session.rw.DebugLine(colorGreen, origin + start * axis, origin + end * axis);
 #endif
             var leftScale = dLeft * invFar;
             var upScale = dUp * invFar;
@@ -1038,20 +976,14 @@ namespace System.NumericsX
             d2 = -fend + lend;
             cull1 = MathX.FLOATSIGNBITSET_(d1);
             cull2 = MathX.FLOATSIGNBITSET_(d2);
-            if (MathX.FLOATNOTZERO(d1) &&
-                MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
+            if (MathX.FLOATNOTZERO(d1) && MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
             {
                 f = d1 / (d1 - d2);
                 p.x = start.x + f * dir.x;
                 if (p.x > 0f)
                 {
                     p.z = start.z + f * dir.z;
-                    if (MathX.Fabs(p.z) <= p.x * upScale)
-                    {
-                        p.y = 1f;
-                        p.z = p.z * dFar / (p.x * dUp);
-                        bounds.AddPoint(p);
-                    }
+                    if (MathX.Fabs(p.z) <= p.x * upScale) { p.y = 1f; p.z = p.z * dFar / (p.x * dUp); bounds.AddPoint(p); }
                 }
             }
 
@@ -1060,20 +992,14 @@ namespace System.NumericsX
             d2 = fend + lend;
             cull1 |= MathX.FLOATSIGNBITSET_(d1) << 1;
             cull2 |= MathX.FLOATSIGNBITSET_(d2) << 1;
-            if (MathX.FLOATNOTZERO(d1) &&
-                MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
+            if (MathX.FLOATNOTZERO(d1) && MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
             {
                 f = d1 / (d1 - d2);
                 p.x = start.x + f * dir.x;
                 if (p.x > 0f)
                 {
                     p.z = start.z + f * dir.z;
-                    if (MathX.Fabs(p.z) <= p.x * upScale)
-                    {
-                        p.y = -1f;
-                        p.z = p.z * dFar / (p.x * dUp);
-                        bounds.AddPoint(p);
-                    }
+                    if (MathX.Fabs(p.z) <= p.x * upScale) { p.y = -1f; p.z = p.z * dFar / (p.x * dUp); bounds.AddPoint(p); }
                 }
             }
 
@@ -1087,20 +1013,14 @@ namespace System.NumericsX
             d2 = -fend + lend;
             cull1 |= MathX.FLOATSIGNBITSET_(d1) << 2;
             cull2 |= MathX.FLOATSIGNBITSET_(d2) << 2;
-            if (MathX.FLOATNOTZERO(d1) &&
-                MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
+            if (MathX.FLOATNOTZERO(d1) && MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
             {
                 f = d1 / (d1 - d2);
                 p.x = start.x + f * dir.x;
                 if (p.x > 0f)
                 {
                     p.y = start.y + f * dir.y;
-                    if (MathX.Fabs(p.y) <= p.x * leftScale)
-                    {
-                        p.y = p.y * dFar / (p.x * dLeft);
-                        p.z = 1f;
-                        bounds.AddPoint(p);
-                    }
+                    if (MathX.Fabs(p.y) <= p.x * leftScale) { p.y = p.y * dFar / (p.x * dLeft); p.z = 1f; bounds.AddPoint(p); }
                 }
             }
 
@@ -1109,45 +1029,25 @@ namespace System.NumericsX
             d2 = fend + lend;
             cull1 |= MathX.FLOATSIGNBITSET_(d1) << 3;
             cull2 |= MathX.FLOATSIGNBITSET_(d2) << 3;
-            if (MathX.FLOATNOTZERO(d1) &&
-                MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
+            if (MathX.FLOATNOTZERO(d1) && MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
             {
                 f = d1 / (d1 - d2);
                 p.x = start.x + f * dir.x;
                 if (p.x > 0f)
                 {
                     p.y = start.y + f * dir.y;
-                    if (MathX.Fabs(p.y) <= p.x * leftScale)
-                    {
-                        p.y = p.y * dFar / (p.x * dLeft);
-                        p.z = -1f;
-                        bounds.AddPoint(p);
-                    }
+                    if (MathX.Fabs(p.y) <= p.x * leftScale) { p.y = p.y * dFar / (p.x * dLeft); p.z = -1f; bounds.AddPoint(p); }
                 }
             }
 
-            if (cull1 == 0 && start.x > 0f)
-            {
-                // add start point to projection bounds
-                p.x = start.x;
-                p.y = start.y * dFar / (start.x * dLeft);
-                p.z = start.z * dFar / (start.x * dUp);
-                bounds.AddPoint(p);
-            }
+            // add start point to projection bounds
+            if (cull1 == 0 && start.x > 0f) { p.x = start.x; p.y = start.y * dFar / (start.x * dLeft); p.z = start.z * dFar / (start.x * dUp); bounds.AddPoint(p); }
 
-            if (cull2 == 0 && end.x > 0f)
-            {
-                // add end point to projection bounds
-                p.x = end.x;
-                p.y = end.y * dFar / (end.x * dLeft);
-                p.z = end.z * dFar / (end.x * dUp);
-                bounds.AddPoint(p);
-            }
+            // add end point to projection bounds
+            if (cull2 == 0 && end.x > 0f) { p.x = end.x; p.y = end.y * dFar / (end.x * dLeft); p.z = end.z * dFar / (end.x * dUp); bounds.AddPoint(p); }
 
-            if (start.x < bounds[0].x)
-                bounds[0].x = start.x < 0f ? 0f : start.x;
-            if (end.x < bounds[0].x)
-                bounds[0].x = end.x < 0f ? 0f : end.x;
+            if (start.x < bounds[0].x) bounds[0].x = start.x < 0f ? 0f : start.x;
+            if (end.x < bounds[0].x) bounds[0].x = end.x < 0f ? 0f : end.x;
 
             startCull = cull1;
             endCull = cull2;
@@ -1158,14 +1058,10 @@ namespace System.NumericsX
             Vector3 p; float d1, d2, fstart, fend, lstart, lend, f;
 
             var clip = startCull ^ endCull;
-            if (clip == 0)
-                return;
+            if (clip == 0) return;
 
 #if  FRUSTUM_DEBUG
-            if (LibX.r_showInteractionScissors_1() > 1)
-            {
-                //session.rw.DebugLine(colorGreen, origin + start * axis, origin + end * axis);
-            }
+            if (r_showInteractionScissors_1() > 1) session.rw.DebugLine(colorGreen, origin + start * axis, origin + end * axis);
 #endif
 
             var leftScale = dLeft * invFar;
@@ -1184,20 +1080,14 @@ namespace System.NumericsX
                     // test left plane
                     d1 = -fstart + lstart;
                     d2 = -fend + lend;
-                    if (MathX.FLOATNOTZERO(d1) &&
-                        MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
+                    if (MathX.FLOATNOTZERO(d1) && MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
                     {
                         f = d1 / (d1 - d2);
                         p.x = start.x + f * dir.x;
                         if (p.x > 0f)
                         {
                             p.z = start.z + f * dir.z;
-                            if (MathX.Fabs(p.z) <= p.x * upScale)
-                            {
-                                p.y = 1f;
-                                p.z = p.z * dFar / (p.x * dUp);
-                                bounds.AddPoint(p);
-                            }
+                            if (MathX.Fabs(p.z) <= p.x * upScale) { p.y = 1f; p.z = p.z * dFar / (p.x * dUp); bounds.AddPoint(p); }
                         }
                     }
                 }
@@ -1207,20 +1097,14 @@ namespace System.NumericsX
                     // test right plane
                     d1 = fstart + lstart;
                     d2 = fend + lend;
-                    if (MathX.FLOATNOTZERO(d1) &&
-                        MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
+                    if (MathX.FLOATNOTZERO(d1) && MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
                     {
                         f = d1 / (d1 - d2);
                         p.x = start.x + f * dir.x;
                         if (p.x > 0f)
                         {
                             p.z = start.z + f * dir.z;
-                            if (MathX.Fabs(p.z) <= p.x * upScale)
-                            {
-                                p.y = -1f;
-                                p.z = p.z * dFar / (p.x * dUp);
-                                bounds.AddPoint(p);
-                            }
+                            if (MathX.Fabs(p.z) <= p.x * upScale) { p.y = -1f; p.z = p.z * dFar / (p.x * dUp); bounds.AddPoint(p); }
                         }
                     }
                 }
@@ -1238,20 +1122,14 @@ namespace System.NumericsX
                     // test up plane
                     d1 = -fstart + lstart;
                     d2 = -fend + lend;
-                    if (MathX.FLOATNOTZERO(d1) &&
-                        MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
+                    if (MathX.FLOATNOTZERO(d1) && MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
                     {
                         f = d1 / (d1 - d2);
                         p.x = start.x + f * dir.x;
                         if (p.x > 0f)
                         {
                             p.y = start.y + f * dir.y;
-                            if (MathX.Fabs(p.y) <= p.x * leftScale)
-                            {
-                                p.y = p.y * dFar / (p.x * dLeft);
-                                p.z = 1f;
-                                bounds.AddPoint(p);
-                            }
+                            if (MathX.Fabs(p.y) <= p.x * leftScale) { p.y = p.y * dFar / (p.x * dLeft); p.z = 1f; bounds.AddPoint(p); }
                         }
                     }
                 }
@@ -1261,20 +1139,14 @@ namespace System.NumericsX
                     // test down plane
                     d1 = fstart + lstart;
                     d2 = fend + lend;
-                    if (MathX.FLOATNOTZERO(d1) &&
-                        MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
+                    if (MathX.FLOATNOTZERO(d1) && MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
                     {
                         f = d1 / (d1 - d2);
                         p.x = start.x + f * dir.x;
                         if (p.x > 0f)
                         {
                             p.y = start.y + f * dir.y;
-                            if (MathX.Fabs(p.y) <= p.x * leftScale)
-                            {
-                                p.y = p.y * dFar / (p.x * dLeft);
-                                p.z = -1f;
-                                bounds.AddPoint(p);
-                            }
+                            if (MathX.Fabs(p.y) <= p.x * leftScale) { p.y = p.y * dFar / (p.x * dLeft); p.z = -1f; bounds.AddPoint(p); }
                         }
                     }
                 }
@@ -1293,7 +1165,7 @@ namespace System.NumericsX
             scaled[0] = localAxis[0] * dFar;
             scaled[1] = localAxis[1] * dLeft;
             scaled[2] = localAxis[2] * dUp;
-            Vector3[] cornerVecs = new Vector3[4];
+            var cornerVecs = new Vector3[4];
             cornerVecs[0] = scaled[0] + scaled[1];
             cornerVecs[1] = scaled[0] - scaled[1];
             cornerVecs[2] = cornerVecs[1] - scaled[2];
@@ -1317,23 +1189,14 @@ namespace System.NumericsX
 
                 index = MathX.FLOATSIGNBITNOTSET_(cornerVecs[i].y);
                 f = (bounds[index].y - localOrigin.y) / cornerVecs[i].y;
-                if (f < clipFractions[i])
-                {
-                    clipFractions[i] = f;
-                    clipPlanes[i] = 4 << index;
-                }
+                if (f < clipFractions[i]) { clipFractions[i] = f; clipPlanes[i] = 4 << index; }
 
                 index = MathX.FLOATSIGNBITNOTSET_(cornerVecs[i].z);
                 f = (bounds[index].z - localOrigin.z) / cornerVecs[i].z;
-                if (f < clipFractions[i])
-                {
-                    clipFractions[i] = f;
-                    clipPlanes[i] = 16 << index;
-                }
+                if (f < clipFractions[i]) { clipFractions[i] = f; clipPlanes[i] = 16 << index; }
 
                 // make sure the frustum is not clipped between the frustum origin and the near plane
-                if (clipFractions[i] < minf)
-                    clipFractions[i] = minf;
+                if (clipFractions[i] < minf) clipFractions[i] = minf;
             }
         }
 
@@ -1369,8 +1232,7 @@ namespace System.NumericsX
             {
                 f = d1 / (d1 - d2);
                 x = localStart.x + f * localDir.x;
-                if (x >= 0f &&
-                    MathX.Fabs(localStart.z + f * localDir.z) <= x * upScale) //: opt
+                if (x >= 0f && MathX.Fabs(localStart.z + f * localDir.z) <= x * upScale) //: opt
                 {
                     if (f < scale1) { scale1 = f; startClip = 0; }
                     if (f > scale2) { scale2 = f; endClip = 0; }
@@ -1382,13 +1244,11 @@ namespace System.NumericsX
             d2 = fend + lend;
             startCull |= MathX.FLOATSIGNBITSET_(d1) << 1;
             endCull |= MathX.FLOATSIGNBITSET_(d2) << 1;
-            if (MathX.FLOATNOTZERO(d1) &&
-                MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
+            if (MathX.FLOATNOTZERO(d1) && MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
             {
                 f = d1 / (d1 - d2);
                 x = localStart.x + f * localDir.x;
-                if (x >= 0f &&
-                    MathX.Fabs(localStart.z + f * localDir.z) <= x * upScale) //: opt
+                if (x >= 0f && MathX.Fabs(localStart.z + f * localDir.z) <= x * upScale) //: opt
                 {
                     if (f < scale1) { scale1 = f; startClip = 1; }
                     if (f > scale2) { scale2 = f; endClip = 1; }
@@ -1405,13 +1265,11 @@ namespace System.NumericsX
             d2 = -fend + lend;
             startCull |= MathX.FLOATSIGNBITSET_(d1) << 2;
             endCull |= MathX.FLOATSIGNBITSET_(d2) << 2;
-            if (MathX.FLOATNOTZERO(d1) &&
-                MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
+            if (MathX.FLOATNOTZERO(d1) && MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
             {
                 f = d1 / (d1 - d2);
                 x = localStart.x + f * localDir.x;
-                if (x >= 0f &&
-                    MathX.Fabs(localStart.y + f * localDir.y) <= x * leftScale) //: opt
+                if (x >= 0f && MathX.Fabs(localStart.y + f * localDir.y) <= x * leftScale) //: opt
                 {
                     if (f < scale1) { scale1 = f; startClip = 2; }
                     if (f > scale2) { scale2 = f; endClip = 2; }
@@ -1423,13 +1281,11 @@ namespace System.NumericsX
             d2 = fend + lend;
             startCull |= MathX.FLOATSIGNBITSET_(d1) << 3;
             endCull |= MathX.FLOATSIGNBITSET_(d2) << 3;
-            if (MathX.FLOATNOTZERO(d1) &&
-                MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
+            if (MathX.FLOATNOTZERO(d1) && MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2)) //: opt
             {
                 f = d1 / (d1 - d2);
                 x = localStart.x + f * localDir.x;
-                if (x >= 0f &&
-                    MathX.Fabs(localStart.y + f * localDir.y) <= x * leftScale) //: opt
+                if (x >= 0f && MathX.Fabs(localStart.y + f * localDir.y) <= x * leftScale) //: opt
                 {
                     if (f < scale1) { scale1 = f; startClip = 3; }
                     if (f > scale2) { scale2 = f; endClip = 3; }
@@ -1437,12 +1293,7 @@ namespace System.NumericsX
             }
 
             // if completely inside
-            if ((startCull | endCull) == 0)
-            {
-                start = points[startIndex];
-                end = points[endIndex];
-                return true;
-            }
+            if ((startCull | endCull) == 0) { start = points[startIndex]; end = points[endIndex]; return true; }
             else if (scale1 <= scale2)
             {
                 if (startCull == 0) { start = points[startIndex]; startClip = -1; }
@@ -1465,8 +1316,7 @@ namespace System.NumericsX
 
         bool AddLocalCapsToProjectionBounds(Span<Vector3> endPoints, Span<int> endPointCull, in Vector3 point, int pointCull, int pointClip, in Bounds projectionBounds)
         {
-            if (pointClip < 0)
-                return false;
+            if (pointClip < 0) return false;
             var p = CapPointIndex[pointClip];
             AddLocalLineToProjectionBoundsUseCull(endPoints[p[0]], point, endPointCull[p[0]], pointCull, projectionBounds);
             AddLocalLineToProjectionBoundsUseCull(endPoints[p[1]], point, endPointCull[p[1]], pointCull, projectionBounds);
@@ -1588,12 +1438,10 @@ namespace System.NumericsX
             }
 
             // if the bounds are completely outside this frustum
-            if (culled != 0)
-                return false;
+            if (culled != 0) return false;
 
             // if the bounds are completely inside this frustum
-            if (outside == 0)
-                return true;
+            if (outside == 0) return true;
 
             // test the remaining edges of the bounds
             for (i = 0; i < 4; i++)
@@ -1673,13 +1521,11 @@ namespace System.NumericsX
 
             // test left/right planes
             var d = dFar * MathX.Fabs(center.y) - dLeft * center.x;
-            if ((d * d) > rs * (sFar + dLeft * dLeft))
-                return false;
+            if ((d * d) > rs * (sFar + dLeft * dLeft)) return false;
 
             // test up/down planes
             d = dFar * MathX.Fabs(center.z) - dUp * center.x;
-            if ((d * d) > rs * (sFar + dUp * dUp))
-                return false;
+            if ((d * d) > rs * (sFar + dUp * dUp)) return false;
 
             // bounds that cover the whole frustum
             projectionBounds[0].x = 0f;
@@ -1727,23 +1573,19 @@ namespace System.NumericsX
             }
 
             // if the other frustum is completely outside this frustum
-            if (culled != 0)
-                return false;
+            if (culled != 0) return false;
 
             // if the other frustum is completely inside this frustum
-            if (outside == 0)
-                return true;
+            if (outside == 0) return true;
 
             // test the remaining edges of the other frustum
             if (localFrustum.dNear > 0f)
-            {
                 for (i = 0; i < 4; i++)
                 {
                     p1 = i;
                     p2 = (i + 1) & 3;
                     AddLocalLineToProjectionBoundsUseCull(points[p1], points[p2], pointCull[p1], pointCull[p2], projectionBounds);
                 }
-            }
 
             for (i = 0; i < 4; i++)
             {
@@ -1813,8 +1655,7 @@ namespace System.NumericsX
             // transform the winding points into the space of this frustum
             var localPoints = stackalloc Vector3[winding.NumPoints + Vector3.ALLOC16]; localPoints = (Vector3*)_alloca16(localPoints);
             var transpose = axis.Transpose();
-            for (i = 0; i < winding.NumPoints; i++)
-                localPoints[i] = (winding[i].ToVec3() - origin) * transpose;
+            for (i = 0; i < winding.NumPoints; i++) localPoints[i] = (winding[i].ToVec3() - origin) * transpose;
 
             // test the winding edges
             int culled = -1, outside = 0;
@@ -1853,18 +1694,10 @@ namespace System.NumericsX
                 scaled[2] = axis[2] * dUp;
 
                 // test the outer edges of this frustum for intersection with the winding
-                if ((outside & 2) != 0 && (outside & 8) != 0)
-                    if (winding.RayIntersection(plane, origin, scaled[0] - scaled[1] - scaled[2], out scale))
-                        projectionBounds.AddPoint(new Vector3(scale * dFar, -1f, -1f));
-                if ((outside & 2) != 0 && (outside & 4) != 0)
-                    if (winding.RayIntersection(plane, origin, scaled[0] - scaled[1] + scaled[2], out scale))
-                        projectionBounds.AddPoint(new Vector3(scale * dFar, -1f, 1f));
-                if ((outside & 1) != 0 && (outside & 8) != 0)
-                    if (winding.RayIntersection(plane, origin, scaled[0] + scaled[1] - scaled[2], out scale))
-                        projectionBounds.AddPoint(new Vector3(scale * dFar, 1f, -1f));
-                if ((outside & 1) != 0 && (outside & 2) != 0)
-                    if (winding.RayIntersection(plane, origin, scaled[0] + scaled[1] + scaled[2], out scale))
-                        projectionBounds.AddPoint(new Vector3(scale * dFar, 1f, 1f));
+                if ((outside & 2) != 0 && (outside & 8) != 0 && winding.RayIntersection(plane, origin, scaled[0] - scaled[1] - scaled[2], out scale)) projectionBounds.AddPoint(new Vector3(scale * dFar, -1f, -1f));
+                if ((outside & 2) != 0 && (outside & 4) != 0 && winding.RayIntersection(plane, origin, scaled[0] - scaled[1] + scaled[2], out scale)) projectionBounds.AddPoint(new Vector3(scale * dFar, -1f, 1f));
+                if ((outside & 1) != 0 && (outside & 8) != 0 && winding.RayIntersection(plane, origin, scaled[0] + scaled[1] - scaled[2], out scale)) projectionBounds.AddPoint(new Vector3(scale * dFar, 1f, -1f));
+                if ((outside & 1) != 0 && (outside & 2) != 0 && winding.RayIntersection(plane, origin, scaled[0] + scaled[1] + scaled[2], out scale)) projectionBounds.AddPoint(new Vector3(scale * dFar, 1f, 1f));
             }
 
             return true;
@@ -1985,8 +1818,7 @@ namespace System.NumericsX
                 {
                     p1 = i;
                     p2 = 4 + i;
-                    if ((boxPointCull[p1] & boxPointCull[p2]) == 0 &&
-                        frustum.ClipLine(localPoints1, localPoints2, p1, p2, out start, out end, out startClip, out endClip)) //: opt
+                    if ((boxPointCull[p1] & boxPointCull[p2]) == 0 && frustum.ClipLine(localPoints1, localPoints2, p1, p2, out start, out end, out startClip, out endClip)) //: opt
                     {
                         AddLocalLineToProjectionBoundsSetCull(start, end, out pointCull[0], out pointCull[1], projectionBounds);
                         AddLocalCapsToProjectionBounds(clipPoints.AsSpan(4), clipPointCull.AsSpan(4), start, pointCull[0], startClip, projectionBounds);
@@ -1999,8 +1831,7 @@ namespace System.NumericsX
                 {
                     p1 = i;
                     p2 = (i + 1) & 3;
-                    if ((boxPointCull[p1] & boxPointCull[p2]) == 0 &&
-                        frustum.ClipLine(localPoints1, localPoints2, p1, p2, out start, out end, out startClip, out endClip)) //: opt
+                    if ((boxPointCull[p1] & boxPointCull[p2]) == 0 && frustum.ClipLine(localPoints1, localPoints2, p1, p2, out start, out end, out startClip, out endClip)) //: opt
                     {
                         AddLocalLineToProjectionBoundsSetCull(start, end, out pointCull[0], out pointCull[1], projectionBounds);
                         AddLocalCapsToProjectionBounds(clipPoints.AsSpan(4), clipPointCull.AsSpan(4), start, pointCull[0], startClip, projectionBounds);
@@ -2013,8 +1844,7 @@ namespace System.NumericsX
                 {
                     p1 = 4 + i;
                     p2 = 4 + ((i + 1) & 3);
-                    if ((boxPointCull[p1] & boxPointCull[p2]) == 0 &&
-                        frustum.ClipLine(localPoints1, localPoints2, p1, p2, out start, out end, out startClip, out endClip)) //: opt
+                    if ((boxPointCull[p1] & boxPointCull[p2]) == 0 && frustum.ClipLine(localPoints1, localPoints2, p1, p2, out start, out end, out startClip, out endClip)) //: opt
                     {
                         AddLocalLineToProjectionBoundsSetCull(start, end, out pointCull[0], out pointCull[1], projectionBounds);
                         AddLocalCapsToProjectionBounds(clipPoints.AsSpan(4), clipPointCull.AsSpan(4), start, pointCull[0], startClip, projectionBounds);
@@ -2117,13 +1947,11 @@ namespace System.NumericsX
                 MathX.Fabs(extents.x * localAxis[0][0]) +
                 MathX.Fabs(extents.y * localAxis[1][0]) +
                 MathX.Fabs(extents.z * localAxis[2][0]);
-            if (d1 - d2 > 0f)
-                return true;
+            if (d1 - d2 > 0f) return true;
 
             // far plane
             d1 = localOrigin.x - dFar;
-            if (d1 - d2 > 0f)
-                return true;
+            if (d1 - d2 > 0f) return true;
 
             Vector3 testOrigin = localOrigin;
             Matrix3x3 testAxis = new(localAxis);
@@ -2142,8 +1970,7 @@ namespace System.NumericsX
                 MathX.Fabs(extents.x * (dFar * testAxis[0][1] - dLeft * testAxis[0][0])) +
                 MathX.Fabs(extents.y * (dFar * testAxis[1][1] - dLeft * testAxis[1][0])) +
                 MathX.Fabs(extents.z * (dFar * testAxis[2][1] - dLeft * testAxis[2][0]));
-            if (d1 - d2 > 0f)
-                return true;
+            if (d1 - d2 > 0f) return true;
 
             if (testOrigin.z < 0f)
             {
@@ -2159,8 +1986,7 @@ namespace System.NumericsX
                 MathX.Fabs(extents.x * (dFar * testAxis[0][2] - dUp * testAxis[0][0])) +
                 MathX.Fabs(extents.y * (dFar * testAxis[1][2] - dUp * testAxis[1][0])) +
                 MathX.Fabs(extents.z * (dFar * testAxis[2][2] - dUp * testAxis[2][0]));
-            if (d1 - d2 > 0f)
-                return true;
+            if (d1 - d2 > 0f) return true;
 
             return false;
         }
@@ -2177,8 +2003,7 @@ namespace System.NumericsX
             var dx = -cornerVecs[index].x;
             index |= (MathX.FLOATSIGNBITSET_(dx) << 2);
 
-            if (indexPoints[index].x < dNear)
-                return true;
+            if (indexPoints[index].x < dNear) return true;
 
             // test far plane
             dy = localFrustum.axis[1].x;
@@ -2187,8 +2012,7 @@ namespace System.NumericsX
             dx = cornerVecs[index].x;
             index |= (MathX.FLOATSIGNBITSET_(dx) << 2);
 
-            if (indexPoints[index].x > dFar)
-                return true;
+            if (indexPoints[index].x > dFar) return true;
 
             var leftScale = dLeft * invFar;
 
@@ -2199,8 +2023,7 @@ namespace System.NumericsX
             dx = dFar * cornerVecs[index].y - dLeft * cornerVecs[index].x;
             index |= (MathX.FLOATSIGNBITSET_(dx) << 2);
 
-            if (indexPoints[index].y > indexPoints[index].x * leftScale)
-                return true;
+            if (indexPoints[index].y > indexPoints[index].x * leftScale) return true;
 
             // test right plane
             dy = -dFar * localFrustum.axis[1].y - dLeft * localFrustum.axis[1].x;
@@ -2209,8 +2032,7 @@ namespace System.NumericsX
             dx = -dFar * cornerVecs[index].y - dLeft * cornerVecs[index].x;
             index |= (MathX.FLOATSIGNBITSET_(dx) << 2);
 
-            if (indexPoints[index].y < -indexPoints[index].x * leftScale)
-                return true;
+            if (indexPoints[index].y < -indexPoints[index].x * leftScale) return true;
 
             var upScale = dUp * invFar;
 
@@ -2221,8 +2043,7 @@ namespace System.NumericsX
             dx = dFar * cornerVecs[index].z - dUp * cornerVecs[index].x;
             index |= (MathX.FLOATSIGNBITSET_(dx) << 2);
 
-            if (indexPoints[index].z > indexPoints[index].x * upScale)
-                return true;
+            if (indexPoints[index].z > indexPoints[index].x * upScale) return true;
 
             // test down plane
             dy = -dFar * localFrustum.axis[1].z - dUp * localFrustum.axis[1].x;
@@ -2231,8 +2052,7 @@ namespace System.NumericsX
             dx = -dFar * cornerVecs[index].z - dUp * cornerVecs[index].x;
             index |= (MathX.FLOATSIGNBITSET_(dx) << 2);
 
-            if (indexPoints[index].z < -indexPoints[index].x * upScale)
-                return true;
+            if (indexPoints[index].z < -indexPoints[index].x * upScale) return true;
 
             return false;
         }
@@ -2267,8 +2087,7 @@ namespace System.NumericsX
             var dx = -cornerVecs[index].x;
             index |= (MathX.FLOATSIGNBITSET_(dx) << 2);
 
-            if (indexPoints[index].x < bounds[0].x)
-                return true;
+            if (indexPoints[index].x < bounds[0].x) return true;
 
             dy = localFrustum.axis[1].x;
             dz = localFrustum.axis[2].x;
@@ -2276,8 +2095,7 @@ namespace System.NumericsX
             dx = cornerVecs[index].x;
             index |= (MathX.FLOATSIGNBITSET_(dx) << 2);
 
-            if (indexPoints[index].x > bounds[1].x)
-                return true;
+            if (indexPoints[index].x > bounds[1].x) return true;
 
             dy = -localFrustum.axis[1].y;
             dz = -localFrustum.axis[2].y;
@@ -2285,10 +2103,7 @@ namespace System.NumericsX
             dx = -cornerVecs[index].y;
             index |= (MathX.FLOATSIGNBITSET_(dx) << 2);
 
-            if (indexPoints[index].y < bounds[0].y)
-            {
-                return true;
-            }
+            if (indexPoints[index].y < bounds[0].y) return true;
 
             dy = localFrustum.axis[1].y;
             dz = localFrustum.axis[2].y;
@@ -2296,8 +2111,7 @@ namespace System.NumericsX
             dx = cornerVecs[index].y;
             index |= (MathX.FLOATSIGNBITSET_(dx) << 2);
 
-            if (indexPoints[index].y > bounds[1].y)
-                return true;
+            if (indexPoints[index].y > bounds[1].y) return true;
 
             dy = -localFrustum.axis[1].z;
             dz = -localFrustum.axis[2].z;
@@ -2305,8 +2119,7 @@ namespace System.NumericsX
             dx = -cornerVecs[index].z;
             index |= (MathX.FLOATSIGNBITSET_(dx) << 2);
 
-            if (indexPoints[index].z < bounds[0].z)
-                return true;
+            if (indexPoints[index].z < bounds[0].z) return true;
 
             dy = localFrustum.axis[1].z;
             dz = localFrustum.axis[2].z;
@@ -2314,8 +2127,7 @@ namespace System.NumericsX
             dx = cornerVecs[index].z;
             index |= (MathX.FLOATSIGNBITSET_(dx) << 2);
 
-            if (indexPoints[index].z > bounds[1].z)
-                return true;
+            if (indexPoints[index].z > bounds[1].z) return true;
 
             return false;
         }
@@ -2341,9 +2153,7 @@ namespace System.NumericsX
                     if (MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2))
                     {
                         f = d1 / (d1 - d2);
-                        if (MathX.Fabs(start.y + f * dir.y) <= dNear * leftScale)
-                            if (MathX.Fabs(start.z + f * dir.z) <= dNear * upScale)
-                                return true;
+                        if (MathX.Fabs(start.y + f * dir.y) <= dNear * leftScale && MathX.Fabs(start.z + f * dir.z) <= dNear * upScale) return true;
                     }
                 }
             }
@@ -2357,9 +2167,7 @@ namespace System.NumericsX
                 if (MathX.FLOATSIGNBITSET(d1) ^ MathX.FLOATSIGNBITSET(d2))
                 {
                     f = d1 / (d1 - d2);
-                    if (MathX.Fabs(start.y + f * dir.y) <= dFar * leftScale)
-                        if (MathX.Fabs(start.z + f * dir.z) <= dFar * upScale)
-                            return true;
+                    if (MathX.Fabs(start.y + f * dir.y) <= dFar * leftScale && MathX.Fabs(start.z + f * dir.z) <= dFar * upScale) return true;
                 }
             }
 
@@ -2378,9 +2186,7 @@ namespace System.NumericsX
                 {
                     f = d1 / (d1 - d2);
                     x = start.x + f * dir.x;
-                    if (x >= dNear && x <= dFar)
-                        if (MathX.Fabs(start.z + f * dir.z) <= x * upScale)
-                            return true;
+                    if (x >= dNear && x <= dFar && MathX.Fabs(start.z + f * dir.z) <= x * upScale) return true;
                 }
             }
 
@@ -2394,9 +2200,7 @@ namespace System.NumericsX
                 {
                     f = d1 / (d1 - d2);
                     x = start.x + f * dir.x;
-                    if (x >= dNear && x <= dFar)
-                        if (MathX.Fabs(start.z + f * dir.z) <= x * upScale)
-                            return true;
+                    if (x >= dNear && x <= dFar && MathX.Fabs(start.z + f * dir.z) <= x * upScale) return true;
                 }
             }
 
@@ -2415,9 +2219,7 @@ namespace System.NumericsX
                 {
                     f = d1 / (d1 - d2);
                     x = start.x + f * dir.x;
-                    if (x >= dNear && x <= dFar)
-                        if (MathX.Fabs(start.y + f * dir.y) <= x * leftScale)
-                            return true;
+                    if (x >= dNear && x <= dFar && MathX.Fabs(start.y + f * dir.y) <= x * leftScale) return true;
                 }
             }
 
@@ -2431,17 +2233,14 @@ namespace System.NumericsX
                 {
                     f = d1 / (d1 - d2);
                     x = start.x + f * dir.x;
-                    if (x >= dNear && x <= dFar)
-                        if (MathX.Fabs(start.y + f * dir.y) <= x * leftScale)
-                            return true;
+                    if (x >= dNear && x <= dFar && MathX.Fabs(start.y + f * dir.y) <= x * leftScale) return true;
                 }
             }
 
             return startInside != 0;
         }
 
-        // Returns true if the ray starts inside the frustum.
-        // If there was an intersection scale1 <= scale2
+        // Returns true if the ray starts inside the frustum. If there was an intersection scale1 <= scale2
         bool LocalRayIntersection(in Vector3 start, in Vector3 dir, out float scale1, out float scale2)
         {
             float d1, d2, fstart, fend, lstart, lend, f, x; int startInside = 1;
@@ -2462,8 +2261,7 @@ namespace System.NumericsX
                 if (d1 != d2)
                 {
                     f = d1 / (d1 - d2);
-                    if (MathX.Fabs(start.y + f * dir.y) <= dNear * leftScale &&
-                        MathX.Fabs(start.z + f * dir.z) <= dNear * upScale) //: opt
+                    if (MathX.Fabs(start.y + f * dir.y) <= dNear * leftScale && MathX.Fabs(start.z + f * dir.z) <= dNear * upScale)
                     {
                         if (f < scale1) scale1 = f;
                         if (f > scale2) scale2 = f;
@@ -2478,8 +2276,7 @@ namespace System.NumericsX
             if (d1 != d2)
             {
                 f = d1 / (d1 - d2);
-                if (MathX.Fabs(start.y + f * dir.y) <= dFar * leftScale &&
-                    MathX.Fabs(start.z + f * dir.z) <= dFar * upScale) //: opt
+                if (MathX.Fabs(start.y + f * dir.y) <= dFar * leftScale && MathX.Fabs(start.z + f * dir.z) <= dFar * upScale)
                 {
                     if (f < scale1) scale1 = f;
                     if (f > scale2) scale2 = f;
@@ -2499,8 +2296,7 @@ namespace System.NumericsX
             {
                 f = d1 / (d1 - d2);
                 x = start.x + f * dir.x;
-                if (x >= dNear && x <= dFar &&
-                    MathX.Fabs(start.z + f * dir.z) <= x * upScale) //: opt
+                if (x >= dNear && x <= dFar && MathX.Fabs(start.z + f * dir.z) <= x * upScale)
                 {
                     if (f < scale1) scale1 = f;
                     if (f > scale2) scale2 = f;
@@ -2515,8 +2311,7 @@ namespace System.NumericsX
             {
                 f = d1 / (d1 - d2);
                 x = start.x + f * dir.x;
-                if (x >= dNear && x <= dFar &&
-                    MathX.Fabs(start.z + f * dir.z) <= x * upScale) //: opt
+                if (x >= dNear && x <= dFar && MathX.Fabs(start.z + f * dir.z) <= x * upScale)
                 {
                     if (f < scale1) scale1 = f;
                     if (f > scale2) scale2 = f;
@@ -2536,8 +2331,7 @@ namespace System.NumericsX
             {
                 f = d1 / (d1 - d2);
                 x = start.x + f * dir.x;
-                if (x >= dNear && x <= dFar &&
-                    MathX.Fabs(start.y + f * dir.y) <= x * leftScale) //: opt
+                if (x >= dNear && x <= dFar && MathX.Fabs(start.y + f * dir.y) <= x * leftScale)
                 {
                     if (f < scale1) scale1 = f;
                     if (f > scale2) scale2 = f;
@@ -2552,8 +2346,7 @@ namespace System.NumericsX
             {
                 f = d1 / (d1 - d2);
                 x = start.x + f * dir.x;
-                if (x >= dNear && x <= dFar &&
-                    MathX.Fabs(start.y + f * dir.y) <= x * leftScale) //: opt
+                if (x >= dNear && x <= dFar && MathX.Fabs(start.y + f * dir.y) <= x * leftScale)
                 {
                     if (f < scale1) scale1 = f;
                     if (f > scale2) scale2 = f;
@@ -2567,16 +2360,9 @@ namespace System.NumericsX
         {
             int i;
             // test if any edges of the other frustum intersect this frustum
-            for (i = 0; i < 4; i++)
-                if (LocalLineIntersection(points[i], points[4 + i]))
-                    return true;
-            if (testFirstSide)
-                for (i = 0; i < 4; i++)
-                    if (LocalLineIntersection(points[i], points[(i + 1) & 3]))
-                        return true;
-            for (i = 0; i < 4; i++)
-                if (LocalLineIntersection(points[4 + i], points[4 + ((i + 1) & 3)]))
-                    return true;
+            for (i = 0; i < 4; i++) if (LocalLineIntersection(points[i], points[4 + i])) return true;
+            if (testFirstSide) for (i = 0; i < 4; i++) if (LocalLineIntersection(points[i], points[(i + 1) & 3])) return true;
+            for (i = 0; i < 4; i++) if (LocalLineIntersection(points[4 + i], points[4 + ((i + 1) & 3)])) return true;
             return false;
         }
 
@@ -2584,16 +2370,9 @@ namespace System.NumericsX
         {
             int i;
             // test if any edges of the other frustum intersect this frustum
-            for (i = 0; i < 4; i++)
-                if (bounds.LineIntersection(points[i], points[4 + i]))
-                    return true;
-            if (dNear > 0f)
-                for (i = 0; i < 4; i++)
-                    if (bounds.LineIntersection(points[i], points[(i + 1) & 3]))
-                        return true;
-            for (i = 0; i < 4; i++)
-                if (bounds.LineIntersection(points[4 + i], points[4 + ((i + 1) & 3)]))
-                    return true;
+            for (i = 0; i < 4; i++) if (bounds.LineIntersection(points[i], points[4 + i])) return true;
+            if (dNear > 0f) for (i = 0; i < 4; i++) if (bounds.LineIntersection(points[i], points[(i + 1) & 3])) return true;
+            for (i = 0; i < 4; i++) if (bounds.LineIntersection(points[4 + i], points[4 + ((i + 1) & 3)])) return true;
             return false;
         }
     }

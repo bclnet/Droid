@@ -7,10 +7,10 @@ using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Render
 {
-    partial class TRX
+    partial class TR
     {
-        public static readonly FrameData frameData = new();
-        public static readonly BackEndState backEnd = new();
+        //public static readonly FrameData frameData = new();
+        //public static readonly BackEndState backEnd = new();
 
         const int NUM_FRAME_DATA = 2;
         static FrameData[] smpFrameData = new FrameData[NUM_FRAME_DATA];

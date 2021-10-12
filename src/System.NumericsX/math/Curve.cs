@@ -105,8 +105,7 @@ namespace System.NumericsX
 		{
 			var length = 0f;
 			var index = IndexForTime(time);
-			for (var i = 0; i < index; i++)
-				length += RombergIntegral(times[i], times[i + 1], 5);
+			for (var i = 0; i < index; i++) length += RombergIntegral(times[i], times[i + 1], 5);
 			length += RombergIntegral(times[index], time, 5);
 			return length;
 		}
@@ -116,39 +115,28 @@ namespace System.NumericsX
 		{
 			if (length <= 0f) return times[0];
 
-			var accumLength = stackalloc float[values.Count + floatX.ALLOC16]; accumLength = (float*)_alloca16(accumLength);
+			var accumLength = stackalloc float[values.Count]; accumLength = (float*)_alloca16(accumLength);
 			var totalLength = 0f;
 			int index;
 			for (index = 0; index < values.Count - 1; index++)
 			{
 				totalLength += GetLengthBetweenKnots(index, index + 1);
 				accumLength[index] = totalLength;
-				if (length < accumLength[index])
-					break;
+				if (length < accumLength[index]) break;
 			}
 
-			if (index >= values.Count - 1)
-				return times[^1];
+			if (index >= values.Count - 1) return times[^1];
 
 			float len0, len1;
-			if (index == 0)
-			{
-				len0 = length;
-				len1 = accumLength[0];
-			}
-			else
-			{
-				len0 = length - accumLength[index - 1];
-				len1 = accumLength[index] - accumLength[index - 1];
-			}
+			if (index == 0) { len0 = length; len1 = accumLength[0]; }
+			else { len0 = length - accumLength[index - 1]; len1 = accumLength[index] - accumLength[index - 1]; }
 
 			// invert the arc length integral using Newton's method
 			var t = (times[index + 1] - times[index]) * len0 / len1;
 			for (var i = 0; i < 32; i++)
 			{
 				var diff = RombergIntegral(times[index], times[index] + t, 5) - len0;
-				if (MathX.Fabs(diff) <= epsilon)
-					return times[index] + t;
+				if (MathX.Fabs(diff) <= epsilon) return times[index] + t;
 				t -= diff / GetSpeed(times[index] + t);
 			}
 			return times[index] + t;
@@ -158,8 +146,7 @@ namespace System.NumericsX
 		public float GetLengthBetweenKnots(int i0, int i1)
 		{
 			var length = 0f;
-			for (var i = i0; i < i1; i++)
-				length += RombergIntegral(times[i], times[i + 1], 5);
+			for (var i = i0; i < i1; i++) length += RombergIntegral(times[i], times[i + 1], 5);
 			return length;
 		}
 
@@ -167,27 +154,18 @@ namespace System.NumericsX
 		public void MakeUniform(float totalTime)
 		{
 			var n = times.Count - 1;
-			for (var i = 0; i <= n; i++)
-				times[i] = i * totalTime / n;
+			for (var i = 0; i <= n; i++) times[i] = i * totalTime / n;
 			changed = true;
 		}
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe void SetConstantSpeed(float totalTime)
 		{
-			var length = stackalloc float[values.Count + floatX.ALLOC16]; length = (float*)_alloca16(length);
+			var length = stackalloc float[values.Count]; length = (float*)_alloca16(length);
 			var totalLength = 0f;
-			int i; for (i = 0; i < values.Count - 1; i++)
-			{
-				length[i] = GetLengthBetweenKnots(i, i + 1);
-				totalLength += length[i];
-			}
+			int i; for (i = 0; i < values.Count - 1; i++) { length[i] = GetLengthBetweenKnots(i, i + 1); totalLength += length[i]; }
 			var scale = totalTime / totalLength;
-			float t; for (t = 0f, i = 0; i < times.Count - 1; i++)
-			{
-				times[i] = t;
-				t += scale * length[i];
-			}
+			float t; for (t = 0f, i = 0; i < times.Count - 1; i++) { times[i] = t; t += scale * length[i]; }
 			times[^1] = totalTime;
 			changed = true;
 		}
@@ -195,16 +173,14 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void ShiftTime(float deltaTime)
 		{
-			for (var i = 0; i < times.Count; i++)
-				times[i] += deltaTime;
+			for (var i = 0; i < times.Count; i++) times[i] += deltaTime;
 			changed = true;
 		}
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void Translate(in Vector4 translation)
 		{
-			for (var i = 0; i < values.Count; i++)
-				values[i] += translation;
+			for (var i = 0; i < values.Count; i++) values[i] += translation;
 			changed = true;
 		}
 
@@ -274,16 +250,15 @@ namespace System.NumericsX
 		{
 			var value = GetCurrentFirstDerivative(time);
 			float speed; int i;
-			for (speed = 0f, i = 0; i < Vector4.Dimension; i++)
-				speed += value[i] * value[i];
+			for (speed = 0f, i = 0; i < Vector4.Dimension; i++) speed += value[i] * value[i];
 			return MathX.Sqrt(speed);
 		}
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		protected unsafe float RombergIntegral(float t0, float t1, int order)
 		{
-			var temp0 = stackalloc float[order + floatX.ALLOC16]; temp0 = (float*)_alloca16(temp0);
-			var temp1 = stackalloc float[order + floatX.ALLOC16]; temp1 = (float*)_alloca16(temp1);
+			var temp0 = stackalloc float[order]; temp0 = (float*)_alloca16(temp0);
+			var temp1 = stackalloc float[order]; temp1 = (float*)_alloca16(temp1);
 
 			var delta = t1 - t0;
 			temp0[0] = 0.5f * delta * (GetSpeed(t0) + GetSpeed(t1));
@@ -293,16 +268,13 @@ namespace System.NumericsX
 			{
 				// approximate using the trapezoid rule
 				var sum = 0f;
-				for (j = 1; j <= m; j++)
-					sum += GetSpeed(t0 + delta * (j - 0.5f));
+				for (j = 1; j <= m; j++) sum += GetSpeed(t0 + delta * (j - 0.5f));
 
 				// Richardson extrapolation
 				temp1[0] = 0.5f * (temp0[0] + delta * sum);
-				for (k = 1, n = 4; k < i; k++, n *= 4)
-					temp1[k] = (n * temp1[k - 1] - temp0[k - 1]) / (n - 1);
+				for (k = 1, n = 4; k < i; k++, n *= 4) temp1[k] = (n * temp1[k - 1] - temp0[k - 1]) / (n - 1);
 
-				for (j = 0; j < i; j++)
-					temp0[j] = temp1[j];
+				for (j = 0; j < i; j++) temp0[j] = temp1[j];
 			}
 			return temp0[order - 1];
 		}
@@ -323,12 +295,11 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override Vector4 GetCurrentValue(float time)
 		{
-			var bvals = stackalloc float[values.Count + floatX.ALLOC16]; bvals = (float*)_alloca16(bvals);
+			var bvals = stackalloc float[values.Count]; bvals = (float*)_alloca16(bvals);
 
 			Basis(values.Count, time, bvals);
 			var v = bvals[0] * values[0];
-			for (var i = 1; i < values.Count; i++)
-				v += bvals[i] * values[i];
+			for (var i = 1; i < values.Count; i++) v += bvals[i] * values[i];
 			return v;
 		}
 
@@ -340,12 +311,11 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override Vector4 GetCurrentFirstDerivative(float time)
 		{
-			var bvals = stackalloc float[values.Count + floatX.ALLOC16]; bvals = (float*)_alloca16(bvals);
+			var bvals = stackalloc float[values.Count]; bvals = (float*)_alloca16(bvals);
 
 			BasisFirstDerivative(values.Count, time, bvals);
 			var v = bvals[0] * values[0];
-			for (var i = 1; i < values.Count; i++)
-				v += bvals[i] * values[i];
+			for (var i = 1; i < values.Count; i++) v += bvals[i] * values[i];
 			var d = (times[^1] - times[0]);
 			return (float)(values.Count - 1) / d * v;
 		}
@@ -357,12 +327,11 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public unsafe override Vector4 GetCurrentSecondDerivative(float time)
 		{
-			var bvals = stackalloc float[values.Count + floatX.ALLOC16]; bvals = (float*)_alloca16(bvals);
+			var bvals = stackalloc float[values.Count]; bvals = (float*)_alloca16(bvals);
 
 			BasisSecondDerivative(values.Count, time, bvals);
 			var v = bvals[0] * values[0];
-			for (var i = 1; i < values.Count; i++)
-				v += bvals[i] * values[i];
+			for (var i = 1; i < values.Count; i++) v += bvals[i] * values[i];
 			var d = (times[^1] - times[0]);
 			return (float)(values.Count - 2) * (values.Count - 1) / (d * d) * v;
 		}
@@ -375,10 +344,9 @@ namespace System.NumericsX
 		{
 			bvals[0] = 1f;
 			var d = order - 1;
-			if (d <= 0)
-				return;
+			if (d <= 0) return;
 
-			var c = stackalloc float[d + 1 + floatX.ALLOC16]; c = (float*)_alloca16(c);
+			var c = stackalloc float[d + 1]; c = (float*)_alloca16(c);
 			var s = (float)(t - times[0]) / (times[^1] - times[0]);
 			var o = 1f - s;
 			var ps = s;
@@ -407,8 +375,7 @@ namespace System.NumericsX
 		{
 			Basis(order - 1, t, bvals + 1);
 			bvals[0] = 0f;
-			for (var i = 0; i < order - 1; i++)
-				bvals[i] -= bvals[i + 1];
+			for (var i = 0; i < order - 1; i++) bvals[i] -= bvals[i + 1];
 		}
 
 		/// <summary>
@@ -419,8 +386,7 @@ namespace System.NumericsX
 		{
 			BasisFirstDerivative(order - 1, t, bvals + 1);
 			bvals[0] = 0f;
-			for (var i = 0; i < order - 1; i++)
-				bvals[i] -= bvals[i + 1];
+			for (var i = 0; i < order - 1; i++) bvals[i] -= bvals[i + 1];
 		}
 	}
 
@@ -777,19 +743,15 @@ namespace System.NumericsX
 		{
 			int i; float inv;
 
-			var d0 = stackalloc float[values.Count - 1 + floatX.ALLOC16]; d0 = (float*)_alloca16(d0);
-			var d1 = stackalloc float[values.Count - 1 + floatX.ALLOC16]; d1 = (float*)_alloca16(d1);
-			var alpha = stackalloc Vector4[values.Count - 1 + Vector4.ALLOC16]; alpha = (Vector4*)_alloca16(alpha);
-			var beta = stackalloc float[values.Count + floatX.ALLOC16]; beta = (float*)_alloca16(beta);
-			var gamma = stackalloc float[values.Count - 1 + floatX.ALLOC16]; gamma = (float*)_alloca16(gamma);
-			var delta = stackalloc Vector4[values.Count + Vector4.ALLOC16]; delta = (Vector4*)_alloca16(delta);
+			var d0 = stackalloc float[values.Count - 1]; d0 = (float*)_alloca16(d0);
+			var d1 = stackalloc float[values.Count - 1]; d1 = (float*)_alloca16(d1);
+			var alpha = stackalloc Vector4[values.Count - 1]; alpha = (Vector4*)_alloca16(alpha);
+			var beta = stackalloc float[values.Count]; beta = (float*)_alloca16(beta);
+			var gamma = stackalloc float[values.Count - 1]; gamma = (float*)_alloca16(gamma);
+			var delta = stackalloc Vector4[values.Count]; delta = (Vector4*)_alloca16(delta);
 
-			for (i = 0; i < values.Count - 1; i++)
-				d0[i] = times[i + 1] - times[i];
-
-			for (i = 1; i < values.Count - 1; i++)
-				d1[i] = times[i + 1] - times[i - 1];
-
+			for (i = 0; i < values.Count - 1; i++) d0[i] = times[i + 1] - times[i];
+			for (i = 1; i < values.Count - 1; i++) d1[i] = times[i + 1] - times[i - 1];
 			for (i = 1; i < values.Count - 1; i++)
 			{
 				Vector4 sum = 3f * (d0[i - 1] * values[i + 1] - d1[i] * values[i] + d0[i] * values[i - 1]);
@@ -831,18 +793,15 @@ namespace System.NumericsX
 		{
 			int i; float inv;
 
-			var d0 = stackalloc float[values.Count - 1 + floatX.ALLOC16]; d0 = (float*)_alloca16(d0);
-			var d1 = stackalloc float[values.Count - 1 + floatX.ALLOC16]; d1 = (float*)_alloca16(d1);
-			var alpha = stackalloc Vector4[values.Count - 1 + Vector4.ALLOC16]; alpha = (Vector4*)_alloca16(alpha);
-			var beta = stackalloc float[values.Count + floatX.ALLOC16]; beta = (float*)_alloca16(beta);
-			var gamma = stackalloc float[values.Count - 1 + floatX.ALLOC16]; gamma = (float*)_alloca16(gamma);
-			var delta = stackalloc Vector4[values.Count + Vector4.ALLOC16]; delta = (Vector4*)_alloca16(delta);
+			var d0 = stackalloc float[values.Count - 1]; d0 = (float*)_alloca16(d0);
+			var d1 = stackalloc float[values.Count - 1]; d1 = (float*)_alloca16(d1);
+			var alpha = stackalloc Vector4[values.Count - 1]; alpha = (Vector4*)_alloca16(alpha);
+			var beta = stackalloc float[values.Count]; beta = (float*)_alloca16(beta);
+			var gamma = stackalloc float[values.Count - 1]; gamma = (float*)_alloca16(gamma);
+			var delta = stackalloc Vector4[values.Count]; delta = (Vector4*)_alloca16(delta);
 
-			for (i = 0; i < values.Count - 1; i++)
-				d0[i] = times[i + 1] - times[i];
-
-			for (i = 1; i < values.Count - 1; i++)
-				d1[i] = times[i + 1] - times[i - 1];
+			for (i = 0; i < values.Count - 1; i++) d0[i] = times[i + 1] - times[i];
+			for (i = 1; i < values.Count - 1; i++) d1[i] = times[i + 1] - times[i - 1];
 
 			inv = 1f / d0[0];
 			alpha[0] = 3f * (inv - 1f) * (values[1] - values[0]);
@@ -893,7 +852,7 @@ namespace System.NumericsX
 		{
 			int i, j; float c0, c1; MatrixX mat = new(); VectorX x = new();
 
-			var d0 = stackalloc float[values.Count - 1 + floatX.ALLOC16]; d0 = (float*)_alloca16(d0);
+			var d0 = stackalloc float[values.Count - 1]; d0 = (float*)_alloca16(d0);
 			x.SetData(values.Count, VectorX.VECX_ALLOCA(values.Count));
 			mat.SetData(values.Count, values.Count, MatrixX.MATX_ALLOCA(values.Count * values.Count));
 
@@ -901,8 +860,7 @@ namespace System.NumericsX
 			c.AssureSize(values.Count);
 			d.AssureSize(values.Count);
 
-			for (i = 0; i < values.Count - 1; i++)
-				d0[i] = times[i + 1] - times[i];
+			for (i = 0; i < values.Count - 1; i++) d0[i] = times[i + 1] - times[i];
 
 			// matrix of system
 			mat[0][0] = 1f;
@@ -933,11 +891,9 @@ namespace System.NumericsX
 			mat.LU_Factor(null);
 			for (i = 0; i < Vector4.Dimension; i++)
 			{
-				for (j = 0; j < values.Count; j++)
-					x[j] = c[j][i];
+				for (j = 0; j < values.Count; j++) x[j] = c[j][i];
 				mat.LU_Solve(ref x, x, null);
-				for (j = 0; j < values.Count; j++)
-					c.Ptr()[j][i] = x[j];
+				for (j = 0; j < values.Count; j++) c.Ptr()[j][i] = x[j];
 			}
 
 			for (i = 0; i < values.Count - 1; i++)
@@ -1375,12 +1331,10 @@ namespace System.NumericsX
 
 			var sum = 0f;
 			var d1 = TimeForIndex(index + order - 1) - TimeForIndex(index);
-			if (d1 != 0f)
-				sum += (float)(t - TimeForIndex(index)) * Basis(index, order - 1, t) / d1;
+			if (d1 != 0f) sum += (float)(t - TimeForIndex(index)) * Basis(index, order - 1, t) / d1;
 
 			var d2 = TimeForIndex(index + order) - TimeForIndex(index + 1);
-			if (d2 != 0f)
-				sum += (float)(TimeForIndex(index + order) - t) * Basis(index + 1, order - 1, t) / d2;
+			if (d2 != 0f) sum += (float)(TimeForIndex(index + order) - t) * Basis(index + 1, order - 1, t) / d2;
 			return sum;
 		}
 
@@ -1549,7 +1503,7 @@ namespace System.NumericsX
 		{
 			if (times.Count == 1) return values[0];
 
-			var bvals = stackalloc float[order + floatX.ALLOC16]; bvals = (float*)_alloca16(bvals);
+			var bvals = stackalloc float[order]; bvals = (float*)_alloca16(bvals);
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
 			Basis(i - 1, order, clampedTime, bvals);
@@ -1571,7 +1525,7 @@ namespace System.NumericsX
 		{
 			if (times.Count == 1) return values[0] - values[0];
 
-			var bvals = stackalloc float[order + floatX.ALLOC16]; bvals = (float*)_alloca16(bvals);
+			var bvals = stackalloc float[order]; bvals = (float*)_alloca16(bvals);
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
 			BasisFirstDerivative(i - 1, order, clampedTime, bvals);
@@ -1593,7 +1547,7 @@ namespace System.NumericsX
 		{
 			if (times.Count == 1) return values[0] - values[0];
 
-			var bvals = stackalloc float[order + floatX.ALLOC16]; bvals = (float*)_alloca16(bvals);
+			var bvals = stackalloc float[order]; bvals = (float*)_alloca16(bvals);
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
 			BasisSecondDerivative(i - 1, order, clampedTime, bvals);
@@ -1729,7 +1683,7 @@ namespace System.NumericsX
 		{
 			if (times.Count == 1) return values[0];
 
-			var bvals = stackalloc float[order + floatX.ALLOC16]; bvals = (float*)_alloca16(bvals);
+			var bvals = stackalloc float[order]; bvals = (float*)_alloca16(bvals);
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
 			Basis(i - 1, order, clampedTime, bvals);
@@ -1755,8 +1709,8 @@ namespace System.NumericsX
 		{
 			if (times.Count == 1) return values[0];
 
-			var bvals = stackalloc float[order + floatX.ALLOC16]; bvals = (float*)_alloca16(bvals);
-			var d1vals = stackalloc float[order + floatX.ALLOC16]; d1vals = (float*)_alloca16(d1vals);
+			var bvals = stackalloc float[order]; bvals = (float*)_alloca16(bvals);
+			var d1vals = stackalloc float[order]; d1vals = (float*)_alloca16(d1vals);
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
 			Basis(i - 1, order, clampedTime, bvals);
@@ -1788,9 +1742,9 @@ namespace System.NumericsX
 		{
 			if (times.Count == 1) return values[0];
 
-			var bvals = stackalloc float[order + floatX.ALLOC16]; bvals = (float*)_alloca16(bvals);
-			var d1vals = stackalloc float[order + floatX.ALLOC16]; d1vals = (float*)_alloca16(d1vals);
-			var d2vals = stackalloc float[order + floatX.ALLOC16]; d2vals = (float*)_alloca16(d2vals);
+			var bvals = stackalloc float[order]; bvals = (float*)_alloca16(bvals);
+			var d1vals = stackalloc float[order]; d1vals = (float*)_alloca16(d1vals);
+			var d2vals = stackalloc float[order]; d2vals = (float*)_alloca16(d2vals);
 			var clampedTime = ClampedTime(time);
 			var i = IndexForTime(clampedTime);
 			Basis(i - 1, order, clampedTime, bvals);

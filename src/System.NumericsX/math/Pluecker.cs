@@ -15,8 +15,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe Pluecker(float[] a)
         {
-            fixed (float* p = this.p, a_ = a)
-                Unsafe.CopyBlock(p, a_, 6U * sizeof(float));
+            fixed (float* p = this.p, a_ = a) Unsafe.CopyBlock(p, a_, 6U * sizeof(float));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Pluecker(in Vector3 start, in Vector3 end)
@@ -131,11 +130,9 @@ namespace System.NumericsX
             p[0] = -(p1.c * -p2.d - p2.c * -p1.d);
             p[1] = -(p2.b * -p1.d - p1.b * -p2.d);
             p[2] = p1.b * p2.c - p2.b * p1.c;
-
             p[3] = -(p1.a * -p2.d - p2.a * -p1.d);
             p[4] = p1.a * p2.b - p2.a * p1.b;
             p[5] = p1.a * p2.c - p2.a * p1.c;
-
             return p[2] != 0f || p[5] != 0f || p[4] != 0f;
         }
 
@@ -153,11 +150,8 @@ namespace System.NumericsX
             dir2.z = -p[4];
 
             d = dir2 * dir2;
-            if (d == 0f)
-            {
-                start = end = default;
-                return false; // pluecker coordinate does not represent a line
-            }
+            // pluecker coordinate does not represent a line
+            if (d == 0f) { start = end = default; return false; }
 
             start = dir2.Cross(dir1) * (1f / d);
             end = start + dir2;
@@ -178,11 +172,8 @@ namespace System.NumericsX
             dir.z = -p[4];
 
             d = dir * dir;
-            if (d == 0f)
-            {
-                start = default;
-                return false; // pluecker coordinate does not represent a line
-            }
+            // pluecker coordinate does not represent a line
+            if (d == 0f) { start = default; return false; }
 
             start = dir.Cross(dir1) * (1f / d);
             return true;
@@ -212,8 +203,7 @@ namespace System.NumericsX
             dir.x = -a.p[5] * p[4] - a.p[4] * -p[5];
             dir.y = a.p[4] * p[2] - a.p[2] * p[4];
             dir.z = a.p[2] * -p[5] - -a.p[5] * p[2];
-            if (dir.x == 0f && dir.y == 0f && dir.z == 0f)
-                return -1f;   // FIXME: implement for parallel lines
+            if (dir.x == 0f && dir.y == 0f && dir.z == 0f) return -1f;   // FIXME: implement for parallel lines
             d = a.p[4] * (p[2] * dir.y - -p[5] * dir.x) +
                 a.p[5] * (p[2] * dir.z - p[4] * dir.x) +
                 a.p[2] * (-p[5] * dir.z - p[4] * dir.y);
@@ -237,8 +227,7 @@ namespace System.NumericsX
         public Pluecker Normalize()                                    // pluecker normalize
         {
             var d = LengthSqr;
-            if (d == 0f)
-                return this; // pluecker coordinate does not represent a line
+            if (d == 0f) return this; // pluecker coordinate does not represent a line
             d = MathX.InvSqrt(d);
             return new(p[0] * d, p[1] * d, p[2] * d, p[3] * d, p[4] * d, p[5] * d);
         }
@@ -263,14 +252,12 @@ namespace System.NumericsX
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         //{
-        //    fixed (float* _ = this.p)
-        //        return callback(_);
+        //    fixed (float* _ = this.p) return callback(_);
         //}
 
         public unsafe string ToString(int precision = 2)
         {
-            fixed (float* _ = p)
-                return FloatArrayToString(_, Dimension, precision);
+            fixed (float* _ = p) return FloatArrayToString(_, Dimension, precision);
         }
     }
 }

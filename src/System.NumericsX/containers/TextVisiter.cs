@@ -114,8 +114,7 @@ namespace System.NumericsX
         /// <param name="chars">Array of characters to move past</param>
         public void MovePast(char[] chars)
         {
-            while (IsInArray(Peek(), chars))
-                MoveAhead();
+            while (IsInArray(Peek(), chars)) MoveAhead();
         }
 
         /// <summary>
@@ -127,9 +126,7 @@ namespace System.NumericsX
         /// <returns></returns>
         protected static bool IsInArray(char c, char[] chars)
         {
-            foreach (var ch in chars)
-                if (c == ch)
-                    return true;
+            foreach (var ch in chars) if (c == ch) return true;
             return false;
         }
 
@@ -139,11 +136,7 @@ namespace System.NumericsX
         public void MoveToEndOfLine()
         {
             var c = Peek();
-            while (c != '\r' && c != '\n' && !EndOfText)
-            {
-                MoveAhead();
-                c = Peek();
-            }
+            while (c != '\r' && c != '\n' && !EndOfText) { MoveAhead(); c = Peek(); }
         }
 
         /// <summary>
@@ -151,8 +144,7 @@ namespace System.NumericsX
         /// </summary>
         public void MovePastWhitespace()
         {
-            while (char.IsWhiteSpace(Peek()))
-                MoveAhead();
+            while (char.IsWhiteSpace(Peek())) MoveAhead();
         }
     }
 }

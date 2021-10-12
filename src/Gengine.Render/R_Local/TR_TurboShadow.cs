@@ -3,7 +3,7 @@ using GlIndex = System.Int32;
 
 namespace Gengine.Render
 {
-    partial class TRX
+    partial class TR
     {
         static int c_turboUsedVerts, c_turboUnusedVerts;
 

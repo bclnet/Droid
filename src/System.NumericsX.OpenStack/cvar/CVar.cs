@@ -53,15 +53,14 @@ namespace System.NumericsX.OpenStack
         // Always use one of the following constructors.
         public CVar(string name, string value, CVAR flags, string description, ArgCompletion valueCompletion = null)
         {
-            if (valueCompletion == null && (flags & CVAR.BOOL) != 0)
-                valueCompletion = CmdArgs.ArgCompletion_Boolean;
+            if (valueCompletion == null && (flags & CVAR.BOOL) != 0) valueCompletion = CmdArgs.ArgCompletion_Boolean;
             Init(name, value, flags, description, 1, -1, null, valueCompletion);
         }
         public CVar(string name, string value, CVAR flags, string description, float valueMin, float valueMax, ArgCompletion valueCompletion = null)
             => Init(name, value, flags, description, valueMin, valueMax, null, valueCompletion);
         public CVar(string name, string value, CVAR flags, string description, string[] valueStrings, ArgCompletion valueCompletion = null)
             => Init(name, value, flags, description, 1, -1, valueStrings, valueCompletion);
-        void Init (string name, string value, CVAR flags, string description, float valueMin, float valueMax, string[] valueStrings, ArgCompletion valueCompletion)
+        void Init(string name, string value, CVAR flags, string description, float valueMin, float valueMax, string[] valueStrings, ArgCompletion valueCompletion)
         {
             this.name = name;
             this.value = value;
@@ -74,13 +73,8 @@ namespace System.NumericsX.OpenStack
             this.integerValue = 0;
             this.floatValue = 0.0f;
             this.internalVar = this;
-            if (staticVars != Empty)
-            {
-                this.next = staticVars;
-                staticVars = this;
-            }
-            else
-                cvarSystem.Register(this);
+            if (staticVars != Empty) { this.next = staticVars; staticVars = this; }
+            else cvarSystem.Register(this);
         }
 
         public string Name => internalVar.name;
@@ -129,8 +123,7 @@ namespace System.NumericsX.OpenStack
         {
             if (staticVars != Empty)
             {
-                for (var cvar = staticVars; cvar != null; cvar = cvar.next)
-                    cvarSystem.Register(cvar);
+                for (var cvar = staticVars; cvar != null; cvar = cvar.next) cvarSystem.Register(cvar);
                 staticVars = Empty;
             }
         }
@@ -189,12 +182,9 @@ namespace System.NumericsX.OpenStack
                 if ((flags & CVAR.STATIC) != 0)
                 {
                     // the code has more than one static declaration of the same variable, make sure they have the same properties
-                    if (!string.Equals(resetString, cvar.String, StringComparison.OrdinalIgnoreCase))
-                        Warning($"CVar '{nameString}' declared multiple times with different initial value");
-                    if ((flags & (CVAR.BOOL | CVAR.INTEGER | CVAR.FLOAT)) != (cvar.Flags & (CVAR.BOOL | CVAR.INTEGER | CVAR.FLOAT)))
-                        Warning($"CVar '{nameString}' declared multiple times with different type");
-                    if (valueMin != cvar.MinValue || valueMax != cvar.MaxValue)
-                        Warning($"CVar '{nameString}' declared multiple times with different minimum/maximum");
+                    if (!string.Equals(resetString, cvar.String, StringComparison.OrdinalIgnoreCase)) Warning($"CVar '{nameString}' declared multiple times with different initial value");
+                    if ((flags & (CVAR.BOOL | CVAR.INTEGER | CVAR.FLOAT)) != (cvar.Flags & (CVAR.BOOL | CVAR.INTEGER | CVAR.FLOAT))) Warning($"CVar '{nameString}' declared multiple times with different type");
+                    if (valueMin != cvar.MinValue || valueMax != cvar.MaxValue) Warning($"CVar '{nameString}' declared multiple times with different minimum/maximum");
                 }
 
                 // the code is now specifying a variable that the user already set a value for, take the new value as the reset value
@@ -214,10 +204,8 @@ namespace System.NumericsX.OpenStack
             UpdateCheat();
 
             // only allow one non-empty reset string without a warning
-            if (resetString.Length == 0)
-                resetString = cvar.String;
-            else if (cvar.String.Length != 0 && resetString != cvar.String)
-                Warning($"cvar \"{nameString}\" given initial values: \"{resetString}\" and \"{cvar.String}\"\n");
+            if (resetString.Length == 0) resetString = cvar.String;
+            else if (cvar.String.Length != 0 && resetString != cvar.String) Warning($"cvar \"{nameString}\" given initial values: \"{resetString}\" and \"{cvar.String}\"\n");
         }
 
         public void UpdateValue()
@@ -228,8 +216,7 @@ namespace System.NumericsX.OpenStack
             {
                 integerValue = (int.TryParse(value, out var z) ? z : 0) != 0 ? 1 : 0;
                 floatValue = integerValue;
-                if (value != "0" && value != "1")
-                    value = valueString = integerValue != 0 ? "true" : "false";
+                if (value != "0" && value != "1") value = valueString = integerValue != 0 ? "true" : "false";
             }
             else if ((flags & CVAR.INTEGER) != 0)
             {
@@ -239,8 +226,7 @@ namespace System.NumericsX.OpenStack
                     if (integerValue < valueMin) { integerValue = (int)valueMin; clamped = true; }
                     else if (integerValue > valueMax) { integerValue = (int)valueMax; clamped = true; }
                 }
-                if (clamped || !value.All(char.IsNumber) || value.IndexOf('.') != 0)
-                    value = valueString = integerValue.ToString();
+                if (clamped || !value.All(char.IsNumber) || value.IndexOf('.') != 0) value = valueString = integerValue.ToString();
                 floatValue = integerValue;
             }
             else if ((flags & CVAR.FLOAT) != 0)
@@ -251,8 +237,7 @@ namespace System.NumericsX.OpenStack
                     if (floatValue < valueMin) { floatValue = valueMin; clamped = true; }
                     else if (floatValue > valueMax) { floatValue = valueMax; clamped = true; }
                 }
-                if (clamped || !value.All(char.IsNumber))
-                    value = valueString = floatValue.ToString();
+                if (clamped || !value.All(char.IsNumber)) value = valueString = floatValue.ToString();
                 integerValue = (int)floatValue;
             }
             else
@@ -260,19 +245,12 @@ namespace System.NumericsX.OpenStack
                 if (valueStrings != null && valueStrings.Length > 0)
                 {
                     integerValue = 0;
-                    for (var i = 0; valueStrings.Length < i; i++)
-                        if (string.Equals(valueString, valueStrings[i], StringComparison.OrdinalIgnoreCase))
-                        {
-                            integerValue = i;
-                            break;
-                        }
+                    for (var i = 0; valueStrings.Length < i; i++) if (string.Equals(valueString, valueStrings[i], StringComparison.OrdinalIgnoreCase)) { integerValue = i; break; }
                     value = valueString = valueStrings[integerValue];
                     floatValue = integerValue;
                 }
-                else if (valueString.Length < 32)
-                    integerValue = (int)(floatValue = float.TryParse(value, out var z) ? z : 0f);
-                else
-                    integerValue = (int)(floatValue = 0.0f);
+                else if (valueString.Length < 32) integerValue = (int)(floatValue = float.TryParse(value, out var z) ? z : 0f);
+                else integerValue = (int)(floatValue = 0.0f);
             }
         }
 
@@ -309,26 +287,15 @@ namespace System.NumericsX.OpenStack
                 }
             }
 
-            if (newValue == null)
-                newValue = resetString;
+            if (newValue == null) newValue = resetString;
 
             if (!force)
             {
-                if ((flags & CVAR.ROM) != 0)
-                {
-                    Printf($"{nameString} is read only.\n");
-                    return;
-                }
-
-                if ((flags & CVAR.INIT) != 0)
-                {
-                    Printf($"{nameString} is write protected.\n");
-                    return;
-                }
+                if ((flags & CVAR.ROM) != 0) { Printf($"{nameString} is read only.\n"); return; }
+                if ((flags & CVAR.INIT) != 0) { Printf($"{nameString} is write protected.\n"); return; }
             }
 
-            if (string.Equals(valueString, newValue, StringComparison.OrdinalIgnoreCase))
-                return;
+            if (string.Equals(valueString, newValue, StringComparison.OrdinalIgnoreCase)) return;
 
             valueString = newValue;
             value = valueString;

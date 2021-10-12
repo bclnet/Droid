@@ -78,12 +78,7 @@ namespace System.NumericsX.OpenStack
         public int WriteBit
         {
             get => writeBit; // get current write bit
-            set // set current write bit
-            {
-                writeBit = value & 7;
-                if (writeBit != 0)
-                    writeData[curSize - 1] &= (byte)((1 << writeBit) - 1);
-            }
+            set { writeBit = value & 7; if (writeBit != 0) writeData[curSize - 1] &= (byte)((1 << writeBit) - 1); } // set current write bit
         }
 
         public int NumBitsWritten => ((curSize << 3) - ((8 - writeBit) & 7)); // returns number of bits written
@@ -100,8 +95,7 @@ namespace System.NumericsX.OpenStack
         {
             curSize = s;
             writeBit = b & 7;
-            if (writeBit != 0)
-                writeData[curSize - 1] &= (byte)((1 << writeBit) - 1);
+            if (writeBit != 0) writeData[curSize - 1] &= (byte)((1 << writeBit) - 1);
         }
 
         public int ReadCount
@@ -149,12 +143,10 @@ namespace System.NumericsX.OpenStack
         /// <param name="numBits">The number bits.</param>
         public void WriteBits(int value, int numBits) // write the specified number of bits
         {
-            if (writeData == null)
-                Error("BitMsg::WriteBits: cannot write to message");
+            if (writeData == null) Error("BitMsg::WriteBits: cannot write to message");
 
             // check if the number of bits is valid
-            if (numBits == 0 || numBits < -31 || numBits > 32)
-                Error($"BitMsg::WriteBits: bad numBits {numBits}");
+            if (numBits == 0 || numBits < -31 || numBits > 32) Error($"BitMsg::WriteBits: bad numBits {numBits}");
 
             // check for value overflows
             // this should be an error really, as it can go unnoticed and cause either bandwidth or corrupted data transmitted
@@ -173,26 +165,19 @@ namespace System.NumericsX.OpenStack
                 }
             }
 
-            if (numBits < 0)
-                numBits = -numBits;
+            if (numBits < 0) numBits = -numBits;
 
             // check for msg overflow
-            if (CheckOverflow(numBits))
-                return;
+            if (CheckOverflow(numBits)) return;
 
             // write the bits
             int put;
             int fraction;
             while (numBits != 0)
             {
-                if (writeBit == 0)
-                {
-                    writeData[curSize] = 0;
-                    curSize++;
-                }
+                if (writeBit == 0) { writeData[curSize] = 0; curSize++; }
                 put = 8 - writeBit;
-                if (put > numBits)
-                    put = numBits;
+                if (put > numBits) put = numBits;
                 fraction = value & ((1 << put) - 1);
                 writeData[curSize - 1] |= (byte)(fraction << writeBit);
                 numBits -= put;
@@ -216,24 +201,16 @@ namespace System.NumericsX.OpenStack
         public void WriteDir(Vector3 dir, int numBits) => WriteBits(DirToBits(dir, numBits), numBits);
         public void WriteString(string s, int maxLength = -1, bool make7Bit = true)
         {
-            if (s == null)
-                WriteData(EmptyByte, 0, 1);
+            if (s == null) WriteData(EmptyByte, 0, 1);
             else
             {
                 var l = s.Length;
-                if (maxLength >= 0 && l >= maxLength)
-                    l = maxLength - 1;
+                if (maxLength >= 0 && l >= maxLength) l = maxLength - 1;
                 var dataPtr = GetByteSpace(l + 1);
                 var bytePtr = s;
                 int i;
-                if (make7Bit)
-                    for (i = 0; i < l; i++)
-                        dataPtr[i] = bytePtr[i] > 127
-                            ? (byte)'.'
-                            : (byte)bytePtr[i];
-                else
-                    for (i = 0; i < l; i++)
-                        dataPtr[i] = (byte)bytePtr[i];
+                if (make7Bit) for (i = 0; i < l; i++) dataPtr[i] = bytePtr[i] > 127 ? (byte)'.' : (byte)bytePtr[i];
+                else for (i = 0; i < l; i++) dataPtr[i] = (byte)bytePtr[i];
                 dataPtr[i] = 0;
             }
         }
@@ -260,73 +237,39 @@ namespace System.NumericsX.OpenStack
         {
             int i;
             var x = oldValue ^ newValue;
-            for (i = 7; i > 0; i--)
-                if ((x & (1 << i)) != 0)
-                {
-                    i++;
-                    break;
-                }
+            for (i = 7; i > 0; i--) if ((x & (1 << i)) != 0) { i++; break; }
             WriteBits(i, 3);
-            if (i != 0)
-                WriteBits(((1 << i) - 1) & newValue, i);
+            if (i != 0) WriteBits(((1 << i) - 1) & newValue, i);
         }
         public void WriteDeltaShortCounter(int oldValue, int newValue)
         {
             int i;
             var x = oldValue ^ newValue;
-            for (i = 15; i > 0; i--)
-                if ((x & (1 << i)) != 0)
-                {
-                    i++;
-                    break;
-                }
+            for (i = 15; i > 0; i--) if ((x & (1 << i)) != 0) { i++; break; }
             WriteBits(i, 4);
-            if (i != 0)
-                WriteBits(((1 << i) - 1) & newValue, i);
+            if (i != 0) WriteBits(((1 << i) - 1) & newValue, i);
         }
         public void WriteDeltaIntCounter(int oldValue, int newValue)
         {
             int i;
             var x = oldValue ^ newValue;
-            for (i = 31; i > 0; i--)
-                if ((x & (1 << i)) != 0)
-                {
-                    i++;
-                    break;
-                }
+            for (i = 31; i > 0; i--) if ((x & (1 << i)) != 0) { i++; break; }
             WriteBits(i, 5);
-            if (i != 0)
-                WriteBits(((1 << i) - 1) & newValue, i);
+            if (i != 0) WriteBits(((1 << i) - 1) & newValue, i);
         }
         public bool WriteDeltaDict(Dictionary<string, string> dict, Dictionary<string, string> @base)
         {
             var changed = false;
             if (@base != null)
             {
-                foreach (var kv in dict)
-                    if (!@base.TryGetValue(kv.Key, out var basekvValue) || !string.Equals(basekvValue, kv.Value))
-                    {
-                        WriteString(kv.Key);
-                        WriteString(kv.Value);
-                        changed = true;
-                    }
+                foreach (var kv in dict) if (!@base.TryGetValue(kv.Key, out var basekvValue) || !string.Equals(basekvValue, kv.Value)) { WriteString(kv.Key); WriteString(kv.Value); changed = true; }
                 WriteString(string.Empty);
-                foreach (var basekv in @base)
-                    if (!dict.ContainsKey(basekv.Key))
-                    {
-                        WriteString(basekv.Key);
-                        changed = true;
-                    }
+                foreach (var basekv in @base) if (!dict.ContainsKey(basekv.Key)) { WriteString(basekv.Key); changed = true; }
                 WriteString(string.Empty);
             }
             else
             {
-                foreach (var kv in dict)
-                {
-                    WriteString(kv.Key);
-                    WriteString(kv.Value);
-                    changed = true;
-                }
+                foreach (var kv in dict) { WriteString(kv.Key); WriteString(kv.Value); changed = true; }
                 WriteString(string.Empty);
                 WriteString(string.Empty);
             }
@@ -347,20 +290,17 @@ namespace System.NumericsX.OpenStack
         /// <returns></returns>
         public int ReadBits(int numBits)            // read the specified number of bits
         {
-            if (readData == null)
-                FatalError("BitMsg::ReadBits: cannot read from message");
+            if (readData == null) FatalError("BitMsg::ReadBits: cannot read from message");
 
             // check if the number of bits is valid
-            if (numBits == 0 || numBits < -31 || numBits > 32)
-                FatalError($"BitMsg::ReadBits: bad numBits {numBits}");
+            if (numBits == 0 || numBits < -31 || numBits > 32) FatalError($"BitMsg::ReadBits: bad numBits {numBits}");
 
             bool sgn;
             if (numBits < 0) { numBits = -numBits; sgn = true; }
             else sgn = false;
 
             // check for overflow
-            if (numBits > RemainingReadBits)
-                return -1;
+            if (numBits > RemainingReadBits) return -1;
 
             var value = 0;
             var valueBits = 0;
@@ -368,11 +308,9 @@ namespace System.NumericsX.OpenStack
             int fraction;
             while (valueBits < numBits)
             {
-                if (readBit == 0)
-                    readCount++;
+                if (readBit == 0) readCount++;
                 get = 8 - readBit;
-                if (get > (numBits - valueBits))
-                    get = numBits - valueBits;
+                if (get > (numBits - valueBits)) get = numBits - valueBits;
                 fraction = readData[readCount - 1];
                 fraction >>= readBit;
                 fraction &= (1 << get) - 1;
@@ -382,9 +320,7 @@ namespace System.NumericsX.OpenStack
                 readBit = (readBit + get) & 7;
             }
 
-            if (sgn)
-                if ((value & (1 << (numBits - 1))) != 0)
-                    value |= -1 ^ ((1 << numBits) - 1);
+            if (sgn && (value & (1 << (numBits - 1))) != 0) value |= -1 ^ ((1 << numBits) - 1);
 
             return value;
         }
@@ -411,8 +347,7 @@ namespace System.NumericsX.OpenStack
             while (true)
             {
                 c = (byte)ReadByte();
-                if (c <= 0 || c >= 255)
-                    break;
+                if (c <= 0 || c >= 255) break;
                 // translate all fmt spec to avoid crash bugs in string routines
                 if (c == '%') c = (byte)'.';
                 // we will read past any excessively long string, so the following data can be read, but the string will be truncated
@@ -428,9 +363,8 @@ namespace System.NumericsX.OpenStack
             l = 0;
             while (true)
             {
-                c = (byte)ReadByte();
-                if (c <= 0 || c >= 255)
-                    break;
+                c = ReadByte();
+                if (c <= 0 || c >= 255) break;
                 // translate all fmt spec to avoid crash bugs in string routines
                 if (c == '%') c = (byte)'.';
                 // we will read past any excessively long string, so the following data can be read, but the string will be truncated
@@ -445,25 +379,21 @@ namespace System.NumericsX.OpenStack
             var cnt = readCount;
             if (readCount + length > curSize)
             {
-                if (data != null)
-                    Unsafe.CopyBlock(ref data[0], ref readData.AsSpan(readCount)[0], (uint)RemaingData);
+                if (data != null) Unsafe.CopyBlock(ref data[0], ref readData.AsSpan(readCount)[0], (uint)RemaingData);
                 readCount = curSize;
             }
             else
             {
-                if (data != null)
-                    Unsafe.CopyBlock(ref data[0], ref readData.AsSpan(readCount)[0], (uint)length);
+                if (data != null) Unsafe.CopyBlock(ref data[0], ref readData.AsSpan(readCount)[0], (uint)length);
                 readCount += length;
             }
             return readCount - cnt;
         }
         public void ReadNetadr(out Netadr adr)
         {
-            adr = new Netadr();
-            adr.type = NA.IP;
-            for (var i = 0; i < 4; i++)
-                adr.ip[i] = (byte)ReadByte();
-            adr.port = (ushort)ReadUShort();
+            adr = new Netadr { type = NA.IP };
+            for (var i = 0; i < 4; i++) adr.ip[i] = ReadByte();
+            adr.port = ReadUShort();
         }
 
         public char ReadDeltaChar(int oldValue) => (char)ReadDelta(oldValue, -8);
@@ -480,16 +410,14 @@ namespace System.NumericsX.OpenStack
         public int ReadDeltaByteCounter(int oldValue)
         {
             var i = ReadBits(3);
-            if (i == 0)
-                return oldValue;
+            if (i == 0) return oldValue;
             var newValue = ReadBits(i);
             return ((oldValue & ~((1 << i) - 1)) | newValue);
         }
         public int ReadDeltaShortCounter(int oldValue)
         {
             var i = ReadBits(4);
-            if (i == 0)
-                return oldValue;
+            if (i == 0) return oldValue;
             var newValue = ReadBits(i);
             return (oldValue & ~((1 << i) - 1)) | newValue;
 
@@ -497,8 +425,7 @@ namespace System.NumericsX.OpenStack
         public int ReadDeltaIntCounter(int oldValue)
         {
             var i = ReadBits(5);
-            if (i == 0)
-                return oldValue;
+            if (i == 0) return oldValue;
             var newValue = ReadBits(i);
             return (oldValue & ~((1 << i) - 1)) | newValue;
         }
@@ -511,19 +438,8 @@ namespace System.NumericsX.OpenStack
             if (@base != null) dict = @base;
             else dict.Clear();
 
-            while (ReadString(out var key, keybuf) != 0)
-            {
-                ReadString(out var value, valuebuf);
-                dict[key] = value;
-                changed = true;
-            }
-
-            while (ReadString(out var key, keybuf) != 0)
-            {
-                dict.Remove(key);
-                changed = true;
-            }
-
+            while (ReadString(out var key, keybuf) != 0) { ReadString(out var value, valuebuf); dict[key] = value; changed = true; }
+            while (ReadString(out var key, keybuf) != 0) { dict.Remove(key); changed = true; }
             return changed;
         }
 
@@ -568,10 +484,8 @@ namespace System.NumericsX.OpenStack
 
             if (numBits > RemainingWriteBits)
             {
-                if (!allowOverflow)
-                    FatalError("BitMsg: overflow without allowOverflow set");
-                if (numBits > (maxSize << 3))
-                    FatalError($"BitMsg: {numBits} bits is > full message size");
+                if (!allowOverflow) FatalError("BitMsg: overflow without allowOverflow set");
+                if (numBits > (maxSize << 3)) FatalError($"BitMsg: {numBits} bits is > full message size");
                 Printf("BitMsg: overflow\n");
                 BeginWriting();
                 overflowed = true;
@@ -582,8 +496,7 @@ namespace System.NumericsX.OpenStack
 
         Span<byte> GetByteSpace(int length)
         {
-            if (writeData == null)
-                FatalError("BitMsg::GetByteSpace: cannot write to message");
+            if (writeData == null) FatalError("BitMsg::GetByteSpace: cannot write to message");
 
             // round up to the next byte
             WriteByteAlign();
@@ -598,11 +511,7 @@ namespace System.NumericsX.OpenStack
 
         void WriteDelta(int oldValue, int newValue, int numBits)
         {
-            if (oldValue == newValue)
-            {
-                WriteBits(0, 1);
-                return;
-            }
+            if (oldValue == newValue) { WriteBits(0, 1); return; }
             WriteBits(1, 1);
             WriteBits(newValue, numBits);
         }
@@ -656,11 +565,7 @@ namespace System.NumericsX.OpenStack
         {
             newBase?.WriteBits(value, numBits);
 
-            if (base_ == null)
-            {
-                writeDelta.WriteBits(value, numBits);
-                changed = true;
-            }
+            if (base_ == null) { writeDelta.WriteBits(value, numBits); changed = true; }
             else
             {
                 var baseValue = base_.ReadBits(numBits);
@@ -686,11 +591,7 @@ namespace System.NumericsX.OpenStack
         {
             newBase?.WriteString(s, maxLength);
 
-            if (base_ == null)
-            {
-                writeDelta.WriteString(s, maxLength);
-                changed = true;
-            }
+            if (base_ == null) { writeDelta.WriteString(s, maxLength); changed = true; }
             else
             {
                 var baseString = new byte[MAX_DATA_BUFFER];
@@ -703,11 +604,7 @@ namespace System.NumericsX.OpenStack
         {
             newBase?.WriteData(data, offset, length);
 
-            if (base_ == null)
-            {
-                writeDelta.WriteData(data, offset, length);
-                changed = true;
-            }
+            if (base_ == null) { writeDelta.WriteData(data, offset, length); changed = true; }
             else
             {
                 var baseData = new byte[MAX_DATA_BUFFER];
@@ -722,11 +619,7 @@ namespace System.NumericsX.OpenStack
         {
             newBase?.WriteDeltaDict(dict, null);
 
-            if (base_ == null)
-            {
-                writeDelta.WriteDeltaDict(dict, null);
-                changed = true;
-            }
+            if (base_ == null) { writeDelta.WriteDeltaDict(dict, null); changed = true; }
             else
             {
                 var baseDict = new Dictionary<string, string>();
@@ -750,11 +643,7 @@ namespace System.NumericsX.OpenStack
         {
             newBase?.WriteBits(newValue, 8);
 
-            if (base_ == null)
-            {
-                writeDelta.WriteDeltaByteCounter(oldValue, newValue);
-                changed = true;
-            }
+            if (base_ == null) { writeDelta.WriteDeltaByteCounter(oldValue, newValue); changed = true; }
             else
             {
                 var baseValue = base_.ReadBits(8);
@@ -766,11 +655,7 @@ namespace System.NumericsX.OpenStack
         {
             newBase?.WriteBits(newValue, 16);
 
-            if (base_ == null)
-            {
-                writeDelta.WriteDeltaShortCounter(oldValue, newValue);
-                changed = true;
-            }
+            if (base_ == null) { writeDelta.WriteDeltaShortCounter(oldValue, newValue); changed = true; }
             else
             {
                 var baseValue = base_.ReadBits(16);
@@ -782,11 +667,7 @@ namespace System.NumericsX.OpenStack
         {
             newBase?.WriteBits(newValue, 32);
 
-            if (base_ == null)
-            {
-                writeDelta.WriteDeltaIntCounter(oldValue, newValue);
-                changed = true;
-            }
+            if (base_ == null) { writeDelta.WriteDeltaIntCounter(oldValue, newValue); changed = true; }
             else
             {
                 var baseValue = base_.ReadBits(32);
@@ -799,11 +680,7 @@ namespace System.NumericsX.OpenStack
         {
             int value;
 
-            if (base_ == null)
-            {
-                value = readDelta.ReadBits(numBits);
-                changed = true;
-            }
+            if (base_ == null) { value = readDelta.ReadBits(numBits); changed = true; }
             else
             {
                 var baseValue = base_.ReadBits(numBits);
@@ -830,60 +707,39 @@ namespace System.NumericsX.OpenStack
         public Vector3 ReadDir(int numBits) => BitMsg.BitsToDir(ReadBits(numBits), numBits);
         public void ReadString(out string s, int bufferSize = Platform.MAX_STRING_CHARS)
         {
-            if (base_ == null)
-            {
-                readDelta.ReadString(out s, bufferSize);
-                changed = true;
-            }
+            if (base_ == null) { readDelta.ReadString(out s, bufferSize); changed = true; }
             else
             {
                 var baseString = new byte[MAX_DATA_BUFFER];
                 base_.ReadString(out s, baseString);
                 if (readDelta == null || readDelta.ReadBits(1) == 0) { }
-                else
-                {
-                    readDelta.ReadString(out s, bufferSize);
-                    changed = true;
-                }
+                else { readDelta.ReadString(out s, bufferSize); changed = true; }
             }
 
             newBase?.WriteString(s);
         }
         public void ReadString(out string s, byte[] buffer)
         {
-            if (base_ == null)
-            {
-                readDelta.ReadString(out s, buffer);
-                changed = true;
-            }
+            if (base_ == null) { readDelta.ReadString(out s, buffer); changed = true; }
             else
             {
                 var baseString = new byte[MAX_DATA_BUFFER];
                 base_.ReadString(out s, baseString);
                 if (readDelta == null || readDelta.ReadBits(1) == 0) { }
-                else
-                {
-                    readDelta.ReadString(out s, buffer);
-                    changed = true;
-                }
+                else { readDelta.ReadString(out s, buffer); changed = true; }
             }
 
             newBase?.WriteString(s);
         }
         public void ReadData(byte[] data, int length)
         {
-            if (base_ == null)
-            {
-                readDelta.ReadData(data, length);
-                changed = true;
-            }
+            if (base_ == null) { readDelta.ReadData(data, length); changed = true; }
             else
             {
                 var baseData = new byte[MAX_DATA_BUFFER];
                 Debug.Assert(length < baseData.Length);
                 base_.ReadData(baseData, length);
-                if (readDelta == null || readDelta.ReadBits(1) == 0)
-                    Unsafe.CopyBlock(ref data[0], ref baseData[0], (uint)length);
+                if (readDelta == null || readDelta.ReadBits(1) == 0) Unsafe.CopyBlock(ref data[0], ref baseData[0], (uint)length);
                 else { readDelta.ReadData(data, length); changed = true; }
             }
 
@@ -891,11 +747,7 @@ namespace System.NumericsX.OpenStack
         }
         public void ReadDict(Dictionary<string, string> dict)
         {
-            if (base_ == null)
-            {
-                readDelta.ReadDeltaDict(dict, null);
-                changed = true;
-            }
+            if (base_ == null) { readDelta.ReadDeltaDict(dict, null); changed = true; }
             else
             {
                 var baseDict = new Dictionary<string, string>();
@@ -922,11 +774,7 @@ namespace System.NumericsX.OpenStack
         {
             int value;
 
-            if (base_ == null)
-            {
-                value = readDelta.ReadDeltaByteCounter(oldValue);
-                changed = true;
-            }
+            if (base_ == null) { value = readDelta.ReadDeltaByteCounter(oldValue); changed = true; }
             else
             {
                 var baseValue = base_.ReadBits(8);
@@ -941,11 +789,7 @@ namespace System.NumericsX.OpenStack
         {
             int value;
 
-            if (base_ == null)
-            {
-                value = readDelta.ReadDeltaShortCounter(oldValue);
-                changed = true;
-            }
+            if (base_ == null) { value = readDelta.ReadDeltaShortCounter(oldValue); changed = true; }
             else
             {
                 var baseValue = base_.ReadBits(16);
@@ -960,11 +804,7 @@ namespace System.NumericsX.OpenStack
         {
             int value;
 
-            if (base_ == null)
-            {
-                value = readDelta.ReadDeltaIntCounter(oldValue);
-                changed = true;
-            }
+            if (base_ == null) { value = readDelta.ReadDeltaIntCounter(oldValue); changed = true; }
             else
             {
                 var baseValue = base_.ReadBits(32);
@@ -989,8 +829,7 @@ namespace System.NumericsX.OpenStack
             else
             {
                 var baseValue = base_.ReadBits(numBits);
-                if (baseValue == newValue)
-                    writeDelta.WriteBits(0, 1);
+                if (baseValue == newValue) writeDelta.WriteBits(0, 1);
                 else
                 {
                     writeDelta.WriteBits(1, 1);

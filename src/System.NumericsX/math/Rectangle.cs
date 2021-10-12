@@ -142,11 +142,7 @@ namespace System.NumericsX
         public unsafe ref float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (float* p = &x)
-                    return ref p[index];
-            }
+            get { fixed (float* p = &x) return ref p[index]; }
         }
 
         public override string ToString()
@@ -167,9 +163,7 @@ namespace System.NumericsX
         public bool Contains(float xt, float yt)
         {
             var c = rects.Count;
-            for (var i = 0; i < c; i++)
-                if (rects[i].Contains(xt, yt))
-                    return true;
+            for (var i = 0; i < c; i++) if (rects[i].Contains(xt, yt)) return true;
             return false;
         }
 

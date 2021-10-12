@@ -25,8 +25,7 @@ namespace System.NumericsX.OpenStack
             for (len = 0; len < MAX_STRING_CHARS; len++)
             {
                 source.Read((byte*)&str[len], 1);
-                if (str[len] == 0)
-                    break;
+                if (str[len] == 0) break;
             }
             if (len == MAX_STRING_CHARS) Error("ReadZASCII: bad string");
             return new string(str, 0, len);
@@ -212,8 +211,7 @@ namespace System.NumericsX.OpenStack
                 fixed (byte* buf_ = buf)
                 {
                     var result = Read(buf_, len);
-                    if (len < result)
-                        Unsafe.InitBlock((void*)(buf_ + result), (byte)' ', (uint)(result - len));
+                    if (len < result) Unsafe.InitBlock((void*)(buf_ + result), (byte)' ', (uint)(result - len));
                     s = new string((char*)buf_, 0, len);
                     return result;
                 }
@@ -405,14 +403,9 @@ namespace System.NumericsX.OpenStack
         public override string FullPath => name;
         public override int Read(byte[] buffer, int len)
         {
-            if ((mode & (1 << (int)FS.READ)) == 0)
-            {
-                FatalError($"File_Memory::Read: {name} not opened in read mode");
-                return 0;
-            }
+            if ((mode & (1 << (int)FS.READ)) == 0) { FatalError($"File_Memory::Read: {name} not opened in read mode"); return 0; }
 
-            if (curPtr + len > fileSize)
-                len = fileSize - curPtr;
+            if (curPtr + len > fileSize) len = fileSize - curPtr;
             Unsafe.CopyBlock(ref buffer[0], ref filePtr[curPtr], (uint)len);
             curPtr += len;
             return len;
@@ -420,24 +413,15 @@ namespace System.NumericsX.OpenStack
 
         public override int Write(byte[] buffer, int len)
         {
-            if ((mode & (1 << (int)FS.WRITE)) == 0)
-            {
-                FatalError($"File_Memory::Write: {name} not opened in write mode");
-                return 0;
-            }
+            if ((mode & (1 << (int)FS.WRITE)) == 0) { FatalError($"File_Memory::Write: {name} not opened in write mode"); return 0; }
 
             var alloc = curPtr + len + 1 - allocated; // need room for len+1
             if (alloc > 0)
             {
-                if (maxSize != 0)
-                {
-                    Error($"File_Memory::Write: exceeded maximum size {maxSize}");
-                    return 0;
-                }
+                if (maxSize != 0) { Error($"File_Memory::Write: exceeded maximum size {maxSize}"); return 0; }
                 var extra = granularity * (1 + alloc / granularity);
                 var newPtr = new byte[allocated + extra];
-                if (allocated != 0)
-                    Unsafe.CopyBlock(ref newPtr[0], ref filePtr[0], (uint)allocated);
+                if (allocated != 0) Unsafe.CopyBlock(ref newPtr[0], ref filePtr[0], (uint)allocated);
                 allocated += extra;
                 //curPtr = curPtr;
                 filePtr = newPtr;
@@ -479,12 +463,7 @@ namespace System.NumericsX.OpenStack
         {
             fileSize = 0;
             granularity = 16384;
-            if (freeMemory)
-            {
-                allocated = 0;
-                filePtr = null;
-                curPtr = 0;
-            }
+            if (freeMemory) { allocated = 0; filePtr = null; curPtr = 0; }
             else curPtr = 0;
         }
         // set data for reading
@@ -528,21 +507,13 @@ namespace System.NumericsX.OpenStack
         public override string FullPath => name;
         public override int Read(byte[] buffer, int len)
         {
-            if ((mode & (1 << (int)FS.READ)) == 0)
-            {
-                FatalError($"File_BitMsg::Read: {name} not opened in read mode");
-                return 0;
-            }
+            if ((mode & (1 << (int)FS.READ)) == 0) { FatalError($"File_BitMsg::Read: {name} not opened in read mode"); return 0; }
 
             return msg.ReadData(buffer, len);
         }
         public override int Write(byte[] buffer, int len)
         {
-            if ((mode & (1 << (int)FS.WRITE)) == 0)
-            {
-                FatalError($"File_Memory::Write: {name} not opened in write mode");
-                return 0;
-            }
+            if ((mode & (1 << (int)FS.WRITE)) == 0) { FatalError($"File_Memory::Write: {name} not opened in write mode"); return 0; }
 
             msg.WriteData(buffer, 0, len);
             return len;
@@ -581,14 +552,9 @@ namespace System.NumericsX.OpenStack
         {
             int buf, block, remaining, read, tries;
 
-            if ((mode & (1 << (int)FS.READ)) == 0)
-            {
-                FatalError($"File_Permanent::Read: {name} not opened in read mode");
-                return 0;
-            }
+            if ((mode & (1 << (int)FS.READ)) == 0) { FatalError($"File_Permanent::Read: {name} not opened in read mode"); return 0; }
 
-            if (o == null)
-                return 0;
+            if (o == null) return 0;
 
             buf = 0; remaining = len; tries = 0;
             while (remaining != 0)
@@ -613,14 +579,9 @@ namespace System.NumericsX.OpenStack
         {
             int buf, block, remaining, written, tries;
 
-            if ((mode & (1 << (int)FS.WRITE)) == 0)
-            {
-                FatalError("File_Permanent::Write: {name} not opened in write mode");
-                return 0;
-            }
+            if ((mode & (1 << (int)FS.WRITE)) == 0) { FatalError("File_Permanent::Write: {name} not opened in write mode"); return 0; }
 
-            if (o == null)
-                return 0;
+            if (o == null) return 0;
 
             buf = 0; remaining = len; tries = 0;
             while (remaining != 0)
@@ -636,8 +597,7 @@ namespace System.NumericsX.OpenStack
                 buf += written;
                 fileSize += written;
             }
-            if (handleSync)
-                o.Flush();
+            if (handleSync) o.Flush();
             return len;
         }
         public override int Length => fileSize;
@@ -724,8 +684,7 @@ namespace System.NumericsX.OpenStack
                         // set the file position in the zip file (also sets the current file info)
                         unzSetOffset64(z, zipFilePos);
                         unzOpenCurrentFile(z);
-                        if (offset <= 0)
-                            return 0;
+                        if (offset <= 0) return 0;
                         goto case FS_SEEK.CUR;
                     }
                 case FS_SEEK.CUR:
@@ -734,8 +693,7 @@ namespace System.NumericsX.OpenStack
                         for (i = 0; i < (offset - ZIP_SEEK_BUF_SIZE); i += ZIP_SEEK_BUF_SIZE)
                         {
                             res = unzReadCurrentFile(z, buf, ZIP_SEEK_BUF_SIZE);
-                            if (res < ZIP_SEEK_BUF_SIZE)
-                                return -1;
+                            if (res < ZIP_SEEK_BUF_SIZE) return -1;
                         }
                         res = i + unzReadCurrentFile(z, buf, offset - i);
                         return res == offset ? 0 : -1;

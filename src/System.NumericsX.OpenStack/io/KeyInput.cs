@@ -17,31 +17,31 @@ namespace System.NumericsX.OpenStack
 
     public static class KeyInput
     {
-//        static const char* cheatCodes[] = {
-//        "iddqd",		// Invincibility
-//        "idkfa",		// All weapons, keys, ammo, and 200% armor
-//        "idfa",			// Reset ammunition
-//        "idspispopd",	// Walk through walls
-//        "idclip",		// Walk through walls
-//        "idchoppers",	// Chainsaw
-///*
-//	"idbeholds",	// Berserker strength
-//	"idbeholdv",	// Temporary invincibility
-//	"idbeholdi",	// Temporary invisibility
-//	"idbeholda",	// Full automap
-//	"idbeholdr",	// Anti-radiation suit
-//	"idbeholdl",	// Light amplification visor
-//	"idclev",		// Level select
-//	"iddt",			// Toggle full map; full map and objects; normal map
-//	"idmypos",		// Display coordinates and heading
-//	"idmus",		// Change music to indicated level
-//	"fhhall",		// Kill all enemies in level
-//	"fhshh",		// Invisible to enemies until attack
-//*/
-//        NULL
-//};
-//        char lastKeys[32];
-//        int lastKeyIndex;
+        //        static const char* cheatCodes[] = {
+        //        "iddqd",		// Invincibility
+        //        "idkfa",		// All weapons, keys, ammo, and 200% armor
+        //        "idfa",			// Reset ammunition
+        //        "idspispopd",	// Walk through walls
+        //        "idclip",		// Walk through walls
+        //        "idchoppers",	// Chainsaw
+        ///*
+        //	"idbeholds",	// Berserker strength
+        //	"idbeholdv",	// Temporary invincibility
+        //	"idbeholdi",	// Temporary invisibility
+        //	"idbeholda",	// Full automap
+        //	"idbeholdr",	// Anti-radiation suit
+        //	"idbeholdl",	// Light amplification visor
+        //	"idclev",		// Level select
+        //	"iddt",			// Toggle full map; full map and objects; normal map
+        //	"idmypos",		// Display coordinates and heading
+        //	"idmus",		// Change music to indicated level
+        //	"fhhall",		// Kill all enemies in level
+        //	"fhshh",		// Invisible to enemies until attack
+        //*/
+        //        NULL
+        //};
+        //        char lastKeys[32];
+        //        int lastKeyIndex;
 
         // keys that can be set without a special name
         static string unnamedkeys = "*,-=./[\\]1234567890abcdefghijklmnopqrstuvwxyz";
@@ -201,10 +201,8 @@ namespace System.NumericsX.OpenStack
 
         public static void ArgCompletion_KeyName(CmdArgs args, Action<string> callback)
         {
-            for (var i = 0; i < unnamedkeys.Length; i++)
-                callback($"{args[0]} {unnamedkeys[i]}");
-            foreach (var (n, _, _) in keynames)
-                callback($"{args[0]} {n}");
+            for (var i = 0; i < unnamedkeys.Length; i++) callback($"{args[0]} {unnamedkeys[i]}");
+            foreach (var (n, _, _) in keynames) callback($"{args[0]} {n}");
         }
 
         /// <summary>
@@ -253,8 +251,7 @@ namespace System.NumericsX.OpenStack
         {
             for (var i = 0; i < MAX_KEYS; i++)
             {
-                if (keys[i].down)
-                    PreliminaryKeyEvent(i, false);
+                if (keys[i].down) PreliminaryKeyEvent(i, false);
                 keys[i].down = false;
             }
 
@@ -270,10 +267,8 @@ namespace System.NumericsX.OpenStack
         /// <returns></returns>
         public static int StringToKeyNum(string str)
         {
-            if (string.IsNullOrEmpty(str))
-                return -1;
-            if (str[1] == 0)
-                return str[0];
+            if (string.IsNullOrEmpty(str)) return -1;
+            if (str[1] == 0) return str[0];
 
             // check for hex code
             if (str[0] == '0' && str[1] == 'x' && str.Length == 4)
@@ -290,9 +285,7 @@ namespace System.NumericsX.OpenStack
             }
 
             // scan for a text match
-            foreach (var (n, k, _) in keynames)
-                if (string.Equals(str, n, StringComparison.OrdinalIgnoreCase))
-                    return (int)k;
+            foreach (var (n, k, _) in keynames) if (string.Equals(str, n, StringComparison.OrdinalIgnoreCase)) return (int)k;
 
             return -1;
 
@@ -306,10 +299,8 @@ namespace System.NumericsX.OpenStack
         static char[] KeyNumToString_tinystr = new char[5];
         public static string KeyNumToString(int keyNum, bool localized = false)
         {
-            if (keyNum == -1)
-                return "<KEY NOT FOUND>";
-            if (keyNum < 0 || keyNum > 255)
-                return "<OUT OF RANGE>";
+            if (keyNum == -1) return "<KEY NOT FOUND>";
+            if (keyNum < 0 || keyNum > 255) return "<OUT OF RANGE>";
 
             // check for printable ascii (don't use quote)
             if (keyNum > 32 && keyNum < 127 && keyNum != '"' && keyNum != ';' && keyNum != '\'')
@@ -323,8 +314,7 @@ namespace System.NumericsX.OpenStack
             foreach (var (n, k, si) in keynames)
                 if (keyNum == (int)k)
                 {
-                    if (!localized || si[0] != '#')
-                        return n;
+                    if (!localized || si[0] != '#') return n;
                     else
                     {
 #if MACOS_X
@@ -365,8 +355,7 @@ namespace System.NumericsX.OpenStack
 
         public static void SetBinding(int keyNum, string binding)
         {
-            if (keyNum == -1)
-                return;
+            if (keyNum == -1) return;
 
             // Clear out all button states so we aren't stuck forever thinking this key is held down
             usercmdGen.Clear();
@@ -387,31 +376,21 @@ namespace System.NumericsX.OpenStack
         public static bool UnbindBinding(string binding)
         {
             var unbound = false;
-            if (!string.IsNullOrEmpty(binding))
-                for (var i = 0; i < MAX_KEYS; i++)
-                    if (string.Equals(keys[i].binding, binding, StringComparison.OrdinalIgnoreCase))
-                    {
-                        SetBinding(i, string.Empty);
-                        unbound = true;
-                    }
+            if (!string.IsNullOrEmpty(binding)) for (var i = 0; i < MAX_KEYS; i++) if (string.Equals(keys[i].binding, binding, StringComparison.OrdinalIgnoreCase)) { SetBinding(i, string.Empty); unbound = true; }
             return unbound;
         }
 
         public static int NumBinds(string binding)
         {
             var count = 0;
-            if (!string.IsNullOrEmpty(binding))
-                for (var i = 0; i < MAX_KEYS; i++)
-                    if (string.Equals(keys[i].binding, binding, StringComparison.OrdinalIgnoreCase))
-                        count++;
+            if (!string.IsNullOrEmpty(binding)) for (var i = 0; i < MAX_KEYS; i++) if (string.Equals(keys[i].binding, binding, StringComparison.OrdinalIgnoreCase)) count++;
             return count;
         }
 
         public static bool ExecKeyBinding(int keyNum)
         {
             // commands that are used by the async thread don't add text
-            if (keys[keyNum].usercmdAction != 0)
-                return false;
+            if (keys[keyNum].usercmdAction != 0) return false;
 
             // send the bound action
             if (keys[keyNum].binding.Length != 0)
@@ -434,8 +413,7 @@ namespace System.NumericsX.OpenStack
                 for (var i = 0; i < MAX_KEYS; i++)
                     if (string.Equals(keys[i].binding, bind, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (b.Length > 0)
-                            b.Append(LanguageDictGetString("#str_07183"));
+                        if (b.Length > 0) b.Append(LanguageDictGetString("#str_07183"));
                         b.Append(KeyNumToString(i, true));
                     }
             return b.Length == 0
@@ -478,42 +456,28 @@ namespace System.NumericsX.OpenStack
 
         static void Key_Unbind_f(CmdArgs args)
         {
-            if (args.Count != 2)
-            {
-                Printf("unbind <key> : remove commands from a key\n");
-                return;
-            }
+            if (args.Count != 2) { Printf("unbind <key> : remove commands from a key\n"); return; }
 
             var b = StringToKeyNum(args[1]);
             if (b == -1)
             {
                 // If it wasn't a key, it could be a command
-                if (!UnbindBinding(args[1]))
-                    Printf($"\"{args[1]}\" isn't a valid key\n");
+                if (!UnbindBinding(args[1])) Printf($"\"{args[1]}\" isn't a valid key\n");
             }
             else SetBinding(b, string.Empty);
         }
 
         static void Key_Unbindall_f(CmdArgs args)
         {
-            for (var i = 0; i < MAX_KEYS; i++)
-                SetBinding(i, string.Empty);
+            for (var i = 0; i < MAX_KEYS; i++) SetBinding(i, string.Empty);
         }
 
         static void Key_Bind_f(CmdArgs args)
         {
             var c = args.Count;
-            if (c < 2)
-            {
-                Printf("bind <key> [command] : attach a command to a key\n");
-                return;
-            }
+            if (c < 2) { Printf("bind <key> [command] : attach a command to a key\n"); return; }
             var b = StringToKeyNum(args[1]);
-            if (b == -1)
-            {
-                Printf($"\"{args[1]}\" isn't a valid key\n");
-                return;
-            }
+            if (b == -1) { Printf($"\"{args[1]}\" isn't a valid key\n"); return; }
 
             if (c == 2)
             {
@@ -527,8 +491,7 @@ namespace System.NumericsX.OpenStack
             for (var i = 2; i < c; i++)
             {
                 sb.Append(args[i]);
-                if (i != (c - 1))
-                    sb.Append(' ');
+                if (i != (c - 1)) sb.Append(' ');
             }
             SetBinding(b, sb.ToString());
         }
@@ -537,24 +500,16 @@ namespace System.NumericsX.OpenStack
         static void Key_BindUnBindTwo_f(CmdArgs args)
         {
             var c = args.Count;
-            if (c < 3)
-            {
-                Printf("bindunbindtwo <keynum> [command]\n");
-                return;
-            }
+            if (c < 3) { Printf("bindunbindtwo <keynum> [command]\n"); return; }
             var key = int.TryParse(args[1], out var z) ? z : 0;
             var bind = args[2];
-            if (NumBinds(bind) >= 2 && !KeyIsBoundTo(key, bind))
-                UnbindBinding(bind);
+            if (NumBinds(bind) >= 2 && !KeyIsBoundTo(key, bind)) UnbindBinding(bind);
             SetBinding(key, bind);
         }
 
-
         static void Key_ListBinds_f(CmdArgs args)
         {
-            for (var i = 0; i < MAX_KEYS; i++)
-                if (keys[i].binding.Length != 0)
-                    Printf($"{KeyNumToString(i)} \"{keys[i].binding}\"\n");
+            for (var i = 0; i < MAX_KEYS; i++) if (keys[i].binding.Length != 0) Printf($"{KeyNumToString(i)} \"{keys[i].binding}\"\n");
         }
     }
 }

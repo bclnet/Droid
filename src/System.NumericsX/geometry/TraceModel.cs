@@ -158,8 +158,8 @@ namespace System.NumericsX
         {
             int i;
 
-            if (type != TRM.BOX)
-                InitBox();
+            if (type != TRM.BOX) InitBox();
+
             // offset to center
             offset = (boxBounds[0] + boxBounds[1]) * 0.5f;
             // set box vertices
@@ -177,8 +177,7 @@ namespace System.NumericsX
             polys[4].dist = boxBounds[1][1];
             polys[5].dist = -boxBounds[0][0];
             // set polygon bounds
-            for (i = 0; i < 6; i++)
-                polys[i].bounds = boxBounds;
+            for (i = 0; i < 6; i++) polys[i].bounds = boxBounds;
             polys[0].bounds[1][2] = boxBounds[0][2];
             polys[1].bounds[0][2] = boxBounds[1][2];
             polys[2].bounds[1][1] = boxBounds[0][1];
@@ -274,8 +273,7 @@ namespace System.NumericsX
         {
             int i, e0, e1, v0, v1, v2; Vector3 v = new();
 
-            if (type != TRM.OCTAHEDRON)
-                InitOctahedron();
+            if (type != TRM.OCTAHEDRON) InitOctahedron();
 
             offset = (octBounds[0] + octBounds[1]) * 0.5f;
             v[0] = octBounds[1][0] - offset[0];
@@ -463,25 +461,18 @@ namespace System.NumericsX
             float s, d;
             Vector3 a = new(), b = new(), c = new();
 
-            if (type != TRM.DODECAHEDRON)
-                InitDodecahedron();
+            if (type != TRM.DODECAHEDRON)                InitDodecahedron();
 
             a[0] = a[1] = a[2] = 0.5773502691896257f; // 1f / ( 3f ) ^ 0.5f;
             b[0] = b[1] = b[2] = 0.3568220897730899f; // ( ( 3f - ( 5f ) ^ 0.5f ) / 6f ) ^ 0.5f;
             c[0] = c[1] = c[2] = 0.9341723589627156f; // ( ( 3f + ( 5f ) ^ 0.5f ) / 6f ) ^ 0.5f;
             d = 0.5f / c[0];
             s = (dodBounds[1][0] - dodBounds[0][0]) * d;
-            a[0] *= s;
-            b[0] *= s;
-            c[0] *= s;
+            a[0] *= s; b[0] *= s; c[0] *= s;
             s = (dodBounds[1][1] - dodBounds[0][1]) * d;
-            a[1] *= s;
-            b[1] *= s;
-            c[1] *= s;
+            a[1] *= s; b[1] *= s; c[1] *= s;
             s = (dodBounds[1][2] - dodBounds[0][2]) * d;
-            a[2] *= s;
-            b[2] *= s;
-            c[2] *= s;
+            a[2] *= s; b[2] *= s; c[2] *= s;
 
             offset = (dodBounds[0] + dodBounds[1]) * 0.5f;
 
@@ -556,23 +547,10 @@ namespace System.NumericsX
             int i, n, ii, n2; float angle; Vector3 halfSize;
 
             n = numSides;
-            if (n < 3)
-                n = 3;
-            if (n * 2 > MAX_TRACEMODEL_VERTS)
-            {
-                Printf("WARNING: TraceModel::SetupCylinder: too many vertices\n");
-                n = MAX_TRACEMODEL_VERTS / 2;
-            }
-            if (n * 3 > MAX_TRACEMODEL_EDGES)
-            {
-                Printf("WARNING: TraceModel::SetupCylinder: too many sides\n");
-                n = MAX_TRACEMODEL_EDGES / 3;
-            }
-            if (n + 2 > MAX_TRACEMODEL_POLYS)
-            {
-                Printf("WARNING: TraceModel::SetupCylinder: too many polygons\n");
-                n = MAX_TRACEMODEL_POLYS - 2;
-            }
+            if (n < 3) n = 3;
+            if (n * 2 > MAX_TRACEMODEL_VERTS) { Printf("WARNING: TraceModel::SetupCylinder: too many vertices\n"); n = MAX_TRACEMODEL_VERTS / 2; }
+            if (n * 3 > MAX_TRACEMODEL_EDGES) { Printf("WARNING: TraceModel::SetupCylinder: too many sides\n"); n = MAX_TRACEMODEL_EDGES / 3; }
+            if (n + 2 > MAX_TRACEMODEL_POLYS) { Printf("WARNING: TraceModel::SetupCylinder: too many polygons\n"); n = MAX_TRACEMODEL_POLYS - 2; }
 
             type = TRM.CYLINDER;
             numVerts = n * 2;
@@ -664,23 +642,10 @@ namespace System.NumericsX
             int i, n, ii; float angle; Vector3 halfSize;
 
             n = numSides;
-            if (n < 2)
-                n = 3;
-            if (n + 1 > MAX_TRACEMODEL_VERTS)
-            {
-                Printf("WARNING: TraceModel::SetupCone: too many vertices\n");
-                n = MAX_TRACEMODEL_VERTS - 1;
-            }
-            if (n * 2 > MAX_TRACEMODEL_EDGES)
-            {
-                Printf("WARNING: TraceModel::SetupCone: too many edges\n");
-                n = MAX_TRACEMODEL_EDGES / 2;
-            }
-            if (n + 1 > MAX_TRACEMODEL_POLYS)
-            {
-                Printf("WARNING: TraceModel::SetupCone: too many polygons\n");
-                n = MAX_TRACEMODEL_POLYS - 1;
-            }
+            if (n < 2) n = 3;
+            if (n + 1 > MAX_TRACEMODEL_VERTS) { Printf("WARNING: TraceModel::SetupCone: too many vertices\n"); n = MAX_TRACEMODEL_VERTS - 1; }
+            if (n * 2 > MAX_TRACEMODEL_EDGES) { Printf("WARNING: TraceModel::SetupCone: too many edges\n"); n = MAX_TRACEMODEL_EDGES / 2; }
+            if (n + 1 > MAX_TRACEMODEL_POLYS) { Printf("WARNING: TraceModel::SetupCone: too many polygons\n"); n = MAX_TRACEMODEL_POLYS - 1; }
 
             type = TRM.CONE;
             numVerts = n + 1;
@@ -815,8 +780,8 @@ namespace System.NumericsX
         {
             int i, j, edgeNum; float halfLength = length * 0.5f;
 
-            if (type != TRM.BONE)
-                InitBone();
+            if (type != TRM.BONE) InitBone();
+
             // offset to center
             offset.Set(0f, 0f, 0f);
             // set vertices
@@ -863,11 +828,7 @@ namespace System.NumericsX
             type = TRM.POLYGON;
             numVerts = count;
             // times three because we need to be able to turn the polygon into a volume
-            if (numVerts * 3 > MAX_TRACEMODEL_EDGES)
-            {
-                Printf("WARNING: TraceModel::SetupPolygon: too many vertices\n");
-                numVerts = MAX_TRACEMODEL_EDGES / 3;
-            }
+            if (numVerts * 3 > MAX_TRACEMODEL_EDGES) { Printf("WARNING: TraceModel::SetupPolygon: too many vertices\n"); numVerts = MAX_TRACEMODEL_EDGES / 3; }
 
             numEdges = numVerts;
             numPolys = 2;
@@ -884,8 +845,7 @@ namespace System.NumericsX
             mid = Vector3.origin;
             for (i = 0, j = 1; i < numVerts; i++, j++)
             {
-                if (j >= numVerts)
-                    j = 0;
+                if (j >= numVerts) j = 0;
                 verts[i] = v[i];
                 edges[i + 1].v[0] = i;
                 edges[i + 1].v[1] = j;
@@ -908,8 +868,7 @@ namespace System.NumericsX
         public unsafe void SetupPolygon(in Winding w)
         {
             var verts = stackalloc Vector3[w.NumPoints + Vector3.ALLOC16]; verts = (Vector3*)_alloca16(verts);
-            for (var i = 0; i < w.NumPoints; i++)
-                verts[i] = w[i].ToVec3();
+            for (var i = 0; i < w.NumPoints; i++) verts[i] = w[i].ToVec3();
             SetupPolygon(verts, w.NumPoints);
         }
 
@@ -952,8 +911,7 @@ namespace System.NumericsX
         {
             int i, j, edgeNum, numSharpEdges; float dot; Vector3 dir; TraceModelEdge* edge;
 
-            for (i = 0; i <= numEdges; i++)
-                edges[i].normal.Zero();
+            for (i = 0; i <= numEdges; i++) edges[i].normal.Zero();
 
             numSharpEdges = 0;
             fixed (TraceModelEdge* edges = this.edges)
@@ -964,8 +922,7 @@ namespace System.NumericsX
                     {
                         edgeNum = poly.edges[j];
                         edge = edges + Math.Abs(edgeNum);
-                        if (edge->normal[0] == 0f && edge->normal[1] == 0f && edge->normal[2] == 0f)
-                            edge->normal = poly.normal;
+                        if (edge->normal[0] == 0f && edge->normal[1] == 0f && edge->normal[2] == 0f) edge->normal = poly.normal;
                         else
                         {
                             dot = edge->normal * poly.normal;
@@ -990,8 +947,7 @@ namespace System.NumericsX
         {
             int i;
 
-            for (i = 0; i < numVerts; i++)
-                verts[i] += translation;
+            for (i = 0; i < numVerts; i++) verts[i] += translation;
             for (i = 0; i < numPolys; i++)
             {
                 polys[i].dist += polys[i].normal * translation;
@@ -1008,8 +964,7 @@ namespace System.NumericsX
         {
             int i, j, edgeNum;
 
-            for (i = 0; i < numVerts; i++)
-                verts[i] *= rotation;
+            for (i = 0; i < numVerts; i++) verts[i] *= rotation;
 
             bounds.Clear();
             for (i = 0; i < numPolys; i++)
@@ -1043,8 +998,7 @@ namespace System.NumericsX
                         edgeNum = polys[0].edges[i];
                         edge = &edges[Math.Abs(edgeNum)];
                         dir = verts[edge->v[MathX.INTSIGNBITSET_(edgeNum)]] - verts[edge->v[MathX.INTSIGNBITNOTSET_(edgeNum)]];
-                        if (dir.Normalize() < 2f * m)
-                            continue;
+                        if (dir.Normalize() < 2f * m) continue;
                         dir *= m;
                         verts[edge->v[0]] -= dir;
                         verts[edge->v[1]] += dir;
@@ -1071,10 +1025,8 @@ namespace System.NumericsX
         {
             int i;
 
-            if (type != a.type || numVerts != a.numVerts || numEdges != a.numEdges || numPolys != a.numPolys)
-                return false;
-            if (bounds != a.bounds || offset != a.offset)
-                return false;
+            if (type != a.type || numVerts != a.numVerts || numEdges != a.numEdges || numPolys != a.numPolys) return false;
+            if (bounds != a.bounds || offset != a.offset) return false;
 
             switch (type)
             {
@@ -1083,16 +1035,11 @@ namespace System.NumericsX
                 case TRM.OCTAHEDRON:
                 case TRM.DODECAHEDRON:
                 case TRM.CYLINDER:
-                case TRM.CONE:
-                    break;
+                case TRM.CONE: break;
                 case TRM.BONE:
                 case TRM.POLYGON:
                 case TRM.POLYGONVOLUME:
-                case TRM.CUSTOM:
-                    for (i = 0; i < a.numVerts; i++)
-                        if (verts[i] != a.verts[i])
-                            return false;
-                    break;
+                case TRM.CUSTOM: for (i = 0; i < a.numVerts; i++) if (verts[i] != a.verts[i]) return false; break;
             }
             return true;
         }
@@ -1112,8 +1059,7 @@ namespace System.NumericsX
         {
             int i; float total; Vector3 base_, v1, v2, cross;
 
-            if (polyNum < 0 || polyNum >= numPolys)
-                return 0f;
+            if (polyNum < 0 || polyNum >= numPolys) return 0f;
             ref TraceModelPoly poly = ref polys[polyNum];
             total = 0f;
             base_ = verts[edges[Math.Abs(poly.edges[0])].v[MathX.INTSIGNBITSET_(poly.edges[0])]];
@@ -1134,9 +1080,7 @@ namespace System.NumericsX
             int i, j, edgeNum, numSilEdges, nextSilVert; int* unsortedSilEdges = stackalloc int[MAX_TRACEMODEL_EDGES];
 
             numSilEdges = 0;
-            for (i = 1; i <= numEdges; i++)
-                if (edgeIsSilEdge[i] != 0)
-                    unsortedSilEdges[numSilEdges++] = i;
+            for (i = 1; i <= numEdges; i++) if (edgeIsSilEdge[i] != 0) unsortedSilEdges[numSilEdges++] = i;
 
             silEdges[0] = unsortedSilEdges[0];
             unsortedSilEdges[0] = -1;
@@ -1148,22 +1092,11 @@ namespace System.NumericsX
                     edgeNum = unsortedSilEdges[j];
                     if (edgeNum >= 0)
                     {
-                        if (edges[edgeNum].v[0] == nextSilVert)
-                        {
-                            nextSilVert = edges[edgeNum].v[1];
-                            silEdges[i] = edgeNum;
-                            break;
-                        }
-                        if (edges[edgeNum].v[1] == nextSilVert)
-                        {
-                            nextSilVert = edges[edgeNum].v[0];
-                            silEdges[i] = -edgeNum;
-                            break;
-                        }
+                        if (edges[edgeNum].v[0] == nextSilVert) { nextSilVert = edges[edgeNum].v[1]; silEdges[i] = edgeNum; break; }
+                        if (edges[edgeNum].v[1] == nextSilVert) { nextSilVert = edges[edgeNum].v[0]; silEdges[i] = -edgeNum; break; }
                     }
                 }
-                if (j >= numSilEdges)
-                    silEdges[i] = 1;    // shouldn't happen
+                if (j >= numSilEdges) silEdges[i] = 1;    // shouldn't happen
                 unsortedSilEdges[j] = -1;
             }
             return numSilEdges;
@@ -1181,12 +1114,7 @@ namespace System.NumericsX
                 ref TraceModelPoly poly = ref polys[i];
                 edgeNum = poly.edges[0];
                 dir = verts[edges[Math.Abs(edgeNum)].v[MathX.INTSIGNBITSET_(edgeNum)]] - projectionOrigin;
-                if (dir * poly.normal < 0f)
-                    for (j = 0; j < poly.numEdges; j++)
-                    {
-                        edgeNum = poly.edges[j];
-                        edgeIsSilEdge[Math.Abs(edgeNum)] ^= 1;
-                    }
+                if (dir * poly.normal < 0f) for (j = 0; j < poly.numEdges; j++) { edgeNum = poly.edges[j]; edgeIsSilEdge[Math.Abs(edgeNum)] ^= 1; }
             }
 
             return GetOrderedSilhouetteEdges(edgeIsSilEdge, silEdges);
@@ -1201,12 +1129,7 @@ namespace System.NumericsX
             for (i = 0; i < numPolys; i++)
             {
                 ref TraceModelPoly poly = ref polys[i];
-                if (projectionDir * poly.normal < 0f)
-                    for (j = 0; j < poly.numEdges; j++)
-                    {
-                        edgeNum = poly.edges[j];
-                        edgeIsSilEdge[Math.Abs(edgeNum)] ^= 1;
-                    }
+                if (projectionDir * poly.normal < 0f) for (j = 0; j < poly.numEdges; j++) { edgeNum = poly.edges[j]; edgeIsSilEdge[Math.Abs(edgeNum)] ^= 1; }
             }
 
             return GetOrderedSilhouetteEdges(edgeIsSilEdge, silEdges);
@@ -1218,23 +1141,12 @@ namespace System.NumericsX
         public void GetMassProperties(float density, float mass, out Vector3 centerOfMass, in Matrix3x3 inertiaTensor)
         {
             // if polygon trace model
-            if (type == TRM.POLYGON)
-            {
-                VolumeFromPolygon(out var trm, 1f);
-                trm.GetMassProperties(density, mass, out centerOfMass, inertiaTensor);
-                return;
-            }
+            if (type == TRM.POLYGON) { VolumeFromPolygon(out var trm, 1f); trm.GetMassProperties(density, mass, out centerOfMass, inertiaTensor); return; }
 
             VolumeIntegrals(out var integrals);
 
             // if no volume
-            if (integrals.T0 == 0f)
-            {
-                mass = 1f;
-                centerOfMass = Vector3.origin;
-                inertiaTensor.Identity();
-                return;
-            }
+            if (integrals.T0 == 0f) { mass = 1f; centerOfMass = Vector3.origin; inertiaTensor.Identity(); return; }
 
             // mass of model
             mass = density * integrals.T0;
@@ -1284,7 +1196,6 @@ namespace System.NumericsX
 
         unsafe void ProjectionIntegrals(int polyNum, int a, int b, out ProjectionIntegrals_ integrals)
         {
-            ;
             int i, edgeNum;
             Vector3 v1, v2;
             float a0, a1, da;
@@ -1376,20 +1287,16 @@ namespace System.NumericsX
 
             integrals.Faa = k1 * pi.Paa;
             integrals.Fbb = k1 * pi.Pbb;
-            integrals.Fcc = k3 * (MathX.Square(n[a]) * pi.Paa + 2 * n[a] * n[b] * pi.Pab + MathX.Square(n[b]) * pi.Pbb
-                    + w * (2 * (n[a] * pi.Pa + n[b] * pi.Pb) + w * pi.P1));
+            integrals.Fcc = k3 * (MathX.Square(n[a]) * pi.Paa + 2 * n[a] * n[b] * pi.Pab + MathX.Square(n[b]) * pi.Pbb + w * (2 * (n[a] * pi.Pa + n[b] * pi.Pb) + w * pi.P1));
 
             integrals.Faaa = k1 * pi.Paaa;
             integrals.Fbbb = k1 * pi.Pbbb;
-            integrals.Fccc = -k4 * (MathX.Cube(n[a]) * pi.Paaa + 3 * MathX.Square(n[a]) * n[b] * pi.Paab
-                    + 3 * n[a] * MathX.Square(n[b]) * pi.Pabb + MathX.Cube(n[b]) * pi.Pbbb
-                    + 3 * w * (MathX.Square(n[a]) * pi.Paa + 2 * n[a] * n[b] * pi.Pab + MathX.Square(n[b]) * pi.Pbb)
-                    + w * w * (3 * (n[a] * pi.Pa + n[b] * pi.Pb) + w * pi.P1));
+            integrals.Fccc = -k4 * (MathX.Cube(n[a]) * pi.Paaa + 3 * MathX.Square(n[a]) * n[b] * pi.Paab + 3 * n[a] * MathX.Square(n[b]) * pi.Pabb + MathX.Cube(n[b]) * pi.Pbbb
+                    + 3 * w * (MathX.Square(n[a]) * pi.Paa + 2 * n[a] * n[b] * pi.Pab + MathX.Square(n[b]) * pi.Pbb) + w * w * (3 * (n[a] * pi.Pa + n[b] * pi.Pb) + w * pi.P1));
 
             integrals.Faab = k1 * pi.Paab;
             integrals.Fbbc = -k2 * (n[a] * pi.Pabb + n[b] * pi.Pbbb + w * pi.Pbb);
-            integrals.Fcca = k3 * (MathX.Square(n[a]) * pi.Paaa + 2 * n[a] * n[b] * pi.Paab + MathX.Square(n[b]) * pi.Pabb
-                    + w * (2 * (n[a] * pi.Paa + n[b] * pi.Pab) + w * pi.Pa));
+            integrals.Fcca = k3 * (MathX.Square(n[a]) * pi.Paaa + 2 * n[a] * n[b] * pi.Paab + MathX.Square(n[b]) * pi.Pabb + w * (2 * (n[a] * pi.Paa + n[b] * pi.Pab) + w * pi.Pa));
         }
 
         void VolumeIntegrals(out VolumeIntegrals_ integrals)

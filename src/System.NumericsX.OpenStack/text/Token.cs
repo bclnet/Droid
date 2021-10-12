@@ -84,10 +84,8 @@ namespace System.NumericsX.OpenStack
         {
             get
             {
-                if (type != TT.NUMBER)
-                    return 0.0;
-                if ((subtype & TT_VALUESVALID) == 0)
-                    NumberValue();
+                if (type != TT.NUMBER) return 0.0;
+                if ((subtype & TT_VALUESVALID) == 0) NumberValue();
                 return floatvalue;
             }
         }
@@ -107,10 +105,8 @@ namespace System.NumericsX.OpenStack
         {
             get
             {
-                if (type != TT.NUMBER)
-                    return 0;
-                if ((subtype & TT_VALUESVALID) == 0)
-                    NumberValue();
+                if (type != TT.NUMBER) return 0;
+                if ((subtype & TT_VALUESVALID) == 0) NumberValue();
                 return intvalue;
             }
         }
@@ -157,21 +153,9 @@ namespace System.NumericsX.OpenStack
             {
                 if ((subtype & (TT_INFINITE | TT_INDEFINITE | TT_NAN)) != 0)
                 {
-                    if ((subtype & TT_INFINITE) != 0)
-                    {   // 1.#INF
-                        uint inf = 0x7f800000;
-                        floatvalue = *(float*)&inf;
-                    }
-                    else if ((subtype & TT_INDEFINITE) != 0)
-                    {   // 1.#IND
-                        uint ind = 0xffc00000;
-                        floatvalue = *(float*)&ind;
-                    }
-                    else if ((subtype & TT_NAN) != 0)
-                    {   // 1.#QNAN
-                        uint nan = 0x7fc00000;
-                        floatvalue = *(float*)&nan;
-                    }
+                    if ((subtype & TT_INFINITE) != 0) { uint inf = 0x7f800000; floatvalue = *(float*)&inf; } // 1.#INF
+                    else if ((subtype & TT_INDEFINITE) != 0) { uint ind = 0xffc00000; floatvalue = *(float*)&ind; } // 1.#IND
+                    else if ((subtype & TT_NAN) != 0) { uint nan = 0x7fc00000; floatvalue = *(float*)&nan; } // 1.#QNAN
                 }
                 else
                 {

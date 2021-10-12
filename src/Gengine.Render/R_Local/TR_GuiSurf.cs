@@ -8,7 +8,7 @@ using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Render
 {
-    unsafe partial class TRX
+    unsafe partial class TR
     {
         // Calculates two axis for the surface sutch that a point dotted against the axis will give a 0.0 to 1.0 range in S and T when inside the gui surface
         public static void R_SurfaceToTextureAxis(SrfTriangles tri, ref Vector3 origin, Vector3* axis)

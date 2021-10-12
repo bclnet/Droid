@@ -221,13 +221,7 @@ namespace System.NumericsX
 
         public bool AddPoint(in Vector3 v)                    // add the point, returns true if the box expanded
         {
-            if (extents.x < 0f)
-            {
-                extents.Zero();
-                center = v;
-                axis.Identity();
-                return true;
-            }
+            if (extents.x < 0f) { extents.Zero(); center = v; axis.Identity(); return true; }
 
             Bounds bounds1 = new();
             bounds1[0].x = bounds1[1].x = center * axis[0];
@@ -235,9 +229,8 @@ namespace System.NumericsX
             bounds1[0].z = bounds1[1].z = center * axis[2];
             bounds1[0] -= extents;
             bounds1[1] += extents;
-            if (!bounds1.AddPoint(new Vector3(v * axis[0], v * axis[1], v * axis[2])))
-                // point is contained in the box
-                return false;
+            // point is contained in the box
+            if (!bounds1.AddPoint(new Vector3(v * axis[0], v * axis[1], v * axis[2]))) return false;
 
             Matrix3x3 axis2 = new();
             axis2[0] = v - center;
@@ -251,34 +244,16 @@ namespace System.NumericsX
             bounds2.AddPoint(new Vector3(v * axis2[0], v * axis2[1], v * axis2[2]));
 
             // create new box based on the smallest bounds
-            if (bounds1.Volume < bounds2.Volume)
-            {
-                center = (bounds1[0] + bounds1[1]) * 0.5f;
-                extents = bounds1[1] - center;
-                center *= axis;
-            }
-            else
-            {
-                center = (bounds2[0] + bounds2[1]) * 0.5f;
-                extents = bounds2[1] - center;
-                center *= axis2;
-                axis = axis2;
-            }
+            if (bounds1.Volume < bounds2.Volume) { center = (bounds1[0] + bounds1[1]) * 0.5f; extents = bounds1[1] - center; center *= axis; }
+            else { center = (bounds2[0] + bounds2[1]) * 0.5f; extents = bounds2[1] - center; center *= axis2; axis = axis2; }
             return true;
         }
 
         public bool AddBox(in Box a)                      // add the box, returns true if the box expanded
         {
-            if (a.extents.x < 0f)
-                return false;
+            if (a.extents.x < 0f) return false;
 
-            if (extents.x < 0f)
-            {
-                center = a.center;
-                extents = a.extents;
-                axis = a.axis;
-                return true;
-            }
+            if (extents.x < 0f) { center = a.center; extents = a.extents; axis = a.axis; return true; }
 
             // test axis of this box
             var ax = new Matrix3x3[3]; var bounds = new Bounds[4];
@@ -289,9 +264,8 @@ namespace System.NumericsX
             bounds[0][0] -= extents;
             bounds[0][1] += extents;
             a.AxisProjection(ax[0], out var b);
-            if (!bounds[0].AddBounds(b))
-                // the other box is contained in this box
-                return false;
+            // the other box is contained in this box
+            if (!bounds[0].AddBounds(b)) return false;
 
             // test axis of other box
             ax[1] = a.axis;
@@ -301,14 +275,8 @@ namespace System.NumericsX
             bounds[1][0] -= a.extents;
             bounds[1][1] += a.extents;
             AxisProjection(ax[1], out b);
-            if (!bounds[1].AddBounds(b))
-            {
-                // this box is contained in the other box
-                center = a.center;
-                extents = a.extents;
-                axis = a.axis;
-                return true;
-            }
+            // this box is contained in the other box
+            if (!bounds[1].AddBounds(b)) { center = a.center; extents = a.extents; axis = a.axis; return true; }
 
             // test axes aligned with the vector between the box centers and one of the box axis
             var dir = a.center - center;
@@ -435,8 +403,7 @@ namespace System.NumericsX
             d = MathX.Fabs(axisdir[0]);
             e0 = extents.x;
             e1 = a.extents.x * ac[0, 0] + a.extents.y * ac[0, 1] + a.extents.z * ac[0, 2];
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * A1
             c[1, 0] = axis[1] * a.axis[0];
@@ -450,8 +417,7 @@ namespace System.NumericsX
             d = MathX.Fabs(axisdir[1]);
             e0 = extents.y;
             e1 = a.extents.x * ac[1, 0] + a.extents.y * ac[1, 1] + a.extents.z * ac[1, 2];
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * A2
             c[2, 0] = axis[2] * a.axis[0];
@@ -465,92 +431,79 @@ namespace System.NumericsX
             d = MathX.Fabs(axisdir[2]);
             e0 = extents.z;
             e1 = a.extents.x * ac[2, 0] + a.extents.y * ac[2, 1] + a.extents.z * ac[2, 2];
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * B0
             d = MathX.Fabs(a.axis[0] * dir);
             e0 = extents.x * ac[0, 0] + extents.y * ac[1, 0] + extents.z * ac[2, 0];
             e1 = a.extents.x;
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * B1
             d = MathX.Fabs(a.axis[1] * dir);
             e0 = extents.x * ac[0, 1] + extents.y * ac[1, 1] + extents.z * ac[2, 1];
             e1 = a.extents.y;
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * B2
             d = MathX.Fabs(a.axis[2] * dir);
             e0 = extents.x * ac[0, 2] + extents.y * ac[1, 2] + extents.z * ac[2, 2];
             e1 = a.extents.z;
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * A0xB0
             d = MathX.Fabs(axisdir[2] * c[1, 0] - axisdir[1] * c[2, 0]);
             e0 = extents.y * ac[2, 0] + extents.z * ac[1, 0];
             e1 = a.extents.y * ac[0, 2] + a.extents.z * ac[0, 1];
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * A0xB1
             d = MathX.Fabs(axisdir[2] * c[1, 1] - axisdir[1] * c[2, 1]);
             e0 = extents.y * ac[2, 1] + extents.z * ac[1, 1];
             e1 = a.extents.x * ac[0, 2] + a.extents.z * ac[0, 0];
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * A0xB2
             d = MathX.Fabs(axisdir[2] * c[1, 2] - axisdir[1] * c[2, 2]);
             e0 = extents.y * ac[2, 2] + extents.z * ac[1, 2];
             e1 = a.extents.x * ac[0, 1] + a.extents.y * ac[0, 0];
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * A1xB0
             d = MathX.Fabs(axisdir[0] * c[2, 0] - axisdir[2] * c[0, 0]);
             e0 = extents.x * ac[2, 0] + extents.z * ac[0, 0];
             e1 = a.extents.y * ac[1, 2] + a.extents.z * ac[1, 1];
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * A1xB1
             d = MathX.Fabs(axisdir[0] * c[2, 1] - axisdir[2] * c[0, 1]);
             e0 = extents.x * ac[2, 1] + extents.z * ac[0, 1];
             e1 = a.extents.x * ac[1, 2] + a.extents.z * ac[1, 0];
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * A1xB2
             d = MathX.Fabs(axisdir[0] * c[2, 2] - axisdir[2] * c[0, 2]);
             e0 = extents.x * ac[2, 2] + extents.z * ac[0, 2];
             e1 = a.extents.x * ac[1, 1] + a.extents.y * ac[1, 0];
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * A2xB0
             d = MathX.Fabs(axisdir[1] * c[0, 0] - axisdir[0] * c[1, 0]);
             e0 = extents.x * ac[1, 0] + extents.y * ac[0, 0];
             e1 = a.extents.y * ac[2, 2] + a.extents.z * ac[2, 1];
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * A2xB1
             d = MathX.Fabs(axisdir[1] * c[0, 1] - axisdir[0] * c[1, 1]);
             e0 = extents.x * ac[1, 1] + extents.y * ac[0, 1];
             e1 = a.extents.x * ac[2, 2] + a.extents.z * ac[2, 0];
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
 
             // axis C0 + t * A2xB2
             d = MathX.Fabs(axisdir[1] * c[0, 2] - axisdir[0] * c[1, 2]);
             e0 = extents.x * ac[1, 2] + extents.y * ac[0, 2];
             e1 = a.extents.x * ac[2, 1] + a.extents.y * ac[2, 0];
-            if (d > e0 + e1)
-                return false;
+            if (d > e0 + e1) return false;
             return true;
         }
 
@@ -576,18 +529,14 @@ namespace System.NumericsX
         {
             if (denom > 0f)
             {
-                if (numer > denom * scale1)
-                    return false;
-                if (numer > denom * scale0)
-                    scale0 = numer / denom;
+                if (numer > denom * scale1) return false;
+                if (numer > denom * scale0) scale0 = numer / denom;
                 return true;
             }
             else if (denom < 0f)
             {
-                if (numer > denom * scale0)
-                    return false;
-                if (numer > denom * scale1)
-                    scale1 = numer / denom;
+                if (numer > denom * scale0) return false;
+                if (numer > denom * scale1) scale1 = numer / denom;
                 return true;
             }
             else return numer <= 0f;
@@ -621,8 +570,7 @@ namespace System.NumericsX
 
             // compute mean of points
             center = points[0];
-            for (i = 1; i < numPoints; i++)
-                center += points[i];
+            for (i = 1; i < numPoints; i++) center += points[i];
             invNumPoints = 1f / numPoints;
             center *= invNumPoints;
 
@@ -678,8 +626,7 @@ namespace System.NumericsX
 
             // refine by calculating the bounds of the points projected onto the axis and adjusting the center and extents
             bounds.Clear();
-            for (i = 0; i < numPoints; i++)
-                bounds.AddPoint(new Vector3(points[i] * axis[0], points[i] * axis[1], points[i] * axis[2]));
+            for (i = 0; i < numPoints; i++) bounds.AddPoint(new Vector3(points[i] * axis[0], points[i] * axis[1], points[i] * axis[2]));
             center = (bounds[0] + bounds[1]) * 0.5f;
             extents = bounds[1] - center;
             center *= axis;
@@ -771,8 +718,7 @@ namespace System.NumericsX
             f = dir2 * axis[2]; planeBits |= MathX.FLOATSIGNBITSET_(f) << 5;
 
             var index = BoxPlaneBitsSilVerts[planeBits];
-            for (var i = 0; i < index[0]; i++)
-                silVerts[i] = points[index[i + 1]];
+            for (var i = 0; i < index[0]; i++) silVerts[i] = points[index[i + 1]];
             return index[0];
         }
 
@@ -786,8 +732,7 @@ namespace System.NumericsX
             f = projectionDir * axis[2]; if (MathX.FLOATNOTZERO(f)) planeBits |= 16 << MathX.FLOATSIGNBITSET_(f);
 
             var index = BoxPlaneBitsSilVerts[planeBits];
-            for (var i = 0; i < index[0]; i++)
-                silVerts[i] = points[index[i + 1]];
+            for (var i = 0; i < index[0]; i++) silVerts[i] = points[index[i + 1]];
             return index[0];
         }
     }

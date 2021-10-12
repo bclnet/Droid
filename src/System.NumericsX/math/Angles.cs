@@ -51,17 +51,9 @@ namespace System.NumericsX
         public unsafe float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                fixed (float* p = &pitch)
-                    return p[index];
-            }
+            get { fixed (float* p = &pitch) return p[index]; }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set
-            {
-                fixed (float* p = &pitch)
-                    p[index] = value;
-            }
+            set { fixed (float* p = &pitch) p[index] = value; }
         }
 
         /// <summary>
@@ -238,8 +230,7 @@ namespace System.NumericsX
             };
             var w = cxcy * cz + sxsy * sz;
             var angle = MathX.ACos(w);
-            if (angle == 0f)
-                vec.Set(0f, 0f, 1f);
+            if (angle == 0f) vec.Set(0f, 0f, 1f);
             else
             {
                 vec.Normalize();
@@ -275,8 +266,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
         {
-            fixed (float* _ = &pitch)
-                return callback(_);
+            fixed (float* _ = &pitch) return callback(_);
         }
 
         public unsafe string ToString(int precision = 2)
