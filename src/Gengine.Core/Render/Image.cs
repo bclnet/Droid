@@ -91,8 +91,7 @@ namespace Gengine.Render
         {
             REPEAT,
             CLAMP,
-            CLAMP_TO_BORDER,        // this should replace TR_CLAMP_TO_ZERO and TR_CLAMP_TO_ZERO_ALPHA,
-                                    // but I don't want to risk changing it right now
+            CLAMP_TO_BORDER,        // this should replace TR_CLAMP_TO_ZERO and TR_CLAMP_TO_ZERO_ALPHA, but I don't want to risk changing it right now
             CLAMP_TO_ZERO,      // guarantee 0,0,0,255 edge for projected textures, set AFTER image format selection
             CLAMP_TO_ZERO_ALPHA // guarantee 0 alpha edge for projected textures, set AFTER image format selection
         }
@@ -170,12 +169,8 @@ namespace Gengine.Render
         // used by callback functions to specify the actual data data goes from the bottom to the top line of the image, as OpenGL expects it
         // These perform an implicit Bind() on the current texture unit
         // FIXME: should we implement cinematics this way, instead of with explicit calls?
-        public void GenerateImage(byte[] pic, int width, int height,
-                            TF filter, bool allowDownSize,
-                            TR repeat, TD depth) => throw new NotImplementedException();
-        public void GenerateCubeImage(byte[][] pic, int size,
-                                TF filter, bool allowDownSize,
-                                TD depth) => throw new NotImplementedException();
+        public void GenerateImage(byte[] pic, int width, int height, TF filter, bool allowDownSize, TR repeat, TD depth) => throw new NotImplementedException();
+        public void GenerateCubeImage(byte[][] pic, int size, TF filter, bool allowDownSize, TD depth) => throw new NotImplementedException();
 
         public void CopyFramebuffer(int x, int y, int width, int height, bool useOversizedBuffer) => throw new NotImplementedException();
 
@@ -277,7 +272,7 @@ namespace Gengine.Render
         // Be careful not to use the same image file with different filter / repeat / etc parameters if possible, because it will cause a second copy to be loaded.
         // If the load fails for any reason, the image will be filled in with the default grid pattern.
         // Will automatically resample non-power-of-two images and execute image programs if needed.
-        public Image ImageFromFile(string name,                                Image.TF filter, bool allowDownSize,                                Image.TR repeat, Image.TD depth, Image.CF cubeMap = Image.CF._2D) => throw new NotImplementedException();
+        public Image ImageFromFile(string name, Image.TF filter, bool allowDownSize, Image.TR repeat, Image.TD depth, Image.CF cubeMap = Image.CF._2D) => throw new NotImplementedException();
 
         // look for a loaded image, whatever the parameters
         public Image GetImage(string name) => throw new NotImplementedException();
