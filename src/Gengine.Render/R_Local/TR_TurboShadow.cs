@@ -3,7 +3,7 @@ using GlIndex = System.Int32;
 
 namespace Gengine.Render
 {
-    partial class TR
+    unsafe partial class TR
     {
         static int c_turboUsedVerts, c_turboUnusedVerts;
 
@@ -20,16 +20,15 @@ namespace Gengine.Render
 
             if (r_useShadowProjectedCull.Bool) R_CalcInteractionCullBits(ent, tri, light, cullInfo);
 
-            int numFaces = tri.numIndexes / 3;
-            int numShadowingFaces = 0;
+            var numFaces = tri.numIndexes / 3;
+            var numShadowingFaces = 0;
             facing = cullInfo.facing;
 
             // if all the triangles are inside the light frustum
             if (cullInfo.cullBits == LIGHT_CULL_ALL_FRONT || !r_useShadowProjectedCull.Bool)
             {
                 // count the number of shadowing faces
-                for (i = 0; i < numFaces; i++)
-                    numShadowingFaces += facing[i];
+                for (i = 0; i < numFaces; i++) numShadowingFaces += facing[i];
                 numShadowingFaces = numFaces - numShadowingFaces;
             }
             else
@@ -42,18 +41,17 @@ namespace Gengine.Render
                 for (j = i = 0; i < tri.numIndexes; i += 3, j++)
                     if (modifyFacing[j] == 0)
                     {
-                        int i1 = indexes[i + 0];
-                        int i2 = indexes[i + 1];
-                        int i3 = indexes[i + 2];
+                        var i1 = indexes[i + 0];
+                        var i2 = indexes[i + 1];
+                        var i3 = indexes[i + 2];
 
                         if ((cullBits[i1] & cullBits[i2] & cullBits[i3]) != 0) modifyFacing[j] = 1;
                         else numShadowingFaces++;
                     }
             }
 
-            if (numShadowingFaces == 0)
-                // no faces are inside the light frustum and still facing the right way
-                return null;
+            // no faces are inside the light frustum and still facing the right way
+            if (numShadowingFaces == 0) return null;
 
             // shadowVerts will be NULL on these surfaces, so the shadowVerts will be taken from the ambient surface
             newTri = R_AllocStaticTriSurf();
@@ -66,7 +64,7 @@ namespace Gengine.Render
             GlIndex tempIndexes = newTri.indexes;
             GlIndex shadowIndexes = newTri.indexes;
 #else
-            GlIndex tempIndexes = GlIndex[tri.numSilEdges * 6];
+            GlIndex tempIndexes = new GlIndex[tri.numSilEdges * 6];
             GlIndex shadowIndexes = tempIndexes;
 #endif
 
@@ -75,8 +73,7 @@ namespace Gengine.Render
             {
                 int f1 = facing[sil.p1], f2 = facing[sil.p2];
 
-                if ((f1 ^ f2) == 0)
-                    continue;
+                if ((f1 ^ f2) == 0) continue;
 
                 int v1 = sil.v1 << 1, v2 = sil.v2 << 1;
 
@@ -118,19 +115,11 @@ namespace Gengine.Render
 
             for (i = 0, j = 0; i < tri.numIndexes; i += 3, j++)
             {
-                if (facing[j] != 0)
-                    continue;
+                if (facing[j] != 0) continue;
 
-                int i0 = indexes[i + 0] << 1;
-                shadowIndexes[2] = i0;
-                shadowIndexes[3] = i0 ^ 1;
-                int i1 = indexes[i + 1] << 1;
-                shadowIndexes[1] = i1;
-                shadowIndexes[4] = i1 ^ 1;
-                int i2 = indexes[i + 2] << 1;
-                shadowIndexes[0] = i2;
-                shadowIndexes[5] = i2 ^ 1;
-
+                var i0 = indexes[i + 0] << 1; shadowIndexes[2] = i0; shadowIndexes[3] = i0 ^ 1;
+                var i1 = indexes[i + 1] << 1; shadowIndexes[1] = i1; shadowIndexes[4] = i1 ^ 1;
+                var i2 = indexes[i + 2] << 1; shadowIndexes[0] = i2; shadowIndexes[5] = i2 ^ 1;
                 shadowIndexes += 6;
             }
 

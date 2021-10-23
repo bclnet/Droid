@@ -1,3 +1,5 @@
+using System.NumericsX.OpenStack;
+
 namespace System.NumericsX
 {
     public static class Program
@@ -13,7 +15,7 @@ namespace System.NumericsX
             // test idPolynomial
             //Polynomial.Test();
 
-            SimdTest.Test_f(null);
+            SimdTest.Test_f(new CmdArgs("test", false));
         }
     }
 }

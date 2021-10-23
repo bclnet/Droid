@@ -10,7 +10,7 @@ using GlIndex = System.Int32;
 
 namespace Gengine.Render
 {
-    partial class TR
+    unsafe partial class TR
     {
         const int MAX_SIL_EDGES = 0x10000;
         const int SILEDGE_HASH_SIZE = 1024;
@@ -132,8 +132,7 @@ namespace Gengine.Render
             if (tri.shadowVertexes != null) total += tri.numVerts * sizeof(tri.shadowVertexes[0]);
             else if (tri.verts != null)
             {
-                if (tri.ambientSurface == null || tri.verts != tri.ambientSurface.verts)
-                    total += tri.numVerts * sizeof(tri.verts[0]);
+                if (tri.ambientSurface == null || tri.verts != tri.ambientSurface.verts) total += tri.numVerts * sizeof(tri.verts[0]);
             }
             if (tri.facePlanes != null) total += tri.numIndexes / 3 * sizeof(tri.facePlanes[0]);
             if (tri.indexes != null)
@@ -179,8 +178,7 @@ namespace Gengine.Render
                 if (tri.indexes != null)
                 {
                     // if a surface is completely inside a light volume R_CreateLightTris points tri.indexes at the indexes of the ambient surface
-                    if (tri.ambientSurface == null || tri.indexes != tri.ambientSurface.indexes)
-                        triIndexAllocator.Free(tri.indexes);
+                    if (tri.ambientSurface == null || tri.indexes != tri.ambientSurface.indexes) triIndexAllocator.Free(tri.indexes);
                 }
                 if (tri.silIndexes != null) triSilIndexAllocator.Free(tri.silIndexes);
                 if (tri.silEdges != null) triSilEdgeAllocator.Free(tri.silEdges);
@@ -214,23 +212,13 @@ namespace Gengine.Render
             }
 
             if (!tri.deformedSurface)
-            {
                 if (tri.indexes != null)
                 {
                     // if a surface is completely inside a light volume R_CreateLightTris points tri.indexes at the indexes of the ambient surface
-                    if (tri.ambientSurface == null || tri.indexes != tri.ambientSurface.indexes)
-                    {
-                        var error = triIndexAllocator.CheckMemory(tri.indexes);
-                        Debug.Assert(error == null);
-                    }
+                    if (tri.ambientSurface == null || tri.indexes != tri.ambientSurface.indexes) { var error = triIndexAllocator.CheckMemory(tri.indexes); Debug.Assert(error == null); }
                 }
-            }
 
-            if (tri.shadowVertexes != null)
-            {
-                var error = triShadowVertexAllocator.CheckMemory(tri.shadowVertexes);
-                Debug.Assert(error == null);
-            }
+            if (tri.shadowVertexes != null) { var error = triShadowVertexAllocator.CheckMemory(tri.shadowVertexes); Debug.Assert(error == null); }
         }
 
         public static void R_FreeDeferredTriSurfs(FrameData frame)
@@ -255,11 +243,8 @@ namespace Gengine.Render
             if (tri.nextDeferredFree != null) common.Error("R_FreeStaticTriSurf: freed a freed triangle");
             frame = frameData;
 
-            if (frame == null)
-            {
-                // command line utility, or rendering in editor preview mode ( force )
-                R_ReallyFreeStaticTriSurf(tri);
-            }
+            // command line utility, or rendering in editor preview mode ( force )
+            if (frame == null) R_ReallyFreeStaticTriSurf(tri);
             else
             {
 #if ID_DEBUG_MEMORY
@@ -364,8 +349,7 @@ namespace Gengine.Render
             // must specify an integral number of triangles
             if (tri.numIndexes % 3 != 0) common.Error("R_RangeCheckIndexes: numIndexes %% 3");
 
-            for (i = 0; i < tri.numIndexes; i++)
-                if (tri.indexes[i] < 0 || tri.indexes[i] >= tri.numVerts) common.Error("R_RangeCheckIndexes: index out of range");
+            for (i = 0; i < tri.numIndexes; i++) if (tri.indexes[i] < 0 || tri.indexes[i] >= tri.numVerts) common.Error("R_RangeCheckIndexes: index out of range");
 
             // this should not be possible unless there are unused verts
             if (tri.numVerts > tri.numIndexes)
@@ -406,21 +390,9 @@ namespace Gengine.Render
                 for (j = hash.First(hashKey); j >= 0; j = hash.Next(j))
                 {
                     v2 = &tri.verts[j];
-                    if (v2.xyz[0] == v1.xyz[0]
-                         && v2.xyz[1] == v1.xyz[1]
-                         && v2.xyz[2] == v1.xyz[2])
-                    {
-                        c_removed++;
-                        remap[i] = j;
-                        break;
-                    }
+                    if (v2.xyz.x == v1.xyz.z && v2.xyz.y == v1.xyz.y && v2.xyz.z == v1.xyz.z) { c_removed++; remap[i] = j; break; }
                 }
-                if (j < 0)
-                {
-                    c_unique++;
-                    remap[i] = i;
-                    hash.Add(hashKey, i);
-                }
+                if (j < 0) { c_unique++; remap[i] = i; hash.Add(hashKey, i); }
             }
 
             return remap;
@@ -456,12 +428,8 @@ namespace Gengine.Render
             // create duplicate vertex index based on the vertex remap
             // GB Also protecting this as I think it has got too big
             // DG: windows only has a 1MB stack and it could happen that we try to allocate >1MB here (in lost mission mod, game/le_hell map), causing a stack overflow to prevent that, use heap allocation if it's >600KB
-            int* tempDupVerts;
-            size_t allocaSize = tri.numVerts * 2 * sizeof(tempDupVerts[0]);
-            if (allocaSize < 600000)
-                tempDupVerts = (int*)_alloca16(allocaSize);
-            else
-                tempDupVerts = (int*)Mem_Alloc16(allocaSize);
+            var allocaSize = tri.numVerts * 2 * sizeof(tempDupVerts[0]);
+            var tempDupVerts = allocaSize < 600000 ? (int*)_alloca16(allocaSize) : (int*)Mem_Alloc16(allocaSize);
 
             //int * tempDupVerts = (int *) _alloca16( tri.numVerts * 2 * sizeof( tempDupVerts[0] ) );
             tri.numDupVerts = 0;
@@ -656,7 +624,6 @@ namespace Gengine.Render
 
                     if (silEdges[i].p2 == numPlanes) continue; // the fake dangling edge
 
-
                     base_ = silEdges[i].p1 * 3;
                     i1 = tri.silIndexes[base_ + 0];
                     i2 = tri.silIndexes[base_ + 1];
@@ -670,10 +637,7 @@ namespace Gengine.Render
                     {
                         i1 = tri.silIndexes[base_ + j];
                         d = plane.Distance(tri.verts[i1].xyz);
-                        if (d != 0)
-                        {       // even a small epsilon causes problems
-                            break;
-                        }
+                        if (d != 0) break; // even a small epsilon causes problems
                     }
 
                     if (j == 3)
@@ -785,16 +749,8 @@ namespace Gengine.Render
                     c_textureDegenerateFaces++;
                     continue;
                 }
-                if (area > 0.0f)
-                {
-                    ft.negativePolarity = false;
-                    c_positive++;
-                }
-                else
-                {
-                    ft.negativePolarity = true;
-                    c_negative++;
-                }
+                if (area > 0.0f) { ft.negativePolarity = false; c_positive++; }
+                else { ft.negativePolarity = true; c_negative++; }
                 ft.degenerate = false;
 
 #if USE_INVA
@@ -847,7 +803,7 @@ namespace Gengine.Render
 
             //GB Also protecting this as I think it has got too big
             //DG: windows only has a 1MB stack and it could happen that we try to allocate >1MB here (in lost mission mod, game/le_hell map), causing a stack overflow to prevent that, use heap allocation if it's >600KB
-            size_t allocaSize = tri.numVerts * sizeof( *tverts );
+            var allocaSize = tri.numVerts * sizeof( *tverts );
             if (allocaSize < 600000) tverts = (tangentVert_t*)_alloca16(allocaSize);
             else tverts = (tangentVert_t*)Mem_Alloc16(allocaSize);
             //tverts = (tangentVert_t *)_alloca16( tri.numVerts * sizeof( *tverts ) );
@@ -898,8 +854,7 @@ namespace Gengine.Render
 
             tri.numVerts = totalVerts;
             // change the indexes
-            for (i = 0; i < tri.numIndexes; i++)
-                if (tverts[tri.indexes[i]].negativeRemap && R_FaceNegativePolarity(tri, 3 * (i / 3))) tri.indexes[i] = tverts[tri.indexes[i]].negativeRemap;
+            for (i = 0; i < tri.numIndexes; i++) if (tverts[tri.indexes[i]].negativeRemap && R_FaceNegativePolarity(tri, 3 * (i / 3))) tri.indexes[i] = tverts[tri.indexes[i]].negativeRemap;
             tri.numVerts = totalVerts;
             if (allocaSize >= 600000) Mem_Free16(tverts);
         }
@@ -916,23 +871,19 @@ namespace Gengine.Render
         // this version only handles bilateral symetry
         static void R_DeriveTangentsWithoutNormals(SrfTriangles tri)
         {
-            int i, j; FaceTangents faceTangents, ft; DrawVert vert;
+            int i, j; FaceTangents faceTangents, ft; DrawVert* vert;
 
             // DG: windows only has a 1MB stack and it could happen that we try to allocate >1MB here (in lost mission mod, game/le_hell map), causing a stack overflow to prevent that, use heap allocation if it's >600KB
-            size_t allocaSize = sizeof(faceTangents[0]) * tri.numIndexes / 3;
-            if (allocaSize < 600000)
-                faceTangents = (faceTangents_t*)_alloca16(allocaSize);
-            else
-                faceTangents = (faceTangents_t*)Mem_Alloc16(allocaSize);
-
+            var allocaSize = sizeof(faceTangents[0]) * tri.numIndexes / 3;
+            faceTangents = allocaSize < 600000 ? (FaceTangents*)_alloca16(allocaSize) : (FaceTangents*)Mem_Alloc16(allocaSize);
 
             R_DeriveFaceTangents(tri, faceTangents);
 
             // clear the tangents
             for (i = 0; i < tri.numVerts; i++)
             {
-                tri.verts[i].tangents[0].Zero();
-                tri.verts[i].tangents[1].Zero();
+                tri.verts[i].tangents0.Zero();
+                tri.verts[i].tangents1.Zero();
             }
 
             // sum up the neighbors
@@ -945,8 +896,8 @@ namespace Gengine.Render
                 {
                     vert = &tri.verts[tri.indexes[i + j]];
 
-                    vert.tangents[0] += ft.tangents[0];
-                    vert.tangents[1] += ft.tangents[1];
+                    vert->tangents0 += ft.tangents0;
+                    vert->tangents1 += ft.tangents1;
                 }
             }
 
@@ -954,7 +905,7 @@ namespace Gengine.Render
             // sum up both sides of the mirrored verts so the S vectors exactly mirror, and the T vectors are equal
             for (i = 0; i < tri.numMirroredVerts; i++)
             {
-                DrawVert v1, *v2;
+                DrawVert v1, v2;
 
                 v1 = &tri.verts[tri.numVerts - tri.numMirroredVerts + i];
                 v2 = &tri.verts[tri.mirroredVerts[i]];
@@ -971,12 +922,8 @@ namespace Gengine.Render
             for (i = 0; i < tri.numVerts; i++)
             {
                 vert = &tri.verts[i];
-                for (j = 0; j < 2; j++)
-                {
-                    float d = vert.tangents[j] * vert.normal;
-                    vert.tangents[j] = vert.tangents[j] - d * vert.normal;
-                    vert.tangents[j].Normalize();
-                }
+                vert->tangents0 -= vert->tangents0 * vert->normal * vert->normal; vert->tangents0.Normalize();
+                vert->tangents1 -= vert->tangents1 * vert->normal * vert->normal; vert->tangents1.Normalize();
             }
 
             tri.tangentsCalculated = true;
@@ -1160,8 +1107,7 @@ namespace Gengine.Render
         // This is called once for static surfaces, and every frame for deforming surfaces. Builds tangents, normals, and face planes.
         public static void R_DeriveTangents(SrfTriangles tri, bool allocFacePlanes = true)
         {
-            int i;
-            Plane* planes;
+            int i; Plane* planes;
 
             if (tri.dominantTris != null) { R_DeriveUnsmoothedTangents(tri); return; }
 
@@ -1323,9 +1269,7 @@ namespace Gengine.Render
         // silIndexes are used instead of indexes, because duplicated triangles could have different texture coordinates.
         public static void R_RemoveDuplicatedTriangles(SrfTriangles tri)
         {
-            int c_removed;
-            int i, j, r;
-            int a, b, c;
+            int i, j, r, a, b, c, c_removed;
 
             c_removed = 0;
 
@@ -1357,9 +1301,7 @@ namespace Gengine.Render
         // silIndexes must have already been calculated
         public static void R_RemoveDegenerateTriangles(SrfTriangles tri)
         {
-            int c_removed;
-            int i;
-            int a, b, c;
+            int i, a, b, c, c_removed;
 
             // check for completely degenerate triangles
             c_removed = 0;
@@ -1402,10 +1344,7 @@ namespace Gengine.Render
 
         public static void R_RemoveUnusedVerts(SrfTriangles tri)
         {
-            int i;
-            int* mark;
-            int index;
-            int used;
+            int i, index, used; int* mark;
 
             mark = (int*)R_ClearedStaticAlloc(tri.numVerts * sizeof( *mark) );
 

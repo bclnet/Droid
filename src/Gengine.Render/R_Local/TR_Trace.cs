@@ -50,18 +50,10 @@ namespace Gengine.Render
             Simd.TracePointCull(cullBits, totalOr, radius, planes, tri.verts, tri.numVerts);
 
             // if we don't have points on both sides of both the ray planes, no intersection
-            if (((totalOr ^ (totalOr >> 4)) & 3) != 0)
-            {
-                //common.Printf("nothing crossed the trace planes\n");
-                return hit;
-            }
+            if (((totalOr ^ (totalOr >> 4)) & 3) != 0) { /*common.Printf("nothing crossed the trace planes\n");*/ return hit; }
 
             // if we don't have any points between front and end, no intersection
-            if (((totalOr ^ (totalOr >> 1)) & 4) != 0)
-            {
-                //common.Printf("trace didn't reach any triangles\n");
-                return hit;
-            }
+            if (((totalOr ^ (totalOr >> 1)) & 4) != 0) { /*common.Printf("trace didn't reach any triangles\n");*/ return hit; }
 
             // scan for triangles that cross both planes
             c_testPlanes = c_testEdges = c_intersect = 0;
@@ -83,12 +75,10 @@ namespace Gengine.Render
                 triOr |= cullBits[tri.indexes[i + 2]];
 
                 // if we don't have points on both sides of both the ray planes, no intersection
-                if (((triOr ^ (triOr >> 4)) & 3) != 0)
-                    continue;
+                if (((triOr ^ (triOr >> 4)) & 3) != 0) continue;
 
                 // if we don't have any points between front and end, no intersection
-                if (((triOr ^ (triOr >> 1)) & 4) != 0)
-                    continue;
+                if (((triOr ^ (triOr >> 1)) & 4) != 0) continue;
 
                 c_testPlanes++;
 
@@ -117,26 +107,22 @@ namespace Gengine.Render
                 d = plane.Normal * cross;
                 if (d > 0f)
                 {
-                    if (radiusSqr <= 0f)
-                        continue;
+                    if (radiusSqr <= 0f) continue;
                     edge = tri.verts[tri.indexes[i + 0]].xyz - tri.verts[tri.indexes[i + 1]].xyz;
                     edgeLengthSqr = edge.LengthSqr;
-                    if (cross.LengthSqr > edgeLengthSqr * radiusSqr)
-                        continue;
+                    if (cross.LengthSqr > edgeLengthSqr * radiusSqr) continue;
                     d = edge * dir[0];
                     if (d < 0f)
                     {
                         edge = tri.verts[tri.indexes[i + 0]].xyz - tri.verts[tri.indexes[i + 2]].xyz;
                         d = edge * dir[0];
-                        if (d < 0f && dir[0].LengthSqr > radiusSqr)
-                            continue;
+                        if (d < 0f && dir[0].LengthSqr > radiusSqr) continue;
                     }
                     else if (d > edgeLengthSqr)
                     {
                         edge = tri.verts[tri.indexes[i + 1]].xyz - tri.verts[tri.indexes[i + 2]].xyz;
                         d = edge * dir[1];
-                        if (d < 0f && dir[1].LengthSqr > radiusSqr)
-                            continue;
+                        if (d < 0f && dir[1].LengthSqr > radiusSqr) continue;
                     }
                 }
 
@@ -146,26 +132,22 @@ namespace Gengine.Render
                 d = plane.Normal * cross;
                 if (d > 0f)
                 {
-                    if (radiusSqr <= 0f)
-                        continue;
+                    if (radiusSqr <= 0f) continue;
                     edge = tri.verts[tri.indexes[i + 1]].xyz - tri.verts[tri.indexes[i + 2]].xyz;
                     edgeLengthSqr = edge.LengthSqr;
-                    if (cross.LengthSqr > edgeLengthSqr * radiusSqr)
-                        continue;
+                    if (cross.LengthSqr > edgeLengthSqr * radiusSqr) continue;
                     d = edge * dir[1];
                     if (d < 0f)
                     {
                         edge = tri.verts[tri.indexes[i + 1]].xyz - tri.verts[tri.indexes[i + 0]].xyz;
                         d = edge * dir[1];
-                        if (d < 0f && dir[1].LengthSqr > radiusSqr)
-                            continue;
+                        if (d < 0f && dir[1].LengthSqr > radiusSqr) continue;
                     }
                     else if (d > edgeLengthSqr)
                     {
                         edge = tri.verts[tri.indexes[i + 2]].xyz - tri.verts[tri.indexes[i + 0]].xyz;
                         d = edge * dir[2];
-                        if (d < 0f && dir[2].LengthSqr > radiusSqr)
-                            continue;
+                        if (d < 0f && dir[2].LengthSqr > radiusSqr) continue;
                     }
                 }
 
@@ -173,26 +155,22 @@ namespace Gengine.Render
                 d = plane.Normal * cross;
                 if (d > 0f)
                 {
-                    if (radiusSqr <= 0f)
-                        continue;
+                    if (radiusSqr <= 0f) continue;
                     edge = tri.verts[tri.indexes[i + 2]].xyz - tri.verts[tri.indexes[i + 0]].xyz;
                     edgeLengthSqr = edge.LengthSqr;
-                    if (cross.LengthSqr > edgeLengthSqr * radiusSqr)
-                        continue;
+                    if (cross.LengthSqr > edgeLengthSqr * radiusSqr) continue;
                     d = edge * dir[2];
                     if (d < 0f)
                     {
                         edge = tri.verts[tri.indexes[i + 2]].xyz - tri.verts[tri.indexes[i + 1]].xyz;
                         d = edge * dir[2];
-                        if (d < 0f && dir[2].LengthSqr > radiusSqr)
-                            continue;
+                        if (d < 0f && dir[2].LengthSqr > radiusSqr) continue;
                     }
                     else if (d > edgeLengthSqr)
                     {
                         edge = tri.verts[tri.indexes[i + 0]].xyz - tri.verts[tri.indexes[i + 1]].xyz;
                         d = edge * dir[0];
-                        if (d < 0f && dir[0].LengthSqr > radiusSqr)
-                            continue;
+                        if (d < 0f && dir[0].LengthSqr > radiusSqr) continue;
                     }
                 }
 
