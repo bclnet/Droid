@@ -22,6 +22,7 @@ namespace System.NumericsX
         public static unsafe ref Vector3 cast_vec3(Vector5 s) => ref *(Vector3*)&s;
         public static unsafe ref Vector3 cast_vec3(Plane s) => ref *(Vector3*)&s;
         public static unsafe ref Vector3 cast_vec3(float* s, int index) => ref *(Vector3*)&s[index];
+        public static unsafe ref Vector3 cast_vec3(float[] s, int index) { fixed (float* s_ = s) return ref *(Vector3*)&s_[index]; }
 
         public static unsafe ref Vector4 cast_vec4(Plane s) => ref *(Vector4*)&s;
         public static unsafe ref Vector4 cast_vec4(Rectangle s) => ref *(Vector4*)&s;

@@ -6,7 +6,7 @@ using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Render
 {
-    public unsafe class FrameBuffer
+    public unsafe class _NewFile
     {
     }
 }

@@ -69,15 +69,10 @@ namespace Gengine.Framework
 
         static void Con_Dump_f(CmdArgs args)
         {
-            if (args.Count != 2)
-            {
-                common.Printf("usage: conDump <filename>\n");
-                return;
-            }
+            if (args.Count != 2) { common.Printf("usage: conDump <filename>\n"); return; }
 
             var fileName = args[1];
-            if (string.IsNullOrEmpty(Path.GetExtension(fileName)))
-                fileName += ".txt";
+            if (string.IsNullOrEmpty(Path.GetExtension(fileName))) fileName += ".txt";
 
             common.Printf($"Dumped console text to {fileName}.\n");
 
@@ -95,11 +90,7 @@ namespace Gengine.Framework
 
             consoleField.SetWidthInChars(LINE_WIDTH);
 
-            for (var i = 0; i < COMMAND_HISTORY; i++)
-            {
-                historyEditLines[i].Clear();
-                historyEditLines[i].SetWidthInChars(LINE_WIDTH);
-            }
+            for (var i = 0; i < COMMAND_HISTORY; i++) { historyEditLines[i].Clear(); historyEditLines[i].SetWidthInChars(LINE_WIDTH); }
 
             cmdSystem.AddCommand("clear", Con_Clear_f, CMD_FL.SYSTEM, "clears the console");
             cmdSystem.AddCommand("conDump", Con_Dump_f, CMD_FL.SYSTEM, "dumps the console text to a file");
@@ -137,8 +128,7 @@ namespace Gengine.Framework
 
         public void Clear()
         {
-            for (var i = 0; i < CON_TEXTSIZE; i++)
-                text[i] = (short)((System.NumericsX.OpenStack.stringX.ColorIndex(C_COLOR_CYAN) << 8) | ' ');
+            for (var i = 0; i < CON_TEXTSIZE; i++) text[i] = (short)((stringX.ColorIndex(C_COLOR_CYAN) << 8) | ' ');
             Bottom(); // go to end
         }
 
@@ -152,32 +142,23 @@ namespace Gengine.Framework
             var buffer = stackalloc byte[LINE_WIDTH + 2];
 
             var f = fileSystem.OpenFileWrite(toFile);
-            if (f == null)
-            {
-                common.Warning($"couldn't open {toFile}");
-                return;
-            }
+            if (f == null) { common.Warning($"couldn't open {toFile}"); return; }
 
             // skip empty lines
             l = current - TOTAL_LINES + 1;
-            if (l < 0)
-                l = 0;
+            if (l < 0) l = 0;
             for (; l <= current; l++)
             {
                 line = text.AsSpan((l % TOTAL_LINES) * LINE_WIDTH);
-                for (x = 0; x < LINE_WIDTH; x++)
-                    if ((line[x] & 0xff) > ' ')
-                        break;
-                if (x != LINE_WIDTH)
-                    break;
+                for (x = 0; x < LINE_WIDTH; x++) if ((line[x] & 0xff) > ' ') break;
+                if (x != LINE_WIDTH) break;
             }
 
             // write the remaining lines
             for (; l <= current; l++)
             {
                 line = text.AsSpan((l % TOTAL_LINES) * LINE_WIDTH);
-                for (i = 0; i < LINE_WIDTH; i++)
-                    buffer[i] = (byte)(line[i] & 0xff);
+                for (i = 0; i < LINE_WIDTH; i++) buffer[i] = (byte)(line[i] & 0xff);
                 for (x = LINE_WIDTH - 1; x >= 0; x--)
                     if (buffer[x] <= ' ') buffer[x] = 0;
                     else break;
@@ -197,8 +178,7 @@ namespace Gengine.Framework
                 // make sure the history is in the right order
                 var line = (nextHistoryLine + i) % COMMAND_HISTORY;
                 var s = historyEditLines[line].Buffer.ToString();
-                if (string.IsNullOrEmpty(s))
-                    f.WriteString(s);
+                if (string.IsNullOrEmpty(s)) f.WriteString(s);
             }
             fileSystem.CloseFile(f);
         }
@@ -206,14 +186,12 @@ namespace Gengine.Framework
         public void LoadHistory()
         {
             var f = fileSystem.OpenFileRead("consolehistory.dat");
-            if (f == null) // file doesn't exist
-                return;
+            if (f == null) return; // file doesn't exist
 
             historyLine = 0;
             for (var i = 0; i < COMMAND_HISTORY; ++i)
             {
-                if (f.Tell >= f.Length)
-                    break; // EOF is reached
+                if (f.Tell >= f.Length) break; // EOF is reached
                 f.ReadString(out var tmp);
                 historyEditLines[i].SetBuffer(tmp);
                 ++historyLine;
@@ -251,11 +229,7 @@ namespace Gengine.Framework
                 cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "\n");
 
                 // copy line to history buffer, if it isn't the same as the last command
-                if (consoleFieldBuffer != historyEditLines[(nextHistoryLine + COMMAND_HISTORY - 1) % COMMAND_HISTORY].Buffer.ToString())
-                {
-                    historyEditLines[nextHistoryLine % COMMAND_HISTORY] = consoleField;
-                    nextHistoryLine++;
-                }
+                if (consoleFieldBuffer != historyEditLines[(nextHistoryLine + COMMAND_HISTORY - 1) % COMMAND_HISTORY].Buffer.ToString()) { historyEditLines[nextHistoryLine % COMMAND_HISTORY] = consoleField; nextHistoryLine++; }
 
                 historyLine = nextHistoryLine;
                 // clear the next line from old garbage, else the oldest history entry turns up when pressing DOWN
@@ -274,15 +248,13 @@ namespace Gengine.Framework
             // command history (ctrl-p ctrl-n for unix style)
             if ((key == K_UPARROW) || ((char.ToLowerInvariant((char)key) == 'p') && KeyInput.IsDown(K_CTRL)))
             {
-                if (nextHistoryLine - historyLine < COMMAND_HISTORY && historyLine > 0)
-                    historyLine--;
+                if (nextHistoryLine - historyLine < COMMAND_HISTORY && historyLine > 0) historyLine--;
                 consoleField = historyEditLines[historyLine % COMMAND_HISTORY];
                 return;
             }
             if ((key == K_DOWNARROW) || ((char.ToLowerInvariant((char)key) == 'n') && KeyInput.IsDown(K_CTRL)))
             {
-                if (historyLine == nextHistoryLine)
-                    return;
+                if (historyLine == nextHistoryLine) return;
                 historyLine++;
                 consoleField = historyEditLines[historyLine % COMMAND_HISTORY];
                 return;
@@ -307,8 +279,7 @@ namespace Gengine.Framework
         /// </summary>
         void Scroll()
         {
-            if (lastKeyEvent == -1 || (lastKeyEvent + 200) > eventLoop.Milliseconds)
-                return;
+            if (lastKeyEvent == -1 || (lastKeyEvent + 200) > eventLoop.Milliseconds) return;
 
             // console scrolling
             if (KeyInput.IsDown(K_PGUP)) { PageUp(); nextKeyEvent = CONSOLE_REPEAT; return; }
@@ -330,26 +301,19 @@ namespace Gengine.Framework
         /// </summary>
         void UpdateDisplayFraction()
         {
-            if (con_speed.Float <= 0.1f)
-            {
-                fracTime = com_frameTime;
-                displayFrac = finalFrac;
-                return;
-            }
+            if (con_speed.Float <= 0.1f) { fracTime = com_frameTime; displayFrac = finalFrac; return; }
 
             // scroll towards the destination height
             if (finalFrac < displayFrac)
             {
                 displayFrac -= con_speed.Float * (com_frameTime - fracTime) * 0.001f;
-                if (finalFrac > displayFrac)
-                    displayFrac = finalFrac;
+                if (finalFrac > displayFrac) displayFrac = finalFrac;
                 fracTime = com_frameTime;
             }
             else if (finalFrac > displayFrac)
             {
                 displayFrac += con_speed.Float * (com_frameTime - fracTime) * 0.001f;
-                if (finalFrac < displayFrac)
-                    displayFrac = finalFrac;
+                if (finalFrac < displayFrac) displayFrac = finalFrac;
                 fracTime = com_frameTime;
             }
         }
@@ -358,22 +322,19 @@ namespace Gengine.Framework
         {
             var consoleKey = false;
             if (e.evType == SE.KEY)
-                if (e.evValue == SysW.GetConsoleKey(false) || e.evValue == SysW.GetConsoleKey(true) || (e.evValue == (int)K_ESCAPE && KeyInput.IsDown(K_SHIFT))) // shift+esc should also open console
-                    consoleKey = true;
+                if (e.evValue == SysW.GetConsoleKey(false) || e.evValue == SysW.GetConsoleKey(true) || (e.evValue == (int)K_ESCAPE && KeyInput.IsDown(K_SHIFT))) // shift+esc should also open console consoleKey = true;
 
 #if ID_CONSOLE_LOCK
-            // If the console's not already down, and we have it turned off, check for ctrl+alt
-            if (!keyCatching && !C.com_allowConsole.Bool)
-                if (!KeyInput.IsDown(K_CTRL) || !KeyInput.IsDown(K_ALT))
-                    consoleKey = false;
+                    // If the console's not already down, and we have it turned off, check for ctrl+alt
+                    if (!keyCatching && !C.com_allowConsole.Bool)
+                        if (!KeyInput.IsDown(K_CTRL) || !KeyInput.IsDown(K_ALT)) consoleKey = false;
 #endif
 
             // we always catch the console key e
             if (!forceAccept && consoleKey)
             {
                 // ignore up es
-                if (e.evValue2 == 0)
-                    return true;
+                if (e.evValue2 == 0) return true;
 
                 consoleField.ClearAutoComplete();
 
@@ -396,23 +357,20 @@ namespace Gengine.Framework
             }
 
             // if we aren't key catching, dump all the other es
-            if (!forceAccept && !keyCatching)
-                return false;
+            if (!forceAccept && !keyCatching) return false;
 
             // handle key and character es
             if (e.evType == SE.CHAR)
             {
                 // never send the console key as a character
-                if (e.evValue != SysW.GetConsoleKey(false) && e.evValue != SysW.GetConsoleKey(true))
-                    consoleField.CharEvent((char)e.evValue);
+                if (e.evValue != SysW.GetConsoleKey(false) && e.evValue != SysW.GetConsoleKey(true)) consoleField.CharEvent((char)e.evValue);
                 return true;
             }
 
             if (e.evType == SE.KEY)
             {
                 // ignore up key es
-                if (e.evValue2 == 0)
-                    return true;
+                if (e.evValue2 == 0) return true;
 
                 KeyDownEvent((Key)e.evValue);
                 return true;
@@ -429,15 +387,12 @@ namespace Gengine.Framework
         void Linefeed()
         {
             // mark time for transparent overlay
-            if (current >= 0)
-                times[current % NUM_CON_TIMES] = com_frameTime;
+            if (current >= 0) times[current % NUM_CON_TIMES] = com_frameTime;
 
             x = 0;
-            if (display == current)
-                display++;
+            if (display == current) display++;
             current++;
-            for (var i = 0; i < LINE_WIDTH; i++)
-                text[(current % TOTAL_LINES) * LINE_WIDTH + i] = (short)((System.NumericsX.OpenStack.stringX.ColorIndex(C_COLOR_CYAN) << 8) | ' ');
+            for (var i = 0; i < LINE_WIDTH; i++) text[(current % TOTAL_LINES) * LINE_WIDTH + i] = (short)((stringX.ColorIndex(C_COLOR_CYAN) << 8) | ' ');
         }
 
         /// <summary>
@@ -451,11 +406,10 @@ namespace Gengine.Framework
 #if ID_ALLOW_TOOLS
             RadiantPrint(text);
 
-            if ((C.com_editors & (int)EDITOR.MATERIAL) != 0)
-                MaterialEditorPrintConsole(text);
+            if ((C.com_editors & (int)EDITOR.MATERIAL) != 0) MaterialEditorPrintConsole(text);
 #endif
 
-            color = System.NumericsX.OpenStack.stringX.ColorIndex(C_COLOR_CYAN);
+            color = stringX.ColorIndex(C_COLOR_CYAN);
             fixed (void* text_ = this.text, textTill = &this.text[this.text.Length])
             {
                 var txt = (byte*)text_;
@@ -463,12 +417,7 @@ namespace Gengine.Framework
                 while (txt < textTill)
                 {
                     c = *txt;
-                    if (System.NumericsX.OpenStack.stringX.IsColor(txt, textTill))
-                    {
-                        color = System.NumericsX.OpenStack.stringX.ColorIndex(txt[1] == C_COLOR_DEFAULT ? C_COLOR_CYAN : txt[1]);
-                        txt += 2;
-                        continue;
-                    }
+                    if (stringX.IsColor(txt, textTill)) { color = stringX.ColorIndex(txt[1] == C_COLOR_DEFAULT ? C_COLOR_CYAN : txt[1]); txt += 2; continue; }
 
                     y = current % TOTAL_LINES;
 
@@ -477,13 +426,10 @@ namespace Gengine.Framework
                     if (c > ' ' && (x == 0 || this.text[y * LINE_WIDTH + x - 1] <= ' '))
                     {
                         // count word length
-                        for (l = 0; l < LINE_WIDTH; l++)
-                            if (txt[l] <= ' ')
-                                break;
+                        for (l = 0; l < LINE_WIDTH; l++) if (txt[l] <= ' ') break;
 
                         // word wrap
-                        if (l != LINE_WIDTH && (x + l >= LINE_WIDTH))
-                            Linefeed();
+                        if (l != LINE_WIDTH && (x + l >= LINE_WIDTH)) Linefeed();
                     }
 
                     txt++;
@@ -510,8 +456,7 @@ namespace Gengine.Framework
             }
 
             // mark time for transparent overlay
-            if (current >= 0)
-                times[current % NUM_CON_TIMES] = com_frameTime;
+            if (current >= 0) times[current % NUM_CON_TIMES] = com_frameTime;
         }
 
         #endregion
@@ -538,7 +483,7 @@ namespace Gengine.Framework
                 }
             }
 
-            renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(C_COLOR_CYAN));
+            renderSystem.SetColor(stringX.ColorForIndex(C_COLOR_CYAN));
 
             renderSystem.DrawSmallChar(1 * R.SMALLCHAR_WIDTH, y, ']', localConsole.charSetShader);
 
@@ -554,33 +499,28 @@ namespace Gengine.Framework
         {
             int x, v, i, time, currentColor; Span<short> text_p;
 
-            if (con_noPrint.Bool)
-                return;
+            if (con_noPrint.Bool) return;
 
-            currentColor = System.NumericsX.OpenStack.stringX.ColorIndex(C_COLOR_WHITE);
-            renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(currentColor));
+            currentColor = stringX.ColorIndex(C_COLOR_WHITE);
+            renderSystem.SetColor(stringX.ColorForIndex(currentColor));
 
             v = 0;
             for (i = current - NUM_CON_TIMES + 1; i <= current; i++)
             {
-                if (i < 0)
-                    continue;
+                if (i < 0) continue;
                 time = times[i % NUM_CON_TIMES];
-                if (time == 0)
-                    continue;
+                if (time == 0) continue;
                 time = com_frameTime - time;
-                if (time > con_notifyTime.Float * 1000)
-                    continue;
+                if (time > con_notifyTime.Float * 1000) continue;
                 text_p = text.AsSpan((i % TOTAL_LINES) * LINE_WIDTH);
 
                 for (x = 0; x < LINE_WIDTH; x++)
                 {
-                    if ((text_p[x] & 0xff) == ' ')
-                        continue;
-                    if (System.NumericsX.OpenStack.stringX.ColorIndex(text_p[x] >> 8) != currentColor)
+                    if ((text_p[x] & 0xff) == ' ') continue;
+                    if (stringX.ColorIndex(text_p[x] >> 8) != currentColor)
                     {
-                        currentColor = System.NumericsX.OpenStack.stringX.ColorIndex(text_p[x] >> 8);
-                        renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(currentColor));
+                        currentColor = stringX.ColorIndex(text_p[x] >> 8);
+                        renderSystem.SetColor(stringX.ColorForIndex(currentColor));
                     }
                     renderSystem.DrawSmallChar((x + 1) * R.SMALLCHAR_WIDTH, v, text_p[x] & 0xff, localConsole.charSetShader);
                 }
@@ -600,11 +540,9 @@ namespace Gengine.Framework
             int i, x, rows, row, lines, currentColor; float y; Span<short> text_p;
 
             lines = MathX.FtoiFast(R.SCREEN_HEIGHT * frac);
-            if (lines <= 0)
-                return;
+            if (lines <= 0) return;
 
-            if (lines > R.SCREEN_HEIGHT)
-                lines = R.SCREEN_HEIGHT;
+            if (lines > R.SCREEN_HEIGHT) lines = R.SCREEN_HEIGHT;
 
             // draw the background
             y = frac * R.SCREEN_HEIGHT - 2;
@@ -617,13 +555,12 @@ namespace Gengine.Framework
 
             // draw the version number
 
-            renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(C_COLOR_CYAN));
+            renderSystem.SetColor(stringX.ColorForIndex(C_COLOR_CYAN));
 
             var version = $"{ENGINE_VERSION}.{BUILD_NUMBER}";
             i = version.Length;
 
-            for (x = 0; x < i; x++)
-                renderSystem.DrawSmallChar(R.SCREEN_WIDTH - (i - x) * R.SMALLCHAR_WIDTH, (lines - (R.SMALLCHAR_HEIGHT + R.SMALLCHAR_HEIGHT / 2)), version[x], localConsole.charSetShader);
+            for (x = 0; x < i; x++) renderSystem.DrawSmallChar(R.SCREEN_WIDTH - (i - x) * R.SMALLCHAR_WIDTH, (lines - (R.SMALLCHAR_HEIGHT + R.SMALLCHAR_HEIGHT / 2)), version[x], localConsole.charSetShader);
 
             // draw the text
             vislines = lines;
@@ -635,40 +572,35 @@ namespace Gengine.Framework
             if (display != current)
             {
                 // draw arrows to show the buffer is backscrolled
-                renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(C_COLOR_CYAN));
-                for (x = 0; x < LINE_WIDTH; x += 4)
-                    renderSystem.DrawSmallChar((x + 1) * R.SMALLCHAR_WIDTH, MathX.FtoiFast(y), '^', localConsole.charSetShader);
+                renderSystem.SetColor(stringX.ColorForIndex(C_COLOR_CYAN));
+                for (x = 0; x < LINE_WIDTH; x += 4) renderSystem.DrawSmallChar((x + 1) * R.SMALLCHAR_WIDTH, MathX.FtoiFast(y), '^', localConsole.charSetShader);
                 y -= R.SMALLCHAR_HEIGHT;
                 rows--;
             }
 
             row = display;
 
-            if (x == 0)
-                row--;
+            if (x == 0) row--;
 
-            currentColor = System.NumericsX.OpenStack.stringX.ColorIndex(C_COLOR_WHITE);
-            renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(currentColor));
+            currentColor = stringX.ColorIndex(C_COLOR_WHITE);
+            renderSystem.SetColor(stringX.ColorForIndex(currentColor));
 
             for (i = 0; i < rows; i++, y -= R.SMALLCHAR_HEIGHT, row--)
             {
-                if (row < 0)
-                    break;
-                if (current - row >= TOTAL_LINES)
-                    // past scrollback wrap point
-                    continue;
+                if (row < 0) break;
+                // past scrollback wrap point
+                if (current - row >= TOTAL_LINES) continue;
 
                 text_p = text.AsSpan((row % TOTAL_LINES) * LINE_WIDTH);
 
                 for (x = 0; x < LINE_WIDTH; x++)
                 {
-                    if ((text_p[x] & 0xff) == ' ')
-                        continue;
+                    if ((text_p[x] & 0xff) == ' ') continue;
 
-                    if (System.NumericsX.OpenStack.stringX.ColorIndex(text_p[x] >> 8) != currentColor)
+                    if (stringX.ColorIndex(text_p[x] >> 8) != currentColor)
                     {
-                        currentColor = System.NumericsX.OpenStack.stringX.ColorIndex(text_p[x] >> 8);
-                        renderSystem.SetColor(System.NumericsX.OpenStack.stringX.ColorForIndex(currentColor));
+                        currentColor = stringX.ColorIndex(text_p[x] >> 8);
+                        renderSystem.SetColor(stringX.ColorForIndex(currentColor));
                     }
                     renderSystem.DrawSmallChar((x + 1) * R.SMALLCHAR_WIDTH, MathX.FtoiFast(y), text_p[x] & 0xff, localConsole.charSetShader);
                 }
@@ -688,8 +620,7 @@ namespace Gengine.Framework
         {
             var y = 0f;
 
-            if (charSetShader == null)
-                return;
+            if (charSetShader == null) return;
 
             if (forceFullScreen)
             {

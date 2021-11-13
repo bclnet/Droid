@@ -13,6 +13,8 @@ namespace System.NumericsX
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct JointMat
     {
+        public const int ALLOC16 = 1;
+
         fixed float mat[3 * 4];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

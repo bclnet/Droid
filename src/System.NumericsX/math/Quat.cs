@@ -7,6 +7,8 @@ namespace System.NumericsX
     [StructLayout(LayoutKind.Sequential)]
     public struct Quat
     {
+        public const int ALLOC16 = 1;
+
         public float x;
         public float y;
         public float z;

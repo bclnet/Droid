@@ -1,77 +1,17 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.IO;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
-using System.Runtime.InteropServices;
 using static System.NumericsX.OpenStack.OpenStack;
+using static System.NumericsX.Platform;
+using static Gengine.Render.TR;
+using static Gengine.Lib;
 
 namespace Gengine.Render
 {
-    public class RenderModelStatic : IRenderModel
+    public unsafe class RenderModelStatic : IRenderModel
     {
-        // the inherited public interface
-        public static IRenderModel Alloc();
-
-        public RenderModelStatic();
-
-        public virtual void InitFromFile(string fileName);
-        public virtual void PartialInitFromFile(string fileName);
-        public virtual void PurgeModel();
-        public virtual void Reset() { }
-        public virtual void LoadModel();
-        public virtual bool IsLoaded { get; }
-        public virtual void SetLevelLoadReferenced(bool referenced);
-        public virtual bool IsLevelLoadReferenced();
-        public virtual void TouchData();
-        public virtual void InitEmpty(string name);
-        public virtual void AddSurface(ModelSurface surface);
-        public virtual void FinishSurfaces();
-        public virtual void FreeVertexCache();
-        public virtual string Name();
-        public virtual void Print();
-        public virtual void List();
-        public virtual int Memory();
-        public virtual DateTime Timestamp();
-        public virtual int NumSurfaces();
-        public virtual int NumBaseSurfaces();
-        public virtual ModelSurface Surface(int surfaceNum);
-        public virtual SrfTriangles AllocSurfaceTriangles(int numVerts, int numIndexes);
-        public virtual void FreeSurfaceTriangles(ref SrfTriangles tris);
-        public virtual SrfTriangles ShadowHull();
-        public virtual bool IsStaticWorldModel();
-        public virtual DynamicModel IsDynamicModel { get; }
-        public virtual bool IsDefaultModel();
-        public virtual bool IsReloadable();
-        public virtual IRenderModel InstantiateDynamicModel(RenderEntity ent, ViewDef view, IRenderModel cachedModel);
-        public virtual int NumJoints();
-        public virtual MD5Joint[] GetJoints();
-        public virtual JointHandle GetJointHandle(string name);
-        public virtual string GetJointName(JointHandle handle);
-        public virtual JointQuat GetDefaultPose();
-        public virtual int NearestJoint(int surfaceNum, int a, int b, int c);
-        public virtual Bounds Bounds(RenderEntity ent);
-        public virtual void ReadFromDemoFile(VFileDemo f);
-        public virtual void WriteToDemoFile(VFileDemo f);
-        public virtual float DepthHack();
-
-        public void MakeDefaultModel();
-
-        public bool LoadASE(string fileName);
-        public bool LoadLWO(string fileName);
-        public bool LoadFLT(string fileName);
-        public bool LoadMA(string filename);
-
-        public bool ConvertASEToModelSurfaces(AseModel ase);
-        public bool ConvertLWOToModelSurfaces(St_lwObject lwo);
-        public bool ConvertMAToModelSurfaces(MaModel ma);
-
-        public AseModel ConvertLWOToASE(St_lwObject obj, string fileName);
-
-        public bool DeleteSurfaceWithId(int id);
-        public void DeleteSurfacesWithNegativeId();
-        public bool FindSurfaceWithId(int id, out int surfaceNum);
-
         public List<ModelSurface> surfaces;
         public Bounds bounds;
         public int overlaysAdded;
@@ -89,1888 +29,1611 @@ namespace Gengine.Render
         protected bool levelLoadReferenced; // for determining if it needs to be freed
         protected DateTime timeStamp;
 
-        protected static CVar r_mergeModelSurfaces;   // combine model surfaces with the same material
-        protected static CVar r_slopVertex;           // merge xyz coordinates this far apart
-        protected static CVar r_slopTexCoord;         // merge texture coordinates this far apart
-        protected static CVar r_slopNormal;           // merge normals that dot less than this
-    }
+        protected static CVar r_mergeModelSurfaces = new("r_mergeModelSurfaces", "1", CVAR.BOOL | CVAR.RENDERER, "combine model surfaces with the same material");   // combine model surfaces with the same material
+        protected static CVar r_slopVertex = new("r_slopVertex", "0.01", CVAR.RENDERER, "merge xyz coordinates this far apart");           // merge xyz coordinates this far apart
+        protected static CVar r_slopTexCoord = new("r_slopTexCoord", "0.001", CVAR.RENDERER, "merge texture coordinates this far apart");         // merge texture coordinates this far apart
+        protected static CVar r_slopNormal = new("r_slopNormal", "0.02", CVAR.RENDERER, "merge normals that dot less than this");           // merge normals that dot less than this
 
-    public class MD5Mesh
-    {
-        const string MD5_SnapshotName = "_MD5_Snapshot_";
+        // the inherited public interface
+        public static IRenderModel Alloc();
 
-        static int c_numVerts = 0;
-        static int c_numWeights = 0;
-        static int c_numWeightJoints = 0;
-
-        struct VertexWeight
+        public RenderModelStatic()
         {
-            public int vert;
-            public int joint;
-            public Vector3 offset;
-            public float jointWeight;
-        }
-
-        List<Vector2> texCoords;           // texture coordinates
-        int numWeights;         // number of weights
-        Vector4[] scaledWeights;      // joint weights
-        int[] weightIndex;       // pairs of: joint offset + bool true if next weight is for next vertex
-        Material shader;               // material applied to mesh
-        int numTris;            // number of triangles
-        DeformInfo deformInfo;          // used to create srfTriangles_t from base frames and new vertexes
-        int surfaceNum;         // number of the static surface created for this mesh
-
-        public MD5Mesh()
-        {
-            scaledWeights = null;
-            weightIndex = null;
-            shader = null;
-            numTris = 0;
-            deformInfo = null;
-            surfaceNum = 0;
-        }
-
-        public void ParseMesh(Lexer parser, int numJoints, JointMat[] joints)
-        {
-            Token token;
-            Token name;
-            int num;
-            int count;
-            int jointnum;
-            string shaderName;
-            int i, j;
-            List<int> tris;
-            List<int> firstWeightForVertex;
-            List<int> numWeightsForVertex;
-            int maxweight;
-            List<VertexWeight> tempWeights;
-
-            parser.ExpectTokenString("{");
-
-            // parse name
-            if (parser.CheckTokenString("name"))
-                parser.ReadToken(out name);
-
-            // parse shader
-            parser.ExpectTokenString("shader");
-
-            parser.ReadToken(out token);
-            shaderName = token;
-
-            shader = declManager.FindMaterial(shaderName);
-
-            // parse texture coordinates
-            parser.ExpectTokenString("numverts");
-            count = parser.ParseInt();
-            if (count < 0) parser.Error($"Invalid size: {token}");
-
-            texCoords.SetNum(count);
-            firstWeightForVertex.SetNum(count);
-            numWeightsForVertex.SetNum(count);
-
-            numWeights = 0;
-            maxweight = 0;
-            for (i = 0; i < texCoords.Count; i++)
-            {
-                parser.ExpectTokenString("vert");
-                parser.ParseInt();
-
-                parser.Parse1DMatrix(2, texCoords[i].ToFloatPtr());
-
-                firstWeightForVertex[i] = parser.ParseInt();
-                numWeightsForVertex[i] = parser.ParseInt();
-
-                if (!numWeightsForVertex[i])
-                {
-                    parser.Error("Vertex without any joint weights.");
-                }
-
-                numWeights += numWeightsForVertex[i];
-                if (numWeightsForVertex[i] + firstWeightForVertex[i] > maxweight)
-                {
-                    maxweight = numWeightsForVertex[i] + firstWeightForVertex[i];
-                }
-            }
-
-            //
-            // parse tris
-            //
-            parser.ExpectTokenString("numtris");
-            count = parser.ParseInt();
-            if (count < 0)
-            {
-                parser.Error("Invalid size: %d", count);
-            }
-
-            tris.SetNum(count * 3);
-            numTris = count;
-            for (i = 0; i < count; i++)
-            {
-                parser.ExpectTokenString("tri");
-                parser.ParseInt();
-
-                tris[i * 3 + 0] = parser.ParseInt();
-                tris[i * 3 + 1] = parser.ParseInt();
-                tris[i * 3 + 2] = parser.ParseInt();
-            }
-
-            //
-            // parse weights
-            //
-            parser.ExpectTokenString("numweights");
-            count = parser.ParseInt();
-            if (count < 0)
-            {
-                parser.Error("Invalid size: %d", count);
-            }
-
-            if (maxweight > count)
-            {
-                parser.Warning("Vertices reference out of range weights in model (%d of %d weights).", maxweight, count);
-            }
-
-            tempWeights.SetNum(count);
-
-            for (i = 0; i < count; i++)
-            {
-                parser.ExpectTokenString("weight");
-                parser.ParseInt();
-
-                jointnum = parser.ParseInt();
-                if ((jointnum < 0) || (jointnum >= numJoints))
-                {
-                    parser.Error("Joint Index out of range(%d): %d", numJoints, jointnum);
-                }
-
-                tempWeights[i].joint = jointnum;
-                tempWeights[i].jointWeight = parser.ParseFloat();
-
-                parser.Parse1DMatrix(3, tempWeights[i].offset.ToFloatPtr());
-            }
-
-            // create pre-scaled weights and an index for the vertex/joint lookup
-            scaledWeights = (idVec4*)Mem_Alloc16(numWeights * sizeof(scaledWeights[0]));
-            weightIndex = (int*)Mem_Alloc16(numWeights * 2 * sizeof(weightIndex[0]));
-            memset(weightIndex, 0, numWeights * 2 * sizeof(weightIndex[0]));
-
-            count = 0;
-            for (i = 0; i < texCoords.Num(); i++)
-            {
-                num = firstWeightForVertex[i];
-                for (j = 0; j < numWeightsForVertex[i]; j++, num++, count++)
-                {
-                    scaledWeights[count].ToVec3() = tempWeights[num].offset * tempWeights[num].jointWeight;
-                    scaledWeights[count].w = tempWeights[num].jointWeight;
-                    weightIndex[count * 2 + 0] = tempWeights[num].joint * sizeof(idJointMat);
-                }
-                weightIndex[count * 2 - 1] = 1;
-            }
-
-            tempWeights.Clear();
-            numWeightsForVertex.Clear();
-            firstWeightForVertex.Clear();
-
-            parser.ExpectTokenString("}");
-
-            // update counters
-            c_numVerts += texCoords.Num();
-            c_numWeights += numWeights;
-            c_numWeightJoints++;
-            for (i = 0; i < numWeights; i++)
-            {
-                c_numWeightJoints += weightIndex[i * 2 + 1];
-            }
-
-            //
-            // build the information that will be common to all animations of this mesh:
-            // silhouette edge connectivity and normal / tangent generation information
-            //
-            //GB Check there are not too many verts
-            // DG: windows only has a 1MB stack and it could happen that we try to allocate >1MB here
-            //     (in lost mission mod, game/le_hell map), causing a stack overflow
-            //     to prevent that, use heap allocation if it's >600KB
-            size_t allocaSize = texCoords.Num() * sizeof(idDrawVert);
-            idDrawVert* verts;
-            if (allocaSize < 600000)
-                verts = (idDrawVert*)_alloca16(allocaSize);
-
-            else
-                verts = (idDrawVert*)Mem_Alloc16(allocaSize);
-
-            for (i = 0; i < texCoords.Num(); i++)
-            {
-                verts[i].Clear();
-                verts[i].st = texCoords[i];
-            }
-            TransformVerts(verts, joints);
-            deformInfo = R_BuildDeformInfo(texCoords.Num(), verts, tris.Num(), tris.Ptr(), shader.UseUnsmoothedTangents());
-
-            if (allocaSize >= 600000)
-                Mem_Free16(verts);
-        }
-
-        void TransformVerts(DrawVert[] verts, JointMat[] joints);
-            => SIMDProcessor.TransformVerts(verts, texCoords.Num(), entJoints, scaledWeights, weightIndex, numWeights);
-
-        // Special transform to make the mesh seem fat or skinny.  May be used for zombie deaths
-        void TransformScaledVerts(DrawVert[] verts, JointMat[] joints, float scale)
-        {
-            idVec4* scaledWeights = (idVec4*)_alloca16(numWeights * sizeof(scaledWeights[0]));
-            SIMDProcessor.Mul(scaledWeights[0].ToFloatPtr(), scale, scaledWeights[0].ToFloatPtr(), numWeights * 4);
-            SIMDProcessor.TransformVerts(verts, texCoords.Num(), entJoints, scaledWeights, weightIndex, numWeights);
-        }
-
-        public void UpdateSurface(RenderEntity ent, JointMat[] joints, ModelSurface surf)
-        {
-            int i, base;
-            srfTriangles_t* tri;
-
-            tr.pc.c_deformedSurfaces++;
-            tr.pc.c_deformedVerts += deformInfo.numOutputVerts;
-            tr.pc.c_deformedIndexes += deformInfo.numIndexes;
-
-            surf.shader = shader;
-
-            if (surf.geometry)
-            {
-                // if the number of verts and indexes are the same we can re-use the triangle surface
-                // the number of indexes must be the same to assure the correct amount of memory is allocated for the facePlanes
-                if (surf.geometry.numVerts == deformInfo.numOutputVerts && surf.geometry.numIndexes == deformInfo.numIndexes)
-                {
-                    R_FreeStaticTriSurfVertexCaches(surf.geometry);
-                }
-                else
-                {
-                    R_FreeStaticTriSurf(surf.geometry);
-                    surf.geometry = R_AllocStaticTriSurf();
-                }
-            }
-            else
-            {
-                surf.geometry = R_AllocStaticTriSurf();
-            }
-
-            tri = surf.geometry;
-
-            // note that some of the data is references, and should not be freed
-            tri.deformedSurface = true;
-            tri.tangentsCalculated = false;
-            tri.facePlanesCalculated = false;
-
-            tri.numIndexes = deformInfo.numIndexes;
-            tri.indexes = deformInfo.indexes;
-            tri.silIndexes = deformInfo.silIndexes;
-            tri.numMirroredVerts = deformInfo.numMirroredVerts;
-            tri.mirroredVerts = deformInfo.mirroredVerts;
-            tri.numDupVerts = deformInfo.numDupVerts;
-            tri.dupVerts = deformInfo.dupVerts;
-            tri.numSilEdges = deformInfo.numSilEdges;
-            tri.silEdges = deformInfo.silEdges;
-            tri.dominantTris = deformInfo.dominantTris;
-            tri.numVerts = deformInfo.numOutputVerts;
-
-            if (tri.verts == null)
-            {
-                R_AllocStaticTriSurfVerts(tri, tri.numVerts);
-                for (i = 0; i < deformInfo.numSourceVerts; i++)
-                {
-                    tri.verts[i].Clear();
-                    tri.verts[i].st = texCoords[i];
-                }
-            }
-
-            if (ent.shaderParms[SHADERPARM_MD5_SKINSCALE] != 0f)
-            {
-                TransformScaledVerts(tri.verts, entJoints, ent.shaderParms[SHADERPARM_MD5_SKINSCALE]);
-            }
-            else
-            {
-                TransformVerts(tri.verts, entJoints);
-            }
-
-            // replicate the mirror seam vertexes
-            base = deformInfo.numOutputVerts - deformInfo.numMirroredVerts;
-            for (i = 0; i < deformInfo.numMirroredVerts; i++)
-            {
-                tri.verts[base + i] = tri.verts[deformInfo.mirroredVerts[i]];
-            }
-
-            R_BoundTriSurf(tri);
-
-            // If a surface is going to be have a lighting interaction generated, it will also have to call
-            // R_DeriveTangents() to get normals, tangents, and face planes.  If it only
-            // needs shadows generated, it will only have to generate face planes.  If it only
-            // has ambient drawing, or is culled, no additional work will be necessary
-            if (!r_useDeferredTangents.GetBool())
-            {
-                // set face planes, vertex normals, tangents
-                R_DeriveTangents(tri);
-            }
-        }
-
-        public Bounds CalcBounds(JointMat[] joints)
-        {
-            idBounds bounds;
-
-            idDrawVert* verts;
-            size_t allocaSize = texCoords.Num() * sizeof(idDrawVert);
-            if (allocaSize < 600000)
-                verts = (idDrawVert*)_alloca16(allocaSize);
-            else
-                verts = (idDrawVert*)Mem_Alloc16(allocaSize);
-
-            TransformVerts(verts, entJoints);
-
-            SIMDProcessor.MinMax(bounds[0], bounds[1], verts, texCoords.Num());
-
-            if (allocaSize >= 600000)
-                Mem_Free16(verts);
-            return bounds;
-        }
-
-        public int NearestJoint(int a, int b, int c)
-        {
-            int i, bestJoint, vertNum, weightVertNum;
-            float bestWeight;
-
-            // duplicated vertices might not have weights
-            if (a >= 0 && a < texCoords.Num())
-            {
-                vertNum = a;
-            }
-            else if (b >= 0 && b < texCoords.Num())
-            {
-                vertNum = b;
-            }
-            else if (c >= 0 && c < texCoords.Num())
-            {
-                vertNum = c;
-            }
-            else
-            {
-                // all vertices are duplicates which shouldn't happen
-                return 0;
-            }
-
-            // find the first weight for this vertex
-            weightVertNum = 0;
-            for (i = 0; weightVertNum < vertNum; i++)
-            {
-                weightVertNum += weightIndex[i * 2 + 1];
-            }
-
-            // get the joint for the largest weight
-            bestWeight = scaledWeights[i].w;
-            bestJoint = weightIndex[i * 2 + 0] / sizeof(idJointMat);
-            for (; weightIndex[i * 2 + 1] == 0; i++)
-            {
-                if (scaledWeights[i].w > bestWeight)
-                {
-                    bestWeight = scaledWeights[i].w;
-                    bestJoint = weightIndex[i * 2 + 0] / sizeof(idJointMat);
-                }
-            }
-            return bestJoint;
-        }
-
-
-        public int NumVerts
-            => texCoords.Count;
-
-        public int NumTris
-            => numTris;
-
-        public int NumWeights
-            => numWeights;
-    }
-
-    public class RenderModelMD5 : RenderModelStatic
-    {
-        List<MD5Joint> joints;
-        List<JointQuat> defaultPose;
-        List<JointMat> invertedDefaultPose;
-        List<MD5Mesh> meshes;
-
-        void GetFrameBounds(RenderEntity ent, out Bounds bounds);
-
-        void DrawJoints(RenderEntity ent, ViewDef view)
-        {
-            int i;
-            int num;
-            idVec3 pos;
-            const idJointMat* joint;
-            const idMD5Joint* md5Joint;
-            int parentNum;
-
-            num = ent.numJoints;
-            joint = ent.joints;
-            md5Joint = joints.Ptr();
-            for (i = 0; i < num; i++, joint++, md5Joint++)
-            {
-                pos = ent.origin + joint.ToVec3() * ent.axis;
-                if (md5Joint.parent)
-                {
-                    parentNum = md5Joint.parent - joints.Ptr();
-                    session.rw.DebugLine(colorWhite, ent.origin + ent.joints[parentNum].ToVec3() * ent.axis, pos);
-                }
-
-                session.rw.DebugLine(colorRed, pos, pos + joint.ToMat3()[0] * 2f * ent.axis);
-                session.rw.DebugLine(colorGreen, pos, pos + joint.ToMat3()[1] * 2f * ent.axis);
-                session.rw.DebugLine(colorBlue, pos, pos + joint.ToMat3()[2] * 2f * ent.axis);
-            }
-
-            idBounds bounds;
-
-            bounds.FromTransformedBounds(ent.bounds, vec3_zero, ent.axis);
-            session.rw.DebugBounds(colorMagenta, bounds, ent.origin);
-
-            if ((r_jointNameScale.GetFloat() != 0f) && (bounds.Expand(128f).ContainsPoint(view.renderView.vieworg - ent.origin)))
-            {
-                idVec3 offset( 0, 0, r_jointNameOffset.GetFloat() );
-                float scale;
-
-                scale = r_jointNameScale.GetFloat();
-                joint = ent.joints;
-                num = ent.numJoints;
-                for (i = 0; i < num; i++, joint++)
-                {
-                    pos = ent.origin + joint.ToVec3() * ent.axis;
-                    session.rw.DrawText(joints[i].name, pos + offset, scale, colorWhite, view.renderView.viewaxis, 1);
-                }
-            }
-        }
-
-        void ParseJoint(Lexer parser, MD5Joint joint, JointQuat defaultPose)
-        {
-            idToken token;
-            int num;
-
-            //
-            // parse name
-            //
-            parser.ReadToken(&token);
-            joint.name = token;
-
-            //
-            // parse parent
-            //
-            num = parser.ParseInt();
-            if (num < 0)
-            {
-                joint.parent = null;
-            }
-            else
-            {
-                if (num >= joints.Num() - 1)
-                {
-                    parser.Error("Invalid parent for joint '%s'", joint.name.c_str());
-                }
-                joint.parent = &joints[num];
-            }
-
-            //
-            // parse default pose
-            //
-            parser.Parse1DMatrix(3, defaultPose.t.ToFloatPtr());
-            parser.Parse1DMatrix(3, defaultPose.q.ToFloatPtr());
-            defaultPose.q.w = defaultPose.q.CalcW();
-        }
-
-        public override void InitFromFile(string fileName)
-        {
-            name = fileName;
-            LoadModel();
-        }
-
-        public override DynamicModel IsDynamicModel
-            => DynamicModel.DM_CACHED;
-
-        void CalculateBounds(JointMat[] joints)
-        {
-            int i;
-            idMD5Mesh* mesh;
-
+            name = "<undefined>";
             bounds.Clear();
-            for (mesh = meshes.Ptr(), i = 0; i < meshes.Num(); i++, mesh++)
+            lastModifiedFrame = 0;
+            lastArchivedFrame = 0;
+            overlaysAdded = 0;
+            shadowHull = null;
+            isStaticWorldModel = false;
+            defaulted = false;
+            purged = false;
+            fastLoad = false;
+            reloadable = true;
+            levelLoadReferenced = false;
+            timeStamp = DateTime.MinValue;
+        }
+        public void Dispose()
+            => PurgeModel();
+
+        public virtual void InitFromFile(string fileName)
+        {
+            bool loaded;
+            InitEmpty(fileName);
+
+            var extension = Path.GetExtension(name).ToLowerInvariant();
+            if (extension == ".ase") { loaded = LoadASE(name); reloadable = true; }
+            else if (extension == ".lwo") { loaded = LoadLWO(name); reloadable = true; }
+            else if (extension == ".flt") { loaded = LoadFLT(name); reloadable = true; }
+            else if (extension == ".ma") { loaded = LoadMA(name); reloadable = true; }
+            else { common.Warning($"RenderModelStatic::InitFromFile: unknown type for model: \'{name}\'"); loaded = false; }
+            if (!loaded) { common.Warning($"Couldn't load model: '{name}'"); MakeDefaultModel(); return; }
+
+            // it is now available for use
+            purged = false;
+
+            // create the bounds for culling and dynamic surface creation
+            FinishSurfaces();
+        }
+
+        public virtual void PartialInitFromFile(string fileName)
+        {
+            fastLoad = true;
+            InitFromFile(fileName);
+        }
+
+        public virtual void PurgeModel()
+        {
+            for (var i = 0; i < surfaces.Count; i++)
             {
-                bounds.AddBounds(mesh.CalcBounds(entJoints));
+                var surf = surfaces[i];
+                if (surf.geometry != null) R_FreeStaticTriSurf(surf.geometry);
+            }
+            surfaces.Clear();
+
+            purged = true;
+        }
+
+        public virtual void Reset() { }
+
+        public virtual void LoadModel()
+        {
+            PurgeModel();
+            InitFromFile(name);
+        }
+
+        public virtual bool IsLoaded
+            => !purged;
+
+        public virtual bool IsLevelLoadReferenced
+        {
+            get => levelLoadReferenced;
+            set => levelLoadReferenced = value;
+        }
+
+        public virtual void TouchData()
+        {
+            for (var i = 0; i < surfaces.Count; i++)
+            {
+                var surf = surfaces[i];
+                declManager.FindMaterial(surf.shader.Name); // re-find the material to make sure it gets added to the level keep list
             }
         }
 
-        // This calculates a rough bounds by using the joint radii without transforming all the points
-        public override Bounds Bounds(RenderEntity ent)
+        public virtual void InitEmpty(string name)
         {
-            if (ent == null)
-                // this is the bounds for the reference pose
-                return bounds;
-            return ent.bounds;
+            // model names of the form _area* are static parts of the world, and have already been considered for optimized shadows
+            // other model names are inline entity models, and need to be shadowed normally
+            isStaticWorldModel = name.StartsWith("_area");
+            this.name = name;
+            reloadable = false; // if it didn't come from a file, we can't reload it
+            PurgeModel();
+            purged = false;
+            bounds.Zero();
         }
 
-        public override void Print()
+        public virtual void AddSurface(ModelSurface surface)
         {
-            const idMD5Mesh* mesh;
-            int i;
-
-            common.Printf("%s\n", name.c_str());
-            common.Printf("Dynamic model.\n");
-            common.Printf("Generated smooth normals.\n");
-            common.Printf("    verts  tris weights material\n");
-            int totalVerts = 0;
-            int totalTris = 0;
-            int totalWeights = 0;
-            for (mesh = meshes.Ptr(), i = 0; i < meshes.Num(); i++, mesh++)
-            {
-                totalVerts += mesh.NumVerts();
-                totalTris += mesh.NumTris();
-                totalWeights += mesh.NumWeights();
-                common.Printf("%2i: %5i %5i %7i %s\n", i, mesh.NumVerts(), mesh.NumTris(), mesh.NumWeights(), mesh.shader.GetName());
-            }
-            common.Printf("-----\n");
-            common.Printf("%4i verts.\n", totalVerts);
-            common.Printf("%4i tris.\n", totalTris);
-            common.Printf("%4i weights.\n", totalWeights);
-            common.Printf("%4i joints.\n", joints.Num());
+            surfaces.Add(surface);
+            if (surface.geometry != null) bounds += surface.geometry.bounds;
         }
 
-        public override void List()
+        // The mergeShadows option allows surfaces with different textures to share silhouette edges for shadow calculation, instead of leaving shared edges hanging.
+        // If any of the original shaders have the noSelfShadow flag set, the surfaces can't be merged, because they will need to be drawn in different order.
+        // If there is only one surface, a separate merged surface won't be generated.
+        // A model with multiple surfaces can't later have a skinned shader change the state of the noSelfShadow flag.
+        //-----------------
+        // Creates mirrored copies of two sided surfaces with normal maps, which would otherwise light funny.
+        // Extends the bounds of deformed surfaces so they don't cull incorrectly at screen edges.
+        public virtual void FinishSurfaces()
         {
-            int i;
-            const idMD5Mesh* mesh;
-            int totalTris = 0;
-            int totalVerts = 0;
+            int i, totalVerts, totalIndexes;
 
-            for (mesh = meshes.Ptr(), i = 0; i < meshes.Num(); i++, mesh++)
+            purged = false;
+
+            // make sure we don't have a huge bounds even if we don't finish everything
+            bounds.Zero();
+
+            if (surfaces.Count == 0) return;
+
+            // renderBump doesn't care about most of this
+            if (fastLoad)
             {
-                totalTris += mesh.numTris;
-                totalVerts += mesh.NumVerts();
+                bounds.Zero();
+                for (i = 0; i < surfaces.Count; i++)
+                {
+                    var surf = surfaces[i];
+                    R_BoundTriSurf(surf.geometry);
+                    bounds.AddBounds(surf.geometry.bounds);
+                }
+                return;
             }
-            common.Printf(" %4ik %3i %4i %4i %s(MD5)", Memory() / 1024, meshes.Num(), totalVerts, totalTris, Name());
 
-            if (defaulted)
+            // cleanup all the final surfaces, but don't create sil edges
+            totalVerts = 0;
+            totalIndexes = 0;
+
+            // decide if we are going to merge all the surfaces into one shadower
+            var numOriginalSurfaces = surfaces.Count;
+
+            // make sure there aren't any NULL shaders or geometry
+            for (i = 0; i < numOriginalSurfaces; i++)
             {
-                common.Printf(" (DEFAULTED)");
+                var surf = surfaces[i];
+                if (surf.geometry == null || surf.shader == null) { MakeDefaultModel(); common.Error($"Model {name}, surface {i} had NULL geometry"); }
+                if (surf.shader == null) { MakeDefaultModel(); common.Error("Model {name}, surface {i} had NULL shader"); }
             }
 
+            // duplicate and reverse triangles for two sided bump mapped surfaces note that this won't catch surfaces that have their shaders dynamically
+            // changed, and won't work with animated models. It is better to create completely separate surfaces, rather than
+            // add vertexes and indexes to the existing surface, because the tangent generation wouldn't like the acute shared edges
+            for (i = 0; i < numOriginalSurfaces; i++)
+            {
+                var surf = surfaces[i];
+                if (surf.shader.ShouldCreateBackSides)
+                {
+                    var newTri = R_CopyStaticTriSurf(surf.geometry);
+                    R_ReverseTriangles(newTri);
+                    AddSurface(new ModelSurface { shader = surf.shader, geometry = newTri });
+                }
+            }
+
+            // clean the surfaces
+            for (i = 0; i < surfaces.Count; i++)
+            {
+                var surf = surfaces[i];
+                R_CleanupTriangles(surf.geometry, surf.geometry.generateNormals, true, surf.shader.UseUnsmoothedTangents);
+                if (surf.shader.SurfaceCastsShadow) { totalVerts += surf.geometry.numVerts; totalIndexes += surf.geometry.numIndexes; }
+            }
+
+            // add up the total surface area for development information
+            for (i = 0; i < surfaces.Count; i++)
+            {
+                var surf = surfaces[i];
+                var tri = surf.geometry;
+                for (var j = 0; j < tri.numIndexes; j += 3)
+                {
+                    var area = Winding.TriangleArea(tri.verts[tri.indexes[j]].xyz, tri.verts[tri.indexes[j + 1]].xyz, tri.verts[tri.indexes[j + 2]].xyz);
+                    surf.shader.AddToSurfaceArea(area);
+                }
+            }
+
+            // calculate the bounds
+            if (surfaces.Count == 0) bounds.Zero();
+            else
+            {
+                bounds.Clear();
+                for (i = 0; i < surfaces.Count; i++)
+                {
+                    var surf = surfaces[i];
+
+                    // if the surface has a deformation, increase the bounds the amount here is somewhat arbitrary, designed to handle
+                    // autosprites and flares, but could be done better with exact deformation information.
+                    // Note that this doesn't handle deformations that are skinned in at run time...
+                    if (surf.shader.Deform != DFRM.NONE)
+                    {
+                        var tri = surf.geometry;
+                        var mid = (tri.bounds[1] + tri.bounds[0]) * 0.5f;
+                        var radius = (tri.bounds[0] - mid).Length;
+                        radius += 20f;
+
+                        tri.bounds[0].x = mid.x - radius;
+                        tri.bounds[0].y = mid.y - radius;
+                        tri.bounds[0].z = mid.z - radius;
+
+                        tri.bounds[1].x = mid.x + radius;
+                        tri.bounds[1].y = mid.y + radius;
+                        tri.bounds[1].z = mid.z + radius;
+                    }
+
+                    // add to the model bounds
+                    bounds.AddBounds(surf.geometry.bounds);
+                }
+            }
+        }
+
+        // We are about to restart the vertex cache, so dump everything
+        public virtual void FreeVertexCache()
+        {
+            for (var j = 0; j < surfaces.Count; j++)
+            {
+                var tri = surfaces[j].geometry;
+                if (tri == null) continue;
+                if (tri.ambientCache != null)
+                {
+                    vertexCache.Free(ref tri.ambientCache);
+                    tri.ambientCache = null;
+                }
+                // static shadows may be present
+                if (tri.shadowCache != null)
+                {
+                    vertexCache.Free(ref tri.shadowCache);
+                    tri.shadowCache = null;
+                }
+            }
+        }
+
+        public virtual string Name
+            => name;
+
+        public virtual void Print()
+        {
+            common.Printf($"{name}\n");
+            common.Printf("Static model.\n");
+            common.Printf($"bounds: ({bounds[0].x} {bounds[0].y} {bounds[0].z}) to ({bounds[1].x} {bounds[1].y} {bounds[1].z})\n");
+            common.Printf("    verts  tris material\n");
+            for (var i = 0; i < NumSurfaces; i++)
+            {
+                var surf = Surface(i);
+                var tri = surf.geometry;
+                var material = surf.shader;
+                if (tri == null) { common.Printf($"{i,2}: {material.Name}, NULL surface geometry\n"); continue; }
+                common.Printf($"{i,2}: {tri.numVerts,5} {tri.numIndexes / 3,5} {material.Name}");
+                common.Printf(tri.generateNormals ? " (smoothed)\n" : "\n");
+            }
+        }
+
+        public virtual void List()
+        {
+            int totalTris = 0, totalVerts = 0, totalBytes = Memory;
+
+            var closed = 'C';
+            for (var j = 0; j < NumSurfaces; j++)
+            {
+                var surf = Surface(j);
+                if (surf.geometry == null) continue;
+                if (!surf.geometry.perfectHull) closed = ' ';
+                totalTris += surf.geometry.numIndexes / 3;
+                totalVerts += surf.geometry.numVerts;
+            }
+            common.Printf($"{closed}{totalBytes / 1024,4}k {NumSurfaces,3} {totalVerts,4} {totalTris,4} {Name}");
+
+            if (IsDynamicModel == DynamicModel.DM_CACHED) common.Printf(" (DM_CACHED)");
+            if (IsDynamicModel == DynamicModel.DM_CONTINUOUS) common.Printf(" (DM_CONTINUOUS)");
+            if (defaulted) common.Printf(" (DEFAULTED)");
+            if (bounds[0].x >= bounds[1].x) common.Printf(" (EMPTY BOUNDS)");
+            if (bounds[1].x - bounds[0].x > 100000) common.Printf(" (HUGE BOUNDS)");
             common.Printf("\n");
         }
 
-        // models that are already loaded at level start time will still touch their materials to make sure they are kept loaded
-        public override void TouchData()
-        {
-            MD5Mesh mesh; int i;
+        public virtual int Memory
+            => 0;
 
-            for (mesh = meshes.Ptr(), i = 0; i < meshes.Num(); i++, mesh++)
-            {
-                declManager.FindMaterial(mesh.shader.GetName());
-            }
+        public virtual DateTime Timestamp
+            => timeStamp;
+
+        public virtual int NumSurfaces
+            => surfaces.Count;
+
+        public virtual int NumBaseSurfaces
+            => surfaces.Count - overlaysAdded;
+
+        public virtual ModelSurface Surface(int surfaceNum)
+            => surfaces[surfaceNum];
+
+        public virtual SrfTriangles AllocSurfaceTriangles(int numVerts, int numIndexes)
+        {
+            var tri = R_AllocStaticTriSurf();
+            R_AllocStaticTriSurfVerts(tri, numVerts);
+            R_AllocStaticTriSurfIndexes(tri, numIndexes);
+            return tri;
         }
 
-        // frees all the data, but leaves the class around for dangling references, which can regenerate the data with LoadModel()
-        public override void PurgeModel()
+        public virtual void FreeSurfaceTriangles(ref SrfTriangles tris)
+            => R_FreeStaticTriSurf(tris);
+
+        public virtual SrfTriangles ShadowHull
+            => shadowHull;
+
+        public virtual bool IsStaticWorldModel
+            => isStaticWorldModel;
+
+        public virtual DynamicModel IsDynamicModel
+            => DynamicModel.DM_STATIC; // dynamic subclasses will override this
+
+        public virtual bool IsDefaultModel
+            => defaulted;
+
+        public virtual bool IsReloadable
+            => reloadable;
+
+        public virtual IRenderModel InstantiateDynamicModel(RenderEntity ent, ViewDef view, IRenderModel cachedModel)
         {
-            purged = true;
-            joints.Clear();
-            defaultPose.Clear();
-            meshes.Clear();
+            if (cachedModel != null) { cachedModel.Dispose(); cachedModel = null; }
+            common.Error($"InstantiateDynamicModel called on static model '{name}'");
+            return null;
         }
 
-        // used for initial loads, reloadModel, and reloading the data of purged models Upon exit, the model will absolutely be valid, but possibly as a default model
-        public override void LoadModel()
-        {
-            int version;
-            int i;
-            int num;
-            int parentNum;
-            idToken token;
-            idLexer parser(LEXFL_ALLOWPATHNAMES | LEXFL_NOSTRINGESCAPECHARS );
-            idJointQuat* pose;
-            idMD5Joint* joint;
-            idJointMat* poseMat3;
+        public virtual int NumJoints
+            => 0;
 
-            if (!purged)
-            {
-                PurgeModel();
-            }
-            purged = false;
+        public virtual MD5Joint[] Joints
+            => null;
 
-            if (!parser.LoadFile(name))
-            {
-                MakeDefaultModel();
-                return;
-            }
+        public virtual JointHandle GetJointHandle(string name)
+            => JointHandle.INVALID_JOINT;
 
-            parser.ExpectTokenString(MD5_VERSION_STRING);
-            version = parser.ParseInt();
+        public virtual string GetJointName(JointHandle handle)
+            => string.Empty;
 
-            if (version != MD5_VERSION)
-            {
-                parser.Error("Invalid version %d.  Should be version %d\n", version, MD5_VERSION);
-            }
+        public virtual JointQuat[] DefaultPose
+            => null;
 
-            //
-            // skip commandline
-            //
-            parser.ExpectTokenString("commandline");
-            parser.ReadToken(&token);
+        public virtual int NearestJoint(int surfaceNum, int a, int b, int c)
+            => (int)JointHandle.INVALID_JOINT;
 
-            // parse num joints
-            parser.ExpectTokenString("numJoints");
-            num = parser.ParseInt();
-            joints.SetGranularity(1);
-            joints.SetNum(num);
-            defaultPose.SetGranularity(1);
-            defaultPose.SetNum(num);
-            poseMat3 = (idJointMat*)_alloca16(num * sizeof( *poseMat3) );
-
-            // parse num meshes
-            parser.ExpectTokenString("numMeshes");
-            num = parser.ParseInt();
-            if (num < 0)
-            {
-                parser.Error("Invalid size: %d", num);
-            }
-            meshes.SetGranularity(1);
-            meshes.SetNum(num);
-
-            //
-            // parse joints
-            //
-            parser.ExpectTokenString("joints");
-            parser.ExpectTokenString("{");
-            pose = defaultPose.Ptr();
-            joint = joints.Ptr();
-            for (i = 0; i < joints.Num(); i++, joint++, pose++)
-            {
-                ParseJoint(parser, joint, pose);
-                poseMat3[i].SetRotation(pose.q.ToMat3());
-                poseMat3[i].SetTranslation(pose.t);
-                if (joint.parent)
-                {
-                    parentNum = joint.parent - joints.Ptr();
-                    pose.q = (poseMat3[i].ToMat3() * poseMat3[parentNum].ToMat3().Transpose()).ToQuat();
-                    pose.t = (poseMat3[i].ToVec3() - poseMat3[parentNum].ToVec3()) * poseMat3[parentNum].ToMat3().Transpose();
-                }
-            }
-            parser.ExpectTokenString("}");
-
-            //-----------------------------------------
-            // create the inverse of the base pose joints to support tech6 style deformation
-            // of base pose vertexes, normals, and tangents.
-            //
-            // vertex * joints * inverseJoints == vertex when joints is the base pose
-            // When the joints are in another pose, it gives the animated vertex position
-            //-----------------------------------------
-            invertedDefaultPose.SetNum(SIMD_ROUND_JOINTS(joints.Num()));
-            for (int i = 0; i < joints.Num(); i++)
-            {
-                invertedDefaultPose[i] = poseMat3[i];
-                invertedDefaultPose[i].Invert();
-            }
-            SIMD_INIT_LAST_JOINT(invertedDefaultPose.Ptr(), joints.Num());
-
-            idStr materialName; // Koz
-            bool isPDAmesh = false;
-
-            for (int i = 0; i < meshes.Num(); i++)
-            {
-                isPDAmesh = false;
-                parser.ExpectTokenString("mesh");
-                meshes[i].ParseMesh(parser, defaultPose.Num(), poseMat3);
-
-                // Koz begin
-                // Remove hands from weapon & pda viewmodels if desired.
-
-                materialName = meshes[i].shader.GetName();
-                if (materialName.IsEmpty())
-                {
-                    meshes[i].shader = null;
-                }
-                else
-                {
-                    if (materialName == "textures/common/pda_gui" || materialName == "_pdaImage" || materialName == "_pdaimage")
-                    {
-                        // Koz pda  - change material to _pdaImage instead of deault
-                        // this allows rendering the PDA & swf menus to the model ingame.
-                        // if we find this gui, we also need to add a surface to the model, so flag.
-                        meshes[i].shader = declManager.FindMaterial("_pdaImage");
-                        isPDAmesh = true;
-                    }
-                }
-
-                if (isPDAmesh)
-                {
-
-
-                    {
-                        common.Printf("Load pda model\n");
-                        for (int ti = 0; ti < meshes[i].NumVerts(); ti++)
-                        {
-                            common.Printf("Numverts %d Vert %d %f %f %f : %f %f %f %f\n", meshes[i].NumVerts(), ti, meshes[i].deformInfo.verts[ti].xyz.x,
-                                meshes[i].deformInfo.verts[ti].xyz.y,
-                                meshes[i].deformInfo.verts[ti].xyz.z,
-                                meshes[i].deformInfo.verts[ti].GetTexCoordS(),
-                                meshes[i].deformInfo.verts[ti].GetTexCoordT(),
-                                meshes[i].deformInfo.verts[ti].st[0],
-                                meshes[i].deformInfo.verts[ti].st[1]);
-                        }
-                    }
-
-
-                    common.Printf("PDA gui found, creating gui surface for hitscan.\n");
-
-                    modelSurface_t pdasurface;
-
-                    pdasurface.id = 0;
-                    pdasurface.shader = declManager.FindMaterial("_pdaImage");
-
-                    srfTriangles_t* pdageometry = AllocSurfaceTriangles(meshes[i].NumVerts(), meshes[i].deformInfo.numIndexes);
-                    assert(pdageometry != null);
-
-                    // infinite bounds
-                    pdageometry.bounds[0][0] =
-                    pdageometry.bounds[0][1] =
-                    pdageometry.bounds[0][2] = -99999;
-                    pdageometry.bounds[1][0] =
-                    pdageometry.bounds[1][1] =
-                    pdageometry.bounds[1][2] = 99999;
-
-                    pdageometry.numVerts = meshes[i].NumVerts();
-                    pdageometry.numIndexes = meshes[i].deformInfo.numIndexes;
-
-                    for (int zz = 0; zz < pdageometry.numIndexes; zz++)
-                    {
-                        pdageometry.indexes[zz] = meshes[i].deformInfo.indexes[zz];
-                    }
-
-                    for (int zz = 0; zz < pdageometry.numVerts; zz++)
-                    {
-                        //GB Fix Verts (if needed)
-                        pdageometry.verts[zz].xyz = meshes[i].deformInfo.verts[zz].xyz;
-                        //pdageometry.verts[zz].SetTexCoord( meshes[i].deformInfo.verts[zz].GetTexCoord() );
-                        pdageometry.verts[zz].st = meshes[i].deformInfo.verts[zz].st;
-                    }
-
-
-                    {
-                        common.Printf("verify pda model\n");
-                        for (int ti = 0; ti < pdageometry.numVerts; ti++)
-                        {
-                            common.Printf("Numverts %d Vert %d %f %f %f : %f %f %f %f\n", pdageometry.numVerts, ti, pdageometry.verts[ti].xyz.x,
-                                pdageometry.verts[ti].xyz.y,
-                                pdageometry.verts[ti].xyz.z,
-                                pdageometry.verts[ti].GetTexCoordS(),
-                                pdageometry.verts[ti].GetTexCoordT(),
-                                pdageometry.verts[ti].st[0],
-                                pdageometry.verts[ti].st[1]);
-                        }
-                    }
-
-
-                    pdasurface.geometry = pdageometry;
-                    AddSurface(pdasurface);
-                }
-                // Koz end PDA
-            }
-
-
-            //
-            // calculate the bounds of the model
-            //
-            CalculateBounds(poseMat3);
-
-            // set the timestamp for reloadmodels
-            fileSystem.ReadFile(name, null, &timeStamp);
-        }
-
-        public override int Memory()
-        {
-            int total, i;
-
-            total = sizeof( *this );
-            total += joints.MemoryUsed() + defaultPose.MemoryUsed() + meshes.MemoryUsed();
-
-            // count up strings
-            for (i = 0; i < joints.Num(); i++)
-            {
-                total += joints[i].name.DynamicMemoryUsed();
-            }
-
-            // count up meshes
-            for (i = 0; i < meshes.Num(); i++)
-            {
-                const idMD5Mesh* mesh = &meshes[i];
-
-                total += mesh.texCoords.MemoryUsed() + mesh.numWeights * (sizeof(mesh.scaledWeights[0]) + sizeof(mesh.weightIndex[0]) * 2);
-
-                // sum up deform info
-                total += sizeof(mesh.deformInfo);
-                total += R_DeformInfoMemoryUsed(mesh.deformInfo);
-            }
-            return total;
-        }
-
-        public override IRenderModel InstantiateDynamicModel(RenderEntity ent, ViewDef view, IRenderModel cachedModel)
-        {
-            int i, surfaceNum;
-            idMD5Mesh* mesh;
-            idRenderModelStatic* staticModel;
-
-            if (cachedModel && !r_useCachedDynamicModels.GetBool())
-            {
-                delete cachedModel;
-                cachedModel = null;
-            }
-
-            if (purged)
-            {
-                common.DWarning("model %s instantiated while purged", Name());
-                LoadModel();
-            }
-
-            if (!ent.joints)
-            {
-                common.Printf("idRenderModelMD5::InstantiateDynamicModel: null joints on renderEntity for '%s'\n", Name());
-                delete cachedModel;
-                return null;
-            }
-            else if (ent.numJoints != joints.Num())
-            {
-                common.Printf("idRenderModelMD5::InstantiateDynamicModel: renderEntity has different number of joints than model for '%s'\n", Name());
-                delete cachedModel;
-                return null;
-            }
-
-            tr.pc.c_generateMd5++;
-
-            if (cachedModel)
-            {
-                assert(dynamic_cast<idRenderModelStatic*>(cachedModel) != null);
-                assert(idStr::Icmp(cachedModel.Name(), MD5_SnapshotName) == 0);
-                staticModel = static_cast<idRenderModelStatic*>(cachedModel);
-            }
-            else
-            {
-                staticModel = new idRenderModelStatic;
-                staticModel.InitEmpty(MD5_SnapshotName);
-            }
-
-            staticModel.bounds.Clear();
-
-            if (r_showSkel.GetInteger())
-            {
-                if ((view != null) && (!r_skipSuppress.GetBool() || !ent.suppressSurfaceInViewID || (ent.suppressSurfaceInViewID != view.renderView.viewID)))
-                {
-                    // only draw the skeleton
-                    DrawJoints(ent, view);
-                }
-
-                if (r_showSkel.GetInteger() > 1)
-                {
-                    // turn off the model when showing the skeleton
-                    staticModel.InitEmpty(MD5_SnapshotName);
-                    return staticModel;
-                }
-            }
-
-            // create all the surfaces
-            for (mesh = meshes.Ptr(), i = 0; i < meshes.Num(); i++, mesh++)
-            {
-                // avoid deforming the surface if it will be a nodraw due to a skin remapping
-                // FIXME: may have to still deform clipping hulls
-                const idMaterial* shader = mesh.shader;
-
-                shader = R_RemapShaderBySkin(shader, ent.customSkin, ent.customShader);
-
-                if (!shader || (!shader.IsDrawn() && !shader.SurfaceCastsShadow()))
-                {
-                    staticModel.DeleteSurfaceWithId(i);
-                    mesh.surfaceNum = -1;
-                    continue;
-                }
-
-                modelSurface_t* surf;
-
-                if (staticModel.FindSurfaceWithId(i, surfaceNum))
-                {
-                    mesh.surfaceNum = surfaceNum;
-                    surf = &staticModel.surfaces[surfaceNum];
-                }
-                else
-                {
-
-                    // Remove Overlays before adding new surfaces
-                    idRenderModelOverlay::RemoveOverlaySurfacesFromModel(staticModel);
-
-                    mesh.surfaceNum = staticModel.NumSurfaces();
-                    surf = &staticModel.surfaces.Alloc();
-                    surf.geometry = null;
-                    surf.shader = null;
-                    surf.id = i;
-                }
-
-                mesh.UpdateSurface(ent, ent.joints, surf);
-
-                staticModel.bounds.AddPoint(surf.geometry.bounds[0]);
-                staticModel.bounds.AddPoint(surf.geometry.bounds[1]);
-            }
-
-            return staticModel;
-        }
-
-        public override int NumJoints
-            => joints.Count;
-
-        public override IList<MD5Joint> Joints
-            => joints;
-
-        public override JointHandle GetJointHandle(string name)
-        {
-            const idMD5Joint* joint;
-            int i;
-
-            joint = joints.Ptr();
-            for (i = 0; i < joints.Num(); i++, joint++)
-            {
-                if (idStr::Icmp(joint.name.c_str(), name) == 0)
-                {
-                    return (jointHandle_t)i;
-                }
-            }
-
-            return INVALID_JOINT;
-        }
-
-        public override string GetJointName(JointHandle handle)
-        {
-            if ((handle < 0) || (handle >= joints.Num()))
-            {
-                return "<invalid joint>";
-            }
-
-            return joints[handle].name;
-        }
-
-        public override IList<JointQuat> DefaultPose
-            => defaultPose;
-
-        public override int NearestJoint(int surfaceNum, int a, int b, int c)
-        {
-            int i;
-            const idMD5Mesh* mesh;
-
-            if (surfaceNum > meshes.Num())
-            {
-                common.Error("idRenderModelMD5::NearestJoint: surfaceNum > meshes.Num()");
-            }
-
-            for (mesh = meshes.Ptr(), i = 0; i < meshes.Num(); i++, mesh++)
-            {
-                if (mesh.surfaceNum == surfaceNum)
-                {
-                    return mesh.NearestJoint(a, b, c);
-                }
-            }
-            return 0;
-        }
-    }
-
-    public class RenderModelMD3 : RenderModelStatic
-    {
-        int index;          // model = tr.models[model.index]
-        int dataSize;       // just for listing purposes
-        Md3Header md3;            // only if type == MOD_MESH
-        int numLods;
-
-        public unsafe override void InitFromFile(string fileName)
-        {
-            int i, j;
-
-            name = fileName;
-
-            var size = fileSystem.ReadFile(fileName, out var buffer, out var _);
-            if (size <= 0)
-                return;
-
-            md3 = UnsafeX.ReadTSize<Md3Header>(Md3Header.SizeOf, buffer);
-            LittleInt(ref md3.ident);
-            LittleInt(ref md3.version);
-            LittleInt(ref md3.numFrames);
-            LittleInt(ref md3.numTags);
-            LittleInt(ref md3.numSurfaces);
-            LittleInt(ref md3.ofsFrames);
-            LittleInt(ref md3.ofsTags);
-            LittleInt(ref md3.ofsSurfaces);
-            LittleInt(ref md3.ofsEnd);
-
-            if (md3.version != ModelXMd3.MD3_VERSION)
-            {
-                fileSystem.FreeFile(buffer);
-                common.Warning($"InitFromFile: {fileName} has wrong version ({md3.version} should be {ModelXMd3.MD3_VERSION})");
-                return;
-            }
-
-            size = md3.ofsEnd;
-            dataSize += size;
-
-            if (md3.numFrames < 1)
-            {
-                common.Warning($"InitFromFile: {fileName} has no frames");
-                fileSystem.FreeFile(buffer);
-                return;
-            }
-
-            // swap all the frames
-            md3.frames = UnsafeX.ReadTArray<Md3Frame>(buffer, md3.ofsFrames, md3.numFrames);
-            for (i = 0; i < md3.frames.Length; i++)
-            {
-                ref Md3Frame frame = ref md3.frames[i];
-                LittleFloat(ref frame.radius);
-                LittleVector3(ref frame.bounds[0]);
-                LittleVector3(ref frame.bounds[1]);
-                LittleVector3(ref frame.localOrigin);
-            }
-
-            // swap all the tags
-            md3.tags = UnsafeX.ReadTArray<Md3Tag>(buffer, md3.ofsTags, md3.numTags * md3.numFrames);
-            for (i = 0; i < md3.tags.Length; i++)
-            {
-                ref Md3Tag tag = ref md3.tags[i];
-                LittleVector3(ref tag.origin);
-                LittleVector3(ref tag.axis[0]);
-                LittleVector3(ref tag.axis[1]);
-                LittleVector3(ref tag.axis[2]);
-            }
-
-            // swap all the surfaces
-            md3.surfaces = new Md3Surface[md3.numSurfaces];
-            var surfOfs = md3.ofsSurfaces;
-            for (i = 0; i < md3.surfaces.Length; i++)
-            {
-                md3.surfaces[i] = UnsafeX.ReadTSize<Md3Surface>(Md3Surface.SizeOf, buffer, surfOfs);
-                ref Md3Surface surf = ref md3.surfaces[i];
-                LittleInt(ref surf.ident);
-                LittleInt(ref surf.flags);
-                LittleInt(ref surf.numFrames);
-                LittleInt(ref surf.numShaders);
-                LittleInt(ref surf.numTriangles);
-                LittleInt(ref surf.ofsTriangles);
-                LittleInt(ref surf.numVerts);
-                LittleInt(ref surf.ofsShaders);
-                LittleInt(ref surf.ofsSt);
-                LittleInt(ref surf.ofsXyzNormals);
-                LittleInt(ref surf.ofsEnd);
-
-                if (surf.numVerts > ModelXMd3.SHADER_MAX_VERTEXES)
-                    common.Error($"InitFromFile: {fileName} has more than {ModelXMd3.SHADER_MAX_VERTEXES} verts on a surface ({surf.numVerts})");
-                if (surf.numTriangles * 3 > ModelXMd3.SHADER_MAX_INDEXES)
-                    common.Error($"InitFromFile: {fileName} has more than {ModelXMd3.SHADER_MAX_INDEXES / 3} triangles on a surface ({surf.numTriangles})");
-
-                // change to surface identifier
-                surf.ident = 0;    //SF_MD3;
-
-                // lowercase the surface name so skin compares are faster
-                surf.name = surf.name.ToLowerInvariant();
-
-                // strip off a trailing _1 or _2 this is a crutch for q3data being a mess
-                j = surf.name.Length;
-                if (j > 2 && surf.name[j - 2] == '_')
-                    surf.name = surf.name.Remove(j - 2);
-
-                // register the shaders
-                surf.shaders = UnsafeX.ReadTArray<Md3Shader>(buffer, surfOfs + surf.ofsShaders, surf.numShaders);
-                for (j = 0; j < surf.shaders.Length; j++)
-                {
-                    ref Md3Shader shader = ref surf.shaders[j];
-                    var sh = declManager.FindMaterial(shader.name);
-                    shader.shader = sh;
-                }
-
-                // swap all the triangles
-                surf.tris = UnsafeX.ReadTArray<Md3Triangle>(buffer, surfOfs + surf.ofsTriangles, surf.numTriangles);
-                for (j = 0; j < surf.tris.Length; j++)
-                {
-                    ref Md3Triangle tri = ref surf.tris[j];
-                    LittleInt(ref tri.indexes[0]);
-                    LittleInt(ref tri.indexes[1]);
-                    LittleInt(ref tri.indexes[2]);
-                }
-
-                // swap all the ST
-                surf.sts = UnsafeX.ReadTArray<Md3St>(buffer, surfOfs + surf.ofsSt, surf.numVerts);
-                for (j = 0; j < surf.sts.Length; j++)
-                {
-                    ref Md3St st = ref surf.sts[j];
-                    LittleFloat(ref st.st[0]);
-                    LittleFloat(ref st.st[1]);
-                }
-
-                // swap all the XyzNormals
-                surf.xyzs = UnsafeX.ReadTArray<Md3XyzNormal>(buffer, surfOfs + surf.ofsXyzNormals, surf.numVerts * surf.numFrames);
-                for (j = 0; j < surf.xyzs.Length; j++)
-                {
-                    ref Md3XyzNormal xyz = ref surf.xyzs[j];
-                    LittleShort(ref xyz.xyz[0]);
-                    LittleShort(ref xyz.xyz[1]);
-                    LittleShort(ref xyz.xyz[2]);
-
-                    LittleShort(ref xyz.normal);
-                }
-
-                // find the next surface
-                surfOfs += surf.ofsEnd;
-            }
-
-            fileSystem.FreeFile(buffer);
-        }
-
-        public override DynamicModel IsDynamicModel
-            => DynamicModel.DM_CACHED;
-
-        void LerpMeshVertexes(SrfTriangles tri, Md3Surface surf, float backlerp, int frame, int oldframe)
-        {
-            float oldXyzScale, newXyzScale; int vertNum, numVerts;
-
-            ref Md3XyzNormal newXyz = ref surf.xyzs[frame];
-            newXyzScale = ModelXMd3.MD3_XYZ_SCALE * (1f - backlerp);
-
-            numVerts = surf.numVerts;
-
-            if (backlerp == 0)
-                // just copy the vertexes
-                for (vertNum = 0; vertNum < numVerts; vertNum++)
-                {
-
-                    var outvert = tri.verts[tri.numVerts];
-
-                    outvert.xyz.x = newXyz.xyz[0] * newXyzScale;
-                    outvert.xyz.y = newXyz.xyz[1] * newXyzScale;
-                    outvert.xyz.z = newXyz.xyz[2] * newXyzScale;
-
-                    tri.numVerts++;
-                }
-            else
-            {
-                // interpolate and copy the vertexes
-                ref Md3XyzNormal oldXyz = ref surf.xyzs[oldframe];
-                oldXyzScale = ModelXMd3.MD3_XYZ_SCALE * backlerp;
-
-                for (vertNum = 0; vertNum < numVerts; vertNum++)
-                {
-                    var outvert = tri.verts[tri.numVerts];
-
-                    // interpolate the xyz
-                    outvert.xyz.x = oldXyz.xyz[0] * oldXyzScale + newXyz.xyz[0] * newXyzScale;
-                    outvert.xyz.y = oldXyz.xyz[1] * oldXyzScale + newXyz.xyz[1] * newXyzScale;
-                    outvert.xyz.z = oldXyz.xyz[2] * oldXyzScale + newXyz.xyz[2] * newXyzScale;
-
-                    tri.numVerts++;
-                }
-            }
-        }
-
-        public override IRenderModel InstantiateDynamicModel(RenderEntity ent, ViewDef view, IRenderModel cachedModel)
-        {
-            int i, j;
-            float backlerp;
-            //int* triangles;
-            //float* texCoords;
-            int indexes, numVerts;
-            Md3Surface surface;
-            int frame, oldframe;
-            RenderModelStatic staticModel;
-
-            if (cachedModel != null)
-                cachedModel = null;
-
-            staticModel = new RenderModelStatic();
-            staticModel.bounds.Clear();
-
-            // TODO: these need set by an entity
-            frame = (int)ent.shaderParms[RenderWorldX.SHADERPARM_MD3_FRAME];         // probably want to keep frames < 1000 or so
-            oldframe = (int)ent.shaderParms[RenderWorldX.SHADERPARM_MD3_LASTFRAME];
-            backlerp = ent.shaderParms[RenderWorldX.SHADERPARM_MD3_BACKLERP];
-
-            for (i = 0; i < md3.numSurfaces; i++)
-            {
-                surface = md3.surfaces[i];
-
-                var tri = R_AllocStaticTriSurf();
-                R_AllocStaticTriSurfVerts(tri, surface.numVerts);
-                R_AllocStaticTriSurfIndexes(tri, surface.numTriangles * 3);
-                tri.bounds.Clear();
-
-                ModelSurface surf = new();
-
-                surf.geometry = tri;
-                surf.shader = surface.shaders[0].shader;
-
-                LerpMeshVertexes(tri, surface, backlerp, frame, oldframe);
-
-                triangles = surface.tris[0].indexes;
-                indexes = surface.numTriangles * 3;
-                for (j = 0; j < indexes; j++)
-                    tri.indexes[j] = triangles[j];
-                tri.numIndexes += indexes;
-
-                texCoords = surface.sts;
-
-                numVerts = surface.numVerts;
-                for (j = 0; j < numVerts; j++)
-                {
-                    idDrawVert* stri = &tri.verts[j];
-                    stri.st[0] = texCoords[j * 2 + 0];
-                    stri.st[1] = texCoords[j * 2 + 1];
-                }
-
-                R_BoundTriSurf(tri);
-
-                staticModel.AddSurface(surf);
-                staticModel.bounds.AddPoint(surf.geometry.bounds[0]);
-                staticModel.bounds.AddPoint(surf.geometry.bounds[1]);
-            }
-
-            return staticModel;
-        }
-
-        public override Bounds Bounds(RenderEntity ent)
-        {
-            Bounds ret = new();
-
-            ret.Clear();
-
-            if (ent == null || md3 == null)
-            {
-                // just give it the editor bounds
-                ret.AddPoint(new Vector3(-10, -10, -10));
-                ret.AddPoint(new Vector3(10, 10, 10));
-                return ret;
-            }
-
-            var frame = md3.frames[0];
-
-            ret.AddPoint(frame.bounds[0]);
-            ret.AddPoint(frame.bounds[1]);
-
-            return ret;
-        }
-    }
-
-    public class RenderModelLiquid : RenderModelStatic
-    {
-        const int LIQUID_MAX_SKIP_FRAMES = 5;
-        const int LIQUID_MAX_TYPES = 3;
-
-        public RenderModelLiquid()
-        {
-            verts_x = 32;
-            verts_y = 32;
-            scale_x = 256f;
-            scale_y = 256f;
-            liquid_type = 0;
-            density = 0.97f;
-            drop_height = 4;
-            drop_radius = 4;
-            drop_delay = 1000;
-            shader = declManager.FindMaterial(null);
-            update_tics = 33;  // ~30 hz
-            time = 0;
-            seed = 0;
-
-            random.SetSeed(0);
-        }
-
-        public override void InitFromFile(string fileName)
-        {
-            int i, x, y; float size_x, size_y, rate;
-            Parser parser = new(LEXFL.ALLOWPATHNAMES | LEXFL.NOSTRINGESCAPECHARS);
-            List<int> tris = new();
-
-            name = fileName;
-
-            if (!parser.LoadFile(fileName))
-            {
-                MakeDefaultModel();
-                return;
-            }
-
-            size_x = scale_x * verts_x;
-            size_y = scale_y * verts_y;
-
-            while (parser.ReadToken(out var token))
-            {
-                if (string.Equals(token, "seed", StringComparison.OrdinalIgnoreCase)) seed = parser.ParseInt();
-                else if (string.Equals(token, "size_x", StringComparison.OrdinalIgnoreCase)) size_x = parser.ParseFloat();
-                else if (string.Equals(token, "size_y", StringComparison.OrdinalIgnoreCase)) size_y = parser.ParseFloat();
-                else if (string.Equals(token, "verts_x", StringComparison.OrdinalIgnoreCase))
-                {
-                    verts_x = (int)parser.ParseFloat();
-                    if (verts_x < 2)
-                    {
-                        parser.Warning("Invalid # of verts.  Using default model.");
-                        MakeDefaultModel();
-                        return;
-                    }
-                }
-                else if (string.Equals(token, "verts_y", StringComparison.OrdinalIgnoreCase))
-                {
-                    verts_y = (int)parser.ParseFloat();
-                    if (verts_y < 2)
-                    {
-                        parser.Warning("Invalid # of verts.  Using default model.");
-                        MakeDefaultModel();
-                        return;
-                    }
-                }
-                else if (string.Equals(token, "liquid_type", StringComparison.OrdinalIgnoreCase))
-                {
-                    liquid_type = parser.ParseInt() - 1;
-                    if (liquid_type < 0 || liquid_type >= LIQUID_MAX_TYPES)
-                    {
-                        parser.Warning("Invalid liquid_type.  Using default model.");
-                        MakeDefaultModel();
-                        return;
-                    }
-                }
-                else if (string.Equals(token, "density", StringComparison.OrdinalIgnoreCase)) density = parser.ParseFloat();
-                else if (string.Equals(token, "drop_height", StringComparison.OrdinalIgnoreCase)) drop_height = parser.ParseFloat();
-                else if (string.Equals(token, "drop_radius", StringComparison.OrdinalIgnoreCase)) drop_radius = parser.ParseInt();
-                else if (string.Equals(token, "drop_delay", StringComparison.OrdinalIgnoreCase)) drop_delay = MathX.SEC2MS(parser.ParseFloat());
-                else if (string.Equals(token, "shader", StringComparison.OrdinalIgnoreCase))
-                {
-                    parser.ReadToken(out token);
-                    shader = declManager.FindMaterial(token);
-                }
-                else if (string.Equals(token, "update_rate", StringComparison.OrdinalIgnoreCase))
-                {
-                    rate = parser.ParseFloat();
-                    if (rate <= 0f || rate > 60f)
-                    {
-                        parser.Warning("Invalid update_rate.  Must be between 0 and 60.  Using default model.");
-                        MakeDefaultModel();
-                        return;
-                    }
-                    update_tics = (int)(1000 / rate);
-                }
-                else
-                {
-                    parser.Warning($"Unknown parameter '{token}'.  Using default model.");
-                    MakeDefaultModel();
-                    return;
-                }
-            }
-
-            scale_x = size_x / (verts_x - 1);
-            scale_y = size_y / (verts_y - 1);
-
-            pages.SetNum(2 * verts_x * verts_y);
-            page1 = pages.Ptr();
-            page2 = page1 + verts_x * verts_y;
-
-            verts.SetNum(verts_x * verts_y);
-            for (i = 0, y = 0; y < verts_y; y++)
-            {
-                for (x = 0; x < verts_x; x++, i++)
-                {
-                    page1[i] = 0f;
-                    page2[i] = 0f;
-                    verts[i].Clear();
-                    verts[i].xyz.Set(x * scale_x, y * scale_y, 0f);
-                    verts[i].st.Set((float)x / (float)(verts_x - 1), (float)-y / (float)(verts_y - 1));
-                }
-            }
-
-            tris.SetNum((verts_x - 1) * (verts_y - 1) * 6);
-            for (i = 0, y = 0; y < verts_y - 1; y++)
-            {
-                for (x = 1; x < verts_x; x++, i += 6)
-                {
-                    tris[i + 0] = y * verts_x + x;
-                    tris[i + 1] = y * verts_x + x - 1;
-                    tris[i + 2] = (y + 1) * verts_x + x - 1;
-
-                    tris[i + 3] = (y + 1) * verts_x + x - 1;
-                    tris[i + 4] = (y + 1) * verts_x + x;
-                    tris[i + 5] = y * verts_x + x;
-                }
-            }
-
-            // build the information that will be common to all animations of this mesh:
-            // sil edge connectivity and normal / tangent generation information
-            deformInfo = R_BuildDeformInfo(verts.Count, verts.Ptr(), tris.Count, tris.Ptr(), true);
-
-            bounds.Clear();
-            bounds.AddPoint(new Vector3(0f, 0f, drop_height * -10f));
-            bounds.AddPoint(new Vector3((verts_x - 1) * scale_x, (verts_y - 1) * scale_y, drop_height * 10f));
-
-            // set the timestamp for reloadmodels
-            fileSystem.ReadFile(name, out timeStamp);
-
-            Reset();
-        }
-
-        public override DynamicModel IsDynamicModel
-            => DynamicModel.DM_CONTINUOUS;
-
-        public override IRenderModel InstantiateDynamicModel(RenderEntity ent, ViewDef view, IRenderModel cachedModel)
-        {
-            RenderModelStatic staticModel; int frames, t; float lerp;
-
-            if (cachedModel != null)
-                cachedModel = null;
-
-            if (deformInfo == null)
-                return null;
-
-            t = view == null ? 0 : view.renderView.time;
-
-            // update the liquid model
-            frames = (t - time) / update_tics;
-            if (frames > LIQUID_MAX_SKIP_FRAMES)
-            {
-                // don't let time accumalate when skipping frames
-                time += update_tics * (frames - LIQUID_MAX_SKIP_FRAMES);
-
-                frames = LIQUID_MAX_SKIP_FRAMES;
-            }
-
-            while (frames > 0)
-            {
-                Update();
-                frames--;
-            }
-
-            // create the surface
-            lerp = (t - time) / (float)update_tics;
-            var surf = GenerateSurface(lerp);
-
-            staticModel = new RenderModelStatic();
-            staticModel.AddSurface(surf);
-            staticModel.bounds = surf.geometry.bounds;
-
-            return staticModel;
-        }
-
-        public override Bounds Bounds(RenderEntity ent)
+        public virtual Bounds Bounds(RenderEntity ent)
             => bounds;
 
-        public override void Reset()
+        public virtual void ReadFromDemoFile(VFileDemo f)
         {
-            int i, x, y;
+            PurgeModel();
 
-            if (pages.Count < 2 * verts_x * verts_y)
-                return;
+            InitEmpty(f.ReadHashString());
 
-            nextDropTime = 0;
-            time = 0;
-            random.SetSeed(seed);
+            int i, j;
+            f.ReadInt(out var numSurfaces);
 
-            page1 = pages.Ptr();
-            page2 = page1 + verts_x * verts_y;
-
-            for (i = 0, y = 0; y < verts_y; y++)
+            for (i = 0; i < numSurfaces; i++)
             {
-                for (x = 0; x < verts_x; x++, i++)
+                ModelSurface surf = new();
+                surf.shader = declManager.FindMaterial(f.ReadHashString());
+
+                var tri = R_AllocStaticTriSurf();
+                f.ReadInt(out tri.numIndexes);
+                R_AllocStaticTriSurfIndexes(tri, tri.numIndexes);
+                for (j = 0; j < tri.numIndexes; ++j) f.ReadInt(out tri.indexes[j]);
+
+                f.ReadInt(out tri.numVerts);
+                R_AllocStaticTriSurfVerts(tri, tri.numVerts);
+                for (j = 0; j < tri.numVerts; ++j)
                 {
-                    page1[i] = 0f;
-                    page2[i] = 0f;
-                    verts[i].xyz.z = 0f;
+                    f.ReadVec3(out tri.verts[j].xyz);
+                    f.ReadVec2(out tri.verts[j].st);
+                    f.ReadVec3(out tri.verts[j].normal);
+                    f.ReadVec3(out tri.verts[j].tangents0);
+                    f.ReadVec3(out tri.verts[j].tangents1);
+                    f.ReadUnsignedChar(out tri.verts[j].color0);
+                    f.ReadUnsignedChar(out tri.verts[j].color1);
+                    f.ReadUnsignedChar(out tri.verts[j].color2);
+                    f.ReadUnsignedChar(out tri.verts[j].color3);
                 }
-            }
-        }
-
-        public void IntersectBounds(Bounds bounds, float displacement)
-        {
-            int left = (int)(bounds[0].x / scale_x),
-                right = (int)(bounds[1].x / scale_x),
-                top = (int)(bounds[0].y / scale_y),
-                bottom = (int)(bounds[1].y / scale_y);
-            float down = bounds[0].z;
-            //up = bounds[1].z;
-
-            if (right < 1 || left >= verts_x || bottom < 1 || top >= verts_x)
-                return;
-
-            // Perform edge clipping...
-            if (left < 1) left = 1;
-            if (right >= verts_x) right = verts_x - 1;
-            if (top < 1) top = 1;
-            if (bottom >= verts_y) bottom = verts_y - 1;
-
-            for (var cy = top; cy < bottom; cy++)
-                for (var cx = left; cx < right; cx++)
-                {
-                    ref float pos = ref page1[verts_x * cy + cx];
-                    if (pos > down) //&& pos < up)
-                        pos = down;
-            }
-        }
-
-        ModelSurface GenerateSurface(float lerp)
-        {
-            SrfTriangles tri;
-            int i, base_;
-            DrawVert vert;
-            ModelSurface surf;
-            float inv_lerp;
-
-            inv_lerp = 1f - lerp;
-            vert = verts.Ptr();
-            for (i = 0; i < verts.Count; i++, vert++)
-                vert.xyz.z = page1[i] * lerp + page2[i] * inv_lerp;
-
-            tr.pc.c_deformedSurfaces++;
-            tr.pc.c_deformedVerts += deformInfo.numOutputVerts;
-            tr.pc.c_deformedIndexes += deformInfo.numIndexes;
-
-            tri = R_AllocStaticTriSurf();
-
-            // note that some of the data is references, and should not be freed
-            tri.deformedSurface = true;
-
-            tri.numIndexes = deformInfo.numIndexes;
-            tri.indexes = deformInfo.indexes;
-            tri.silIndexes = deformInfo.silIndexes;
-            tri.numMirroredVerts = deformInfo.numMirroredVerts;
-            tri.mirroredVerts = deformInfo.mirroredVerts;
-            tri.numDupVerts = deformInfo.numDupVerts;
-            tri.dupVerts = deformInfo.dupVerts;
-            tri.numSilEdges = deformInfo.numSilEdges;
-            tri.silEdges = deformInfo.silEdges;
-            tri.dominantTris = deformInfo.dominantTris;
-
-            tri.numVerts = deformInfo.numOutputVerts;
-            R_AllocStaticTriSurfVerts(tri, tri.numVerts);
-            SIMDProcessor.Memcpy(tri.verts, verts.Ptr(), deformInfo.numSourceVerts * sizeof(tri.verts[0]));
-
-            // replicate the mirror seam vertexes
-            base_ = deformInfo.numOutputVerts - deformInfo.numMirroredVerts;
-            for (i = 0; i < deformInfo.numMirroredVerts; i++)
-                tri.verts[base_ + i] = tri.verts[deformInfo.mirroredVerts[i]];
-
-            R_BoundTriSurf(tri);
-
-            // If a surface is going to be have a lighting interaction generated, it will also have to call
-            // R_DeriveTangents() to get normals, tangents, and face planes.  If it only
-            // needs shadows generated, it will only have to generate face planes.  If it only
-            // has ambient drawing, or is culled, no additional work will be necessary
-            if (!r_useDeferredTangents.Bool)
-                // set face planes, vertex normals, tangents
-                R_DeriveTangents(tri);
-
-            surf.geometry = tri;
-            surf.shader = shader;
-
-            return surf;
-        }
-
-        void WaterDrop(int x, int y, float[] page)
-        {
-            int square;
-            int radsquare = drop_radius * drop_radius;
-            float invlength = 1f / radsquare;
-            float dist;
-
-            if (x < 0) x = 1 + drop_radius + random.RandomInt(verts_x - 2 * drop_radius - 1);
-            if (y < 0) y = 1 + drop_radius + random.RandomInt(verts_y - 2 * drop_radius - 1);
-
-            int left = -drop_radius,
-                right = drop_radius,
-                top = -drop_radius,
-                bottom = drop_radius;
-
-            // Perform edge clipping...
-            if (x - drop_radius < 1) left -= (x - drop_radius - 1);
-            if (y - drop_radius < 1) top -= (y - drop_radius - 1);
-            if (x + drop_radius > verts_x - 1) right -= (x + drop_radius - verts_x + 1);
-            if (y + drop_radius > verts_y - 1) bottom -= (y + drop_radius - verts_y + 1);
-
-            for (var cy = top; cy < bottom; cy++)
-                for (var cx = left; cx < right; cx++)
-                {
-                    square = cy * cy + cx * cx;
-                    if (square < radsquare)
-                    {
-                        dist = MathX.Sqrt(square * invlength);
-                        page[verts_x * (cy + y) + cx + x] += MathX.Cos16((float)(dist * Math.PI * 0.5f)) * drop_height;
-                    }
-                }
-        }
-
-        void Update()
-        {
-            int x, y;
-            float* p2;
-            float* p1;
-            float value;
-
-            time += update_tics;
-
-            idSwap(page1, page2);
-
-            if (time > nextDropTime)
-            {
-                WaterDrop(-1, -1, page2);
-                nextDropTime = time + drop_delay;
-            }
-            else if (time < nextDropTime - drop_delay)
-            {
-                nextDropTime = time + drop_delay;
-            }
-
-            p1 = page1;
-            p2 = page2;
-
-            switch (liquid_type)
-            {
-                case 0:
-                    for (y = 1; y < verts_y - 1; y++)
-                    {
-                        p2 += verts_x;
-                        p1 += verts_x;
-                        for (x = 1; x < verts_x - 1; x++)
-                        {
-                            value =
-                                (p2[x + verts_x] +
-                                  p2[x - verts_x] +
-                                  p2[x + 1] +
-                                  p2[x - 1] +
-                                  p2[x - verts_x - 1] +
-                                  p2[x - verts_x + 1] +
-                                  p2[x + verts_x - 1] +
-                                  p2[x + verts_x + 1] +
-                                  p2[x]) * (2f / 9f) -
-                                p1[x];
-
-                            p1[x] = value * density;
-                        }
-                    }
-                    break;
-
-                case 1:
-                    for (y = 1; y < verts_y - 1; y++)
-                    {
-                        p2 += verts_x;
-                        p1 += verts_x;
-                        for (x = 1; x < verts_x - 1; x++)
-                        {
-                            value =
-                                (p2[x + verts_x] +
-                                  p2[x - verts_x] +
-                                  p2[x + 1] +
-                                  p2[x - 1] +
-                                  p2[x - verts_x - 1] +
-                                  p2[x - verts_x + 1] +
-                                  p2[x + verts_x - 1] +
-                                  p2[x + verts_x + 1]) * 0.25f -
-                                p1[x];
-
-                            p1[x] = value * density;
-                        }
-                    }
-                    break;
-
-                case 2:
-                    for (y = 1; y < verts_y - 1; y++)
-                    {
-                        p2 += verts_x;
-                        p1 += verts_x;
-                        for (x = 1; x < verts_x - 1; x++)
-                        {
-                            value =
-                                (p2[x + verts_x] +
-                                  p2[x - verts_x] +
-                                  p2[x + 1] +
-                                  p2[x - 1] +
-                                  p2[x - verts_x - 1] +
-                                  p2[x - verts_x + 1] +
-                                  p2[x + verts_x - 1] +
-                                  p2[x + verts_x + 1] +
-                                  p2[x]) * (1f / 9f);
-
-                            p1[x] = value * density;
-                        }
-                    }
-                    break;
-            }
-        }
-
-        int verts_x;
-        int verts_y;
-        float scale_x;
-        float scale_y;
-        int time;
-        int liquid_type;
-        int update_tics;
-        int seed;
-
-        RandomX random;
-
-        Material shader;
-        DeformInfo deformInfo;        // used to create srfTriangles_t from base frames and new vertexes
-        float density;
-        float drop_height;
-        int drop_radius;
-        float drop_delay;
-
-        List<float> pages;
-        float[] page1;
-        float[] page2;
-
-        List<DrawVert> verts;
-
-        int nextDropTime;
-    }
-
-    public class RenderModelPrt : RenderModelStatic
-    {
-        readonly DeclParticle particleSystem;
-
-        public RenderModelPrt();
-
-        public virtual void InitFromFile(string fileName);
-        public virtual void TouchData();
-        public virtual DynamicModel IsDynamicModel();
-        public virtual IRenderModel InstantiateDynamicModel(RenderEntity ent, ViewDef view, IRenderModel cachedModel);
-        public virtual Bounds Bounds(RenderEntity ent);
-        public virtual float DepthHack();
-        public virtual int Memory();
-    }
-
-    // This is a simple dynamic model that just creates a stretched quad between two points that faces the view, like a dynamic deform tube.
-    public class RenderModelBeam : RenderModelStatic
-    {
-        const string beam_SnapshotName = "_beam_Snapshot_";
-
-        public override DynamicModel IsDynamicModel => DynamicModel.DM_CONTINUOUS;	// regenerate for every view
-        public override bool IsLoaded => true;	// don't ever need to load
-        public override IRenderModel InstantiateDynamicModel(RenderEntity ent, ViewDef view, IRenderModel cachedModel)
-        {
-            RenderModelStatic staticModel;
-            SrfTriangles tri;
-            ModelSurface surf;
-
-            if (cachedModel != null)
-                cachedModel = null;
-
-            if (ent == null || viewDef == null)
-                return null;
-
-            if (cachedModel != null)
-            {
-                Debug.Assert(cachedModel is RenderModelStatic);
-                Debug.Assert(string.Equals(cachedModel.Name, beam_SnapshotName, StringComparison.OrdinalIgnoreCase));
-
-                staticModel = (RenderModelStatic)cachedModel;
-                surf = staticModel.Surface(0);
-                tri = surf.geometry;
-            }
-            else
-            {
-                staticModel = new RenderModelStatic();
-                staticModel.InitEmpty(beam_SnapshotName);
-
-                tri = R_AllocStaticTriSurf();
-                R_AllocStaticTriSurfVerts(tri, 4);
-                R_AllocStaticTriSurfIndexes(tri, 6);
-
-                tri.verts[0].Clear(); tri.verts[0].st.x = 0; tri.verts[0].st.y = 0;
-                tri.verts[1].Clear(); tri.verts[1].st.x = 0; tri.verts[1].st.y = 1;
-                tri.verts[2].Clear(); tri.verts[2].st.x = 1; tri.verts[2].st.y = 0;
-                tri.verts[3].Clear(); tri.verts[3].st.x = 1; tri.verts[3].st.y = 1;
-
-                tri.indexes[0] = 0;
-                tri.indexes[1] = 2;
-                tri.indexes[2] = 1;
-                tri.indexes[3] = 2;
-                tri.indexes[4] = 3;
-                tri.indexes[5] = 1;
-
-                tri.numVerts = 4;
-                tri.numIndexes = 6;
 
                 surf.geometry = tri;
-                surf.id = 0;
-                surf.shader = tr.defaultMaterial;
-                staticModel.AddSurface(surf);
+                this.AddSurface(surf);
             }
-
-            Vector3[] target = reinterpret.cast_vec3(ent.shaderParms[RenderWorldX.SHADERPARM_BEAM_END_X]);
-
-            // we need the view direction to project the minor axis of the tube as the view changes
-            Vector3 localView, localTarget;
-            float modelMatrix[16];
-            R_AxisToModelMatrix(ent.axis, ent.origin, modelMatrix);
-            R_GlobalPointToLocal(modelMatrix, viewDef.renderView.vieworg, localView);
-            R_GlobalPointToLocal(modelMatrix, target, localTarget);
-
-            Vector3 major = localTarget;
-            Vector3 minor;
-
-            Vector3 mid = 0.5f * localTarget;
-            Vector3 dir = mid - localView;
-            minor.Cross(major, dir);
-            minor.Normalize();
-            if (ent.shaderParms[RenderWorldX.SHADERPARM_BEAM_WIDTH] != 0f)
-                minor *= ent.shaderParms[RenderWorldX.SHADERPARM_BEAM_WIDTH] * 0.5f;
-
-            int red = MathX.FtoiFast(ent.shaderParms[RenderWorldX.SHADERPARM_RED] * 255f);
-            int green = MathX.FtoiFast(ent.shaderParms[RenderWorldX.SHADERPARM_GREEN] * 255f);
-            int blue = MathX.FtoiFast(ent.shaderParms[RenderWorldX.SHADERPARM_BLUE] * 255f);
-            int alpha = MathX.FtoiFast(ent.shaderParms[RenderWorldX.SHADERPARM_ALPHA] * 255f);
-
-            tri.verts[0].xyz = minor;
-            tri.verts[0].color[0] = red;
-            tri.verts[0].color[1] = green;
-            tri.verts[0].color[2] = blue;
-            tri.verts[0].color[3] = alpha;
-
-            tri.verts[1].xyz = -minor;
-            tri.verts[1].color[0] = red;
-            tri.verts[1].color[1] = green;
-            tri.verts[1].color[2] = blue;
-            tri.verts[1].color[3] = alpha;
-
-            tri.verts[2].xyz = localTarget + minor;
-            tri.verts[2].color[0] = red;
-            tri.verts[2].color[1] = green;
-            tri.verts[2].color[2] = blue;
-            tri.verts[2].color[3] = alpha;
-
-            tri.verts[3].xyz = localTarget - minor;
-            tri.verts[3].color[0] = red;
-            tri.verts[3].color[1] = green;
-            tri.verts[3].color[2] = blue;
-            tri.verts[3].color[3] = alpha;
-
-            R_BoundTriSurf(tri);
-
-            staticModel.bounds = tri.bounds;
-
-            return staticModel;
+            this.FinishSurfaces();
         }
 
-        public override Bounds Bounds(RenderEntity ent)
+        public virtual void WriteToDemoFile(VFileDemo f)
         {
-            Bounds b = new();
+            // note that it has been updated
+            lastArchivedFrame = tr.frameCount;
 
-            b.Zero();
-            if (ent == null)
+            var data0 = (int)DemoCommand.DC_DEFINE_MODEL;
+            f.WriteInt(data0);
+            f.WriteHashString(Name);
+
+            int i, j;
+            f.WriteInt(surfaces.Count);
+            for (i = 0; i < surfaces.Count; i++)
             {
-                b.ExpandSelf(8f);
+                var surf = surfaces[i];
+                f.WriteHashString(surf.shader.Name);
+
+                var tri = surf.geometry;
+                f.WriteInt(tri.numIndexes);
+                for (j = 0; j < tri.numIndexes; ++j) f.WriteInt(tri.indexes[j]);
+                f.WriteInt(tri.numVerts);
+                for (j = 0; j < tri.numVerts; ++j)
+                {
+                    f.WriteVec3(tri.verts[j].xyz);
+                    f.WriteVec2(tri.verts[j].st);
+                    f.WriteVec3(tri.verts[j].normal);
+                    f.WriteVec3(tri.verts[j].tangents0);
+                    f.WriteVec3(tri.verts[j].tangents1);
+                    f.WriteUnsignedChar(tri.verts[j].color0);
+                    f.WriteUnsignedChar(tri.verts[j].color1);
+                    f.WriteUnsignedChar(tri.verts[j].color2);
+                    f.WriteUnsignedChar(tri.verts[j].color3);
+                }
+            }
+        }
+
+        public virtual float DepthHack
+            => 0f;
+
+        static void AddCubeFace(SrfTriangles tri, Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4)
+        {
+            tri.verts[tri.numVerts + 0].Clear();
+            tri.verts[tri.numVerts + 0].xyz = v1 * 8;
+            tri.verts[tri.numVerts + 0].st.x = 0;
+            tri.verts[tri.numVerts + 0].st.y = 0;
+
+            tri.verts[tri.numVerts + 1].Clear();
+            tri.verts[tri.numVerts + 1].xyz = v2 * 8;
+            tri.verts[tri.numVerts + 1].st.x = 1;
+            tri.verts[tri.numVerts + 1].st.y = 0;
+
+            tri.verts[tri.numVerts + 2].Clear();
+            tri.verts[tri.numVerts + 2].xyz = v3 * 8;
+            tri.verts[tri.numVerts + 2].st.x = 1;
+            tri.verts[tri.numVerts + 2].st.y = 1;
+
+            tri.verts[tri.numVerts + 3].Clear();
+            tri.verts[tri.numVerts + 3].xyz = v4 * 8;
+            tri.verts[tri.numVerts + 3].st.x = 0;
+            tri.verts[tri.numVerts + 3].st.y = 1;
+
+            tri.indexes[tri.numIndexes + 0] = tri.numVerts + 0;
+            tri.indexes[tri.numIndexes + 1] = tri.numVerts + 1;
+            tri.indexes[tri.numIndexes + 2] = tri.numVerts + 2;
+            tri.indexes[tri.numIndexes + 3] = tri.numVerts + 0;
+            tri.indexes[tri.numIndexes + 4] = tri.numVerts + 2;
+            tri.indexes[tri.numIndexes + 5] = tri.numVerts + 3;
+
+            tri.numVerts += 4;
+            tri.numIndexes += 6;
+        }
+
+        public void MakeDefaultModel()
+        {
+            defaulted = true;
+
+            // throw out any surfaces we already have
+            PurgeModel();
+
+            // create one new surface
+            ModelSurface surf = new();
+
+            var tri = R_AllocStaticTriSurf();
+
+            surf.shader = tr.defaultMaterial;
+            surf.geometry = tri;
+
+            R_AllocStaticTriSurfVerts(tri, 24);
+            R_AllocStaticTriSurfIndexes(tri, 36);
+
+            AddCubeFace(tri, new Vector3(-1, 1, 1), new Vector3(1, 1, 1), new Vector3(1, -1, 1), new Vector3(-1, -1, 1));
+            AddCubeFace(tri, new Vector3(-1, 1, -1), new Vector3(-1, -1, -1), new Vector3(1, -1, -1), new Vector3(1, 1, -1));
+
+            AddCubeFace(tri, new Vector3(1, -1, 1), new Vector3(1, 1, 1), new Vector3(1, 1, -1), new Vector3(1, -1, -1));
+            AddCubeFace(tri, new Vector3(-1, -1, 1), new Vector3(-1, -1, -1), new Vector3(-1, 1, -1), new Vector3(-1, 1, 1));
+
+            AddCubeFace(tri, new Vector3(-1, -1, 1), new Vector3(1, -1, 1), new Vector3(1, -1, -1), new Vector3(-1, -1, -1));
+            AddCubeFace(tri, new Vector3(-1, 1, 1), new Vector3(-1, 1, -1), new Vector3(1, 1, -1), new Vector3(1, 1, 1));
+
+            tri.generateNormals = true;
+
+            AddSurface(surf);
+            FinishSurfaces();
+        }
+
+        public bool LoadASE(string fileName)
+        {
+            var ase = ModelXAse.ASE_Load(fileName); if (ase == null) return false;
+            ConvertASEToModelSurfaces(ase);
+            ModelXAse.ASE_Free(ase);
+            return true;
+        }
+
+        public bool LoadLWO(string fileName)
+        {
+            uint failID = 0; int failPos = 0;
+            var lwo = ModelXLwo.lwGetObject(fileName, ref failID, ref failPos);
+            if (lwo == null) return false;
+            ConvertLWOToModelSurfaces(lwo);
+            ModelXLwo.lwFreeObject(lwo);
+            return true;
+        }
+
+        // USGS height map data for megaTexture experiments
+        public bool LoadFLT(string fileName)
+        {
+            var len = fileSystem.ReadFile(fileName, out var data, out var _);
+            if (len <= 0) return false;
+            var size = (int)Math.Sqrt(len / 4f);
+            fixed (byte* dataB = data)
+            {
+                var dataF = (float*)dataB;
+
+                // bound the altitudes
+                float min = 9999999f, max = -9999999f;
+                for (var i = 0; i < len / 4; i++)
+                {
+                    dataF[i] = BigFloat(dataF[i]);
+                    if (dataF[i] == -9999) dataF[i] = 0;        // unscanned areas
+
+                    if (dataF[i] < min) min = dataF[i];
+                    if (dataF[i] > max) max = dataF[i];
+                }
+#if true
+                // write out a gray scale height map
+                var image = (byte*)R_StaticAlloc(len);
+                var image_p = image;
+                for (var i = 0; i < len / 4; i++)
+                {
+                    var v = (data[i] - min) / (max - min);
+                    image_p[0] = image_p[1] = image_p[2] = (byte)(v * 255); image_p[3] = 255;
+                    image_p += 4;
+                }
+                var tgaName = $"{PathX.StripFileExtension(fileName)}.tga";
+                R_WriteTGA(tgaName, image, size, size, false);
+                R_StaticFree(ref image);
+                //return false;
+#endif
+
+                // find the island above sea level
+                int minX, maxX, minY, maxY;
+                {
+                    int i;
+                    for (minX = 0; minX < size; minX++)
+                    {
+                        for (i = 0; i < size; i++) if (dataF[i * size + minX] > 1.0f) break;
+                        if (i != size) break;
+                    }
+                    for (maxX = size - 1; maxX > 0; maxX--)
+                    {
+                        for (i = 0; i < size; i++) if (dataF[i * size + maxX] > 1f) break;
+                        if (i != size) break;
+                    }
+                    for (minY = 0; minY < size; minY++)
+                    {
+                        for (i = 0; i < size; i++) if (dataF[minY * size + i] > 1f) break;
+                        if (i != size) break;
+                    }
+                    for (maxY = size - 1; maxY < size; maxY--)
+                    {
+                        for (i = 0; i < size; i++) if (dataF[maxY * size + i] > 1f) break;
+                        if (i != size) break;
+                    }
+                }
+
+                var width = maxX - minX + 1; // width /= 2;
+                var height = maxY - minY + 1;
+
+                // allocate triangle surface
+                var tri = R_AllocStaticTriSurf();
+                tri.numVerts = width * height;
+                tri.numIndexes = (width - 1) * (height - 1) * 6;
+
+                fastLoad = true; // don't do all the sil processing
+
+                R_AllocStaticTriSurfIndexes(tri, tri.numIndexes);
+                R_AllocStaticTriSurfVerts(tri, tri.numVerts);
+
+                for (var i = 0; i < height; i++)
+                    for (var j = 0; j < width; j++)
+                    {
+                        var v = i * width + j;
+                        tri.verts[v].Clear();
+                        tri.verts[v].xyz.x = j * 10;  // each sample is 10 meters
+                        tri.verts[v].xyz.y = -i * 10;
+                        tri.verts[v].xyz.z = data[(minY + i) * size + minX + j];  // height is in meters
+                        tri.verts[v].st.x = (float)j / (width - 1);
+                        tri.verts[v].st.y = 1f - ((float)i / (height - 1));
+                    }
+
+                for (var i = 0; i < height - 1; i++)
+                    for (var j = 0; j < width - 1; j++)
+                    {
+                        var v = (i * (width - 1) + j) * 6;
+#if false
+                        tri.indexes[v + 0] = i * width + j;
+                        tri.indexes[v + 1] = (i + 1) * width + j;
+                        tri.indexes[v + 2] = (i + 1) * width + j + 1;
+                        tri.indexes[v + 3] = i * width + j;
+                        tri.indexes[v + 4] = (i + 1) * width + j + 1;
+                        tri.indexes[v + 5] = i * width + j + 1;
+#else
+                        tri.indexes[v + 0] = i * width + j;
+                        tri.indexes[v + 1] = i * width + j + 1;
+                        tri.indexes[v + 2] = (i + 1) * width + j + 1;
+                        tri.indexes[v + 3] = i * width + j;
+                        tri.indexes[v + 4] = (i + 1) * width + j + 1;
+                        tri.indexes[v + 5] = (i + 1) * width + j;
+#endif
+                    }
+
+                fileSystem.FreeFile(data);
+
+                var surface = new ModelSurface
+                {
+                    geometry = tri,
+                    id = 0,
+                    shader = tr.defaultMaterial // declManager.FindMaterial( "shaderDemos/megaTexture" );
+                };
+                this.AddSurface(surface);
+            }
+            return true;
+        }
+
+        public bool LoadMA(string filename)
+        {
+            var ma = ModelXMa.MA_Load(filename);
+            if (ma == null) return false;
+            ConvertMAToModelSurfaces(ma);
+            ModelXMa.MA_Free(ma);
+            return true;
+        }
+
+        class MatchVert
+        {
+            public MatchVert next;
+            public int v, tv;
+            public byte[] color = new byte[4];
+            public Vector3 normal;
+        }
+
+        static byte[] ConvertASEToModelSurfaces_identityColor = { 255, 255, 255, 255 };
+        public bool ConvertASEToModelSurfaces(AseModel ase)
+        {
+            AseObject obj;
+            AseMesh mesh;
+            AseMaterial material;
+            Material im1, im2;
+            SrfTriangles tri;
+            int objectNum;
+            int i, j, k;
+            int v, tv;
+            int* vRemap;
+            int* tvRemap;
+            MatchVert mvTable;   // all of the match verts
+            MatchVert mvHash;       // points inside mvTable for each xyz index
+            MatchVert lastmv;
+            MatchVert mv;
+            Vector3 normal = new();
+            float uOffset, vOffset, textureSin, textureCos;
+            float uTiling, vTiling;
+            byte* color;
+            ModelSurface modelSurf;
+
+            if (ase == null || ase.objects.Count < 1) return false;
+
+            timeStamp = ase.timeStamp;
+
+            // the modeling programs can save out multiple surfaces with a common material, but we would like to mege them together where possible
+            // meaning that this.NumSurfaces() <= ase.objects.currentElements
+            var mergeTo = stackalloc int[ase.objects.Count * sizeof(int)];
+            ModelSurface surf = new();
+            surf.geometry = null;
+            // if we don't have any materials, dump everything into a single surface
+            if (ase.materials.Count == 0)
+            {
+                surf.shader = tr.defaultMaterial;
+                surf.id = 0;
+                this.AddSurface(surf);
+                for (i = 0; i < ase.objects.Count; i++) mergeTo[i] = 0;
+            }
+            // don't merge any
+            else if (!r_mergeModelSurfaces.Bool)
+                for (i = 0; i < ase.objects.Count; i++)
+                {
+                    mergeTo[i] = i;
+                    obj = ase.objects[i];
+                    material = ase.materials[obj.materialRef];
+                    surf.shader = declManager.FindMaterial(material.name);
+                    surf.id = this.NumSurfaces;
+                    this.AddSurface(surf);
+                }
+            // search for material matches
+            else
+                for (i = 0; i < ase.objects.Count; i++)
+                {
+                    obj = ase.objects[i];
+                    material = ase.materials[obj.materialRef];
+                    im1 = declManager.FindMaterial(material.name);
+                    if (im1.IsDiscrete) j = this.NumSurfaces; // flares, autosprites, etc
+                    else
+                        for (j = 0; j < this.NumSurfaces; j++)
+                        {
+                            modelSurf = this.surfaces[j];
+                            im2 = modelSurf.shader;
+                            if (im1 == im2) { mergeTo[i] = j; break; } // merge this
+                        }
+                    // didn't merge
+                    if (j == this.NumSurfaces)
+                    {
+                        mergeTo[i] = j;
+                        surf.shader = im1;
+                        surf.id = this.NumSurfaces;
+                        this.AddSurface(surf);
+                    }
+                }
+
+            //VectorSubset < Vector3, 3 > vertexSubset;
+            //VectorSubset < Vector2, 2 > texCoordSubset;
+
+            // build the surfaces
+            for (objectNum = 0; objectNum < ase.objects.Count; objectNum++)
+            {
+                obj = ase.objects[objectNum];
+                mesh = obj.mesh;
+                material = ase.materials[obj.materialRef];
+                im1 = declManager.FindMaterial(material.name);
+
+                var normalsParsed = mesh.normalsParsed;
+
+                // completely ignore any explict normals on surfaces with a renderbump command which will guarantee the best contours and least vertexes.
+                var rb = im1.RenderBump;
+                if (rb != null && rb[0] != 0) normalsParsed = false;
+
+                // It seems like the tools our artists are using often generate verts and texcoords slightly separated that should be merged
+                // note that we really should combine the surfaces with common materials before doing this operation, because we can miss a slop combination if they are in different surfaces
+
+                vRemap = (int*)R_StaticAlloc(mesh.numVertexes * sizeof(int));
+                // renderbump doesn't care about vertex count
+                if (fastLoad)
+                    for (j = 0; j < mesh.numVertexes; j++) vRemap[j] = j;
+                else
+                {
+                    float vertexEpsilon = r_slopVertex.Float, expand = 2 * 32 * vertexEpsilon; Vector3 mins, maxs;
+
+                    fixed (Vector3* vertexesV = mesh.vertexes) Simd.MinMax3(out mins, out maxs, vertexesV, mesh.numVertexes);
+                    mins -= new Vector3(expand, expand, expand);
+                    maxs += new Vector3(expand, expand, expand);
+                    vertexSubset.Init(mins, maxs, 32, 1024);
+                    for (j = 0; j < mesh.numVertexes; j++) vRemap[j] = vertexSubset.FindVector(mesh.vertexes, j, vertexEpsilon);
+                }
+
+                tvRemap = (int*)R_StaticAlloc(mesh.numTVertexes * sizeof(int));
+                // renderbump doesn't care about vertex count
+                if (fastLoad)
+                    for (j = 0; j < mesh.numTVertexes; j++) tvRemap[j] = j;
+                else
+                {
+                    float texCoordEpsilon = r_slopTexCoord.Float, expand = 2 * 32 * texCoordEpsilon; Vector2 mins, maxs;
+
+                    fixed (Vector2* tvertexesV = mesh.tvertexes) Simd.MinMax2(out mins, out maxs, tvertexesV, mesh.numTVertexes);
+                    mins -= new Vector2(expand, expand);
+                    maxs += new Vector2(expand, expand);
+                    texCoordSubset.Init(mins, maxs, 32, 1024);
+                    for (j = 0; j < mesh.numTVertexes; j++) tvRemap[j] = texCoordSubset.FindVector(mesh.tvertexes, j, texCoordEpsilon);
+                }
+
+                // we need to find out how many unique vertex / texcoord combinations there are, because ASE tracks them separately but we need them unified
+
+                // the maximum possible number of combined vertexes is the number of indexes
+                mvTable = (MatchVert*)R_ClearedStaticAlloc(mesh.numFaces * 3 * sizeof(MatchVert));
+
+                // we will have a hash chain based on the xyz values
+                mvHash = (MatchVert**)R_ClearedStaticAlloc(mesh.numVertexes * sizeof(MatchVert));
+
+                // allocate triangle surface
+                tri = R_AllocStaticTriSurf();
+                tri.numVerts = 0;
+                tri.numIndexes = 0;
+                R_AllocStaticTriSurfIndexes(tri, mesh.numFaces * 3);
+                tri.generateNormals = !normalsParsed;
+
+                // init default normal, color and tex coord index
+                normal.Zero();
+                color = ConvertASEToModelSurfaces_identityColor;
+                tv = 0;
+
+                // find all the unique combinations
+                var normalEpsilon = 1f - r_slopNormal.Float;
+                for (j = 0; j < mesh.numFaces; j++)
+                {
+                    for (k = 0; k < 3; k++)
+                    {
+                        v = mesh.faces[j].vertexNum[k];
+                        if (v < 0 || v >= mesh.numVertexes) common.Error($"ConvertASEToModelSurfaces: bad vertex index in ASE file {name}");
+
+                        // collapse the position if it was slightly offset
+                        v = vRemap[v];
+
+                        // we may or may not have texcoords to compare
+                        if (mesh.numTVFaces == mesh.numFaces && mesh.numTVertexes != 0)
+                        {
+                            tv = mesh.faces[j].tVertexNum[k];
+                            if (tv < 0 || tv >= mesh.numTVertexes) common.Error($"ConvertASEToModelSurfaces: bad tex coord index in ASE file {name}");
+                            // collapse the tex coord if it was slightly offset
+                            tv = tvRemap[tv];
+                        }
+
+                        // we may or may not have normals to compare
+                        if (normalsParsed) normal = mesh.faces[j].vertexNormals[k];
+
+                        // we may or may not have colors to compare
+                        if (mesh.colorsParsed) color = mesh.faces[j].vertexColors[k];
+
+                        // find a matching vert
+                        for (lastmv = null, mv = mvHash[v]; mv != null; lastmv = mv, mv = mv.next)
+                        {
+                            if (mv.tv != tv) continue;
+                            if (*(uint*)mv.color != *(uint*)color) continue;
+                            if (!normalsParsed) break; // if we are going to create the normals, just matching texcoords is enough
+                            if (mv.normal * normal > normalEpsilon) break;      // we already have this one
+                        }
+                        if (mv == null)
+                        {
+                            // allocate a new match vert and link to hash chain
+                            mv = mvTable[tri.numVerts];
+                            mv.v = v;
+                            mv.tv = tv;
+                            mv.normal = normal;
+                            *(uint*)mv.color = *(uint*)color;
+                            mv.next = null;
+                            if (lastmv != null) lastmv.next = mv;
+                            else mvHash[v] = mv;
+                            tri.numVerts++;
+                        }
+
+                        tri.indexes[tri.numIndexes] = mv - mvTable;
+                        tri.numIndexes++;
+                    }
+                }
+
+                // allocate space for the indexes and copy them
+                if (tri.numIndexes > mesh.numFaces * 3) common.FatalError($"ConvertASEToModelSurfaces: index miscount in ASE file {name}");
+                if (tri.numVerts > mesh.numFaces * 3) common.FatalError($"ConvertASEToModelSurfaces: vertex miscount in ASE file {name}");
+
+                // an ASE allows the texture coordinates to be scaled, translated, and rotated
+                if (ase.materials.Count == 0)
+                {
+                    uOffset = vOffset = 0f;
+                    uTiling = vTiling = 1f;
+                    textureSin = 0f;
+                    textureCos = 1f;
+                }
+                else
+                {
+                    material = ase.materials[obj.materialRef];
+                    uOffset = -material.uOffset;
+                    vOffset = material.vOffset;
+                    uTiling = material.uTiling;
+                    vTiling = material.vTiling;
+                    textureSin = MathX.Sin(material.angle);
+                    textureCos = MathX.Cos(material.angle);
+                }
+
+                // now allocate and generate the combined vertexes
+                R_AllocStaticTriSurfVerts(tri, tri.numVerts);
+                for (j = 0; j < tri.numVerts; j++)
+                {
+                    mv = mvTable[j];
+                    tri.verts[j].Clear();
+                    tri.verts[j].xyz = mesh.vertexes[mv.v];
+                    tri.verts[j].normal = mv.normal;
+                    *(uint*)tri.verts[j].color = *(uint*)mv.color;
+                    if (mesh.numTVFaces == mesh.numFaces && mesh.numTVertexes != 0)
+                    {
+                        var tv = mesh.tvertexes[mv.tv];
+                        var u = tv.x * uTiling + uOffset;
+                        var v = tv.y * vTiling + vOffset;
+                        tri.verts[j].st[0] = u * textureCos + v * textureSin;
+                        tri.verts[j].st[1] = u * -textureSin + v * textureCos;
+                    }
+                }
+
+                R_StaticFree(ref mvTable);
+                R_StaticFree(ref mvHash);
+                R_StaticFree(ref tvRemap);
+                R_StaticFree(ref vRemap);
+
+                // see if we need to merge with a previous surface of the same material
+                modelSurf = this.surfaces[mergeTo[objectNum]];
+                var mergeTri = modelSurf.geometry;
+                if (mergeTri == null) modelSurf.geometry = tri;
+                else
+                {
+                    modelSurf.geometry = R_MergeTriangles(mergeTri, tri);
+                    R_FreeStaticTriSurf(tri);
+                    R_FreeStaticTriSurf(mergeTri);
+                }
+            }
+
+            return true;
+        }
+
+        public bool ConvertLWOToModelSurfaces(lwObject lwo)
+        {
+            Material im1, im2;
+            SrfTriangles tri;
+            lwSurface lwoSurf;
+            int numTVertexes;
+            int i, j, k;
+            int v, tv;
+            Vector3* vList;
+            int* vRemap;
+            Vector2[] tvList;
+            int* tvRemap;
+            MatchVert mvTable;   // all of the match verts
+            MatchVert[] mvHash;  // points inside mvTable for each xyz index
+            MatchVert lastmv;
+            MatchVert mv;
+            Vector3 normal;
+            byte[] color = new byte[4];
+            ModelSurface modelSurf;
+
+            if (lwo == null || lwo.surf == null) return false;
+
+            timeStamp = lwo.timeStamp;
+
+            // count the number of surfaces
+            i = 0;
+            for (lwoSurf = lwo.surf; lwoSurf != null; lwoSurf = (lwSurface)lwoSurf.next) i++;
+
+            // the modeling programs can save out multiple surfaces with a common material, but we would like to merge them together where possible
+            var mergeTo = stackalloc int[i];
+            var surf = new ModelSurface();
+
+            // don't merge any
+            if (!r_mergeModelSurfaces.Bool)
+                for (lwoSurf = lwo.surf, i = 0; lwoSurf != null; lwoSurf = (lwSurface)lwoSurf.next, i++)
+                {
+                    mergeTo[i] = i;
+                    surf.shader = declManager.FindMaterial(lwoSurf.name);
+                    surf.id = this.NumSurfaces;
+                    this.AddSurface(surf);
+                }
+            // search for material matches
+            else
+                for (lwoSurf = lwo.surf, i = 0; lwoSurf != null; lwoSurf = (lwSurface)lwoSurf.next, i++)
+                {
+                    im1 = declManager.FindMaterial(lwoSurf.name);
+                    if (im1.IsDiscrete) j = this.NumSurfaces; // flares, autosprites, etc
+                    else
+                        for (j = 0; j < this.NumSurfaces; j++)
+                        {
+                            modelSurf = this.surfaces[j];
+                            im2 = modelSurf.shader;
+                            if (im1 == im2) { mergeTo[i] = j; break; } // merge this
+                        }
+                    // didn't merge
+                    if (j == this.NumSurfaces)
+                    {
+                        mergeTo[i] = j;
+                        surf.shader = im1;
+                        surf.id = this.NumSurfaces;
+                        this.AddSurface(surf);
+                    }
+                }
+
+            //VectorSubset < idVec3, 3 > vertexSubset;
+            //VectorSubset < idVec2, 2 > texCoordSubset;
+
+            // we only ever use the first layer
+            var layer = (lwLayer)lwo.layer;
+
+            // vertex positions
+            if (layer.point.count <= 0) { common.Warning($"ConvertLWOToModelSurfaces: model \'{name}\' has bad or missing vertex data"); return false; }
+
+            vList = (Vector3**)R_StaticAlloc(layer.point.count * sizeof(Vector3));
+            for (j = 0; j < layer.point.count; j++)
+            {
+                vList[j].x = layer.point.pt[j].pos[0];
+                vList[j].y = layer.point.pt[j].pos[2];
+                vList[j].z = layer.point.pt[j].pos[1];
+            }
+
+            // vertex texture coords
+            numTVertexes = 0;
+
+            if (layer.nvmaps != 0)
+                for (var vm = layer.vmap; vm != null; vm = (lwVMap)vm.next) if (vm.type == ('T' << 24 | 'X' << 16 | 'U' << 8 | 'V')) numTVertexes += vm.nverts;
+
+            if (numTVertexes != 0)
+            {
+                tvList = new Vector2[numTVertexes];
+                var offset = 0;
+                for (var vm = layer.vmap; vm != null; vm = (lwVMap)vm.next)
+                    if (vm.type == ('T' << 24 | 'X' << 16 | 'U' << 8 | 'V'))
+                    {
+                        vm.offset = offset;
+                        for (k = 0; k < vm.nverts; k++)
+                        {
+                            tvList[k + offset].x = vm.val[k][0];
+                            tvList[k + offset].y = 1f - vm.val[k][1];    // invert the t
+                        }
+                        offset += vm.nverts;
+                    }
             }
             else
             {
-                Vector3 target = reinterpret.cast_vec3(ent.shaderParms[RenderWorldX.SHADERPARM_BEAM_END_X]);
-                Vector3 localTarget;
-                float modelMatrix[16];
-                R_AxisToModelMatrix(ent.axis, ent.origin, modelMatrix);
-                R_GlobalPointToLocal(modelMatrix, target, localTarget);
-
-                b.AddPoint(localTarget);
-                if (ent.shaderParms[RenderWorldX.SHADERPARM_BEAM_WIDTH] != 0f)
-                    b.ExpandSelf(ent.shaderParms[RenderWorldX.SHADERPARM_BEAM_WIDTH] * 0.5f);
+                common.Warning($"ConvertLWOToModelSurfaces: model \'{name}\' has bad or missing uv data");
+                numTVertexes = 1;
+                tvList = new Vector2[numTVertexes];
             }
-            return b;
+
+            // It seems like the tools our artists are using often generate verts and texcoords slightly separated that should be merged
+            // note that we really should combine the surfaces with common materials before doing this operation, because we can miss a slop combination if they are in different surfaces
+
+            vRemap = (int*)R_StaticAlloc(layer.point.count * sizeof(int));
+
+            // renderbump doesn't care about vertex count
+            if (fastLoad)
+                for (j = 0; j < layer.point.count; j++) vRemap[j] = j;
+            else
+            {
+                float vertexEpsilon = r_slopVertex.Float, expand = 2 * 32 * vertexEpsilon; Vector3 mins, maxs;
+                Simd.MinMax3(out mins, out maxs, vList, layer.point.count);
+                mins -= new Vector3(expand, expand, expand);
+                maxs += new Vector3(expand, expand, expand);
+                vertexSubset.Init(mins, maxs, 32, 1024);
+                for (j = 0; j < layer.point.count; j++) vRemap[j] = vertexSubset.FindVector(vList, j, vertexEpsilon);
+            }
+
+            tvRemap = (int*)R_StaticAlloc(numTVertexes * sizeof(int));
+            // renderbump doesn't care about vertex count
+            if (fastLoad)
+                for (j = 0; j < numTVertexes; j++) tvRemap[j] = j;
+            else
+            {
+                float texCoordEpsilon = r_slopTexCoord.Float, expand = 2 * 32 * texCoordEpsilon; Vector2 mins, maxs;
+                fixed (Vector2* tvListV = tvList) Simd.MinMax2(out mins, out maxs, tvListV, numTVertexes);
+                mins -= new Vector2(expand, expand);
+                maxs += new Vector2(expand, expand);
+                texCoordSubset.Init(mins, maxs, 32, 1024);
+                for (j = 0; j < numTVertexes; j++) tvRemap[j] = texCoordSubset.FindVector(tvList, j, texCoordEpsilon);
+            }
+
+            // build the surfaces
+            for (lwoSurf = lwo.surf, i = 0; lwoSurf != null; lwoSurf = (lwSurface)lwoSurf.next, i++)
+            {
+                im1 = declManager.FindMaterial(lwoSurf.name);
+
+                var normalsParsed = true;
+
+                // completely ignore any explict normals on surfaces with a renderbump command which will guarantee the best contours and least vertexes.
+                var rb = im1.RenderBump;
+                if (rb != null && rb[0] != 0) normalsParsed = false;
+
+                // we need to find out how many unique vertex / texcoord combinations there are
+
+                // the maximum possible number of combined vertexes is the number of indexes
+                mvTable = new MatchVert[layer.polygon.count * 3];
+
+                // we will have a hash chain based on the xyz values
+                mvHash = new MatchVert[layer.point.count];
+
+                // allocate triangle surface
+                tri = R_AllocStaticTriSurf();
+                tri.numVerts = 0;
+                tri.numIndexes = 0;
+                R_AllocStaticTriSurfIndexes(tri, layer.polygon.count * 3);
+                tri.generateNormals = !normalsParsed;
+
+                // find all the unique combinations
+                var normalEpsilon = fastLoad ? 1f : 1f - r_slopNormal.Float;    // don't merge unless completely exact
+                for (j = 0; j < layer.polygon.count; j++)
+                {
+                    var poly = layer.polygon.pol[j];
+                    if (poly.surf != lwoSurf) continue;
+                    if (poly.nverts != 3) { common.Warning($"ConvertLWOToModelSurfaces: model {name} has too many verts for a poly! Make sure you triplet it down"); continue; }
+
+                    for (k = 0; k < 3; k++)
+                    {
+                        v = vRemap[poly.v[k].index];
+
+                        normal.x = poly.v[k].norm[0];
+                        normal.y = poly.v[k].norm[2];
+                        normal.z = poly.v[k].norm[1];
+
+                        // LWO models aren't all that pretty when it comes down to the floating point values they store
+                        normal.FixDegenerateNormal();
+
+                        tv = 0;
+
+                        color[0] = (byte)(lwoSurf.color.rgb[0] * 255);
+                        color[1] = (byte)(lwoSurf.color.rgb[1] * 255);
+                        color[2] = (byte)(lwoSurf.color.rgb[2] * 255);
+                        color[3] = (byte)255;
+
+                        // first set attributes from the vertex
+                        var pt = layer.point.pt[poly.v[k].index];
+                        int nvm;
+                        for (nvm = 0; nvm < pt.nvmaps; nvm++)
+                        {
+                            var vm = pt.vm[nvm];
+                            if (vm.vmap.type == ('T' << 24 | 'X' << 16 | 'U' << 8 | 'V')) tv = tvRemap[vm.index + vm.vmap.offset];
+                            if (vm.vmap.type == ('R' << 24 | 'G' << 16 | 'B' << 8 | 'A')) for (var chan = 0; chan < 4; chan++) color[chan] = (byte)(255 * vm.vmap.val[vm.index][chan]);
+                        }
+
+                        // then override with polygon attributes
+                        for (nvm = 0; nvm < poly.v[k].nvmaps; nvm++)
+                        {
+                            var vm = poly.v[k].vm[nvm];
+                            if (vm.vmap.type == ('T' << 24 | 'X' << 16 | 'U' << 8 | 'V')) tv = tvRemap[vm.index + vm.vmap.offset];
+                            if (vm.vmap.type == ('R' << 24 | 'G' << 16 | 'B' << 8 | 'A')) for (var chan = 0; chan < 4; chan++) color[chan] = (byte)(255 * vm.vmap.val[vm.index][chan]);
+                        }
+
+                        // find a matching vert
+                        for (lastmv = null, mv = mvHash[v]; mv != null; lastmv = mv, mv = mv.next)
+                        {
+                            if (mv.tv != tv) continue;
+                            if (*(uint*)mv.color != *(uint*)color) continue;
+                            if (!normalsParsed) break; // if we are going to create the normals, just matching texcoords is enough
+                            if (mv.normal * normal > normalEpsilon) break; // we already have this one
+                        }
+                        // allocate a new match vert and link to hash chain
+                        if (mv == null)
+                        {
+                            mv = mvTable[tri.numVerts];
+                            mv.v = v;
+                            mv.tv = tv;
+                            mv.normal = normal;
+                            *(uint*)mv.color = *(uint*)color;
+                            mv.next = null;
+                            if (lastmv != null) lastmv.next = mv;
+                            else mvHash[v] = mv;
+                            tri.numVerts++;
+                        }
+
+                        tri.indexes[tri.numIndexes] = mv - mvTable;
+                        tri.numIndexes++;
+                    }
+                }
+
+                // allocate space for the indexes and copy them
+                if (tri.numIndexes > layer.polygon.count * 3) common.FatalError($"ConvertLWOToModelSurfaces: index miscount in LWO file {name}");
+                if (tri.numVerts > layer.polygon.count * 3) common.FatalError($"ConvertLWOToModelSurfaces: vertex miscount in LWO file {name}");
+
+                // now allocate and generate the combined vertexes
+                R_AllocStaticTriSurfVerts(tri, tri.numVerts);
+                for (j = 0; j < tri.numVerts; j++)
+                {
+                    mv = mvTable[j];
+                    tri.verts[j].Clear();
+                    tri.verts[j].xyz = vList[mv.v];
+                    tri.verts[j].st = tvList[mv.tv];
+                    tri.verts[j].normal = mv.normal;
+                    *(uint*)tri.verts[j].color = *(uint*)mv.color;
+                }
+
+                R_StaticFree(mvTable);
+                R_StaticFree(mvHash);
+
+                // see if we need to merge with a previous surface of the same material
+                modelSurf = this.surfaces[mergeTo[i]];
+                var mergeTri = modelSurf.geometry;
+                if (mergeTri == null) modelSurf.geometry = tri;
+                else
+                {
+                    modelSurf.geometry = R_MergeTriangles(mergeTri, tri);
+                    R_FreeStaticTriSurf(tri);
+                    R_FreeStaticTriSurf(mergeTri);
+                }
+            }
+
+            R_StaticFree(ref tvRemap);
+            R_StaticFree(ref vRemap);
+            R_StaticFree(ref tvList);
+            R_StaticFree(ref vList);
+
+            return true;
+        }
+
+        public AseModel ConvertLWOToASE(lwObject obj, string fileName)
+        {
+            int j, k;
+
+            if (obj == null) return null;
+
+            var ase = new AseModel { timeStamp = obj.timeStamp };
+            ase.objects.Resize(obj.nlayers, obj.nlayers);
+
+            var materialRef = 0;
+            for (var surf = obj.surf; surf != null; surf = (lwSurface)surf.next)
+            {
+                var mat = new AseMaterial { name = surf.name, uTiling = 1, vTiling = 1, angle = 0, uOffset = 0, vOffset = 0 };
+                ase.materials.Add(mat);
+
+                var layer = obj.layer;
+
+                var obj2 = new AseObject { materialRef = materialRef++ };
+                var mesh = obj2.mesh;
+                ase.objects.Add(obj2);
+
+                mesh.numFaces = layer.polygon.count;
+                mesh.numTVFaces = mesh.numFaces;
+                mesh.faces = new AseFace[mesh.numFaces];
+                mesh.numVertexes = layer.point.count;
+                mesh.vertexes = new Vector3[mesh.numVertexes];
+
+                // vertex positions
+                if (layer.point.count <= 0) common.Warning($"ConvertLWOToASE: model \'{name}\' has bad or missing vertex data");
+
+                for (j = 0; j < layer.point.count; j++)
+                {
+                    mesh.vertexes[j].x = layer.point.pt[j].pos[0];
+                    mesh.vertexes[j].y = layer.point.pt[j].pos[2];
+                    mesh.vertexes[j].z = layer.point.pt[j].pos[1];
+                }
+
+                // vertex texture coords
+                mesh.numTVertexes = 0;
+
+                if (layer.nvmaps != 0) for (var vm = layer.vmap; vm != null; vm = (lwVMap)vm.next) if (vm.type == ('T' << 24 | 'X' << 16 | 'U' << 8 | 'V')) mesh.numTVertexes += vm.nverts;
+
+                if (mesh.numTVertexes != 0)
+                {
+                    mesh.tvertexes = new Vector2[mesh.numTVertexes];
+                    var offset = 0;
+                    for (var vm = layer.vmap; vm != null; vm = (lwVMap)vm.next)
+                        if (vm.type == ('T' << 24 | 'X' << 16 | 'U' << 8 | 'V'))
+                        {
+                            vm.offset = offset;
+                            for (k = 0; k < vm.nverts; k++)
+                            {
+                                mesh.tvertexes[k + offset].x = vm.val[k][0];
+                                mesh.tvertexes[k + offset].y = 1f - vm.val[k][1];   // invert the t
+                            }
+                            offset += vm.nverts;
+                        }
+                }
+                else
+                {
+                    common.Warning($"ConvertLWOToASE: model \'{fileName}\' has bad or missing uv data");
+                    mesh.numTVertexes = 1;
+                    mesh.tvertexes = new Vector2[mesh.numTVertexes];
+                }
+
+                mesh.normalsParsed = true;
+                mesh.colorsParsed = true;  // because we are falling back to the surface color
+
+                // triangles
+                var faceIndex = 0;
+                for (j = 0; j < layer.polygon.count; j++)
+                {
+                    var poly = layer.polygon.pol[j];
+                    if (poly.surf != surf) continue;
+                    if (poly.nverts != 3) { common.Warning($"ConvertLWOToASE: model {fileName} has too many verts for a poly! Make sure you triplet it down"); continue; }
+
+                    mesh.faces[faceIndex].faceNormal.x = poly.norm[0];
+                    mesh.faces[faceIndex].faceNormal.y = poly.norm[2];
+                    mesh.faces[faceIndex].faceNormal.z = poly.norm[1];
+
+                    for (k = 0; k < 3; k++)
+                    {
+                        mesh.faces[faceIndex].vertexNum[k] = poly.v[k].index;
+
+                        mesh.faces[faceIndex].vertexNormals[k].x = poly.v[k].norm[0];
+                        mesh.faces[faceIndex].vertexNormals[k].y = poly.v[k].norm[2];
+                        mesh.faces[faceIndex].vertexNormals[k].z = poly.v[k].norm[1];
+
+                        // complete fallbacks
+                        mesh.faces[faceIndex].tVertexNum[k] = 0;
+
+                        mesh.faces[faceIndex].vertexColors[k][0] = (byte)(surf.color.rgb[0] * 255);
+                        mesh.faces[faceIndex].vertexColors[k][1] = (byte)(surf.color.rgb[1] * 255);
+                        mesh.faces[faceIndex].vertexColors[k][2] = (byte)(surf.color.rgb[2] * 255);
+                        mesh.faces[faceIndex].vertexColors[k][3] = 255;
+
+                        // first set attributes from the vertex
+                        var pt = layer.point.pt[poly.v[k].index];
+                        int nvm;
+                        for (nvm = 0; nvm < pt.nvmaps; nvm++)
+                        {
+                            var vm = pt.vm[nvm];
+                            if (vm.vmap.type == ('T' << 24 | 'X' << 16 | 'U' << 8 | 'V')) mesh.faces[faceIndex].tVertexNum[k] = vm.index + vm.vmap.offset;
+                            if (vm.vmap.type == ('R' << 24 | 'G' << 16 | 'B' << 8 | 'A')) for (var chan = 0; chan < 4; chan++) mesh.faces[faceIndex].vertexColors[k][chan] = (byte)(255 * vm.vmap.val[vm.index][chan]);
+                        }
+
+                        // then override with polygon attributes
+                        for (nvm = 0; nvm < poly.v[k].nvmaps; nvm++)
+                        {
+                            var vm = poly.v[k].vm[nvm];
+                            if (vm.vmap.type == ('T' << 24 | 'X' << 16 | 'U' << 8 | 'V')) mesh.faces[faceIndex].tVertexNum[k] = vm.index + vm.vmap.offset;
+                            if (vm.vmap.type == ('R' << 24 | 'G' << 16 | 'B' << 8 | 'A')) for (var chan = 0; chan < 4; chan++) mesh.faces[faceIndex].vertexColors[k][chan] = (byte)(255 * vm.vmap.val[vm.index][chan]);
+                        }
+                    }
+
+                    faceIndex++;
+                }
+
+                mesh.numFaces = faceIndex;
+                mesh.numTVFaces = faceIndex;
+
+                Array.Resize(ref mesh.faces, mesh.numFaces);
+            }
+
+            return ase;
+        }
+
+        static byte[] ConvertMAToModelSurfaces_identityColor = { 255, 255, 255, 255 };
+        public bool ConvertMAToModelSurfaces(MaModel ma)
+        {
+            MaObject obj;
+            MaMesh mesh;
+            MaMaterial material;
+
+            Material im1, im2;
+            SrfTriangles tri;
+            int objectNum;
+            int i, j, k;
+            int v, tv;
+            int* vRemap;
+            int* tvRemap;
+            MatchVert mvTable;   // all of the match verts
+            MatchVert[] mvHash;       // points inside mvTable for each xyz index
+            MatchVert lastmv;
+            MatchVert mv;
+            Vector3 normal;
+            float uOffset, vOffset, textureSin, textureCos;
+            float uTiling, vTiling;
+            byte* color;
+
+            ModelSurface modelSurf;
+
+            if (ma == null || ma.objects.Count < 1) return false;
+
+            timeStamp = ma.timeStamp;
+
+            // the modeling programs can save out multiple surfaces with a common material, but we would like to mege them together where possible meaning that this.NumSurfaces() <= ma.objects.currentElements
+            var mergeTo = stackalloc int[ma.objects.Count];
+
+            var surf = new ModelSurface();
+            surf.geometry = null;
+            // if we don't have any materials, dump everything into a single surface
+            if (ma.materials.Count == 0)
+            {
+                surf.shader = tr.defaultMaterial;
+                surf.id = 0;
+                this.AddSurface(surf);
+                for (i = 0; i < ma.objects.Count; i++) mergeTo[i] = 0;
+            }
+            // don't merge any
+            else if (!r_mergeModelSurfaces.Bool)
+                for (i = 0; i < ma.objects.Count; i++)
+                {
+                    mergeTo[i] = i;
+                    obj = ma.objects[i];
+                    if (obj.materialRef >= 0) { material = ma.materials[obj.materialRef]; surf.shader = declManager.FindMaterial(material.name); }
+                    else surf.shader = tr.defaultMaterial;
+                    surf.id = this.NumSurfaces;
+                    this.AddSurface(surf);
+                }
+            // search for material matches
+            else
+            {
+                for (i = 0; i < ma.objects.Count; i++)
+                {
+                    obj = ma.objects[i];
+                    if (obj.materialRef >= 0) { material = ma.materials[obj.materialRef]; im1 = declManager.FindMaterial(material.name); }
+                    else im1 = tr.defaultMaterial;
+                    if (im1.IsDiscrete) j = this.NumSurfaces; // flares, autosprites, etc
+                    else
+                        for (j = 0; j < this.NumSurfaces; j++)
+                        {
+                            modelSurf = this.surfaces[j];
+                            im2 = modelSurf.shader;
+                            if (im1 == im2) { mergeTo[i] = j; break; } // merge this
+                        }
+                    // didn't merge
+                    if (j == this.NumSurfaces)
+                    {
+                        mergeTo[i] = j;
+                        surf.shader = im1;
+                        surf.id = this.NumSurfaces;
+                        this.AddSurface(surf);
+                    }
+                }
+            }
+
+            VectorSubset<Vector3> vertexSubset = new(3);
+            VectorSubset<Vector2> texCoordSubset = new(2);
+
+            // build the surfaces
+            for (objectNum = 0; objectNum < ma.objects.Count; objectNum++)
+            {
+                obj = ma.objects[objectNum];
+                mesh = obj.mesh;
+                if (obj.materialRef >= 0) { material = ma.materials[obj.materialRef]; im1 = declManager.FindMaterial(material.name); }
+                else im1 = tr.defaultMaterial;
+
+                var normalsParsed = mesh.normalsParsed;
+
+                // completely ignore any explict normals on surfaces with a renderbump command which will guarantee the best contours and least vertexes.
+                var rb = im1.RenderBump;
+                if (rb != null && rb[0] != 0) normalsParsed = false;
+
+                // It seems like the tools our artists are using often generate verts and texcoords slightly separated that should be merged
+                // note that we really should combine the surfaces with common materials before doing this operation, because we can miss a slop combination if they are in different surfaces
+
+                vRemap = (int*)R_StaticAlloc(mesh.numVertexes * sizeof(vRemap[0]));
+
+                // renderbump doesn't care about vertex count
+                if (fastLoad)
+                    for (j = 0; j < mesh.numVertexes; j++) vRemap[j] = j;
+                else
+                {
+                    float vertexEpsilon = r_slopVertex.Float, expand = 2 * 32 * vertexEpsilon; Vector3 mins, maxs;
+                    fixed (Vector3* vertexesF = mesh.vertexes) Simd.MinMax3(out mins, out maxs, vertexesF, mesh.numVertexes);
+                    mins -= new Vector3(expand, expand, expand);
+                    maxs += new Vector3(expand, expand, expand);
+                    vertexSubset.Init(mins, maxs, 32, 1024);
+                    for (j = 0; j < mesh.numVertexes; j++) vRemap[j] = vertexSubset.FindVector(mesh.vertexes, j, vertexEpsilon);
+                }
+
+                tvRemap = (int*)R_StaticAlloc(mesh.numTVertexes * sizeof(tvRemap[0]));
+                // renderbump doesn't care about vertex count
+                if (fastLoad)
+                    for (j = 0; j < mesh.numTVertexes; j++) tvRemap[j] = j;
+                else
+                {
+                    float texCoordEpsilon = r_slopTexCoord.Float, expand = 2 * 32 * texCoordEpsilon; Vector2 mins, maxs;
+
+                    fixed (Vector2* tvertexesF = mesh.tvertexes) Simd.MinMax2(out mins, out maxs, tvertexesF, mesh.numTVertexes);
+                    mins -= new Vector2(expand, expand);
+                    maxs += new Vector2(expand, expand);
+                    texCoordSubset.Init(mins, maxs, 32, 1024);
+                    for (j = 0; j < mesh.numTVertexes; j++) tvRemap[j] = texCoordSubset.FindVector(mesh.tvertexes, j, texCoordEpsilon);
+                }
+
+                // we need to find out how many unique vertex / texcoord / color combinations there are, because MA tracks them separately but we need them unified
+
+                // the maximum possible number of combined vertexes is the number of indexes
+                mvTable = (MatchVert)R_ClearedStaticAlloc(mesh.numFaces * 3 * sizeof(MatchVert));
+
+                // we will have a hash chain based on the xyz values
+                mvHash = (MatchVert[])R_ClearedStaticAlloc(mesh.numVertexes * sizeof(MatchVert[]));
+
+                // allocate triangle surface
+                tri = R_AllocStaticTriSurf();
+                tri.numVerts = 0;
+                tri.numIndexes = 0;
+                R_AllocStaticTriSurfIndexes(tri, mesh.numFaces * 3);
+                tri.generateNormals = !normalsParsed;
+
+                // init default normal, color and tex coord index
+                normal.Zero();
+                color = ConvertMAToModelSurfaces_identityColor;
+                tv = 0;
+
+                // find all the unique combinations
+                var normalEpsilon = 1f - r_slopNormal.Float;
+                for (j = 0; j < mesh.numFaces; j++)
+                {
+                    for (k = 0; k < 3; k++)
+                    {
+                        v = mesh.faces[j].vertexNum[k];
+
+                        if (v < 0 || v >= mesh.numVertexes) common.Error($"ConvertMAToModelSurfaces: bad vertex index in MA file {name}");
+
+                        // collapse the position if it was slightly offset
+                        v = vRemap[v];
+
+                        // we may or may not have texcoords to compare
+                        if (mesh.numTVertexes != 0)
+                        {
+                            tv = mesh.faces[j].tVertexNum[k];
+                            if (tv < 0 || tv >= mesh.numTVertexes) common.Error($"ConvertMAToModelSurfaces: bad tex coord index in MA file {name}");
+                            // collapse the tex coord if it was slightly offset
+                            tv = tvRemap[tv];
+                        }
+
+                        // we may or may not have normals to compare
+                        if (normalsParsed) normal = mesh.faces[j].vertexNormals[k];
+
+                        // BSM: Todo: Fix the vertex colors
+                        // we may or may not have colors to compare
+                        if (mesh.faces[j].vertexColors[k] != -1 && mesh.faces[j].vertexColors[k] != -999) color = mesh.colors[mesh.faces[j].vertexColors[k] * 4];
+
+                        // find a matching vert
+                        for (lastmv = null, mv = mvHash[v]; mv != null; lastmv = mv, mv = mv.next)
+                        {
+                            if (mv.tv != tv) continue;
+                            if (*(uint*)mv.color != *(uint*)color) continue;
+                            if (!normalsParsed) break; // if we are going to create the normals, just matching texcoords is enough
+                            if (mv.normal * normal > normalEpsilon) break;      // we already have this one
+                        }
+                        if (mv == null)
+                        {
+                            // allocate a new match vert and link to hash chain
+                            mv = mvTable[tri.numVerts];
+                            mv.v = v;
+                            mv.tv = tv;
+                            mv.normal = normal;
+                            *(uint*)mv.color = *(uint*)color;
+                            mv.next = null;
+                            if (lastmv != null) lastmv.next = mv;
+                            else mvHash[v] = mv;
+                            tri.numVerts++;
+                        }
+
+                        tri.indexes[tri.numIndexes] = mv - mvTable;
+                        tri.numIndexes++;
+                    }
+                }
+
+                // allocate space for the indexes and copy them
+                if (tri.numIndexes > mesh.numFaces * 3) common.FatalError($"ConvertMAToModelSurfaces: index miscount in MA file {name}");
+                if (tri.numVerts > mesh.numFaces * 3) common.FatalError($"ConvertMAToModelSurfaces: vertex miscount in MA file {name}");
+
+                // an MA allows the texture coordinates to be scaled, translated, and rotated
+                //BSM: Todo: Does Maya support this and if so how
+                //if (ase.materials.Num() == 0 ) {
+                uOffset = vOffset = 0f;
+                uTiling = vTiling = 1f;
+                textureSin = 0f;
+                textureCos = 1f;
+                //} else {
+                //	material = ase.materials[object.materialRef];
+                //	uOffset = -material.uOffset;
+                //	vOffset = material.vOffset;
+                //	uTiling = material.uTiling;
+                //	vTiling = material.vTiling;
+                //	textureSin = idMath::Sin( material.angle );
+                //	textureCos = idMath::Cos( material.angle );
+                //}
+
+                // now allocate and generate the combined vertexes
+                R_AllocStaticTriSurfVerts(tri, tri.numVerts);
+                for (j = 0; j < tri.numVerts; j++)
+                {
+                    mv = mvTable[j];
+                    tri.verts[j].Clear();
+                    tri.verts[j].xyz = mesh.vertexes[mv.v];
+                    tri.verts[j].normal = mv.normal;
+                    *(uint*)tri.verts[j].color = *(uint*)mv.color;
+                    if (mesh.numTVertexes != 0)
+                    {
+                        var tv = mesh.tvertexes[mv.tv];
+                        var u = tv.x * uTiling + uOffset;
+                        var v = tv.y * vTiling + vOffset;
+                        tri.verts[j].st[0] = u * textureCos + v * textureSin;
+                        tri.verts[j].st[1] = u * -textureSin + v * textureCos;
+                    }
+                }
+
+                R_StaticFree(ref mvTable);
+                R_StaticFree(ref mvHash);
+                R_StaticFree(ref tvRemap);
+                R_StaticFree(ref vRemap);
+
+                // see if we need to merge with a previous surface of the same material
+                modelSurf = this.surfaces[mergeTo[objectNum]];
+                var mergeTri = modelSurf.geometry;
+                if (mergeTri == null) modelSurf.geometry = tri;
+                else
+                {
+                    modelSurf.geometry = R_MergeTriangles(mergeTri, tri);
+                    R_FreeStaticTriSurf(tri);
+                    R_FreeStaticTriSurf(mergeTri);
+                }
+            }
+
+            return true;
+        }
+
+        public bool DeleteSurfaceWithId(int id)
+        {
+            for (var i = 0; i < surfaces.Count; i++) if (surfaces[i].id == id) { R_FreeStaticTriSurf(surfaces[i].geometry); surfaces.RemoveAt(i); return true; }
+            return false;
+        }
+
+        public void DeleteSurfacesWithNegativeId()
+        {
+            for (var i = 0; i < surfaces.Count; i++) if (surfaces[i].id < 0) { R_FreeStaticTriSurf(surfaces[i].geometry); surfaces.RemoveAt(i); i--; }
+        }
+
+        public bool FindSurfaceWithId(int id, out int surfaceNum)
+        {
+            for (var i = 0; i < surfaces.Count; i++) if (surfaces[i].id == id) { surfaceNum = i; return true; }
+            surfaceNum = default;
+            return false;
         }
     }
 
@@ -2004,14 +1667,6 @@ namespace Gengine.Render
     }
 
     public class RenderModelLightning : RenderModelStatic
-    {
-        public virtual DynamicModel IsDynamicModel();
-        public virtual bool IsLoaded();
-        public virtual IRenderModel InstantiateDynamicModel(RenderEntity ent, ViewDef view, IRenderModel cachedModel);
-        public virtual Bounds Bounds(RenderEntity ent);
-    }
-
-    public class RenderModelSprite : RenderModelStatic
     {
         public virtual DynamicModel IsDynamicModel();
         public virtual bool IsLoaded();

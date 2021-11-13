@@ -13,8 +13,7 @@ namespace Gengine.Render
         public static int SIMD_ROUND_JOINTS(int numJoints) => (numJoints + 1) & ~1;
         public static void SIMD_INIT_LAST_JOINT(JointMat[] joints, int numJoints)
         {
-            if ((numJoints & 1) != 0)
-                joints[numJoints] = joints[numJoints - 1];
+            if ((numJoints & 1) != 0) joints[numJoints] = joints[numJoints - 1];
         }
     }
 

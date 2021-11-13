@@ -181,8 +181,7 @@ namespace Gengine.Framework.Async
             gameTimeResidual = 0;
             Array.Clear(challenges, 0, challenges.Length);
             Array.Clear(userCmds, 0, userCmds.Length);
-            for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                ClearClient(i);
+            for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++) ClearClient(i);
             serverReloadingEngine = false;
             nextHeartbeatTime = 0;
             nextAsyncStatsTime = 0;
@@ -203,23 +202,13 @@ namespace Gengine.Framework.Async
             if (serverPort.Port == 0)
                 if (cvarSystem.GetCVarInteger("net_port") != 0)
                 {
-                    if (!serverPort.InitForPort(cvarSystem.GetCVarInteger("net_port")))
-                    {
-                        common.Printf($"Unable to open server on port {cvarSystem.GetCVarInteger("net_port")} (net_port)\n");
-                        return false;
-                    }
+                    if (!serverPort.InitForPort(cvarSystem.GetCVarInteger("net_port"))) { common.Printf($"Unable to open server on port {cvarSystem.GetCVarInteger("net_port")} (net_port)\n"); return false; }
                 }
                 else
                 {
                     // scan for multiple ports, in case other servers are running on this IP already
-                    for (lastPort = 0; lastPort < Config.NUM_SERVER_PORTS; lastPort++)
-                        if (serverPort.InitForPort(Config.PORT_SERVER + lastPort))
-                            break;
-                    if (lastPort >= Config.NUM_SERVER_PORTS)
-                    {
-                        common.Printf("Unable to open server network port.\n");
-                        return false;
-                    }
+                    for (lastPort = 0; lastPort < Config.NUM_SERVER_PORTS; lastPort++) if (serverPort.InitForPort(Config.PORT_SERVER + lastPort)) break;
+                    if (lastPort >= Config.NUM_SERVER_PORTS) { common.Printf("Unable to open server network port.\n"); return false; }
                 }
             return true;
         }
@@ -227,8 +216,7 @@ namespace Gengine.Framework.Async
         public void ClosePort()
         {
             serverPort.Close();
-            for (var i = 0; i < MAX_CHALLENGES; i++)
-                challenges[i].authReplyPrint = string.Empty;
+            for (var i = 0; i < MAX_CHALLENGES; i++) challenges[i].authReplyPrint = string.Empty;
         }
 
         public void Spawn()
@@ -240,23 +228,19 @@ namespace Gengine.Framework.Async
             // shutdown any current game
             session.Stop();
 
-            if (active)
-                return;
+            if (active) return;
 
-            if (!InitPort())
-                return;
+            if (!InitPort()) return;
 
             // trash any currently pending packets
             while (serverPort.GetPacket(out from, msgBuf, out size, msgBuf.Length)) { }
 
             // reset cheats cvars
-            if (!AsyncNetwork.allowCheats.Bool)
-                cvarSystem.ResetFlaggedVariables(CVAR.CHEAT);
+            if (!AsyncNetwork.allowCheats.Bool) cvarSystem.ResetFlaggedVariables(CVAR.CHEAT);
 
             Array.Clear(challenges, 0, challenges.Length);
             Array.Clear(userCmds, 0, userCmds.Length);
-            for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                ClearClient(i);
+            for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++) ClearClient(i);
 
             common.Printf($"Server spawned on port {serverPort.Port}.\n");
 
@@ -278,12 +262,10 @@ namespace Gengine.Framework.Async
         {
             int i, j;
 
-            if (!active)
-                return;
+            if (!active) return;
 
             // drop all clients
-            for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                DropClient(i, "#str_07135");
+            for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++) DropClient(i, "#str_07135");
 
             // send some empty messages to the zombie clients to make sure they disconnect
             for (j = 0; j < 4; j++)
@@ -343,8 +325,7 @@ namespace Gengine.Framework.Async
             // if we are asked to do a full reload, the strategy is completely different
             if (!serverReloadingEngine && (addonReload || AsyncNetwork.serverReloadEngine.Integer != 0))
             {
-                if (AsyncNetwork.serverReloadEngine.Integer != 0)
-                    common.Printf("net_serverReloadEngine enabled - doing a full reload\n");
+                if (AsyncNetwork.serverReloadEngine.Integer != 0) common.Printf("net_serverReloadEngine enabled - doing a full reload\n");
                 // tell the clients to reconnect
                 // FIXME: shouldn't they wait for the new pure list, then reload? in a lot of cases this is going to trigger two reloadEngines for the clients
                 // one to restart, the other one to set paks right ( with addon for instance ) can fix by reconnecting without reloading and waiting for the server to tell..
@@ -380,17 +361,14 @@ namespace Gengine.Framework.Async
 
             // re-initialize all connected clients for the new map
             for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-            {
                 if (clients[i].clientState >= ServerClientState.SCS_PUREWAIT && i != localClientNum)
                 {
                     InitClient(i, clients[i].clientId, clients[i].clientRate);
 
                     SendGameInitToClient(i);
 
-                    if (sessLocal.mapSpawnData.serverInfo.GetBool("si_pure"))
-                        clients[i].clientState = ServerClientState.SCS_PUREWAIT;
+                    if (sessLocal.mapSpawnData.serverInfo.GetBool("si_pure")) clients[i].clientState = ServerClientState.SCS_PUREWAIT;
                 }
-            }
 
             // load map
             sessLocal.ExecuteMapChange();
@@ -403,10 +381,7 @@ namespace Gengine.Framework.Async
                 // lock down the pak list
                 fileSystem.UpdatePureServerChecksums();
                 // tell the clients so they can work out their pure lists
-                for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                    if (clients[i].clientState == ServerClientState.SCS_PUREWAIT)
-                        if (!SendReliablePureToClient(i))
-                            clients[i].clientState = ServerClientState.SCS_CONNECTED;
+                for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++) if (clients[i].clientState == ServerClientState.SCS_PUREWAIT && !SendReliablePureToClient(i)) clients[i].clientState = ServerClientState.SCS_CONNECTED;
             }
 
             // serverTime gets reset, force a heartbeat so timings restart
@@ -432,8 +407,7 @@ namespace Gengine.Framework.Async
                 for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
                 {
                     var client = clients[i];
-                    if (client.clientState >= ServerClientState.SCS_CONNECTED)
-                        rate += client.channel.OutgoingRate;
+                    if (client.clientState >= ServerClientState.SCS_CONNECTED) rate += client.channel.OutgoingRate;
                 }
                 return rate;
             }
@@ -447,8 +421,7 @@ namespace Gengine.Framework.Async
                 for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
                 {
                     var client = clients[i];
-                    if (client.clientState >= ServerClientState.SCS_CONNECTED)
-                        rate += client.channel.IncomingRate;
+                    if (client.clientState >= ServerClientState.SCS_CONNECTED) rate += client.channel.IncomingRate;
                 }
                 return rate;
             }
@@ -516,9 +489,7 @@ namespace Gengine.Framework.Async
             get
             {
                 var ret = 0;
-                for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                    if (clients[i].clientState >= ServerClientState.SCS_CONNECTED)
-                        ret++;
+                for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++) if (clients[i].clientState >= ServerClientState.SCS_CONNECTED) ret++;
                 return ret;
             }
         }
@@ -528,10 +499,7 @@ namespace Gengine.Framework.Async
             get
             {
                 var ret = 0;
-                for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                    if (clients[i].clientState >= ServerClientState.SCS_CONNECTED)
-                        if (serverTime - clients[i].lastInputTime > NOINPUT_IDLE_TIME)
-                            ret++;
+                for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++) if (clients[i].clientState >= ServerClientState.SCS_CONNECTED && serverTime - clients[i].lastInputTime > NOINPUT_IDLE_TIME) ret++;
                 return ret;
             }
         }
@@ -547,10 +515,8 @@ namespace Gengine.Framework.Async
             // duplicate previous user commands if no new commands are available for a client
             for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
-                if (clients[i].clientState == ServerClientState.SCS_FREE)
-                    continue;
-                if (AsyncNetwork.DuplicateUsercmd(userCmds[previousIndex][i], userCmds[currentIndex][i], frame, time))
-                    clients[i].numDuplicatedUsercmds++;
+                if (clients[i].clientState == ServerClientState.SCS_FREE) continue;
+                if (AsyncNetwork.DuplicateUsercmd(userCmds[previousIndex][i], userCmds[currentIndex][i], frame, time)) clients[i].numDuplicatedUsercmds++;
             }
         }
 
@@ -606,8 +572,7 @@ namespace Gengine.Framework.Async
             client.numDuplicatedUsercmds = 0;
 
             // clear the user commands
-            for (var i = 0; i < Config.MAX_USERCMD_BACKUP; i++)
-                userCmds[i][clientNum] = default;
+            for (var i = 0; i < Config.MAX_USERCMD_BACKUP; i++) userCmds[i][clientNum] = default;
 
             // let the game know a player connected
             game.ServerClientConnect(clientNum, client.guid);
@@ -635,15 +600,13 @@ namespace Gengine.Framework.Async
 
         void LocalClientInput()
         {
-            if (localClientNum < 0)
-                return;
+            if (localClientNum < 0) return;
 
             var index = gameFrame & (Config.MAX_USERCMD_BACKUP - 1);
             userCmds[index][localClientNum] = usercmdGen.GetDirectUsercmd();
             userCmds[index][localClientNum].gameFrame = gameFrame;
             userCmds[index][localClientNum].gameTime = gameTime;
-            if (AsyncNetwork.UsercmdInputChanged(userCmds[(gameFrame - 1) & (Config.MAX_USERCMD_BACKUP - 1)][localClientNum], userCmds[index][localClientNum]))
-                clients[localClientNum].lastInputTime = serverTime;
+            if (AsyncNetwork.UsercmdInputChanged(userCmds[(gameFrame - 1) & (Config.MAX_USERCMD_BACKUP - 1)][localClientNum], userCmds[index][localClientNum])) clients[localClientNum].lastInputTime = serverTime;
             clients[localClientNum].gameFrame = gameFrame;
             clients[localClientNum].gameTime = gameTime;
             clients[localClientNum].lastPacketTime = serverTime;
@@ -655,8 +618,7 @@ namespace Gengine.Framework.Async
             BitMsg msg = new(); byte[] msgBuf = new byte[MAX_MESSAGE_SIZE];
 
             var client = clients[clientNum];
-            if (client.clientState <= ServerClientState.SCS_ZOMBIE)
-                return;
+            if (client.clientState <= ServerClientState.SCS_ZOMBIE) return;
 
             if (client.clientState >= ServerClientState.SCS_PUREWAIT && clientNum != localClientNum)
             {
@@ -664,10 +626,8 @@ namespace Gengine.Framework.Async
                 msg.WriteByte((byte)SERVER_RELIABLE_MESSAGE.DISCONNECT);
                 msg.WriteInt(clientNum);
                 msg.WriteString(reason);
-                for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                    // clientNum so SCS_PUREWAIT client gets it's own disconnect msg
-                    if (i == clientNum || clients[i].clientState >= ServerClientState.SCS_CONNECTED)
-                        SendReliableMessage(i, msg);
+                // clientNum so SCS_PUREWAIT client gets it's own disconnect msg
+                for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++) if (i == clientNum || clients[i].clientState >= ServerClientState.SCS_CONNECTED) SendReliableMessage(i, msg);
             }
 
             reason = common.LanguageDictGetString(reason);
@@ -682,13 +642,8 @@ namespace Gengine.Framework.Async
 
         void SendReliableMessage(int clientNum, BitMsg msg)                // checks for overflow and disconnects the faulty client
         {
-            if (clientNum == localClientNum)
-                return;
-            if (!clients[clientNum].channel.SendReliableMessage(msg))
-            {
-                clients[clientNum].channel.ClearReliableMessages();
-                DropClient(clientNum, "#str_07136");
-            }
+            if (clientNum == localClientNum) return;
+            if (!clients[clientNum].channel.SendReliableMessage(msg)) { clients[clientNum].channel.ClearReliableMessages(); DropClient(clientNum, "#str_07136"); }
         }
 
         void CheckClientTimeouts()
@@ -699,27 +654,11 @@ namespace Gengine.Framework.Async
             for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
                 var client = clients[i];
-                if (i == localClientNum)
-                    continue;
+                if (i == localClientNum) continue;
 
-                if (client.lastPacketTime > serverTime)
-                {
-                    client.lastPacketTime = serverTime;
-                    continue;
-                }
-
-                if (client.clientState == ServerClientState.SCS_ZOMBIE && client.lastPacketTime < zombieTimeout)
-                {
-                    client.channel.Shutdown();
-                    client.clientState = ServerClientState.SCS_FREE;
-                    continue;
-                }
-
-                if (client.clientState >= ServerClientState.SCS_PUREWAIT && client.lastPacketTime < clientTimeout)
-                {
-                    DropClient(i, "#str_07137");
-                    continue;
-                }
+                if (client.lastPacketTime > serverTime) { client.lastPacketTime = serverTime; continue; }
+                if (client.clientState == ServerClientState.SCS_ZOMBIE && client.lastPacketTime < zombieTimeout) { client.channel.Shutdown(); client.clientState = ServerClientState.SCS_FREE; continue; }
+                if (client.clientState >= ServerClientState.SCS_PUREWAIT && client.lastPacketTime < clientTimeout) { DropClient(i, "#str_07137"); continue; }
             }
         }
 
@@ -731,17 +670,14 @@ namespace Gengine.Framework.Async
             msg.WriteByte((byte)SERVER_RELIABLE_MESSAGE.PRINT);
             msg.WriteString(s);
 
-            for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                if (clients[i].clientState >= ServerClientState.SCS_CONNECTED)
-                    SendReliableMessage(i, msg);
+            for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++) if (clients[i].clientState >= ServerClientState.SCS_CONNECTED) SendReliableMessage(i, msg);
         }
 
         void SendPrintToClient(int clientNum, string s)
         {
 
             var client = clients[clientNum];
-            if (client.clientState < ServerClientState.SCS_CONNECTED)
-                return;
+            if (client.clientState < ServerClientState.SCS_CONNECTED) return;
 
             BitMsg msg = new(); byte[] msgBuf = new byte[MAX_MESSAGE_SIZE];
 
@@ -759,13 +695,8 @@ namespace Gengine.Framework.Async
             bool gameModifiedInfo;
 
             gameInfo = game.SetUserInfo(userInfoNum, info, false, true);
-            if (gameInfo != null)
-                gameModifiedInfo = true;
-            else
-            {
-                gameModifiedInfo = false;
-                gameInfo = info;
-            }
+            if (gameInfo != null) gameModifiedInfo = true;
+            else { gameModifiedInfo = false; gameInfo = info; }
 
             if (userInfoNum == localClientNum)
             {
@@ -787,9 +718,7 @@ namespace Gengine.Framework.Async
 
             msg.WriteDeltaDict(gameInfo, gameModifiedInfo || sendToAll ? null : sessLocal.mapSpawnData.userInfo[userInfoNum]);
 
-            for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                if (clients[i].clientState >= ServerClientState.SCS_CONNECTED && (sendToAll || i != userInfoNum || gameModifiedInfo))
-                    SendReliableMessage(i, msg);
+            for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++) if (clients[i].clientState >= ServerClientState.SCS_CONNECTED && (sendToAll || i != userInfoNum || gameModifiedInfo)) SendReliableMessage(i, msg);
 
             sessLocal.mapSpawnData.userInfo[userInfoNum] = gameInfo;
         }
@@ -805,8 +734,7 @@ namespace Gengine.Framework.Async
 
         void SendUserInfoToClient(int clientNum, int userInfoNum, Dictionary<string, string> info)
         {
-            if (clients[clientNum].clientState < ServerClientState.SCS_CONNECTED)
-                return;
+            if (clients[clientNum].clientState < ServerClientState.SCS_CONNECTED) return;
 
             BitMsg msg = new(); byte[] msgBuf = new byte[MAX_MESSAGE_SIZE];
 
@@ -832,17 +760,14 @@ namespace Gengine.Framework.Async
             msg.WriteByte((byte)SERVER_RELIABLE_MESSAGE.SYNCEDCVARS);
             msg.WriteDeltaDict(cvars, sessLocal.mapSpawnData.syncedCVars);
 
-            for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                if (clients[i].clientState >= ServerClientState.SCS_CONNECTED)
-                    SendReliableMessage(i, msg);
+            for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++) if (clients[i].clientState >= ServerClientState.SCS_CONNECTED) SendReliableMessage(i, msg);
 
             sessLocal.mapSpawnData.syncedCVars = cvars;
         }
 
         void SendSyncedCvarsToClient(int clientNum, Dictionary<string, string> cvars)
         {
-            if (clients[clientNum].clientState < ServerClientState.SCS_CONNECTED)
-                return;
+            if (clients[clientNum].clientState < ServerClientState.SCS_CONNECTED) return;
 
             BitMsg msg = new(); byte[] msgBuf = new byte[MAX_MESSAGE_SIZE];
 
@@ -868,14 +793,11 @@ namespace Gengine.Framework.Async
         {
             var client = clients[clientNum];
 
-            if (client.lastEmptyTime > realTime)
-                client.lastEmptyTime = realTime;
+            if (client.lastEmptyTime > realTime) client.lastEmptyTime = realTime;
 
-            if (!force && (realTime - client.lastEmptyTime < EMPTY_RESEND_TIME))
-                return false;
+            if (!force && (realTime - client.lastEmptyTime < EMPTY_RESEND_TIME)) return false;
 
-            if (AsyncNetwork.verbose.Integer != 0)
-                common.Printf($"sending empty to client {clientNum}: gameInitId = {gameInitId}, gameFrame = {gameFrame}, gameTime = {gameTime}\n");
+            if (AsyncNetwork.verbose.Integer != 0) common.Printf($"sending empty to client {clientNum}: gameInitId = {gameInitId}, gameFrame = {gameFrame}, gameTime = {gameTime}\n");
 
             BitMsg msg = new(); byte[] msgBuf = new byte[MAX_MESSAGE_SIZE];
 
@@ -893,14 +815,11 @@ namespace Gengine.Framework.Async
         {
             var client = clients[clientNum];
 
-            if (client.lastPingTime > realTime)
-                client.lastPingTime = realTime;
+            if (client.lastPingTime > realTime) client.lastPingTime = realTime;
 
-            if (realTime - client.lastPingTime < PING_RESEND_TIME)
-                return false;
+            if (realTime - client.lastPingTime < PING_RESEND_TIME) return false;
 
-            if (AsyncNetwork.verbose.Integer == 2)
-                common.Printf($"pinging client {clientNum}: gameInitId = {gameInitId}, gameFrame = {gameFrame}, gameTime = {gameTime}\n");
+            if (AsyncNetwork.verbose.Integer == 2) common.Printf($"pinging client {clientNum}: gameInitId = {gameInitId}, gameFrame = {gameFrame}, gameTime = {gameTime}\n");
 
             BitMsg msg = new(); byte[] msgBuf = new byte[MAX_MESSAGE_SIZE];
 
@@ -917,14 +836,12 @@ namespace Gengine.Framework.Async
 
         void SendGameInitToClient(int clientNum)
         {
-            if (AsyncNetwork.verbose.Integer != 0)
-                common.Printf($"sending gameinit to client {clientNum}: gameInitId = {gameInitId}, gameFrame = {gameFrame}, gameTime = {gameTime}\n");
+            if (AsyncNetwork.verbose.Integer != 0) common.Printf($"sending gameinit to client {clientNum}: gameInitId = {gameInitId}, gameFrame = {gameFrame}, gameTime = {gameTime}\n");
 
             var client = clients[clientNum];
 
             // clear the unsent fragments. might flood winsock but that's ok
-            while (client.channel.UnsentFragmentsLeft)
-                client.channel.SendNextFragment(serverPort, serverTime);
+            while (client.channel.UnsentFragmentsLeft) client.channel.SendNextFragment(serverPort, serverTime);
 
             BitMsg msg = new(); byte[] msgBuf = new byte[MAX_MESSAGE_SIZE];
 
@@ -945,11 +862,9 @@ namespace Gengine.Framework.Async
 
             var client = clients[clientNum];
 
-            if (serverTime - client.lastSnapshotTime < AsyncNetwork.serverSnapshotDelay.Integer)
-                return false;
+            if (serverTime - client.lastSnapshotTime < AsyncNetwork.serverSnapshotDelay.Integer) return false;
 
-            if (AsyncNetwork.verbose.Integer == 2)
-                common.Printf($"sending snapshot to client {clientNum}: gameInitId = {gameInitId}, gameFrame = {gameFrame}, gameTime = {gameTime}\n");
+            if (AsyncNetwork.verbose.Integer == 2) common.Printf($"sending snapshot to client {clientNum}: gameInitId = {gameInitId}, gameFrame = {gameFrame}, gameTime = {gameTime}\n");
 
             // how far is the client ahead of the server minus the packet delay
             client.clientAheadTime = client.gameTime - (gameTime + gameTimeResidual);
@@ -974,12 +889,10 @@ namespace Gengine.Framework.Async
             {
                 client = clients[i];
 
-                if (client.clientState == ServerClientState.SCS_FREE || i == clientNum)
-                    continue;
+                if (client.clientState == ServerClientState.SCS_FREE || i == clientNum) continue;
 
                 // if the client is not in the PVS
-                if ((clientInPVS[i >> 3] & (1 << (i & 7))) == 0)
-                    continue;
+                if ((clientInPVS[i >> 3] & (1 << (i & 7))) == 0) continue;
 
                 var maxRelay = MathX.ClampInt(1, Config.MAX_USERCMD_RELAY, AsyncNetwork.serverMaxUsercmdRelay.Integer);
 
@@ -987,12 +900,7 @@ namespace Gengine.Framework.Async
                 numUsercmds = Math.Max(1, Math.Min(client.gameFrame, gameFrame + maxRelay) - gameFrame);
                 msg.WriteByte(i);
                 msg.WriteByte(numUsercmds);
-                for (j = 0; j < numUsercmds; j++)
-                {
-                    index = (gameFrame + j) & (Config.MAX_USERCMD_BACKUP - 1);
-                    AsyncNetwork.WriteUserCmdDelta(msg, userCmds[index][i], last);
-                    last = userCmds[index][i];
-                }
+                for (j = 0; j < numUsercmds; j++) { index = (gameFrame + j) & (Config.MAX_USERCMD_BACKUP - 1); AsyncNetwork.WriteUserCmdDelta(msg, userCmds[index][i], last); last = userCmds[index][i]; }
             }
             msg.WriteByte(Config.MAX_ASYNC_CLIENTS);
 
@@ -1010,19 +918,13 @@ namespace Gengine.Framework.Async
 
             var client = clients[clientNum];
 
-            if (client.clientState == ServerClientState.SCS_ZOMBIE)
-                return;
+            if (client.clientState == ServerClientState.SCS_ZOMBIE) return;
 
             acknowledgeSequence = msg.ReadInt();
             clientGameInitId = msg.ReadInt();
 
             // while loading a map the client may send empty messages to keep the connection alive
-            if (clientGameInitId == Config.GAME_INIT_ID_MAP_LOAD)
-            {
-                if (AsyncNetwork.verbose.Integer != 0)
-                    common.Printf($"ignore unreliable msg from client {clientNum}, gameInitId == ID_MAP_LOAD\n");
-                return;
-            }
+            if (clientGameInitId == Config.GAME_INIT_ID_MAP_LOAD) { if (AsyncNetwork.verbose.Integer != 0) common.Printf($"ignore unreliable msg from client {clientNum}, gameInitId == ID_MAP_LOAD\n"); return; }
 
             // check if the client is in the right game
             if (clientGameInitId != gameInitId)
@@ -1038,12 +940,10 @@ namespace Gengine.Framework.Async
                     if (sessLocal.mapSpawnData.serverInfo.GetBool("si_pure"))
                     {
                         client.clientState = ServerClientState.SCS_PUREWAIT;
-                        if (!SendReliablePureToClient(clientNum))
-                            client.clientState = ServerClientState.SCS_CONNECTED;
+                        if (!SendReliablePureToClient(clientNum)) client.clientState = ServerClientState.SCS_CONNECTED;
                     }
                 }
-                else if (AsyncNetwork.verbose.Integer != 0)
-                    common.Printf($"ignore unreliable msg from client {clientNum}, wrong gameInit, old sequence\n");
+                else if (AsyncNetwork.verbose.Integer != 0) common.Printf($"ignore unreliable msg from client {clientNum}, wrong gameInit, old sequence\n");
                 return;
             }
 
@@ -1055,9 +955,7 @@ namespace Gengine.Framework.Async
                 client.clientState = ServerClientState.SCS_INGAME;
 
                 // send the user info of other clients
-                for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
-                    if (clients[i].clientState >= ServerClientState.SCS_CONNECTED && i != clientNum)
-                        SendUserInfoToClient(clientNum, i, sessLocal.mapSpawnData.userInfo[i]);
+                for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++) if (clients[i].clientState >= ServerClientState.SCS_CONNECTED && i != clientNum) SendUserInfoToClient(clientNum, i, sessLocal.mapSpawnData.userInfo[i]);
 
                 // send synchronized cvars to client
                 SendSyncedCvarsToClient(clientNum, sessLocal.mapSpawnData.syncedCVars);
@@ -1073,8 +971,7 @@ namespace Gengine.Framework.Async
             else if (client.clientState == ServerClientState.SCS_INGAME)
             {
                 // apply the last snapshot the client received
-                if (game.ServerApplySnapshot(clientNum, client.acknowledgeSnapshotSequence))
-                    SendApplySnapshotToClient(clientNum, client.acknowledgeSnapshotSequence);
+                if (game.ServerApplySnapshot(clientNum, client.acknowledgeSnapshotSequence)) SendApplySnapshotToClient(clientNum, client.acknowledgeSnapshotSequence);
             }
 
             // process the unreliable message
@@ -1082,49 +979,38 @@ namespace Gengine.Framework.Async
             switch (id)
             {
                 case CLIENT_UNRELIABLE_MESSAGE.EMPTY:
-                    {
-                        if (AsyncNetwork.verbose.Integer != 0)
-                            common.Printf($"received empty message for client {clientNum}\n");
-                        break;
-                    }
+                    if (AsyncNetwork.verbose.Integer != 0) common.Printf($"received empty message for client {clientNum}\n");
+                    break;
                 case CLIENT_UNRELIABLE_MESSAGE.PINGRESPONSE:
-                    {
-                        client.clientPing = realTime - msg.ReadInt();
-                        break;
-                    }
+                    client.clientPing = realTime - msg.ReadInt();
+                    break;
                 case CLIENT_UNRELIABLE_MESSAGE.USERCMD:
+                    client.clientPrediction = msg.ReadShort();
+
+                    // read user commands
+                    clientGameFrame = msg.ReadInt();
+                    numUsercmds = msg.ReadByte();
+                    for (last = null, i = clientGameFrame - numUsercmds + 1; i <= clientGameFrame; i++)
                     {
-                        client.clientPrediction = msg.ReadShort();
-
-                        // read user commands
-                        clientGameFrame = msg.ReadInt();
-                        numUsercmds = msg.ReadByte();
-                        for (last = null, i = clientGameFrame - numUsercmds + 1; i <= clientGameFrame; i++)
-                        {
-                            index = i & (Config.MAX_USERCMD_BACKUP - 1);
-                            AsyncNetwork.ReadUserCmdDelta(msg, ref userCmds[index][clientNum], last);
-                            userCmds[index][clientNum].gameFrame = i;
-                            userCmds[index][clientNum].duplicateCount = 0;
-                            if (AsyncNetwork.UsercmdInputChanged(userCmds[(i - 1) & (Config.MAX_USERCMD_BACKUP - 1)][clientNum], userCmds[index][clientNum]))
-                                client.lastInputTime = serverTime;
-                            last = userCmds[index][clientNum];
-                        }
-
-                        if (last != null)
-                        {
-                            client.gameFrame = last.Value.gameFrame;
-                            client.gameTime = last.Value.gameTime;
-                        }
-
-                        if (AsyncNetwork.verbose.Integer == 2)
-                            common.Printf($"received user command for client {clientNum}, gameInitId = {clientGameInitId}, gameFrame, {client.gameFrame} gameTime {client.gameTime}\n");
-                        break;
+                        index = i & (Config.MAX_USERCMD_BACKUP - 1);
+                        AsyncNetwork.ReadUserCmdDelta(msg, ref userCmds[index][clientNum], last);
+                        userCmds[index][clientNum].gameFrame = i;
+                        userCmds[index][clientNum].duplicateCount = 0;
+                        if (AsyncNetwork.UsercmdInputChanged(userCmds[(i - 1) & (Config.MAX_USERCMD_BACKUP - 1)][clientNum], userCmds[index][clientNum])) client.lastInputTime = serverTime;
+                        last = userCmds[index][clientNum];
                     }
+
+                    if (last != null)
+                    {
+                        client.gameFrame = last.Value.gameFrame;
+                        client.gameTime = last.Value.gameTime;
+                    }
+
+                    if (AsyncNetwork.verbose.Integer == 2) common.Printf($"received user command for client {clientNum}, gameInitId = {clientGameInitId}, gameFrame, {client.gameFrame} gameTime {client.gameTime}\n");
+                    break;
                 default:
-                    {
-                        common.Printf($"unknown unreliable message {id} from client {clientNum}\n");
-                        break;
-                    }
+                    common.Printf($"unknown unreliable message {id} from client {clientNum}\n");
+                    break;
             }
         }
 
@@ -1142,35 +1028,25 @@ namespace Gengine.Framework.Async
                 switch (id)
                 {
                     case CLIENT_RELIABLE_MESSAGE.CLIENTINFO:
-                        {
-                            Dictionary<string, string> info = new();
-                            msg.ReadDeltaDict(info, sessLocal.mapSpawnData.userInfo[clientNum]);
-                            SendUserInfoBroadcast(clientNum, info);
-                            break;
-                        }
+                        Dictionary<string, string> info = new();
+                        msg.ReadDeltaDict(info, sessLocal.mapSpawnData.userInfo[clientNum]);
+                        SendUserInfoBroadcast(clientNum, info);
+                        break;
                     case CLIENT_RELIABLE_MESSAGE.PRINT:
-                        {
-                            msg.ReadString(out var s);
-                            common.Printf("{s}\n");
-                            break;
-                        }
+                        msg.ReadString(out var s);
+                        common.Printf("{s}\n");
+                        break;
                     case CLIENT_RELIABLE_MESSAGE.DISCONNECT:
-                        {
-                            DropClient(clientNum, "#str_07138");
-                            break;
-                        }
+                        DropClient(clientNum, "#str_07138");
+                        break;
                     case CLIENT_RELIABLE_MESSAGE.PURE:
-                        {
-                            // we get this message once the client has successfully updated it's pure list
-                            ProcessReliablePure(clientNum, msg);
-                            break;
-                        }
+                        // we get this message once the client has successfully updated it's pure list
+                        ProcessReliablePure(clientNum, msg);
+                        break;
                     default:
-                        {
-                            // pass reliable message on to game code
-                            game.ServerProcessReliableMessage(clientNum, msg);
-                            break;
-                        }
+                        // pass reliable message on to game code
+                        game.ServerProcessReliableMessage(clientNum, msg);
+                        break;
                 }
             }
         }
@@ -1181,24 +1057,15 @@ namespace Gengine.Framework.Async
 
             var replyMsg = AuthReplyMsg.AUTH_REPLY_WAITING;
             var reply = (AuthReply)msg.ReadByte();
-            if (reply <= 0 || reply >= AuthReply.AUTH_MAXSTATES)
-            {
-                common.DPrintf($"auth: invalid reply {reply}\n");
-                return;
-            }
+            if (reply <= 0 || reply >= AuthReply.AUTH_MAXSTATES) { common.DPrintf($"auth: invalid reply {reply}\n"); return; }
             var clientId = msg.ReadShort();
             msg.ReadNetadr(out var client_from);
             msg.ReadString(out var client_guid);
             if (reply != AuthReply.AUTH_OK)
             {
                 replyMsg = (AuthReplyMsg)msg.ReadByte();
-                if (replyMsg <= 0 || replyMsg >= AuthReplyMsg.AUTH_REPLY_MAXSTATES)
-                {
-                    common.DPrintf($"auth: invalid reply msg {replyMsg}\n");
-                    return;
-                }
-                if (replyMsg == AuthReplyMsg.AUTH_REPLY_PRINT)
-                    msg.ReadString(out replyPrintMsg);
+                if (replyMsg <= 0 || replyMsg >= AuthReplyMsg.AUTH_REPLY_MAXSTATES) { common.DPrintf($"auth: invalid reply msg {replyMsg}\n"); return; }
+                if (replyMsg == AuthReplyMsg.AUTH_REPLY_PRINT) msg.ReadString(out replyPrintMsg);
             }
 
             lastAuthTime = serverTime;
@@ -1210,40 +1077,19 @@ namespace Gengine.Framework.Async
                 if (!challenges[i].connected && challenges[i].clientId == clientId)
                 {
                     // return if something is wrong. break if we have found a valid auth
-                    if (string.IsNullOrEmpty(challenges[i].guid))
-                    {
-                        common.DPrintf($"auth: client {challenges[i].address} has no guid yet\n");
-                        return;
-                    }
-                    if (challenges[i].guid == client_guid)
-                    {
-                        common.DPrintf($"auth: client {challenges[i].address} {challenges[i].guid} not matched, auth server says guid {client_guid}\n");
-                        return;
-                    }
-                    if (client_from != challenges[i].address)
-                        // let auth work when server and master don't see the same IP
-                        common.DPrintf($"auth: matched guid '{client_guid}' for != IPs {client_from} and {challenges[i].address}\n");
+                    if (string.IsNullOrEmpty(challenges[i].guid)) { common.DPrintf($"auth: client {challenges[i].address} has no guid yet\n"); return; }
+                    if (challenges[i].guid == client_guid) { common.DPrintf($"auth: client {challenges[i].address} {challenges[i].guid} not matched, auth server says guid {client_guid}\n"); return; }
+                    // let auth work when server and master don't see the same IP
+                    if (client_from != challenges[i].address) common.DPrintf($"auth: matched guid '{client_guid}' for != IPs {client_from} and {challenges[i].address}\n");
                     break;
                 }
             }
-            if (i >= MAX_CHALLENGES)
-            {
-                common.DPrintf($"auth: failed client lookup {client_from} {client_guid}\n");
-                return;
-            }
+            if (i >= MAX_CHALLENGES) { common.DPrintf($"auth: failed client lookup {client_from} {client_guid}\n"); return; }
 
-            if (challenges[i].authState != AuthState.CDK_WAIT)
-            {
-                common.DWarning($"auth: challenge 0x{challenges[i].challenge:x} {challenges[i].address} authState {challenges[i].authState} != CDK_WAIT");
-                return;
-            }
+            if (challenges[i].authState != AuthState.CDK_WAIT) { common.DWarning($"auth: challenge 0x{challenges[i].challenge:x} {challenges[i].address} authState {challenges[i].authState} != CDK_WAIT"); return; }
 
             challenges[i].guid = client_guid;
-            if (reply == AuthReply.AUTH_OK)
-            {
-                challenges[i].authState = AuthState.CDK_OK;
-                common.Printf($"client {client_from} {client_guid} is authed\n");
-            }
+            if (reply == AuthReply.AUTH_OK) { challenges[i].authState = AuthState.CDK_OK; common.Printf($"client {client_from} {client_guid} is authed\n"); }
             else
             {
                 var lmsg = replyMsg != AuthReplyMsg.AUTH_REPLY_PRINT
@@ -1270,13 +1116,8 @@ namespace Gengine.Framework.Async
             // see if we already have a challenge for this ip
             for (i = 0; i < MAX_CHALLENGES; i++)
             {
-                if (!challenges[i].connected && from == challenges[i].address && clientId == challenges[i].clientId)
-                    break;
-                if (challenges[i].time < oldestTime)
-                {
-                    oldestTime = challenges[i].time;
-                    oldest = i;
-                }
+                if (!challenges[i].connected && from == challenges[i].address && clientId == challenges[i].clientId) break;
+                if (challenges[i].time < oldestTime) { oldestTime = challenges[i].time; oldest = i; }
             }
 
             if (i >= MAX_CHALLENGES)
@@ -1310,16 +1151,11 @@ namespace Gengine.Framework.Async
             serverPort.SendPacket(from, outMsg.DataW, outMsg.Size);
 
 #if ID_ENFORCE_KEY_CLIENT
-            if (SysW.IsLANAddress(from))
-                // no CD Key check for LAN clients
-                challenges[i].authState = AuthState.CDK_OK;
+            // no CD Key check for LAN clients
+            if (SysW.IsLANAddress(from)) challenges[i].authState = AuthState.CDK_OK;
             else
             {
-                if (AsyncNetwork.LANServer.Bool)
-                {
-                    common.Printf($"net_LANServer is enabled. Client {SysW.NetAdrToString(from)} is not a LAN address, will be rejected\n");
-                    challenges[i].authState = AuthState.CDK_ONLYLAN;
-                }
+                if (AsyncNetwork.LANServer.Bool) { common.Printf($"net_LANServer is enabled. Client {SysW.NetAdrToString(from)} is not a LAN address, will be rejected\n"); challenges[i].authState = AuthState.CDK_ONLYLAN; }
                 else
                 {
                     // emit a cd key confirmation request
@@ -1334,8 +1170,7 @@ namespace Gengine.Framework.Async
                 }
             }
 #else
-            if (!from.IsLANAddress)
-                common.Printf($"Build Does not have CD Key Enforcement enabled. Client {from} is not a LAN address, but will be accepted\n");
+            if (!from.IsLANAddress) common.Printf($"Build Does not have CD Key Enforcement enabled. Client {from} is not a LAN address, but will be accepted\n");
             challenges[i].authState = AuthState.CDK_OK;
 #endif
         }
@@ -1347,12 +1182,8 @@ namespace Gengine.Framework.Async
             int i;
 
             fileSystem.GetPureServerChecksums(serverChecksums);
-            if (serverChecksums[0] == 0)
-            {
-                // happens if you run fully expanded assets with si_pure 1
-                common.Warning("pure server has no pak files referenced");
-                return false;
-            }
+            // happens if you run fully expanded assets with si_pure 1
+            if (serverChecksums[0] == 0) { common.Warning("pure server has no pak files referenced"); return false; }
             common.DPrintf($"client {to}: sending pure pak list\n");
 
             // send our list of required paks
@@ -1361,8 +1192,7 @@ namespace Gengine.Framework.Async
             msg.WriteString("pureServer");
 
             i = 0;
-            while (serverChecksums[i] != 0)
-                msg.WriteInt(serverChecksums[i++]);
+            while (serverChecksums[i] != 0) msg.WriteInt(serverChecksums[i++]);
             msg.WriteInt(0);
 
             serverPort.SendPacket(to, msg.DataW, msg.Size);
@@ -1376,12 +1206,8 @@ namespace Gengine.Framework.Async
             int i;
 
             fileSystem.GetPureServerChecksums(serverChecksums);
-            if (serverChecksums[0] == 0)
-            {
-                // happens if you run fully expanded assets with si_pure 1
-                common.Warning("pure server has no pak files referenced");
-                return false;
-            }
+            // happens if you run fully expanded assets with si_pure 1
+            if (serverChecksums[0] == 0) { common.Warning("pure server has no pak files referenced"); return false; }
 
             common.DPrintf($"client {clientNum}: sending pure pak list (reliable channel) @ gameInitId {gameInitId}\n");
 
@@ -1391,8 +1217,7 @@ namespace Gengine.Framework.Async
             msg.WriteInt(gameInitId);
 
             i = 0;
-            while (serverChecksums[i] != 0)
-                msg.WriteInt(serverChecksums[i++]);
+            while (serverChecksums[i] != 0) msg.WriteInt(serverChecksums[i++]);
             msg.WriteInt(0);
 
             SendReliableMessage(clientNum, msg);
@@ -1406,28 +1231,16 @@ namespace Gengine.Framework.Async
             for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
                 var client = clients[i];
-                if (client.clientState == ServerClientState.SCS_FREE)
-                    continue;
+                if (client.clientState == ServerClientState.SCS_FREE) continue;
                 if (from == client.channel.RemoteAddress && (clientId == client.clientId || from.port == client.channel.RemoteAddress.port))
                 {
-                    if (serverTime - client.lastConnectTime < MIN_RECONNECT_TIME)
-                    {
-                        common.Printf($"{from}: reconnect rejected : too soon\n");
-                        return -1;
-                    }
+                    if (serverTime - client.lastConnectTime < MIN_RECONNECT_TIME) { common.Printf($"{from}: reconnect rejected : too soon\n"); return -1; }
                     break;
                 }
             }
 
-            for (i = 0; i < MAX_CHALLENGES; i++)
-                if (from == challenges[i].address && from.port == challenges[i].address.port)
-                    if (challenge == challenges[i].challenge)
-                        break;
-            if (i == MAX_CHALLENGES)
-            {
-                PrintOOB(from, (int)SERVER_PRINT.BADCHALLENGE, "#str_04840");
-                return -1;
-            }
+            for (i = 0; i < MAX_CHALLENGES; i++) if (from == challenges[i].address && from.port == challenges[i].address.port && challenge == challenges[i].challenge) break;
+            if (i == MAX_CHALLENGES) { PrintOOB(from, (int)SERVER_PRINT.BADCHALLENGE, "#str_04840"); return -1; }
             return i;
         }
 
@@ -1440,13 +1253,8 @@ namespace Gengine.Framework.Async
 
             protocol = msg.ReadInt();
 
-            // check the protocol version
-            if (protocol != Config.ASYNC_PROTOCOL_VERSION)
-            {
-                // that's a msg back to a client, we don't know about it's localization, so send english
-                PrintOOB(from, (int)SERVER_PRINT.BADPROTOCOL, $"server uses protocol {Config.ASYNC_PROTOCOL_MAJOR}.{Config.ASYNC_PROTOCOL_MINOR }\n");
-                return;
-            }
+            // check the protocol version - that's a msg back to a client, we don't know about it's localization, so send english
+            if (protocol != Config.ASYNC_PROTOCOL_VERSION) { PrintOOB(from, (int)SERVER_PRINT.BADPROTOCOL, $"server uses protocol {Config.ASYNC_PROTOCOL_MAJOR}.{Config.ASYNC_PROTOCOL_MINOR }\n"); return; }
 
             clientDataChecksum = msg.ReadInt();
             challenge = msg.ReadInt();
@@ -1454,14 +1262,9 @@ namespace Gengine.Framework.Async
             clientRate = msg.ReadInt();
 
             // check the client data - only for non pure servers
-            if (sessLocal.mapSpawnData.serverInfo.GetInt("si_pure") == 0 && clientDataChecksum != serverDataChecksum)
-            {
-                PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04842");
-                return;
-            }
+            if (sessLocal.mapSpawnData.serverInfo.GetInt("si_pure") == 0 && clientDataChecksum != serverDataChecksum) { PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04842"); return; }
 
-            if ((ichallenge = ValidateChallenge(from, challenge, clientId)) == -1)
-                return;
+            if ((ichallenge = ValidateChallenge(from, challenge, clientId)) == -1) return;
 
             msg.ReadString(out guid);
 
@@ -1475,11 +1278,7 @@ namespace Gengine.Framework.Async
                     PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04843");
                     return;
                 case AuthState.CDK_WAIT:
-                    if (challenges[ichallenge].authReply == AuthReply.AUTH_NONE && Math.Min(serverTime - lastAuthTime, serverTime - challenges[ichallenge].time) > AUTHORIZE_TIMEOUT)
-                    {
-                        common.DPrintf($"{from}: Authorize server timed out\n");
-                        break; // will continue with the connecting process
-                    }
+                    if (challenges[ichallenge].authReply == AuthReply.AUTH_NONE && Math.Min(serverTime - lastAuthTime, serverTime - challenges[ichallenge].time) > AUTHORIZE_TIMEOUT) { common.DPrintf($"{from}: Authorize server timed out\n"); break; } // will continue with the connecting process
                     var msg2 = challenges[ichallenge].authReplyMsg != AuthReplyMsg.AUTH_REPLY_PRINT
                         ? authReplyMsg[(int)challenges[ichallenge].authReplyMsg]
                         : challenges[ichallenge].authReplyPrint;
@@ -1527,8 +1326,7 @@ namespace Gengine.Framework.Async
             for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
                 var client = clients[i];
-                if (client.clientState >= ServerClientState.SCS_PUREWAIT)
-                    numClients++;
+                if (client.clientState >= ServerClientState.SCS_PUREWAIT) numClients++;
             }
 
             // game may be passworded, client banned by IP or GUID
@@ -1552,18 +1350,10 @@ namespace Gengine.Framework.Async
 
             // enter pure checks if necessary
             if (sessLocal.mapSpawnData.serverInfo.GetInt("si_pure") != 0 && challenges[ichallenge].authState != AuthState.CDK_PUREOK)
-                if (SendPureServerMessage(from))
-                {
-                    challenges[ichallenge].authState = AuthState.CDK_PUREWAIT;
-                    return;
-                }
+                if (SendPureServerMessage(from)) { challenges[ichallenge].authState = AuthState.CDK_PUREWAIT; return; }
 
             // push back decl checksum here when running pure. just an additional safe check
-            if (sessLocal.mapSpawnData.serverInfo.GetInt("si_pure") != 0 && clientDataChecksum != serverDataChecksum)
-            {
-                PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04844");
-                return;
-            }
+            if (sessLocal.mapSpawnData.serverInfo.GetInt("si_pure") != 0 && clientDataChecksum != serverDataChecksum) { PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04844"); return; }
 
             ping = serverTime - challenges[ichallenge].pingTime;
             common.Printf($"challenge from {from} connecting with {ping} ping\n");
@@ -1578,21 +1368,17 @@ namespace Gengine.Framework.Async
                     if (islot == 0)
                     {
                         // if this slot uses the same IP and port
-                        if (from == client.channel.RemoteAddress && (clientId == client.clientId || from.port == client.channel.RemoteAddress.port))
-                            break;
+                        if (from == client.channel.RemoteAddress && (clientId == client.clientId || from.port == client.channel.RemoteAddress.port)) break;
                     }
                     else if (islot == 1)
                     {
                         // if this client is not connected and the slot uses the same IP
-                        if (client.clientState >= ServerClientState.SCS_PUREWAIT)
-                            continue;
-                        if (from == client.channel.RemoteAddress)
-                            break;
+                        if (client.clientState >= ServerClientState.SCS_PUREWAIT) continue;
+                        if (from == client.channel.RemoteAddress) break;
                     }
                     else if (islot == 2)
                         // if this slot is free
-                        if (client.clientState == ServerClientState.SCS_FREE)
-                            break;
+                        if (client.clientState == ServerClientState.SCS_FREE) break;
                 }
 
                 if (clientNum < Config.MAX_ASYNC_CLIENTS)
@@ -1605,11 +1391,7 @@ namespace Gengine.Framework.Async
             }
 
             // if no free spots available
-            if (clientNum >= Config.MAX_ASYNC_CLIENTS)
-            {
-                PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04845");
-                return;
-            }
+            if (clientNum >= Config.MAX_ASYNC_CLIENTS) { PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04845"); return; }
 
             common.Printf($"sending connect response to {from}\n");
 
@@ -1646,12 +1428,7 @@ namespace Gengine.Framework.Async
                 i = msg.ReadInt();
                 checksums[numChecksums++] = i;
                 // just to make sure a broken client doesn't crash us
-                if (numChecksums >= IVFileSystem.MAX_PURE_PAKS)
-                {
-                    common.Warning($"MAX_PURE_PAKS ({IVFileSystem.MAX_PURE_PAKS}) exceeded in AsyncServer::ProcessPureMessage\n");
-                    reply = "#str_07144";
-                    return false;
-                }
+                if (numChecksums >= IVFileSystem.MAX_PURE_PAKS) { common.Warning($"MAX_PURE_PAKS ({IVFileSystem.MAX_PURE_PAKS}) exceeded in AsyncServer::ProcessPureMessage\n"); reply = "#str_07144"; return false; }
             } while (i != 0);
             numChecksums--;
 
@@ -1660,19 +1437,9 @@ namespace Gengine.Framework.Async
 
             for (i = 0; serverChecksums[i] != 0; i++)
             {
-                if (checksums[i] != serverChecksums[i])
-                {
-                    common.DPrintf($"client {(from != null ? from.ToString() : $"{clientNum}")}: pak missing (0x{serverChecksums[i]:x})\n");
-                    reply = $"pak missing (0x{serverChecksums[i]:x})\n";
-                    return false;
-                }
+                if (checksums[i] != serverChecksums[i]) { common.DPrintf($"client {(from != null ? from.ToString() : $"{clientNum}")}: pak missing (0x{serverChecksums[i]:x})\n"); reply = $"pak missing (0x{serverChecksums[i]:x})\n"; return false; }
             }
-            if (checksums[i] != 0)
-            {
-                common.DPrintf($"client {(from != null ? from.ToString() : $"{clientNum}")}: extra pak file referenced (0x{checksums[i]:X})\n");
-                reply = $"extra pak file referenced (0x{checksums[i]:x})\n";
-                return false;
-            }
+            if (checksums[i] != 0) { common.DPrintf($"client {(from != null ? from.ToString() : $"{clientNum}")}: extra pak file referenced (0x{checksums[i]:X})\n"); reply = $"extra pak file referenced (0x{checksums[i]:x})\n"; return false; }
             reply = null;
             return true;
         }
@@ -1684,20 +1451,9 @@ namespace Gengine.Framework.Async
             challenge = msg.ReadInt();
             clientId = msg.ReadShort();
 
-            if ((iclient = ValidateChallenge(from, challenge, clientId)) == -1)
-                return;
-
-            if (challenges[iclient].authState != AuthState.CDK_PUREWAIT)
-            {
-                common.DPrintf($"client {from}: got pure message, not in CDK_PUREWAIT\n");
-                return;
-            }
-
-            if (!VerifyChecksumMessage(iclient, from, msg, out var reply))
-            {
-                PrintOOB(from, (int)SERVER_PRINT.MISC, reply);
-                return;
-            }
+            if ((iclient = ValidateChallenge(from, challenge, clientId)) == -1) return;
+            if (challenges[iclient].authState != AuthState.CDK_PUREWAIT) { common.DPrintf($"client {from}: got pure message, not in CDK_PUREWAIT\n"); return; }
+            if (!VerifyChecksumMessage(iclient, from, msg, out var reply)) { PrintOOB(from, (int)SERVER_PRINT.MISC, reply); return; }
 
             common.DPrintf($"client {from}: passed pure checks\n");
             challenges[iclient].authState = AuthState.CDK_PUREOK; // next connect message will get the client through completely
@@ -1709,11 +1465,7 @@ namespace Gengine.Framework.Async
             int clientGameInitId;
 
             clientGameInitId = msg.ReadInt();
-            if (clientGameInitId != gameInitId)
-            {
-                common.DPrintf($"client {clientNum}: ignoring reliable pure from an old gameInit ({clientGameInitId})\n");
-                return;
-            }
+            if (clientGameInitId != gameInitId) { common.DPrintf($"client {clientNum}: ignoring reliable pure from an old gameInit ({clientGameInitId})\n"); return; }
 
             if (clients[clientNum].clientState != ServerClientState.SCS_PUREWAIT)
             {
@@ -1727,11 +1479,7 @@ namespace Gengine.Framework.Async
                 return;
             }
 
-            if (!VerifyChecksumMessage(clientNum, null, msg, out var reply))
-            {
-                DropClient(clientNum, reply);
-                return;
-            }
+            if (!VerifyChecksumMessage(clientNum, null, msg, out var reply)) { DropClient(clientNum, reply); return; }
             common.DPrintf($"client {clientNum}: passed pure checks (reliable channel)\n");
             clients[clientNum].clientState = ServerClientState.SCS_CONNECTED;
         }
@@ -1750,19 +1498,11 @@ namespace Gengine.Framework.Async
             BitMsg outMsg = new(); byte[] msgBuf = new byte[952];
             string s;
 
-            if (string.IsNullOrEmpty(AsyncNetwork.serverRemoteConsolePassword.String))
-            {
-                PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04846");
-                return;
-            }
+            if (string.IsNullOrEmpty(AsyncNetwork.serverRemoteConsolePassword.String)) { PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04846"); return; }
 
             msg.ReadString(out s);
 
-            if (!string.Equals(s, AsyncNetwork.serverRemoteConsolePassword.String, StringComparison.OrdinalIgnoreCase))
-            {
-                PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04847");
-                return;
-            }
+            if (!string.Equals(s, AsyncNetwork.serverRemoteConsolePassword.String, StringComparison.OrdinalIgnoreCase)) { PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04847"); return; }
 
             msg.ReadString(out s);
 
@@ -1776,14 +1516,12 @@ namespace Gengine.Framework.Async
 
             common.EndRedirect();
 
-            if (noRconOutput)
-                PrintOOB(rconAddress, (int)SERVER_PRINT.RCON, "#str_04848");
+            if (noRconOutput) PrintOOB(rconAddress, (int)SERVER_PRINT.RCON, "#str_04848");
         }
 
         void ProcessGetInfoMessage(Netadr from, BitMsg msg)
         {
-            if (!IsActive)
-                return;
+            if (!IsActive) return;
 
             common.DPrintf($"Sending info response to {from}\n");
 
@@ -1801,8 +1539,7 @@ namespace Gengine.Framework.Async
             for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
                 var client = clients[i];
-                if (client.clientState < ServerClientState.SCS_CONNECTED)
-                    continue;
+                if (client.clientState < ServerClientState.SCS_CONNECTED) continue;
 
                 outMsg.WriteByte(i);
                 outMsg.WriteShort(client.clientPing);
@@ -1826,8 +1563,7 @@ namespace Gengine.Framework.Async
             for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
                 var client = clients[i];
-                if (client.clientState < ServerClientState.SCS_CONNECTED)
-                    continue;
+                if (client.clientState < ServerClientState.SCS_CONNECTED) continue;
                 common.Printf($"client {i:2}: {sessLocal.mapSpawnData.userInfo[i].GetString("ui_name", "Player")}, ping = {client.clientPing}, rate = {client.channel.MaxOutgoingRate}\n");
             }
         }
@@ -1837,60 +1573,30 @@ namespace Gengine.Framework.Async
             msg.ReadString(out var s, Platform.MAX_STRING_CHARS * 2); // M. Quinn - Even Balance - PB Packets need more than 1024
 
             // info request
-            if (string.Equals(s, "getInfo", StringComparison.OrdinalIgnoreCase))
-            {
-                ProcessGetInfoMessage(from, msg);
-                return false;
-            }
+            if (string.Equals(s, "getInfo", StringComparison.OrdinalIgnoreCase)) { ProcessGetInfoMessage(from, msg); return false; }
 
             // remote console
-            if (string.Equals(s, "rcon", StringComparison.OrdinalIgnoreCase))
-            {
-                ProcessRemoteConsoleMessage(from, msg);
-                return true;
-            }
+            if (string.Equals(s, "rcon", StringComparison.OrdinalIgnoreCase)) { ProcessRemoteConsoleMessage(from, msg); return true; }
 
-            if (!active)
-            {
-                PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04849");
-                return false;
-            }
+            if (!active) { PrintOOB(from, (int)SERVER_PRINT.MISC, "#str_04849"); return false; }
 
             // challenge from a client
-            if (string.Equals(s, "challenge", StringComparison.OrdinalIgnoreCase))
-            {
-                ProcessChallengeMessage(from, msg);
-                return false;
-            }
+            if (string.Equals(s, "challenge", StringComparison.OrdinalIgnoreCase)) { ProcessChallengeMessage(from, msg); return false; }
 
             // connect from a client
-            if (string.Equals(s, "connect", StringComparison.OrdinalIgnoreCase))
-            {
-                ProcessConnectMessage(from, msg);
-                return false;
-            }
+            if (string.Equals(s, "connect", StringComparison.OrdinalIgnoreCase)) { ProcessConnectMessage(from, msg); return false; }
 
             // pure mesasge from a client
-            if (string.Equals(s, "pureClient", StringComparison.OrdinalIgnoreCase))
-            {
-                ProcessPureMessage(from, msg);
-                return false;
-            }
+            if (string.Equals(s, "pureClient", StringComparison.OrdinalIgnoreCase)) { ProcessPureMessage(from, msg); return false; }
 
             // download request
-            if (string.Equals(s, "downloadRequest", StringComparison.OrdinalIgnoreCase))
-                ProcessDownloadRequestMessage(from, msg);
+            if (string.Equals(s, "downloadRequest", StringComparison.OrdinalIgnoreCase)) ProcessDownloadRequestMessage(from, msg);
 
             // auth server
             if (string.Equals(s, "auth", StringComparison.OrdinalIgnoreCase))
             {
-                if (from != AsyncNetwork.MasterAddress)
-                {
-                    common.Printf($"auth: bad source {from}\n");
-                    return false;
-                }
-                if (AsyncNetwork.LANServer.Bool)
-                    common.Printf("auth message from master. net_LANServer is enabled, ignored.\n");
+                if (from != AsyncNetwork.MasterAddress) { common.Printf($"auth: bad source {from}\n"); return false; }
+                if (AsyncNetwork.LANServer.Bool) common.Printf("auth message from master. net_LANServer is enabled, ignored.\n");
                 ProcessAuthMessage(msg);
                 return false;
             }
@@ -1903,14 +1609,9 @@ namespace Gengine.Framework.Async
             int id = msg.ReadShort();
 
             // check for a connectionless message
-            if (id == CONNECTIONLESS_MESSAGE_ID)
-                return ConnectionlessMessage(from, msg);
+            if (id == CONNECTIONLESS_MESSAGE_ID) return ConnectionlessMessage(from, msg);
 
-            if (msg.RemaingData < 4)
-            {
-                common.DPrintf($"{from}: tiny packet\n");
-                return false;
-            }
+            if (msg.RemaingData < 4) { common.DPrintf($"{from}: tiny packet\n"); return false; }
 
             BitMsg outMsg = new(); byte[] msgBuf = new byte[MAX_MESSAGE_SIZE];
 
@@ -1918,20 +1619,16 @@ namespace Gengine.Framework.Async
             for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
                 var client = clients[i];
-                if (client.clientState == ServerClientState.SCS_FREE)
-                    continue;
+                if (client.clientState == ServerClientState.SCS_FREE) continue;
 
                 // This does not compare the UDP port, because some address translating routers will change that at arbitrary times.
-                if (from != client.channel.RemoteAddress || id != client.clientId)
-                    continue;
+                if (from != client.channel.RemoteAddress || id != client.clientId) continue;
 
                 // make sure it is a valid, in sequence packet
-                if (!client.channel.Process(from, serverTime, msg, out var _))
-                    return false;       // out of order, duplicated, fragment, etc.
+                if (!client.channel.Process(from, serverTime, msg, out var _)) return false;       // out of order, duplicated, fragment, etc.
 
                 // zombie clients still need to do the channel processing to make sure they don't need to retransmit the final reliable message, but they don't do any other processing
-                if (client.clientState == ServerClientState.SCS_ZOMBIE)
-                    return false;
+                if (client.clientState == ServerClientState.SCS_ZOMBIE) return false;
 
                 client.lastPacketTime = serverTime;
 
@@ -1958,17 +1655,10 @@ namespace Gengine.Framework.Async
             outMsg.WriteByte((int)SERVER_RELIABLE_MESSAGE.GAME);
             outMsg.WriteData(msg.DataW, 0, msg.Size);
 
-            if (clientNum >= 0 && clientNum < Config.MAX_ASYNC_CLIENTS)
-            {
-                if (clients[clientNum].clientState == ServerClientState.SCS_INGAME)
-                    SendReliableMessage(clientNum, outMsg);
-                return;
-            }
-
+            if (clientNum >= 0 && clientNum < Config.MAX_ASYNC_CLIENTS) { if (clients[clientNum].clientState == ServerClientState.SCS_INGAME) SendReliableMessage(clientNum, outMsg); return; }
             for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
-                if (clients[i].clientState != ServerClientState.SCS_INGAME)
-                    continue;
+                if (clients[i].clientState != ServerClientState.SCS_INGAME) continue;
                 SendReliableMessage(i, outMsg);
             }
         }
@@ -1985,26 +1675,20 @@ namespace Gengine.Framework.Async
 
             for (var i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
-                if (i == clientNum || clients[i].clientState != ServerClientState.SCS_INGAME)
-                    continue;
+                if (i == clientNum || clients[i].clientState != ServerClientState.SCS_INGAME) continue;
                 SendReliableMessage(i, outMsg);
             }
         }
 
         public void LocalClientSendReliableMessage(BitMsg msg)
         {
-            if (localClientNum < 0)
-            {
-                common.Printf("LocalClientSendReliableMessage: no local client\n");
-                return;
-            }
+            if (localClientNum < 0) { common.Printf("LocalClientSendReliableMessage: no local client\n"); return; }
             game.ServerProcessReliableMessage(localClientNum, msg);
         }
 
         public void ProcessConnectionLessMessages()
         {
-            if (serverPort.Port == 0)
-                return;
+            if (serverPort.Port == 0) return;
 
             BitMsg msg = new(); byte[] msgBuf = new byte[MAX_MESSAGE_SIZE];
 
@@ -2014,8 +1698,7 @@ namespace Gengine.Framework.Async
                 msg.Size = size;
                 msg.BeginReading();
                 var id = msg.ReadShort();
-                if (id == CONNECTIONLESS_MESSAGE_ID)
-                    ConnectionlessMessage(from, msg);
+                if (id == CONNECTIONLESS_MESSAGE_ID) ConnectionlessMessage(from, msg);
             }
         }
 
@@ -2038,14 +1721,9 @@ namespace Gengine.Framework.Async
 
             var msec = UpdateTime(100);
 
-            if (serverPort.Port == 0)
-                return;
+            if (serverPort.Port == 0) return;
 
-            if (!active)
-            {
-                ProcessConnectionLessMessages();
-                return;
-            }
+            if (!active) { ProcessConnectionLessMessages(); return; }
 
             gameTimeResidual += msec;
 
@@ -2061,8 +1739,7 @@ namespace Gengine.Framework.Async
                         msg.InitW(msgBuf);
                         msg.Size = size;
                         msg.BeginReading();
-                        if (ProcessMessage(from, msg))
-                            return; // return because rcon was used
+                        if (ProcessMessage(from, msg)) return; // return because rcon was used
                     }
 
                     msec = UpdateTime(100);
@@ -2085,11 +1762,7 @@ namespace Gengine.Framework.Async
             }
 
             // make sure the time doesn't wrap
-            if (serverTime > 0x70000000)
-            {
-                ExecuteMapChange();
-                return;
-            }
+            if (serverTime > 0x70000000) { ExecuteMapChange(); return; }
 
             // check for synchronized cvar changes
             if ((cvarSystem.GetModifiedFlags() & CVAR.NETWORKSYNC) != 0)
@@ -2138,29 +1811,18 @@ namespace Gengine.Framework.Async
             for (i = 0; i < Config.MAX_ASYNC_CLIENTS; i++)
             {
                 var client = clients[i];
-                if (client.clientState == ServerClientState.SCS_FREE || i == localClientNum)
-                    continue;
+                if (client.clientState == ServerClientState.SCS_FREE || i == localClientNum) continue;
 
                 // modify maximum rate if necesary
-                if (AsyncNetwork.serverMaxClientRate.IsModified)
-                    client.channel.MaxOutgoingRate = Math.Min(client.clientRate, AsyncNetwork.serverMaxClientRate.Integer);
+                if (AsyncNetwork.serverMaxClientRate.IsModified) client.channel.MaxOutgoingRate = Math.Min(client.clientRate, AsyncNetwork.serverMaxClientRate.Integer);
 
                 // if the channel is not yet ready to send new data
-                if (!client.channel.ReadyToSend(serverTime))
-                    continue;
+                if (!client.channel.ReadyToSend(serverTime)) continue;
 
                 // send additional message fragments if the last message was too large to send at once
-                if (client.channel.UnsentFragmentsLeft)
-                {
-                    client.channel.SendNextFragment(serverPort, serverTime);
-                    continue;
-                }
+                if (client.channel.UnsentFragmentsLeft) { client.channel.SendNextFragment(serverPort, serverTime); continue; }
 
-                if (client.clientState == ServerClientState.SCS_INGAME)
-                {
-                    if (!SendSnapshotToClient(i))
-                        SendPingToClient(i);
-                }
+                if (client.clientState == ServerClientState.SCS_INGAME) { if (!SendSnapshotToClient(i)) SendPingToClient(i); }
                 else SendEmptyToClient(i);
             }
 
@@ -2180,8 +1842,7 @@ namespace Gengine.Framework.Async
                         outgoingCompression = GetClientOutgoingCompression(i);
                         incomingCompression = GetClientIncomingCompression(i);
 
-                        if (outgoingRate != -1 && incomingRate != -1)
-                            common.Printf($"client {i}: out rate = {outgoingRate} B/s (% {outgoingCompression:-2.1}%), in rate = {incomingRate} B/s (% {incomingCompression:-2.1}%)\n");
+                        if (outgoingRate != -1 && incomingRate != -1) common.Printf($"client {i}: out rate = {outgoingRate} B/s (% {outgoingCompression:-2.1}%), in rate = {incomingRate} B/s (% {incomingCompression:-2.1}%)\n");
                     }
 
                     GetAsyncStatsAvgMsg(out var msg2);
@@ -2196,8 +1857,7 @@ namespace Gengine.Framework.Async
 
         public void PacifierUpdate()
         {
-            if (!IsActive)
-                return;
+            if (!IsActive) return;
 
             realTime = SysW.Milliseconds;
             ProcessConnectionLessMessages();
@@ -2223,17 +1883,10 @@ namespace Gengine.Framework.Async
 
         public void MasterHeartbeat(bool force = false)
         {
-            if (AsyncNetwork.LANServer.Bool)
-            {
-                if (force)
-                    common.Printf("net_LANServer is enabled. Not sending heartbeats\n");
-                return;
-            }
-            if (force)
-                nextHeartbeatTime = 0;
+            if (AsyncNetwork.LANServer.Bool) { if (force) common.Printf("net_LANServer is enabled. Not sending heartbeats\n"); return; }
+            if (force) nextHeartbeatTime = 0;
             // not yet
-            if (serverTime < nextHeartbeatTime)
-                return;
+            if (serverTime < nextHeartbeatTime) return;
 
             BitMsg msg = new(); byte[] msgBuf = new byte[MAX_MESSAGE_SIZE];
 
@@ -2262,21 +1915,12 @@ namespace Gengine.Framework.Async
         {
             stats_average_sum -= stats_outrate[stats_current];
             stats_outrate[stats_current] = AsyncNetwork.server.OutgoingRate;
-            if (stats_outrate[stats_current] > stats_max)
-            {
-                stats_max = stats_outrate[stats_current];
-                stats_max_index = stats_current;
-            }
+            if (stats_outrate[stats_current] > stats_max) { stats_max = stats_outrate[stats_current]; stats_max_index = stats_current; }
             else if (stats_current == stats_max_index)
             {
                 // find the new max
                 stats_max = 0;
-                for (var i = 0; i < stats_numsamples; i++)
-                    if (stats_outrate[i] > stats_max)
-                    {
-                        stats_max = stats_outrate[i];
-                        stats_max_index = i;
-                    }
+                for (var i = 0; i < stats_numsamples; i++) if (stats_outrate[i] > stats_max) { stats_max = stats_outrate[i]; stats_max_index = i; }
             }
             stats_average_sum += stats_outrate[stats_current];
             stats_current++; stats_current %= stats_numsamples;
@@ -2300,14 +1944,9 @@ namespace Gengine.Framework.Async
                 clientId = msg.ReadShort(),
                 dlRequest = msg.ReadInt();
 
-            if ((iclient = ValidateChallenge(from, challenge, clientId)) == -1)
-                return;
+            if ((iclient = ValidateChallenge(from, challenge, clientId)) == -1) return;
 
-            if (challenges[iclient].authState != AuthState.CDK_PUREWAIT)
-            {
-                common.DPrintf($"client {from}: got download request message, not in CDK_PUREWAIT\n");
-                return;
-            }
+            if (challenges[iclient].authState != AuthState.CDK_PUREWAIT) { common.DPrintf($"client {from}: got download request message, not in CDK_PUREWAIT\n"); return; }
 
             string pakbuf = null;
             pakNames.Add(pakbuf);
@@ -2355,9 +1994,7 @@ namespace Gengine.Framework.Async
             SERVER_DL type = 0;
 
             foreach (var token in pakbuf.Split(';'))
-            {
-                if (type == 0)
-                    type = (SERVER_DL)int.Parse(token);
+                if (type == 0) type = (SERVER_DL)int.Parse(token);
                 else if (type == SERVER_DL.REDIRECT)
                 {
                     common.DPrintf($"download request: redirect to URL {token}\n");
@@ -2366,14 +2003,8 @@ namespace Gengine.Framework.Async
                     serverPort.SendPacket(from, outMsg.DataW, outMsg.Size);
                     return;
                 }
-                else if (type == SERVER_DL.LIST)
-                    pakURLs.Add(token);
-                else
-                {
-                    common.DPrintf($"wrong op type {type}\n");
-                    break;
-                }
-            }
+                else if (type == SERVER_DL.LIST) pakURLs.Add(token);
+                else { common.DPrintf($"wrong op type {type}\n"); break; }
 
             if (type == SERVER_DL.LIST)
             {
@@ -2404,17 +2035,11 @@ namespace Gengine.Framework.Async
                     }
 
                     // keep last 5 bytes for an 'end of message' - SERVER_PAK_END and the totalDlSize long
-                    if (outMsg.RemainingSpace - tmpMsg.Size > 5)
-                        outMsg.WriteData(tmpMsg.DataW, 0, tmpMsg.Size);
-                    else
-                    {
-                        outMsg.WriteByte((byte)SERVER_PAK.END);
-                        break;
-                    }
+                    if (outMsg.RemainingSpace - tmpMsg.Size > 5) outMsg.WriteData(tmpMsg.DataW, 0, tmpMsg.Size);
+                    else { outMsg.WriteByte((byte)SERVER_PAK.END); break; }
                 }
-                if (i == pakURLs.Count)
-                    // put a closure even if size not exceeded
-                    outMsg.WriteByte((byte)SERVER_PAK.END);
+                // put a closure even if size not exceeded
+                if (i == pakURLs.Count) outMsg.WriteByte((byte)SERVER_PAK.END);
                 common.DPrintf($"download request: download {numActualPaks} paks, {totalDlSize} bytes\n");
 
                 serverPort.SendPacket(from, outMsg.DataW, outMsg.Size);

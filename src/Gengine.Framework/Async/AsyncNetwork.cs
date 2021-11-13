@@ -1,4 +1,5 @@
 using System;
+using System.NumericsX;
 using System.NumericsX.OpenStack;
 using System.NumericsX.OpenStack.System;
 using static Gengine.Lib;
@@ -122,16 +123,8 @@ namespace Gengine.Framework.Async
 
         public static void RunFrame()
         {
-            if (console.Active)
-            {
-                SysW.GrabMouseCursor(false);
-                usercmdGen.InhibitUsercmd(INHIBIT.ASYNC, true);
-            }
-            else
-            {
-                SysW.GrabMouseCursor(true);
-                usercmdGen.InhibitUsercmd(INHIBIT.ASYNC, false);
-            }
+            if (console.Active) { SysW.GrabMouseCursor(false); usercmdGen.InhibitUsercmd(INHIBIT.ASYNC, true); }
+            else { SysW.GrabMouseCursor(true); usercmdGen.InhibitUsercmd(INHIBIT.ASYNC, false); }
             client.RunFrame();
             server.RunFrame();
         }
@@ -178,7 +171,7 @@ namespace Gengine.Framework.Async
                 cmd.rightmove = msg.ReadDeltaChar(base_.Value.rightmove);
                 cmd.upmove = msg.ReadDeltaChar(base_.Value.upmove);
                 cmd.angles0 = msg.ReadDeltaShort(base_.Value.angles0);
-                cmd.angles1= msg.ReadDeltaShort(base_.Value.angles1);
+                cmd.angles1 = msg.ReadDeltaShort(base_.Value.angles1);
                 cmd.angles2 = msg.ReadDeltaShort(base_.Value.angles2);
                 return;
             }
@@ -230,11 +223,7 @@ namespace Gengine.Framework.Async
         // returns true if the corresponding master is set to something (and could be resolved)
         public static bool GetMasterAddress(int index, out Netadr adr)
         {
-            if (masters[index].var == null || string.IsNullOrEmpty(masters[index].var.String))
-            {
-                adr = default;
-                return false;
-            }
+            if (masters[index].var == null || string.IsNullOrEmpty(masters[index].var.String)) { adr = default; return false; }
             if (!masters[index].resolved || masters[index].var.IsModified)
             {
                 masters[index].var.ClearModified();
@@ -246,8 +235,7 @@ namespace Gengine.Framework.Async
                     adr = default;
                     return false;
                 }
-                if (masters[index].address.port == 0)
-                    masters[index].address.port = ushort.Parse(Config.IDNET_MASTER_PORT);
+                if (masters[index].address.port == 0) masters[index].address.port = ushort.Parse(Config.IDNET_MASTER_PORT);
                 masters[index].resolved = true;
             }
             adr = masters[index].address;
@@ -257,11 +245,7 @@ namespace Gengine.Framework.Async
         // get the hardcoded idnet master, equivalent to GetMasterAddress( 0, .. )
         public static Netadr MasterAddress
         {
-            get
-            {
-                GetMasterAddress(0, out var ret);
-                return masters[0].address;
-            }
+            get { GetMasterAddress(0, out var ret); return masters[0].address; }
         }
 
         public static void GetNETServers()
@@ -312,12 +296,10 @@ namespace Gengine.Framework.Async
         public static void BuildInvalidKeyMsg(out string msg, bool[] valid)
         {
             msg = string.Empty;
-            if (!valid[0])
-                msg += common.LanguageDictGetString("#str_07194");
+            if (!valid[0]) msg += common.LanguageDictGetString("#str_07194");
             if (fileSystem.HasD3XP && !valid[1])
             {
-                if (msg.Length != 0)
-                    msg += "\n";
+                if (msg.Length != 0) msg += "\n";
                 msg += common.LanguageDictGetString("#str_07195");
             }
             msg += "\n";
@@ -329,8 +311,7 @@ namespace Gengine.Framework.Async
 
         static void SpawnServer_f(CmdArgs args)
         {
-            if (args.Count > 1)
-                cvarSystem.SetCVarString("si_map", args[1]);
+            if (args.Count > 1) cvarSystem.SetCVarString("si_map", args[1]);
 
             // don't let a server spawn with singleplayer game type - it will crash
             if (string.Equals(cvarSystem.GetCVarString("si_gameType"), "singleplayer", StringComparison.OrdinalIgnoreCase))
@@ -341,15 +322,10 @@ namespace Gengine.Framework.Async
             {
                 case 0:
                 case 2:
-                    if (!renderSystem.IsOpenGLRunning)
-                        common.Warning($"OpenGL is not running, net_serverDedicated == {cvarSystem.GetCVarInteger("net_serverDedicated")}");
+                    if (!renderSystem.IsOpenGLRunning) common.Warning($"OpenGL is not running, net_serverDedicated == {cvarSystem.GetCVarInteger("net_serverDedicated")}");
                     break;
                 case 1:
-                    if (renderSystem.IsOpenGLRunning)
-                    {
-                        SysW.ShowConsole(1, false);
-                        renderSystem.ShutdownOpenGL();
-                    }
+                    if (renderSystem.IsOpenGLRunning) { SysW.ShowConsole(1, false); renderSystem.ShutdownOpenGL(); }
                     soundSystem.SetMute(true);
                     soundSystem.ShutdownHW();
                     break;
@@ -364,16 +340,8 @@ namespace Gengine.Framework.Async
 
         static void Connect_f(CmdArgs args)
         {
-            if (server.IsActive)
-            {
-                common.Printf("already running a server\n");
-                return;
-            }
-            if (args.Count != 2)
-            {
-                common.Printf("USAGE: connect <serverName>\n");
-                return;
-            }
+            if (server.IsActive) { common.Printf("already running a server\n"); return; }
+            if (args.Count != 2) { common.Printf("USAGE: connect <serverName>\n"); return; }
             C.com_asyncInput.Bool = false;
             client.ConnectToServer(args[1]);
         }
@@ -395,35 +363,19 @@ namespace Gengine.Framework.Async
 
         static void Heartbeat_f(CmdArgs args)
         {
-            if (!server.IsActive)
-            {
-                common.Printf("server is not running\n");
-                return;
-            }
+            if (!server.IsActive) { common.Printf("server is not running\n"); return; }
             server.MasterHeartbeat(true);
         }
 
         static void Kick_f(CmdArgs args)
         {
-            if (!server.IsActive)
-            {
-                common.Printf("server is not running\n");
-                return;
-            }
+            if (!server.IsActive) { common.Printf("server is not running\n"); return; }
 
             var clientId = args[1];
-            if (!stringX.IsNumeric(clientId))
-            {
-                common.Printf("usage: kick <client number>\n");
-                return;
-            }
+            if (!stringX.IsNumeric(clientId)) { common.Printf("usage: kick <client number>\n"); return; }
             var clientNum = int.Parse(clientId);
 
-            if (server.LocalClientNum == clientNum)
-            {
-                common.Printf("can't kick the host\n");
-                return;
-            }
+            if (server.LocalClientNum == clientNum) { common.Printf("can't kick the host\n"); return; }
 
             server.DropClient(clientNum, "#str_07134");
         }
@@ -433,16 +385,8 @@ namespace Gengine.Framework.Async
 
         static void UpdateUI_f(CmdArgs args)
         {
-            if (args.Count != 2)
-            {
-                common.Warning("AsyncNetwork::UpdateUI_f: wrong arguments\n");
-                return;
-            }
-            if (!server.IsActive)
-            {
-                common.Warning("AsyncNetwork::UpdateUI_f: server is not active\n");
-                return;
-            }
+            if (args.Count != 2) { common.Warning("AsyncNetwork::UpdateUI_f: wrong arguments\n"); return; }
+            if (!server.IsActive) { common.Warning("AsyncNetwork::UpdateUI_f: server is not active\n"); return; }
             var clientNum = int.Parse(args.Args(1));
             server.UpdateUI(clientNum);
         }

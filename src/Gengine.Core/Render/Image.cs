@@ -319,22 +319,22 @@ namespace Gengine.Render
         public void PrintMemInfo(MemInfo mi) => throw new NotImplementedException();
 
         // cvars
-        static CVar image_roundDown;          // round bad sizes down to nearest power of two
-        static CVar image_colorMipLevels;     // development aid to see texture mip usage
-        static CVar image_downSize;               // controls texture downsampling
-        static CVar image_filter;             // changes texture filtering on mipmapped images
-        static CVar image_anisotropy;         // set the maximum texture anisotropy if available
-        static CVar image_writeNormalTGA;     // debug tool to write out .tgas of the final normal maps
-        static CVar image_writeNormalTGAPalletized;       // debug tool to write out palletized versions of the final normal maps
-        static CVar image_writeTGA;               // debug tool to write out .tgas of the non normal maps
-        static CVar image_preload;                // if 0, dynamically load all images
-        static CVar image_showBackgroundLoads;    // 1 = print number of outstanding background loads
-        static CVar image_forceDownSize;      // allows the ability to force a downsize
-        static CVar image_downSizeSpecular;       // downsize specular
-        static CVar image_downSizeSpecularLimit;// downsize specular limit
-        static CVar image_downSizeBump;           // downsize bump maps
-        static CVar image_downSizeBumpLimit;  // downsize bump limit
-        static CVar image_downSizeLimit;      // downsize diffuse limit
+        public static CVar image_roundDown;          // round bad sizes down to nearest power of two
+        public static CVar image_colorMipLevels;     // development aid to see texture mip usage
+        public static CVar image_downSize;               // controls texture downsampling
+        public static CVar image_filter;             // changes texture filtering on mipmapped images
+        public static CVar image_anisotropy;         // set the maximum texture anisotropy if available
+        public static CVar image_writeNormalTGA;     // debug tool to write out .tgas of the final normal maps
+        public static CVar image_writeNormalTGAPalletized;       // debug tool to write out palletized versions of the final normal maps
+        public static CVar image_writeTGA;               // debug tool to write out .tgas of the non normal maps
+        public static CVar image_preload;                // if 0, dynamically load all images
+        public static CVar image_showBackgroundLoads;    // 1 = print number of outstanding background loads
+        public static CVar image_forceDownSize;      // allows the ability to force a downsize
+        public static CVar image_downSizeSpecular;       // downsize specular
+        public static CVar image_downSizeSpecularLimit;// downsize specular limit
+        public static CVar image_downSizeBump;           // downsize bump maps
+        public static CVar image_downSizeBumpLimit;  // downsize bump limit
+        public static CVar image_downSizeLimit;      // downsize diffuse limit
 
         // built-in images
         public Image defaultImage;

@@ -1,14 +1,15 @@
 using System;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using static System.NumericsX.Platform;
-using static System.NumericsX.OpenStack.OpenStack;
 using System.Text;
-using System.Collections.Generic;
+using static System.NumericsX.OpenStack.OpenStack;
+using static System.NumericsX.Platform;
 
 namespace Gengine.Render
 {
+    #region IDs
     static partial class ModelXLwo
     {
         // chunk and subchunk IDs
@@ -155,18 +156,19 @@ namespace Gengine.Render
         public const int ID_SHDR = 'S' << 24 | 'H' << 16 | 'D' << 8 | 'R';
         public const int ID_DATA = 'D' << 24 | 'A' << 16 | 'T' << 8 | 'A';
     }
+    #endregion
+
+    #region Records
 
     // generic linked list
     public class lwNode
     {
         public lwNode next, prev;
-        object data;
     }
 
     // plug-in reference
-    public class lwPlugin
+    public class lwPlugin : lwNode
     {
-        public lwPlugin next, prev;
         public string ord;
         public string name;
         public int flags;
@@ -174,28 +176,26 @@ namespace Gengine.Render
     }
 
     // envelopes
-    public class lwKey
+    public class lwKey : lwNode
     {
-        public lwKey next, prev;
         public float value;
         public float time;
-        public uint shape;               // ID_TCB, ID_BEZ2, etc.
+        public uint shape;              // ID_TCB, ID_BEZ2, etc.
         public float tension;
         public float continuity;
         public float bias;
         public float[] param = new float[4];
     }
 
-    public class lwEnvelope
+    public class lwEnvelope : lwNode
     {
-        public lwEnvelope next, prev;
         public int index;
         public int type;
         public string name;
-        public lwKey key;                 // linked list of keys
+        public lwKey key;               // linked list of keys
         public int nkeys;
-        public int[] behavior = new int[2];       // pre and post (extrapolation)
-        public lwPlugin cfilter;             // linked list of channel filters
+        public int[] behavior = new int[2]; // pre and post (extrapolation)
+        public lwPlugin cfilter;        // linked list of channel filters
         public int ncfilters;
     }
 
@@ -230,8 +230,8 @@ namespace Gengine.Render
 
     public struct lwClipSeq
     {
-        public string prefix;              // filename before sequence digits
-        public string suffix;              // after digits, e.g. extensions
+        public string prefix;           // filename before sequence digits
+        public string suffix;           // after digits, e.g. extensions
         public int digits;
         public int flags;
         public int offset;
@@ -242,7 +242,7 @@ namespace Gengine.Render
     public struct lwClipAnim
     {
         public string name;
-        public string server;              // anim loader plug-in
+        public string server;           // anim loader plug-in
         public object data;
     }
 
@@ -269,11 +269,10 @@ namespace Gengine.Render
         [FieldOffset(0)] public lwClipXRef xref;
         [FieldOffset(0)] public lwClipCycle cycle;
     }
-    public class lwClip
+    public class lwClip : lwNode
     {
-        public lwClip next, prev;
         public int index;
-        public uint type;                // ID_STIL, ID_ISEQ, etc.
+        public uint type;               // ID_STIL, ID_ISEQ, etc.
         public lwClip_source source;
         public float start_time;
         public float duration;
@@ -284,9 +283,9 @@ namespace Gengine.Render
         public lwEParam hue;
         public lwEParam gamma;
         public int negative;
-        public lwPlugin ifilter;             // linked list of image filters
+        public lwPlugin ifilter;        // linked list of image filters
         public int nifilters;
-        public lwPlugin pfilter;             // linked list of pixel filters
+        public lwPlugin pfilter;        // linked list of pixel filters
         public int npfilters;
     }
 
@@ -341,9 +340,8 @@ namespace Gengine.Render
         public object data;
     }
 
-    public class lwGradKey
+    public class lwGradKey : lwNode
     {
-        public lwGradKey next, prev;
         public float value;
         public float[] rgba = new float[4];
     }
@@ -355,8 +353,8 @@ namespace Gengine.Render
         public float start;
         public float end;
         public int repeat;
-        public lwGradKey[] key;              // array of gradient keys
-        public short[] ikey;                    // array of interpolation codes
+        public lwGradKey[] key;         // array of gradient keys
+        public short[] ikey;            // array of interpolation codes
     }
 
     [StructLayout(LayoutKind.Explicit)] //: UNION
@@ -366,9 +364,8 @@ namespace Gengine.Render
         [FieldOffset(0)] public lwProcedural proc;
         [FieldOffset(0)] public lwGradient grad;
     }
-    public class lwTexture
+    public class lwTexture : lwNode
     {
-        public lwTexture next, prev;
         public string ord;
         public uint type;
         public uint chan;
@@ -386,14 +383,14 @@ namespace Gengine.Render
     {
         public float val;
         public int eindex;
-        public lwTexture tex;                 // linked list of texture layers
+        public lwTexture tex;           // linked list of texture layers
     }
 
     public unsafe struct lwCParam
     {
         public fixed float rgb[3];
         public int eindex;
-        public lwTexture tex;                 // linked list of texture layers
+        public lwTexture tex;           // linked list of texture layers
     }
 
     // surfaces
@@ -420,9 +417,8 @@ namespace Gengine.Render
         public lwEParam size;
     }
 
-    public class lwSurface
+    public class lwSurface : lwNode
     {
-        public lwSurface next, prev;
         public string name;
         public string srcname;
         public lwCParam color;
@@ -445,21 +441,20 @@ namespace Gengine.Render
         public lwEParam dif_sharp;
         public lwEParam glow;
         public lwLine line;
-        public lwPlugin shader;              // linked list of shaders
+        public lwPlugin shader;         // linked list of shaders
         public int nshaders;
     }
 
     // vertex maps
-    public class lwVMap
+    public class lwVMap : lwNode
     {
-        public lwVMap next, prev;
         public string name;
         public uint type;
         public int dim;
         public int nverts;
-        public int perpoly;
-        public int[] vindex;              // array of point indexes 
-        public int[] pindex;              // array of polygon indexes
+        public bool perpoly;
+        public int[] vindex;            // array of point indexes 
+        public int[] pindex;            // array of polygon indexes
         public float[] val;
 
         // added by duffy
@@ -477,9 +472,9 @@ namespace Gengine.Render
     {
         public fixed float pos[3];
         public int npols;               // number of polygons sharing the point
-        public int[] pol;                 // array of polygon indexes
+        public int[] pol;               // array of polygon indexes
         public int nvmaps;
-        public lwVMapPt[] vm;                  // array of vmap references
+        public lwVMapPt[] vm;           // array of vmap references
     }
 
     public unsafe struct lwPolVert
@@ -487,7 +482,7 @@ namespace Gengine.Render
         public int index;               // index into the point array
         public fixed float norm[3];
         public int nvmaps;
-        public lwVMapPt[] vm;                  // array of vmap references
+        public lwVMapPt[] vm;           // array of vmap references
     }
 
     public unsafe struct lwPolygon
@@ -499,14 +494,14 @@ namespace Gengine.Render
         public uint type;
         public fixed float norm[3];
         public int nverts;
-        public lwPolVert[] v;                   // array of vertex records
+        public lwPolVert[] v;           // array of vertex records
     }
 
     public class lwPointList
     {
         public int count;
         public int offset;              // only used during reading
-        public lwPoint[] pt;                  // array of points
+        public lwPoint[] pt;            // array of points
     }
 
     public class lwPolygonList
@@ -515,13 +510,12 @@ namespace Gengine.Render
         public int offset;              // only used during reading
         public int vcount;              // total number of vertices
         public int voffset;             // only used during reading
-        public lwPolygon[] pol;                 // array of polygons
+        public lwPolygon[] pol;         // array of polygons
     }
 
     // geometry layers
-    public class lwLayer
+    public class lwLayer : lwNode
     {
-        public lwLayer next, prev;
         public string name;
         public int index;
         public int parent;
@@ -531,7 +525,7 @@ namespace Gengine.Render
         public lwPointList point;
         public lwPolygonList polygon;
         public int nvmaps;
-        public lwVMap vmap;                // linked list of vmaps
+        public lwVMap vmap;             // linked list of vmaps
     }
 
     // tag strings
@@ -539,23 +533,25 @@ namespace Gengine.Render
     {
         public int count;
         public int offset;              // only used during reading
-        public string[] tag;                 // array of strings
+        public string[] tag;            // array of strings
     }
 
     // an object
     public class lwObject
     {
         public DateTime timeStamp;
-        public lwLayer layer;               // linked list of layers
-        public lwEnvelope env;                 // linked list of envelopes
-        public lwClip clip;                // linked list of clips
-        public lwSurface surf;                // linked list of surfaces
+        public lwLayer layer;           // linked list of layers
+        public lwEnvelope env;          // linked list of envelopes
+        public lwClip clip;             // linked list of clips
+        public lwSurface surf;          // linked list of surfaces
         public lwTagList taglist;
         public int nlayers;
         public int nenvs;
         public int nclips;
         public int nsurfs;
     }
+
+    #endregion
 
     static unsafe partial class ModelXLwo
     {
@@ -572,22 +568,18 @@ namespace Gengine.Render
         // 3.  If the file couldn't be opened, or an error occurs while reading the first 12 bytes, both failID and failpos will be unchanged.
         // 
         // If you don't need this information, failID and failpos can be null.
-        public static lwObject lwGetObject(string filename, uint failID, ref int failpos)
+        public static lwObject lwGetObject(string filename, ref uint failID, ref int failpos)
         {
-            VFile fp = null;
-            lwObject obj;
-            lwLayer layer;
-            lwNode node;
-            int id, formsize, type, cksize;
-            int i, rlen;
+            lwObject obj; lwLayer layer; lwNode node;
+            //int id, formsize, type, cksize;
 
-            fp = fileSystem.OpenFileRead(filename); if (fp == null) return null;
+            var fp = fileSystem.OpenFileRead(filename); if (fp == null) return null;
 
             // read the first 12 bytes
             set_flen(0);
-            id = (int)getU4(fp);
-            formsize = (int)getU4(fp);
-            type = (int)getU4(fp);
+            var id = getU4(fp);
+            var formsize = getU4(fp);
+            var type = getU4(fp);
             if (get_flen() != 12) { fileSystem.CloseFile(fp); return null; }
 
             // is this a LW object?
@@ -601,18 +593,18 @@ namespace Gengine.Render
             }
 
             // allocate an object and a default layer
-            obj = new lwObject(); if (obj == null) goto Fail;
-            layer = new lwLayer(); if (layer == null) goto Fail;
+            obj = new lwObject();
+            layer = new lwLayer();
             obj.layer = layer;
-
             obj.timeStamp = fp.Timestamp;
 
             // get the first chunk header
-            id = (int)getU4(fp);
-            cksize = (int)getU4(fp);
+            id = getU4(fp);
+            var cksize = (int)getU4(fp);
             if (get_flen() < 0) goto Fail;
 
             // process chunks as they're encountered
+            int i, rlen;
             while (true)
             {
                 cksize += cksize & 1;
@@ -620,12 +612,7 @@ namespace Gengine.Render
                 switch (id)
                 {
                     case ID_LAYR:
-                        if (obj.nlayers > 0)
-                        {
-                            layer = new lwLayer();
-                            if (layer == null) goto Fail;
-                            lwListAdd(obj.layer, layer);
-                        }
+                        if (obj.nlayers > 0) { layer = new lwLayer(); lwListAdd(ref obj.layer, layer); }
                         obj.nlayers++;
 
                         set_flen(0);
@@ -644,23 +631,22 @@ namespace Gengine.Render
                         break;
 
                     case ID_PNTS:
-                        if (lwGetPoints(fp, cksize, ref layer.point) == 0) goto Fail;
+                        if (!lwGetPoints(fp, cksize, ref layer.point)) goto Fail;
                         break;
 
                     case ID_POLS:
-                        if (lwGetPolygons(fp, cksize, ref layer.polygon, layer.point.offset) == 0)
-                            goto Fail;
+                        if (!lwGetPolygons(fp, cksize, ref layer.polygon, layer.point.offset)) goto Fail;
                         break;
 
                     case ID_VMAP:
                     case ID_VMAD:
-                        node = (lwNode)lwGetVMap(fp, cksize, layer.point.offset, layer.polygon.offset, id == ID_VMAD); if (node == null) goto Fail;
-                        lwListAdd(layer.vmap, node);
+                        node = lwGetVMap(fp, cksize, layer.point.offset, layer.polygon.offset, id == ID_VMAD); if (node == null) goto Fail;
+                        lwListAdd(ref layer.vmap, (lwVMap)node);
                         layer.nvmaps++;
                         break;
 
                     case ID_PTAG:
-                        if (lwGetPolygonTags(fp, cksize, ref obj.taglist, ref layer.polygon) == 0) goto Fail;
+                        if (!lwGetPolygonTags(fp, cksize, ref obj.taglist, ref layer.polygon)) goto Fail;
                         break;
 
                     case ID_BBOX:
@@ -672,27 +658,24 @@ namespace Gengine.Render
                         break;
 
                     case ID_TAGS:
-                        if (lwGetTags(fp, cksize, ref obj.taglist) == 0) goto Fail;
+                        if (!lwGetTags(fp, cksize, ref obj.taglist)) goto Fail;
                         break;
 
                     case ID_ENVL:
-                        node = (lwNode)lwGetEnvelope(fp, cksize);
-                        if (node == null) goto Fail;
-                        lwListAdd(obj.env, node);
+                        node = lwGetEnvelope(fp, cksize); if (node == null) goto Fail;
+                        lwListAdd(ref obj.env, (lwEnvelope)node);
                         obj.nenvs++;
                         break;
 
                     case ID_CLIP:
-                        node = (lwNode)lwGetClip(fp, cksize);
-                        if (node == null) goto Fail;
-                        lwListAdd(obj.clip, node);
+                        node = lwGetClip(fp, cksize); if (node == null) goto Fail;
+                        lwListAdd(ref obj.clip, (lwClip)node);
                         obj.nclips++;
                         break;
 
                     case ID_SURF:
-                        node = (lwNode)lwGetSurface(fp, cksize);
-                        if (node == null) goto Fail;
-                        lwListAdd(obj.surf, node);
+                        node = lwGetSurface(fp, cksize); if (node == null) goto Fail;
+                        lwListAdd(ref obj.surf, (lwSurface)node);
                         obj.nsurfs++;
                         break;
 
@@ -709,27 +692,26 @@ namespace Gengine.Render
 
                 // get the next chunk header
                 set_flen(0);
-                id = (int)getU4(fp);
+                id = getU4(fp);
                 cksize = (int)getU4(fp);
                 if (get_flen() != 8) goto Fail;
             }
 
-            fileSystem.CloseFile(fp);
-            fp = null;
+            fileSystem.CloseFile(fp); fp = null;
 
             if (obj.nlayers == 0) obj.nlayers = 1;
 
             layer = obj.layer;
             while (layer != null)
             {
-                lwGetBoundingBox(&layer.point, layer.bbox);
-                lwGetPolyNormals(&layer.point, &layer.polygon);
-                if (lwGetPointPolygons(&layer.point, &layer.polygon) == 0) goto Fail;
-                if (lwResolvePolySurfaces(&layer.polygon, &obj.taglist, &obj.surf, &obj.nsurfs) == 0) goto Fail;
-                lwGetVertNormals(&layer.point, &layer.polygon);
-                if (lwGetPointVMaps(&layer.point, layer.vmap) == 0) goto Fail;
-                if (lwGetPolyVMaps(&layer.polygon, layer.vmap) == 0) goto Fail;
-                layer = layer.next;
+                lwGetBoundingBox(layer.point, layer.bbox);
+                lwGetPolyNormals(layer.point, layer.polygon);
+                if (!lwGetPointPolygons(layer.point, layer.polygon)) goto Fail;
+                if (!lwResolvePolySurfaces(layer.polygon, obj.taglist, obj.surf, obj.nsurfs)) goto Fail;
+                lwGetVertNormals(layer.point, layer.polygon);
+                if (!lwGetPointVMaps(layer.point, layer.vmap)) goto Fail;
+                if (!lwGetPolyVMaps(layer.polygon, layer.vmap)) goto Fail;
+                layer = (lwLayer)layer.next;
             }
 
             return obj;
@@ -746,11 +728,11 @@ namespace Gengine.Render
         {
             if (o != null)
             {
-                lwListFree(o.layer, lwFreeLayer);
-                lwListFree(o.env, lwFreeEnvelope);
-                lwListFree(o.clip, lwFreeClip);
-                lwListFree(o.surf, lwFreeSurface);
-                lwFreeTags(&o.taglist);
+                lwListFree<lwLayer>(o.layer, lwFreeLayer);
+                lwListFree<lwEnvelope>(o.env, lwFreeEnvelope);
+                lwListFree<lwClip>(o.clip, lwFreeClip);
+                lwListFree<lwSurface>(o.surf, lwFreeSurface);
+                lwFreeTags(o.taglist);
                 o = null;
             }
         }
@@ -761,9 +743,9 @@ namespace Gengine.Render
             if (layer != null)
             {
                 if (layer.name != null) layer.name = null;
-                lwFreePoints(&layer.point);
-                lwFreePolygons(&layer.polygon);
-                lwListFree(layer.vmap, lwFreeVMap);
+                lwFreePoints(layer.point);
+                lwFreePolygons(layer.polygon);
+                lwListFree<lwVMap>(layer.vmap, lwFreeVMap);
                 layer = null;
             }
         }
@@ -788,7 +770,7 @@ namespace Gengine.Render
                     }
                     point.pt = null;
                 }
-                memset(point, 0, sizeof(lwPointList));
+                point.count = 0; point.offset = 0;
             }
         }
 
@@ -801,54 +783,47 @@ namespace Gengine.Render
             {
                 if (plist.pol != null)
                 {
-                    for (i = 0; i < plist.count; i++)
-                        if (plist.pol[i].v != null)
-                            for (j = 0; j < plist.pol[i].nverts; j++)
-                                if (plist.pol[i].v[j].vm != null) plist.pol[i].v[j].vm = null;
+                    for (i = 0; i < plist.count; i++) if (plist.pol[i].v != null)
+                            for (j = 0; j < plist.pol[i].nverts; j++) if (plist.pol[i].v[j].vm != null) plist.pol[i].v[j].vm = null;
                     if (plist.pol[0].v != null) plist.pol[0].v = null;
                     plist.pol = null;
                 }
-                memset(plist, 0, sizeof(lwPolygonList));
+                plist.count = 0; plist.offset = 0; plist.vcount = 0; plist.voffset = 0;
             }
         }
 
         // Read point records from a PNTS chunk in an LWO2 file.  The points are added to the array in the lwPointList.
-        public static int lwGetPoints(VFile fp, int cksize, ref lwPointList point)
+        public static bool lwGetPoints(VFile fp, int cksize, ref lwPointList point)
         {
-            float* f;
-            int np, i, j;
+            int i, j;
 
-            if (cksize == 1) return 1;
+            if (cksize == 1) return true;
 
             // extend the point array to hold the new points
-            np = cksize / 12;
+            var np = cksize / 12;
             point.offset = point.count;
             point.count += np;
-            lwPoint* oldpt = point.pt;
-            point.pt = new lwPoint[point.count * sizeof(lwPoint)];
-            if (!point.pt) return 0;
-            if (oldpt)
-            {
-                memcpy(point.pt, oldpt, point.offset * sizeof(lwPoint));
-                Mem_Free(oldpt);
-            }
-            memset(&point.pt[point.offset], 0, np * sizeof(lwPoint));
+            var oldpt = point.pt;
+            point.pt = new lwPoint[point.count];
+            if (oldpt != null) { Array.Copy(oldpt, point.pt, point.offset); oldpt = null; }
 
             // read the whole chunk
-            f = (float*)getbytes(fp, cksize);
-            if (!f) return 0;
-            BigRevBytes(f, 4, np * 3);
-
-            // assign position values
-            for (i = 0, j = 0; i < np; i++, j += 3)
+            var buf = getbytes(fp, cksize); if (buf == null) return false;
+            fixed (byte* bufB = buf)
             {
-                point.pt[i].pos[0] = f[j];
-                point.pt[i].pos[1] = f[j + 1];
-                point.pt[i].pos[2] = f[j + 2];
+                var f = (float*)bufB;
+                BigRevBytes(f, 4, np * 3);
+
+                // assign position values
+                for (i = 0, j = 0; i < np; i++, j += 3)
+                {
+                    point.pt[i].pos[0] = f[j];
+                    point.pt[i].pos[1] = f[j + 1];
+                    point.pt[i].pos[2] = f[j + 2];
+                }
             }
 
-            Mem_Free(f);
-            return 1;
+            return true;
         }
 
         // Calculate the bounding box for a point list, but only if the bounding box hasn't already been initialized.
@@ -858,8 +833,7 @@ namespace Gengine.Render
 
             if (point.count == 0) return;
 
-            for (i = 0; i < 6; i++)
-                if (bbox[i] != 0.0f) return;
+            for (i = 0; i < 6; i++) if (bbox[i] != 0f) return;
 
             bbox[0] = bbox[1] = bbox[2] = 1e20f;
             bbox[3] = bbox[4] = bbox[5] = -1e20f;
@@ -872,108 +846,90 @@ namespace Gengine.Render
         }
 
         // Allocate or extend the polygon arrays to hold new records.
-        public static int lwAllocPolygons(lwPolygonList plist, int npols, int nverts)
+        public static bool lwAllocPolygons(lwPolygonList plist, int npols, int nverts)
         {
             int i;
 
             plist.offset = plist.count;
             plist.count += npols;
-            lwPolygon* oldpol = plist.pol;
-            plist.pol = (lwPolygon*)Mem_Alloc(plist.count * sizeof(lwPolygon));
-            if (!plist.pol) return 0;
-            if (oldpol)
-            {
-                memcpy(plist.pol, oldpol, plist.offset * sizeof(lwPolygon));
-                Mem_Free(oldpol);
-            }
-            memset(plist.pol + plist.offset, 0, npols * sizeof(lwPolygon));
+            var oldpol = plist.pol;
+            plist.pol = new lwPolygon[plist.count];
+            if (oldpol != null) { Array.Copy(oldpol, plist.pol, plist.offset); oldpol = null; }
 
             plist.voffset = plist.vcount;
             plist.vcount += nverts;
-            lwPolVert* oldpolv = plist.pol[0].v;
-            plist.pol[0].v = (lwPolVert*)Mem_Alloc(plist.vcount * sizeof(lwPolVert));
-            if (!plist.pol[0].v) return 0;
-            if (oldpolv)
-            {
-                memcpy(plist.pol[0].v, oldpolv, plist.voffset * sizeof(lwPolVert));
-                Mem_Free(oldpolv);
-            }
-            memset(plist.pol[0].v + plist.voffset, 0, nverts * sizeof(lwPolVert));
+            var oldpolv = plist.pol[0].v;
+            plist.pol[0].v = new lwPolVert[plist.vcount];
+            if (oldpolv != null) { Array.Copy(oldpolv, plist.pol[0].v, plist.voffset); oldpolv = null; }
 
-            /* fix up the old vertex pointers */
+            // fix up the old vertex pointers
 
-            for (i = 1; i < plist.offset; i++)
-                plist.pol[i].v = plist.pol[i - 1].v + plist.pol[i - 1].nverts;
+            for (i = 1; i < plist.offset; i++) plist.pol[i].v = plist.pol[i - 1].v + plist.pol[i - 1].nverts;
 
-            return 1;
+            return true;
         }
 
         // Read polygon records from a POLS chunk in an LWO2 file.  The polygons are added to the array in the lwPolygonList.
-        public static int lwGetPolygons(VFile fp, int cksize, ref lwPolygonList plist, int ptoffset)
+        public static bool lwGetPolygons(VFile fp, int cksize, ref lwPolygonList plist, int ptoffset)
         {
-            lwPolygon pp;
-            lwPolVert pv;
-            byte[] buf, bp;
-            int i, j, flags, nv, nverts, npols;
-            uint type;
+            lwPolygon* pp; lwPolVert* pv; int i, j, flags, nv;
 
-            if (cksize == 0) return 1;
+            if (cksize == 0) return true;
 
             // read the whole chunk
 
             set_flen(0);
-            type = getU4(fp);
-            buf = getbytes(fp, cksize - 4);
+            var type = getU4(fp);
+            var buf = getbytes(fp, cksize - 4);
             if (get_flen() != cksize) goto Fail;
 
-            // count the polygons and vertices
-            nverts = 0;
-            npols = 0;
-            bp = buf;
-
-            while (bp < buf + cksize - 4)
+            fixed (byte* bufB = buf)
             {
-                nv = sgetU2(&bp);
-                nv &= 0x03FF;
-                nverts += nv;
-                npols++;
-                for (i = 0; i < nv; i++)
-                    j = sgetVX(&bp);
+                // count the polygons and vertices
+                var nverts = 0;
+                var npols = 0;
+                var bp = bufB;
+
+                while (bp < bufB + cksize - 4)
+                {
+                    nv = sgetU2(ref bp);
+                    nv &= 0x03FF;
+                    nverts += nv;
+                    npols++;
+                    for (i = 0; i < nv; i++) j = sgetVX(ref bp);
+                }
+
+                if (!lwAllocPolygons(plist, npols, nverts)) goto Fail;
+
+                // fill in the new polygons
+                lwPolygon* polP = plist.pol;
+                {
+                    bp = bufB;
+                    pp = polP + plist.offset;
+                    pv = plist.pol[0].v + plist.voffset;
+
+                    for (i = 0; i < npols; i++)
+                    {
+                        nv = sgetU2(ref bp);
+                        flags = nv & 0xFC00;
+                        nv &= 0x03FF;
+
+                        pp->nverts = nv;
+                        pp->flags = flags;
+                        pp->type = type;
+                        if (pp->v != null) pp->v = pv;
+                        for (j = 0; j < nv; j++) pp->v[j].index = sgetVX(ref bp) + ptoffset;
+
+                        pp++;
+                        pv += nv;
+                    }
+                }
             }
-
-            if (!lwAllocPolygons(plist, npols, nverts))
-                goto Fail;
-
-            // fill in the new polygons
-
-            bp = buf;
-            pp = plist.pol + plist.offset;
-            pv = plist.pol[0].v + plist.voffset;
-
-            for (i = 0; i < npols; i++)
-            {
-                nv = sgetU2(&bp);
-                flags = nv & 0xFC00;
-                nv &= 0x03FF;
-
-                pp.nverts = nv;
-                pp.flags = flags;
-                pp.type = type;
-                if (!pp.v) pp.v = pv;
-                for (j = 0; j < nv; j++)
-                    pp.v[j].index = sgetVX(&bp) + ptoffset;
-
-                pp++;
-                pv += nv;
-            }
-
-            Mem_Free(buf);
-            return 1;
+            return true;
 
         Fail:
-            if (buf) Mem_Free(buf);
             lwFreePolygons(plist);
-            return 0;
+            return false;
         }
 
         // Calculate the polygon normals.  By convention, LW's polygon normals are found as the cross product of the first and last edges.It's
@@ -1006,7 +962,7 @@ namespace Gengine.Render
         }
 
         // For each point, fill in the indexes of the polygons that share the point.Returns 0 if any of the memory allocations fail, otherwise returns 1.
-        public static int lwGetPointPolygons(lwPointList point, lwPolygonList polygon)
+        public static bool lwGetPointPolygons(lwPointList point, lwPolygonList polygon)
         {
             int i, j, k;
 
@@ -1037,7 +993,7 @@ namespace Gengine.Render
         }
 
         // Convert tag indexes into actual lwSurface pointers.  If any polygons point to tags for which no corresponding surface can be found, a default surface is created.
-        public static int lwResolvePolySurfaces(lwPolygonList polygon, lwTagList tlist, lwSurface[] surf, int[] nsurfs)
+        public static bool lwResolvePolySurfaces(lwPolygonList polygon, lwTagList tlist, lwSurface[] surf, int[] nsurfs)
         {
             lwSurface** s, *st;
             int i;
@@ -1144,7 +1100,7 @@ namespace Gengine.Render
         }
 
         // Read tag strings from a TAGS chunk in an LWO2 file.  The tags are added to the lwTagList array.
-        public static int lwGetTags(VFile fp, int cksize, lwTagList tlist)
+        public static bool lwGetTags(VFile fp, int cksize, lwTagList tlist)
         {
             char* buf, bp;
             int i, len, ntags;
@@ -1194,7 +1150,7 @@ namespace Gengine.Render
         }
 
         // Read polygon tags from a PTAG chunk in an LWO2 file.
-        public static int lwGetPolygonTags(VFile fp, int cksize, ref lwTagList tlist, ref lwPolygonList plist)
+        public static bool lwGetPolygonTags(VFile fp, int cksize, ref lwTagList tlist, ref lwPolygonList plist)
         {
             uint type;
             int rlen = 0, i;
@@ -1232,44 +1188,36 @@ namespace Gengine.Render
         // Free memory used by an lwVMap.
         public static void lwFreeVMap(lwVMap vmap)
         {
-            if (vmap)
-            {
-                if (vmap.name) Mem_Free(vmap.name);
-                if (vmap.vindex) Mem_Free(vmap.vindex);
-                if (vmap.pindex) Mem_Free(vmap.pindex);
-                if (vmap.val)
-                {
-                    if (vmap.val[0]) Mem_Free(vmap.val[0]);
-                    Mem_Free(vmap.val);
-                }
-                Mem_Free(vmap);
-            }
+            //if (vmap != null)
+            //{
+            //    if (vmap.name != null) vmap.name = null;
+            //    if (vmap.vindex != null) vmap.vindex = null;
+            //    if (vmap.pindex != null) vmap.pindex = null;
+            //    if (vmap.val != null)
+            //    {
+            //        //if (vmap.val[0] != 0f) vmap.val[0] = null;
+            //        vmap.val = null;
+            //    }
+            //    vmap = null;
+            //}
         }
 
         // Read an lwVMap from a VMAP or VMAD chunk in an LWO2.
-        public static lwVMap lwGetVMap(VFile fp, int cksize, int ptoffset, int poloffset, int perpoly)
+        public static lwVMap lwGetVMap(VFile fp, int cksize, int ptoffset, int poloffset, bool perpoly)
         {
-            unsigned char* buf, *bp;
-            lwVMap* vmap;
+            byte[] buf, bp;
+            lwVMap vmap;
             float* f;
             int i, j, npts, rlen;
 
 
-            /* read the whole chunk */
-
+            // read the whole chunk
             set_flen(0);
-            buf = (unsigned char*)getbytes(fp, cksize);
-            if (!buf) return null;
+            buf = getbytes(fp, cksize); if (buf == null) return null;
 
-            vmap = (lwVMap*)Mem_ClearedAlloc(sizeof(lwVMap));
-            if (!vmap)
-            {
-                Mem_Free(buf);
-                return null;
-            }
+            vmap = new lwVMap();
 
-            /* initialize the vmap */
-
+            // initialize the vmap
             vmap.perpoly = perpoly;
 
             bp = buf;
@@ -1334,7 +1282,7 @@ namespace Gengine.Render
         }
 
         // Fill in the lwVMapPt structure for each point.
-        public static int lwGetPointVMaps(lwPointList point, lwVMap vmap)
+        public static bool lwGetPointVMaps(lwPointList point, lwVMap vmap)
         {
             lwVMap* vm;
             int i, j, n;
@@ -1385,7 +1333,7 @@ namespace Gengine.Render
         }
 
         // Fill in the lwVMapPt structure for each polygon vertex.
-        public static int lwGetPolyVMaps(lwPolygonList polygon, lwVMap vmap)
+        public static bool lwGetPolyVMaps(lwPolygonList polygon, lwVMap vmap)
         {
             lwVMap* vm;
             lwPolVert* pv;
@@ -1472,32 +1420,22 @@ namespace Gengine.Render
                 switch (clip.type)
                 {
                     case ID_STIL:
-                        {
-                            if (clip.source.still.name != null) clip.source.still.name = null;
-                            break;
-                        }
+                        if (clip.source.still.name != null) clip.source.still.name = null;
+                        break;
                     case ID_ISEQ:
-                        {
-                            if (clip.source.seq.suffix != null) clip.source.seq.suffix = null;
-                            if (clip.source.seq.prefix != null) clip.source.seq.prefix = null;
-                            break;
-                        }
+                        if (clip.source.seq.suffix != null) clip.source.seq.suffix = null;
+                        if (clip.source.seq.prefix != null) clip.source.seq.prefix = null;
+                        break;
                     case ID_ANIM:
-                        {
-                            if (clip.source.anim.server != null) clip.source.anim.server = null;
-                            if (clip.source.anim.name != null) clip.source.anim.name = null;
-                            break;
-                        }
+                        if (clip.source.anim.server != null) clip.source.anim.server = null;
+                        if (clip.source.anim.name != null) clip.source.anim.name = null;
+                        break;
                     case ID_XREF:
-                        {
-                            if (clip.source.xref.s != null) clip.source.xref.s = null;
-                            break;
-                        }
+                        if (clip.source.xref.s != null) clip.source.xref.s = null;
+                        break;
                     case ID_STCC:
-                        {
-                            if (clip.source.cycle.name != null) clip.source.cycle.name = null;
-                            break;
-                        }
+                        if (clip.source.cycle.name != null) clip.source.cycle.name = null;
+                        break;
                 }
                 clip = null;
             }
@@ -1510,10 +1448,10 @@ namespace Gengine.Render
 
             // allocate the Clip structure
             var clip = new lwClip(); if (clip == null) goto Fail;
-            clip.contrast.val = 1.0f;
-            clip.brightness.val = 1.0f;
-            clip.saturation.val = 1.0f;
-            clip.gamma.val = 1.0f;
+            clip.contrast.val = 1f;
+            clip.brightness.val = 1f;
+            clip.saturation.val = 1f;
+            clip.gamma.val = 1f;
 
             // remember where we started
             set_flen(0);
@@ -1527,7 +1465,7 @@ namespace Gengine.Render
             sz = getU2(fp);
             if (get_flen() < 0) goto Fail;
 
-            sz += sz & 1;
+            sz += (ushort)(sz & 1);
             set_flen(0);
 
             switch (clip.type)
@@ -1591,7 +1529,7 @@ namespace Gengine.Render
 
             while (true)
             {
-                sz += sz & 1;
+                sz += (ushort)(sz & 1);
                 set_flen(0);
 
                 switch (id)
@@ -1881,8 +1819,8 @@ namespace Gengine.Render
             t2 = t * t;
             t3 = t * t2;
 
-            h2 = 3.0f * t2 - t3 - t3;
-            h1 = 1.0f - h2;
+            h2 = 3f * t2 - t3 - t3;
+            h1 = 1f - h2;
             h4 = t3 - t2;
             h3 = h4 - t2 + t;
         }
@@ -1895,8 +1833,8 @@ namespace Gengine.Render
             t2 = t * t;
             t3 = t2 * t;
 
-            c = 3.0f * (x1 - x0);
-            b = 3.0f * (x2 - x1) - c;
+            c = 3f * (x1 - x0);
+            b = 3f * (x2 - x1) - c;
             a = x3 - x0 - c - b;
 
             return a * t3 + b * t2 + c * t + x0;
@@ -1923,17 +1861,17 @@ namespace Gengine.Render
         // Interpolate the value of a BEZ2 curve.
         static float bez2(lwKey key0, lwKey key1, float time)
         {
-            float x, y, t, t0 = 0.0f, t1 = 1.0f;
+            float x, y, t, t0 = 0f, t1 = 1f;
 
             x = key0.shape == ID_BEZ2
                 ? key0.time + key0.param[2]
-                : key0.time + (key1.time - key0.time) / 3.0f;
+                : key0.time + (key1.time - key0.time) / 3f;
 
             t = bez2_time(key0.time, x, key1.time + key1.param[0], key1.time, time, ref t0, ref t1);
 
             y = key0.shape == ID_BEZ2
                  ? key0.value + key0.param[3]
-                : key0.value + key0.param[1] / 3.0f;
+                : key0.value + key0.param[1] / 3f;
 
             return bezier(key0.value, y, key1.param[1] + key1.value, key1.value, t);
         }
@@ -1948,8 +1886,8 @@ namespace Gengine.Render
             switch (key0.shape)
             {
                 case ID_TCB:
-                    a = (1.0f - key0.tension) * (1.0f + key0.continuity) * (1.0f + key0.bias);
-                    b = (1.0f - key0.tension) * (1.0f - key0.continuity) * (1.0f - key0.bias);
+                    a = (1f - key0.tension) * (1f + key0.continuity) * (1f + key0.bias);
+                    b = (1f - key0.tension) * (1f - key0.continuity) * (1f - key0.bias);
                     d = key1.value - key0.value;
                     if (key0.prev != null) { t = (key1.time - key0.time) / (key1.time - key0.prev.time); out_ = t * (a * (key0.value - key0.prev.value) + b * d); }
                     else out_ = b * d;
@@ -1974,7 +1912,7 @@ namespace Gengine.Render
                     break;
 
                 case ID_STEP:
-                default: out_ = 0.0f; break;
+                default: out_ = 0f; break;
             }
 
             return out_;
@@ -1995,8 +1933,8 @@ namespace Gengine.Render
                     break;
 
                 case ID_TCB:
-                    a = (1.0f - key1.tension) * (1.0f - key1.continuity) * (1.0f + key1.bias);
-                    b = (1.0f - key1.tension) * (1.0f + key1.continuity) * (1.0f - key1.bias);
+                    a = (1f - key1.tension) * (1f - key1.continuity) * (1f + key1.bias);
+                    b = (1f - key1.tension) * (1f + key1.continuity) * (1f - key1.bias);
                     d = key1.value - key0.value;
 
                     if (key1.next != null) { t = (key1.time - key0.time) / (key1.next.time - key0.time); in_ = t * (b * (key1.next.value - key1.value) + a * d); }
@@ -2018,7 +1956,7 @@ namespace Gengine.Render
 
                 case ID_STEP:
                 default:
-                    in_ = 0.0f;
+                    in_ = 0f;
                     break;
             }
 
@@ -2029,11 +1967,11 @@ namespace Gengine.Render
         public static float lwEvalEnvelope(lwEnvelope env, float time)
         {
             lwKey key0, key1, skey, ekey;
-            float t, h1, h2, h3, h4, in_, out_, offset = 0.0f;
+            float t, h1, h2, h3, h4, in_, out_, offset = 0f;
             int noff;
 
             // if there's no key, the value is 0
-            if (env.nkeys == 0) return 0.0f;
+            if (env.nkeys == 0) return 0f;
 
             // if there's only one key, the value is constant
             if (env.nkeys == 1) return env.key.value;
@@ -2047,7 +1985,7 @@ namespace Gengine.Render
             {
                 switch (env.behavior[0])
                 {
-                    case BEH_RESET: return 0.0f;
+                    case BEH_RESET: return 0f;
                     case BEH_CONSTANT: return skey.value;
                     case BEH_REPEAT: time = range(time, skey.time, ekey.time, null); break;
                     case BEH_OSCILLATE: time = range(time, skey.time, ekey.time, ref noff); if ((noff % 2) != 0) time = ekey.time - skey.time - time; break;
@@ -2061,7 +1999,7 @@ namespace Gengine.Render
             {
                 switch (env.behavior[1])
                 {
-                    case BEH_RESET: return 0.0f;
+                    case BEH_RESET: return 0f;
                     case BEH_CONSTANT: return ekey.value;
                     case BEH_REPEAT: time = range(time, skey.time, ekey.time, _); break;
                     case BEH_OSCILLATE: time = range(time, skey.time, ekey.time, ref noff); if ((noff % 2) != 0) time = ekey.time - skey.time - time; break;
@@ -2614,8 +2552,8 @@ namespace Gengine.Render
             tex.type = type;
             tex.tmap.size.val[0] =
                 tex.tmap.size.val[1] =
-                    tex.tmap.size.val[2] = 1.0f;
-            tex.opacity.val = 1.0f;
+                    tex.tmap.size.val[2] = 1f;
+            tex.opacity.val = 1f;
             tex.enabled = 1;
 
             sz = getU2(fp);
@@ -2814,10 +2752,10 @@ namespace Gengine.Render
             surf.color.rgb[0] = 0.78431f;
             surf.color.rgb[1] = 0.78431f;
             surf.color.rgb[2] = 0.78431f;
-            surf.diffuse.val = 1.0f;
+            surf.diffuse.val = 1f;
             surf.glossiness.val = 0.4f;
-            surf.bump.val = 1.0f;
-            surf.eta.val = 1.0f;
+            surf.bump.val = 1f;
+            surf.eta.val = 1f;
             surf.sideflags = 1;
 
             /* remember where we started */
@@ -3035,10 +2973,10 @@ namespace Gengine.Render
             surf.color.rgb[0] = 0.78431f;
             surf.color.rgb[1] = 0.78431f;
             surf.color.rgb[2] = 0.78431f;
-            surf.diffuse.val = 1.0f;
+            surf.diffuse.val = 1f;
             surf.glossiness.val = 0.4f;
-            surf.bump.val = 1.0f;
-            surf.eta.val = 1.0f;
+            surf.bump.val = 1f;
+            surf.eta.val = 1f;
             surf.sideflags = 1;
 
             return surf;
@@ -3078,7 +3016,6 @@ namespace Gengine.Render
         const int ID_TFP0 = 'T' << 24 | 'F' << 16 | 'P' << 8 | '0';
         const int ID_TFP1 = 'T' << 24 | 'F' << 16 | 'P' << 8 | '1';
 
-
         // Add a clip to the clip list.  Used to store the contents of an RIMG or TIMG surface subchunk.
         static int add_clip(char* s, lwClip** clist, int* nclips)
         {
@@ -3088,10 +3025,10 @@ namespace Gengine.Render
             clip = (lwClip*)Mem_ClearedAlloc(sizeof(lwClip));
             if (!clip) return 0;
 
-            clip.contrast.val = 1.0f;
-            clip.brightness.val = 1.0f;
-            clip.saturation.val = 1.0f;
-            clip.gamma.val = 1.0f;
+            clip.contrast.val = 1f;
+            clip.brightness.val = 1f;
+            clip.saturation.val = 1f;
+            clip.gamma.val = 1f;
 
             if ((p = strstr(s, "(sequence)")))
             {
@@ -3130,10 +3067,10 @@ namespace Gengine.Render
 
                 key0.next = key1;
                 key0.value = pos[i];
-                key0.time = 0.0f;
+                key0.time = 0f;
                 key1.prev = key0;
-                key1.value = pos[i] + vel[i] * 30.0f;
-                key1.time = 1.0f;
+                key1.value = pos[i] + vel[i] * 30f;
+                key1.time = 1f;
                 key0.shape = key1.shape = ID_LINE;
 
                 env.index = *nenvs + i + 1;
@@ -3160,8 +3097,8 @@ namespace Gengine.Render
         static lwTexture get_texture(string s)
         {
             var tex = new lwTexture(); if (tex == null) return null;
-            tex.tmap.size.val[0] = tex.tmap.size.val[1] = tex.tmap.size.val[2] = 1.0f;
-            tex.opacity.val = 1.0f;
+            tex.tmap.size.val[0] = tex.tmap.size.val[1] = tex.tmap.size.val[2] = 1f;
+            tex.opacity.val = 1f;
             tex.enabled = 1;
 
             if (s.Contains("Image Map"))
@@ -3172,14 +3109,13 @@ namespace Gengine.Render
                 else if (s.Contains("Spherical")) tex.param.imap.projection = 2;
                 else if (s.Contains("Cubic")) tex.param.imap.projection = 3;
                 else if (s.Contains("Front")) tex.param.imap.projection = 4;
-                tex.param.imap.aa_strength = 1.0f;
-                tex.param.imap.amplitude.val = 1.0f;
+                tex.param.imap.aa_strength = 1f;
+                tex.param.imap.amplitude.val = 1f;
             }
             else { tex.type = ID_PROC; tex.param.proc.name = s; }
 
             return tex;
         }
-
 
         public static lwSurface lwGetSurface5(VFile fp, int cksize, lwObject obj)
         {
@@ -3199,10 +3135,10 @@ namespace Gengine.Render
             surf.color.rgb[0] = 0.78431f;
             surf.color.rgb[1] = 0.78431f;
             surf.color.rgb[2] = 0.78431f;
-            surf.diffuse.val = 1.0f;
+            surf.diffuse.val = 1f;
             surf.glossiness.val = 0.4f;
-            surf.bump.val = 1.0f;
-            surf.eta.val = 1.0f;
+            surf.bump.val = 1f;
+            surf.eta.val = 1f;
             surf.sideflags = 1;
 
             // remember where we started
@@ -3226,28 +3162,28 @@ namespace Gengine.Render
                 switch (id)
                 {
                     case ID_COLR:
-                        surf.color.rgb[0] = getU1(fp) / 255.0f;
-                        surf.color.rgb[1] = getU1(fp) / 255.0f;
-                        surf.color.rgb[2] = getU1(fp) / 255.0f;
+                        surf.color.rgb[0] = getU1(fp) / 255f;
+                        surf.color.rgb[1] = getU1(fp) / 255f;
+                        surf.color.rgb[2] = getU1(fp) / 255f;
                         break;
                     case ID_FLAG:
                         flags = getU2(fp);
                         if ((flags & 4) != 0) surf.smooth = 1.56207f;
-                        if ((flags & 8) != 0) surf.color_hilite.val = 1.0f;
-                        if ((flags & 16) != 0) surf.color_filter.val = 1.0f;
+                        if ((flags & 8) != 0) surf.color_hilite.val = 1f;
+                        if ((flags & 16) != 0) surf.color_filter.val = 1f;
                         if ((flags & 128) != 0) surf.dif_sharp.val = 0.5f;
                         if ((flags & 256) != 0) surf.sideflags = 3;
-                        if ((flags & 512) != 0) surf.add_trans.val = 1.0f;
+                        if ((flags & 512) != 0) surf.add_trans.val = 1f;
                         break;
-                    case ID_LUMI: surf.luminosity.val = getI2(fp) / 256.0f; break;
+                    case ID_LUMI: surf.luminosity.val = getI2(fp) / 256f; break;
                     case ID_VLUM: surf.luminosity.val = getF4(fp); break;
-                    case ID_DIFF: surf.diffuse.val = getI2(fp) / 256.0f; break;
+                    case ID_DIFF: surf.diffuse.val = getI2(fp) / 256f; break;
                     case ID_VDIF: surf.diffuse.val = getF4(fp); break;
-                    case ID_SPEC: surf.specularity.val = getI2(fp) / 256.0f; break;
+                    case ID_SPEC: surf.specularity.val = getI2(fp) / 256f; break;
                     case ID_VSPC: surf.specularity.val = getF4(fp); break;
                     case ID_GLOS: surf.glossiness.val = (float)Math.Log((float)getU2(fp)) / 20.7944f; break;
                     case ID_SMAN: surf.smooth = getF4(fp); break;
-                    case ID_REFL: surf.reflection.val.val = getI2(fp) / 256.0f; break;
+                    case ID_REFL: surf.reflection.val.val = getI2(fp) / 256f; break;
                     case ID_RFLT: surf.reflection.options = getU2(fp); break;
                     case ID_RIMG:
                         s = getS0(fp);
@@ -3256,7 +3192,7 @@ namespace Gengine.Render
                         break;
 
                     case ID_RSAN: surf.reflection.seam_angle = getF4(fp); break;
-                    case ID_TRAN: surf.transparency.val.val = getI2(fp) / 256.0f; break;
+                    case ID_TRAN: surf.transparency.val.val = getI2(fp) / 256f; break;
                     case ID_RIND: surf.eta.val = getF4(fp); break;
                     case ID_BTEX:
                         s = getbytes(fp, sz);
@@ -3313,7 +3249,7 @@ namespace Gengine.Render
                         if ((flags & 8) != 0) tex.tmap.coord_sys = 1;
                         if ((flags & 16) != 0) tex.negative = 1;
                         if ((flags & 32) != 0) tex.param.imap.pblend = 1;
-                        if ((flags & 64) != 0) { tex.param.imap.aa_strength = 1.0f; tex.param.imap.aas_flags = 1; }
+                        if ((flags & 64) != 0) { tex.param.imap.aa_strength = 1f; tex.param.imap.aas_flags = 1; }
                         break;
                     case ID_TSIZ: for (i = 0; i < 3; i++) tex.tmap.size.val[i] = getF4(fp); break;
                     case ID_TCTR: for (i = 0; i < 3; i++) tex.tmap.center.val[i] = getF4(fp); break;
@@ -3322,8 +3258,8 @@ namespace Gengine.Render
                         for (i = 0; i < 3; i++) v[i] = getF4(fp);
                         tex.tmap.center.eindex = add_tvel(tex.tmap.center.val, v, &obj.env, &obj.nenvs);
                         break;
-                    case ID_TCLR: if (tex.type == ID_PROC) for (i = 0; i < 3; i++) tex.param.proc.value[i] = getU1(fp) / 255.0f; break;
-                    case ID_TVAL: tex.param.proc.value[0] = getI2(fp) / 256.0f; break;
+                    case ID_TCLR: if (tex.type == ID_PROC) for (i = 0; i < 3; i++) tex.param.proc.value[i] = getU1(fp) / 255f; break;
+                    case ID_TVAL: tex.param.proc.value[0] = getI2(fp) / 256f; break;
                     case ID_TAMP: if (tex.type == ID_IMAP) tex.param.imap.amplitude.val = getF4(fp); break;
                     case ID_TIMG: s = getS0(fp); tex.param.imap.cindex = add_clip(s, &obj.clip, &obj.nclips); break;
                     case ID_TAAS:
@@ -3372,67 +3308,65 @@ namespace Gengine.Render
         }
 
         // Read polygon records from a POLS chunk in an LWOB file.  The polygons are added to the array in the lwPolygonList.
-        public static int lwGetPolygons5(VFile fp, int cksize, lwPolygonList plist, int ptoffset)
+        public static bool lwGetPolygons5(VFile fp, int cksize, lwPolygonList plist, int ptoffset)
         {
             lwPolygon pp;
             lwPolVert pv;
-            byte[] buf, bp;
-            int i, nv, nverts, npols;
-            ptrdiff_t j;
+            int i, nv;
+            int j;
 
-            if (cksize == 0) return 1;
+            if (cksize == 0) return true;
 
             // read the whole chunk
 
             set_flen(0);
-            buf = getbytes(fp, cksize); if (buf == null) goto Fail;
-
-            // count the polygons and vertices
-            nverts = 0;
-            npols = 0;
-            bp = buf;
-
-            while (bp < buf + cksize)
+            var buf = getbytes(fp, cksize); if (buf == null) goto Fail;
+            fixed (byte* bufB = buf)
             {
-                nv = sgetU2(&bp);
-                nverts += nv;
-                npols++;
-                bp += 2 * nv;
-                i = sgetI2(&bp);
-                if (i < 0) bp += 2;      /* detail polygons */
+                // count the polygons and vertices
+                var nverts = 0;
+                var npols = 0;
+                var bp = bufB;
+
+                while (bp < bufB + cksize)
+                {
+                    nv = sgetU2(ref bp);
+                    nverts += nv;
+                    npols++;
+                    bp += 2 * nv;
+                    i = sgetI2(ref bp);
+                    if (i < 0) bp += 2; // detail polygons
+                }
+
+                if (lwAllocPolygons(plist, npols, nverts) == 0) goto Fail;
+
+                // fill in the new polygons
+                bp = bufB;
+                pp = plist.pol + plist.offset;
+                pv = plist.pol[0].v + plist.voffset;
+
+                for (i = 0; i < npols; i++)
+                {
+                    nv = sgetU2(ref bp);
+
+                    pp.nverts = nv;
+                    pp.type = ID_FACE;
+                    if (!pp.v) pp.v = pv;
+                    for (j = 0; j < nv; j++) pv[j].index = sgetU2(ref bp) + ptoffset;
+                    j = sgetI2(ref bp);
+                    if (j < 0) { j = -j; bp += 2; }
+                    j -= 1;
+                    pp.surf = (lwSurface*)j;
+
+                    pp++;
+                    pv += nv;
+                }
             }
-
-            if (lwAllocPolygons(plist, npols, nverts) == 0) goto Fail;
-
-            // fill in the new polygons
-            bp = buf;
-            pp = plist.pol + plist.offset;
-            pv = plist.pol[0].v + plist.voffset;
-
-            for (i = 0; i < npols; i++)
-            {
-                nv = sgetU2(&bp);
-
-                pp.nverts = nv;
-                pp.type = ID_FACE;
-                if (!pp.v) pp.v = pv;
-                for (j = 0; j < nv; j++) pv[j].index = sgetU2(&bp) + ptoffset;
-                j = sgetI2(&bp);
-                if (j < 0) { j = -j; bp += 2; }
-                j -= 1;
-                pp.surf = (lwSurface*)j;
-
-                pp++;
-                pv += nv;
-            }
-
-            Mem_Free(buf);
-            return 1;
+            return true;
 
         Fail:
-            if (buf != null) Mem_Free(buf);
             lwFreePolygons(plist);
-            return 0;
+            return false;
         }
 
         // Returns the contents of an LWOB, given its filename, or null if the file couldn't be loaded.  On failure, failID and failpos can be used
@@ -3448,15 +3382,13 @@ namespace Gengine.Render
         // If you don't need this information, failID and failpos can be null.
         public static lwObject lwGetObject5(string filename, ref uint failID, ref int failpos)
         {
-            VFile fp = null;
             lwObject obj;
             lwLayer layer;
             lwNode node;
-            int id, formsize, type, cksize;
+            uint id, formsize, type;
 
-            // open the file
-            // read the first 12 bytes
-            fp = fileSystem.OpenFileRead(filename); if (fp == null) return null;
+            // open the file. read the first 12 bytes
+            var fp = fileSystem.OpenFileRead(filename); if (fp == null) return null;
 
             set_flen(0);
             id = getU4(fp);
@@ -3469,16 +3401,15 @@ namespace Gengine.Render
             if (id != ID_FORM || type != ID_LWOB) { fileSystem.CloseFile(fp); failpos = 12; return null; }
 
             // allocate an object and a default layer
-            obj = new lwObject(); if (obj == null) goto Fail2;
-
-            layer = new lwLayer(); if (layer == null) goto Fail2;
+            obj = new lwObject();
+            layer = new lwLayer();
             obj.layer = layer;
             obj.nlayers = 1;
 
             // get the first chunk header
 
             id = getU4(fp);
-            cksize = getU4(fp);
+            var cksize = (int)getU4(fp);
             if (get_flen() < 0) goto Fail2;
 
             // process chunks as they're encountered
@@ -3501,8 +3432,8 @@ namespace Gengine.Render
                         break;
 
                     case ID_SURF:
-                        node = (lwNode)lwGetSurface5(fp, cksize, obj); if (node == null) goto Fail2;
-                        lwListAdd(obj.surf, node);
+                        node = lwGetSurface5(fp, cksize, obj); if (node == null) goto Fail2;
+                        lwListAdd(ref obj.surf, (lwSurface)node);
                         obj.nsurfs++;
                         break;
 
@@ -3518,28 +3449,23 @@ namespace Gengine.Render
                 // get the next chunk header
                 set_flen(0);
                 id = getU4(fp);
-                cksize = getU4(fp);
-                if (8 != get_flen()) goto Fail2;
+                cksize = (int)getU4(fp);
+                if (get_flen() != 8) goto Fail2;
             }
 
             fileSystem.CloseFile(fp);
-            fp = null;
 
-            lwGetBoundingBox(&layer.point, layer.bbox);
-            lwGetPolyNormals(&layer.point, &layer.polygon);
-            if (lwGetPointPolygons(&layer.point, &layer.polygon) == 0) goto Fail2;
-            if (lwResolvePolySurfaces(&layer.polygon, &obj.taglist, &obj.surf, &obj.nsurfs) == 0) goto Fail2;
-            lwGetVertNormals(&layer.point, &layer.polygon);
+            lwGetBoundingBox(layer.point, layer.bbox);
+            lwGetPolyNormals(layer.point, layer.polygon);
+            if (lwGetPointPolygons(layer.point, layer.polygon) == 0) goto Fail2;
+            if (lwResolvePolySurfaces(layer.polygon, obj.taglist, obj.surf, obj.nsurfs) == 0) goto Fail2;
+            lwGetVertNormals(layer.point, layer.polygon);
 
             return obj;
 
         Fail2:
             failID = id;
-            if (fp != null)
-            {
-                failpos = fp.Tell;
-                fileSystem.CloseFile(fp);
-            }
+            if (fp != null) { failpos = fp.Tell; fileSystem.CloseFile(fp); }
             lwFreeObject(obj);
             return null;
         }
@@ -3549,16 +3475,16 @@ namespace Gengine.Render
         #region list.c
 
         // Free the items in a list.
-        static void lwListFree(lwNode list, Action<lwNode> freeNode)
+        static void lwListFree<T>(lwNode list, Action<T> freeNode) where T : lwNode
         {
             lwNode node, next;
 
             node = list;
-            while (node != null) { next = node.next; freeNode(node); node = next; }
+            while (node != null) { next = node.next; freeNode((T)node); node = next; }
         }
 
         // Append a node to a list.
-        static void lwListAdd(ref lwNode list, lwNode node)
+        static void lwListAdd<T>(ref T list, T node) where T : lwNode
         {
             lwNode head, tail = null;
 
@@ -3570,7 +3496,7 @@ namespace Gengine.Render
         }
 
         // Insert a node into a list in sorted order.
-        static void lwListInsert(ref lwNode vlist, lwNode vitem, Func<lwNode, lwNode, int> compare)
+        static void lwListInsert<T>(ref T vlist, T vitem, Func<T, T, int> compare) where T : lwNode
         {
             lwNode list, item, node, prev;
 
@@ -3579,7 +3505,7 @@ namespace Gengine.Render
             list = vlist; item = vitem; node = list; prev = null;
             while (node != null)
             {
-                if (compare(node, item) > 0) break;
+                if (compare((T)node, (T)item) > 0) break;
                 prev = node;
                 node = node.next;
             }
@@ -3593,10 +3519,25 @@ namespace Gengine.Render
 
         #region vecmath.c
 
-        //public static float dot(float[] a, float[] b);
-        //public static void cross(float[] a, float[] b, float[] c);
-        //public static void normalize(float[] v);
-        //#define vecangle( a, b ) ( float ) idMath::ACos( dot( a, b ) )
+        static float dot(float[] a, float[] b)
+            => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+        static void cross(float[] a, float[] b, float[] c)
+        {
+            c[0] = a[1] * b[2] - a[2] * b[1];
+            c[1] = a[2] * b[0] - a[0] * b[2];
+            c[2] = a[0] * b[1] - a[1] * b[0];
+        }
+
+        static void normalize(float[] v)
+        {
+            var r = (float)MathX.Sqrt(dot(v, v));
+            if (r > 0) { v[0] /= r; v[1] /= r; v[2] /= r; }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static float vecangle(float[] a, float[] b)
+            => (float)MathX.ACos(dot(a, b));
 
         #endregion
 
@@ -3743,12 +3684,12 @@ namespace Gengine.Render
         {
             float f;
 
-            if (flen == FLEN_ERROR) return 0.0f;
-            if (fp.Read((byte*)&f, 4) != 4) { flen = FLEN_ERROR; return 0.0f; }
+            if (flen == FLEN_ERROR) return 0f;
+            if (fp.Read((byte*)&f, 4) != 4) { flen = FLEN_ERROR; return 0f; }
             BigRevBytes(&f, 4, 1);
             flen += 4;
 
-            if (MathX.FLOAT_IS_DENORMAL(f)) f = 0.0f;
+            if (MathX.FLOAT_IS_DENORMAL(f)) f = 0f;
             return f;
 
         }
@@ -3800,7 +3741,7 @@ namespace Gengine.Render
             short i;
 
             if (flen == FLEN_ERROR) return 0;
-            memcpy(&i, bp, 2);
+            i = *bp;
             BigRevBytes(&i, 2, 1);
             flen += 2;
             bp += 2;
@@ -3812,7 +3753,7 @@ namespace Gengine.Render
             int i;
 
             if (flen == FLEN_ERROR) return 0;
-            memcpy(&i, bp, 4);
+            i = *bp;
             BigRevBytes(&i, 4, 1);
             flen += 4;
             bp += 4;
@@ -3847,7 +3788,7 @@ namespace Gengine.Render
             uint i;
 
             if (flen == FLEN_ERROR) return 0;
-            memcpy(&i, bp, 4);
+            i = *bp;
             BigRevBytes(&i, 4, 1);
             flen += 4;
             bp += 4;
@@ -3879,13 +3820,13 @@ namespace Gengine.Render
         {
             float f;
 
-            if (flen == FLEN_ERROR) return 0.0f;
-            memcpy(&f, bp, 4);
+            if (flen == FLEN_ERROR) return 0f;
+            f = *bp;
             BigRevBytes(&f, 4, 1);
             flen += 4;
             bp += 4;
 
-            if (MathX.FLOAT_IS_DENORMAL(f)) f = 0.0f;
+            if (MathX.FLOAT_IS_DENORMAL(f)) f = 0f;
             return f;
         }
 
@@ -3897,15 +3838,15 @@ namespace Gengine.Render
 
             if (flen == FLEN_ERROR) return null;
 
-            len = strlen(buf) + 1;
+            len = stringX.strlen(buf) + 1;
             if (len == 1) { flen += 2; bp += 2; return null; }
             len += len & 1;
             s = new byte[len]; if (s == null) { flen = FLEN_ERROR; return null; }
 
-            memcpy(s, buf, len);
+            fixed (byte* sB = s) Unsafe.CopyBlock(sB, buf, (uint)len);
             flen += len;
             bp += len;
-            return s;
+            return Encoding.ASCII.GetString(s);
         }
 
         #endregion

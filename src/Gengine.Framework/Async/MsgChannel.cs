@@ -27,8 +27,7 @@ namespace Gengine.Framework.Async
 
         public bool Add(byte[] data, int offset, int size)
         {
-            if (SpaceLeft < size + 8)
-                return false;
+            if (SpaceLeft < size + 8) return false;
             int sequence = last;
             WriteShort(size);
             WriteInt(sequence);
@@ -39,11 +38,7 @@ namespace Gengine.Framework.Async
 
         public bool Get(byte[] data, out int size)
         {
-            if (first == last)
-            {
-                size = 0;
-                return false;
-            }
+            if (first == last) { size = 0; return false; }
             int sequence;
             size = ReadShort();
             sequence = ReadInt();
@@ -71,8 +66,7 @@ namespace Gengine.Framework.Async
 
         public void CopyToBuffer(byte[] buf, int offset)
         {
-            if (startIndex <= endIndex)
-                Unsafe.CopyBlock(ref buf[offset], ref buffer[startIndex], (uint)(endIndex - startIndex));
+            if (startIndex <= endIndex) Unsafe.CopyBlock(ref buf[offset], ref buffer[startIndex], (uint)(endIndex - startIndex));
             else
             {
                 Unsafe.CopyBlock(ref buf[offset], ref buffer[startIndex], (uint)(MAX_MSG_QUEUE_SIZE - startIndex));
@@ -112,17 +106,12 @@ namespace Gengine.Framework.Async
 
         void WriteData(byte[] data, int offset, int size)
         {
-            for (var i = 0; i < size; i++)
-                WriteByte(data[offset + i]);
+            for (var i = 0; i < size; i++) WriteByte(data[offset + i]);
         }
         void ReadData(byte[] data, int size)
         {
-            if (data != null)
-                for (var i = 0; i < size; i++)
-                    data[i] = ReadByte();
-            else
-                for (var i = 0; i < size; i++)
-                    ReadByte();
+            if (data != null) for (var i = 0; i < size; i++) data[i] = ReadByte();
+            else for (var i = 0; i < size; i++) ReadByte();
         }
     }
 
@@ -264,11 +253,9 @@ namespace Gengine.Framework.Async
         // Returns true if the channel is ready to send new data based on the maximum rate.
         public bool ReadyToSend(int time)
         {
-            if (maxRate == 0)
-                return true;
+            if (maxRate == 0) return true;
             var deltaTime = time - lastSendTime;
-            if (deltaTime > 1000)
-                return true;
+            if (deltaTime > 1000) return true;
             return (lastDataBytes - deltaTime * maxRate / 1000) <= 0;
         }
 
@@ -276,22 +263,13 @@ namespace Gengine.Framework.Async
         // Sends a message to a connection, fragmenting if necessary A 0 length will still generate a packet.
         public int SendMessage(NetPort port, int time, BitMsg msg)
         {
-            if (remoteAddress.type == NA.BAD)
-                return -1;
+            if (remoteAddress.type == NA.BAD) return -1;
 
-            if (unsentFragments)
-            {
-                common.Error("MsgChannel::SendMessage: called with unsent fragments left");
-                return -1;
-            }
+            if (unsentFragments) { common.Error("MsgChannel::SendMessage: called with unsent fragments left"); return -1; }
 
             var totalLength = 4 + reliableSend.TotalSize + 4 + msg.Size;
 
-            if (totalLength > MAX_MESSAGE_SIZE)
-            {
-                common.Printf($"MsgChannel::SendMessage: message too large, length = {totalLength}\n");
-                return -1;
-            }
+            if (totalLength > MAX_MESSAGE_SIZE) { common.Printf($"MsgChannel::SendMessage: message too large, length = {totalLength}\n"); return -1; }
 
             unsentMsg.InitW(unsentBuffer);
             unsentMsg.BeginWriting();
@@ -324,8 +302,7 @@ namespace Gengine.Framework.Async
             // update rate control variables
             UpdateOutgoingRate(time, unsentMsg.Size);
 
-            if (net_channelShowPackets.Bool)
-                common.Printf($"{id} send {unsentMsg.Size:4} : s = {outgoingSequence - 1} ack = {incomingSequence}\n");
+            if (net_channelShowPackets.Bool) common.Printf($"{id} send {unsentMsg.Size:4} : s = {outgoingSequence - 1} ack = {incomingSequence}\n");
 
             outgoingSequence++;
 
@@ -339,11 +316,9 @@ namespace Gengine.Framework.Async
             BitMsg msg = new(); byte[] msgBuf = new byte[MAX_PACKETLEN];
             int fragLength;
 
-            if (remoteAddress.type == NA.BAD)
-                return;
+            if (remoteAddress.type == NA.BAD) return;
 
-            if (!unsentFragments)
-                return;
+            if (!unsentFragments) return;
 
             // write the packet
             msg.InitW(msgBuf);
@@ -351,8 +326,7 @@ namespace Gengine.Framework.Async
             msg.WriteInt(outgoingSequence | FRAGMENT_BIT);
 
             fragLength = FRAGMENT_SIZE;
-            if (unsentFragmentStart + fragLength > unsentMsg.Size)
-                fragLength = unsentMsg.Size - unsentFragmentStart;
+            if (unsentFragmentStart + fragLength > unsentMsg.Size) fragLength = unsentMsg.Size - unsentFragmentStart;
 
             msg.WriteShort(unsentFragmentStart);
             msg.WriteShort(fragLength);
@@ -364,18 +338,13 @@ namespace Gengine.Framework.Async
             // update rate control variables
             UpdateOutgoingRate(time, msg.Size);
 
-            if (net_channelShowPackets.Bool)
-                common.Printf($"{id} send {msg.Size:4} : s = {outgoingSequence - 1} fragment = {unsentFragmentStart},{fragLength}\n");
+            if (net_channelShowPackets.Bool) common.Printf($"{id} send {msg.Size:4} : s = {outgoingSequence - 1} fragment = {unsentFragmentStart},{fragLength}\n");
 
             unsentFragmentStart += fragLength;
 
             // this exit condition is a little tricky, because a packet that is exactly the fragment length still needs to send
             // a second packet of zero length so that the other side can tell there aren't more to follow
-            if (unsentFragmentStart == unsentMsg.Size && fragLength != FRAGMENT_SIZE)
-            {
-                outgoingSequence++;
-                unsentFragments = false;
-            }
+            if (unsentFragmentStart == unsentMsg.Size && fragLength != FRAGMENT_SIZE) { outgoingSequence++; unsentFragments = false; }
         }
 
         // Returns true if there are unsent fragments left.
@@ -393,11 +362,7 @@ namespace Gengine.Framework.Async
             BitMsg fragMsg = new();
 
             // the IP port can't be used to differentiate them, because some address translating routers periodically change UDP port assignments
-            if (remoteAddress.port != from.port)
-            {
-                common.Printf("MsgChannel::Process: fixing up a translated port\n");
-                remoteAddress.port = from.port;
-            }
+            if (remoteAddress.port != from.port) { common.Printf("MsgChannel::Process: fixing up a translated port\n"); remoteAddress.port = from.port; }
 
             // update incoming rate
             UpdateIncomingRate(time, msg.Size);
@@ -406,11 +371,7 @@ namespace Gengine.Framework.Async
             sequence = msg.ReadInt();
 
             // check for fragment information
-            if ((sequence & FRAGMENT_BIT) != 0)
-            {
-                sequence &= ~FRAGMENT_BIT;
-                fragmented = true;
-            }
+            if ((sequence & FRAGMENT_BIT) != 0) { sequence &= ~FRAGMENT_BIT; fragmented = true; }
             else fragmented = false;
 
             // read the fragment information
@@ -425,8 +386,7 @@ namespace Gengine.Framework.Async
             // discard out of order or duplicated packets
             if (sequence <= incomingSequence)
             {
-                if (net_channelShowDrop.Bool || net_channelShowPackets.Bool)
-                    common.Printf($"{remoteAddress}: out of order packet {sequence} at {incomingSequence}\n");
+                if (net_channelShowDrop.Bool || net_channelShowPackets.Bool) common.Printf($"{remoteAddress}: out of order packet {sequence} at {incomingSequence}\n");
                 return false;
             }
 
@@ -434,8 +394,7 @@ namespace Gengine.Framework.Async
             dropped = sequence - (incomingSequence + 1);
             if (dropped > 0)
             {
-                if (net_channelShowDrop.Bool || net_channelShowPackets.Bool)
-                    common.Printf("{SysW.NetAdrToString(remoteAddress)}: dropped {dropped} packets at {sequence}\n");
+                if (net_channelShowDrop.Bool || net_channelShowPackets.Bool) common.Printf("{SysW.NetAdrToString(remoteAddress)}: dropped {dropped} packets at {sequence}\n");
                 UpdatePacketLoss(time, 0, dropped);
             }
 
@@ -443,17 +402,12 @@ namespace Gengine.Framework.Async
             if (fragmented)
             {
                 // make sure we have the correct sequence number
-                if (sequence != fragmentSequence)
-                {
-                    fragmentSequence = sequence;
-                    fragmentLength = 0;
-                }
+                if (sequence != fragmentSequence) { fragmentSequence = sequence; fragmentLength = 0; }
 
                 // if we missed a fragment, dump the message
                 if (fragStart != fragmentLength)
                 {
-                    if (net_channelShowDrop.Bool || net_channelShowPackets.Bool)
-                        common.Printf($"{remoteAddress}: dropped a message fragment at seq {sequence}\n");
+                    if (net_channelShowDrop.Bool || net_channelShowPackets.Bool) common.Printf($"{remoteAddress}: dropped a message fragment at seq {sequence}\n");
                     // we can still keep the part that we have so far, so we don't need to clear fragmentLength
                     UpdatePacketLoss(time, 0, 1);
                     return false;
@@ -462,8 +416,7 @@ namespace Gengine.Framework.Async
                 // copy the fragment to the fragment buffer
                 if (fragLength < 0 || fragLength > msg.RemaingData || fragmentLength + fragLength > MAX_MESSAGE_SIZE)
                 {
-                    if (net_channelShowDrop.Bool || net_channelShowPackets.Bool)
-                        common.Printf($"{remoteAddress}: illegal fragment length\n");
+                    if (net_channelShowDrop.Bool || net_channelShowPackets.Bool) common.Printf($"{remoteAddress}: illegal fragment length\n");
                     UpdatePacketLoss(time, 0, 1);
                     return false;
                 }
@@ -475,8 +428,7 @@ namespace Gengine.Framework.Async
                 UpdatePacketLoss(time, 1, 0);
 
                 // if this wasn't the last fragment, don't process anything
-                if (fragLength == FRAGMENT_SIZE)
-                    return false;
+                if (fragLength == FRAGMENT_SIZE) return false;
             }
             else
             {
@@ -499,14 +451,9 @@ namespace Gengine.Framework.Async
         public bool SendReliableMessage(BitMsg msg)
         {
             Debug.Assert(remoteAddress.type != NA.BAD);
-            if (remoteAddress.type == NA.BAD)
-                return false;
+            if (remoteAddress.type == NA.BAD) return false;
             var result = reliableSend.Add(msg.DataW, 0, msg.Size);
-            if (!result)
-            {
-                common.Warning("MsgChannel::SendReliableMessage: overflowed");
-                return false;
-            }
+            if (!result) { common.Warning("MsgChannel::SendReliableMessage: overflowed"); return false; }
             return result;
         }
 
@@ -572,22 +519,15 @@ namespace Gengine.Framework.Async
             reliableAcknowledge = o.ReadInt();
 
             // remove acknowledged reliable messages
-            while (reliableSend.First <= reliableAcknowledge)
-                if (!reliableSend.Get(null, out reliableMessageSize))
-                    break;
+            while (reliableSend.First <= reliableAcknowledge) if (!reliableSend.Get(null, out reliableMessageSize)) break;
 
             // read reliable messages
             reliableMessageSize = o.ReadShort();
             while (reliableMessageSize != 0)
             {
-                if (reliableMessageSize <= 0 || reliableMessageSize > o.Size - o.ReadCount)
-                {
-                    common.Printf($"{remoteAddress}: bad reliable message\n");
-                    return false;
-                }
+                if (reliableMessageSize <= 0 || reliableMessageSize > o.Size - o.ReadCount) { common.Printf($"{remoteAddress}: bad reliable message\n"); return false; }
                 reliableSequence = o.ReadInt();
-                if (reliableSequence == reliableReceive.Last + 1)
-                    reliableReceive.Add(o.DataR, o.ReadCount, reliableMessageSize);
+                if (reliableSequence == reliableReceive.Last + 1) reliableReceive.Add(o.DataR, o.ReadCount, reliableMessageSize);
                 o.ReadData(null, reliableMessageSize);
                 reliableMessageSize = o.ReadShort();
             }
@@ -599,14 +539,8 @@ namespace Gengine.Framework.Async
         {
             // update the outgoing rate control variables
             var deltaTime = time - lastSendTime;
-            if (deltaTime > 1000)
-                lastDataBytes = 0;
-            else
-            {
-                lastDataBytes -= (deltaTime * maxRate) / 1000;
-                if (lastDataBytes < 0)
-                    lastDataBytes = 0;
-            }
+            if (deltaTime > 1000) lastDataBytes = 0;
+            else { lastDataBytes -= (deltaTime * maxRate) / 1000; if (lastDataBytes < 0) lastDataBytes = 0; }
             lastDataBytes += size;
             lastSendTime = time;
 
@@ -614,8 +548,7 @@ namespace Gengine.Framework.Async
             if (time - outgoingRateTime > 1000)
             {
                 outgoingRateBytes -= outgoingRateBytes * (time - outgoingRateTime - 1000) / 1000;
-                if (outgoingRateBytes < 0)
-                    outgoingRateBytes = 0;
+                if (outgoingRateBytes < 0) outgoingRateBytes = 0;
             }
             outgoingRateTime = time - 1000;
             outgoingRateBytes += size;
@@ -627,8 +560,7 @@ namespace Gengine.Framework.Async
             if (time - incomingRateTime > 1000)
             {
                 incomingRateBytes -= incomingRateBytes * (time - incomingRateTime - 1000) / 1000;
-                if (incomingRateBytes < 0)
-                    incomingRateBytes = 0;
+                if (incomingRateBytes < 0) incomingRateBytes = 0;
             }
             incomingRateTime = time - 1000;
             incomingRateBytes += size;
@@ -641,11 +573,9 @@ namespace Gengine.Framework.Async
             {
                 var scale = (time - incomingPacketLossTime - 5000) * (1f / 5000f);
                 incomingReceivedPackets -= incomingReceivedPackets * scale;
-                if (incomingReceivedPackets < 0f)
-                    incomingReceivedPackets = 0f;
+                if (incomingReceivedPackets < 0f) incomingReceivedPackets = 0f;
                 incomingDroppedPackets -= incomingDroppedPackets * scale;
-                if (incomingDroppedPackets < 0f)
-                    incomingDroppedPackets = 0f;
+                if (incomingDroppedPackets < 0f) incomingDroppedPackets = 0f;
             }
             incomingPacketLossTime = time - 5000;
             incomingReceivedPackets += numReceived;

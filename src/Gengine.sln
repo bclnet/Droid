@@ -27,6 +27,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.Tests", "System.NumericsX.Tests\System.NumericsX.Tests.csproj", "{D862DC05-EF7F-4930-9A33-D349724A0B50}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.CM", "Gengine.CM\Gengine.CM.csproj", "{6211E066-7021-4FBB-AE67-4D6EAE9D393E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,10 @@ Global
 		{D862DC05-EF7F-4930-9A33-D349724A0B50}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D862DC05-EF7F-4930-9A33-D349724A0B50}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D862DC05-EF7F-4930-9A33-D349724A0B50}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6211E066-7021-4FBB-AE67-4D6EAE9D393E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6211E066-7021-4FBB-AE67-4D6EAE9D393E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6211E066-7021-4FBB-AE67-4D6EAE9D393E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6211E066-7021-4FBB-AE67-4D6EAE9D393E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

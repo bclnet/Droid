@@ -21,12 +21,7 @@ namespace Gengine.Render
             // generate current normals, tangents, and bitangents We might want to support the possibility of deform functions generating
             // explicit normals, and we might also want to allow the cached deformInfo optimization for these.
             // FIXME: this doesn't work, because the deformed surface is just the ambient one, and there isn't an opportunity to generate light interactions
-            if (drawSurf.material.ReceivesLighting)
-            {
-                newTri.verts = ac;
-                R_DeriveTangents(newTri, false);
-                newTri.verts = null;
-            }
+            if (drawSurf.material.ReceivesLighting) { newTri.verts = ac; R_DeriveTangents(newTri, false); newTri.verts = null; }
             newTri.ambientCache = vertexCache.AllocFrameTemp(ac, newTri.numVerts * DrawVert.SizeOf, false);
             fixed (void* newTri_indexes_ = newTri.indexes) newTri.indexCache = vertexCache.AllocFrameTemp(newTri_indexes_, newTri.numIndexes * sizeof(GlIndex), true);
 
@@ -174,16 +169,8 @@ namespace Gengine.Render
                     minor.Cross(major, dir);
                     minor.Normalize();
 
-                    if (j != 0)
-                    {
-                        av1->xyz = mid[j] - l * minor;
-                        av2->xyz = mid[j] + l * minor;
-                    }
-                    else
-                    {
-                        av1->xyz = mid[j] + l * minor;
-                        av2->xyz = mid[j] - l * minor;
-                    }
+                    if (j != 0) { av1->xyz = mid[j] - l * minor; av2->xyz = mid[j] + l * minor; }
+                    else { av1->xyz = mid[j] + l * minor; av2->xyz = mid[j] - l * minor; }
                 }
             }
 

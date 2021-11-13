@@ -161,24 +161,15 @@ namespace Gengine.Framework.Async
 
         public bool InfoResponse(NetworkServer server)
         {
-            if (scanState == ScanState.IDLE)
-                return false;
+            if (scanState == ScanState.IDLE) return false;
 
             var serv = server.adr.ToString();
 
-            if (server.challenge != challenge)
-            {
-                common.DPrintf($"ServerScan::InfoResponse - ignoring response from {serv}, wrong challenge {server.challenge}.");
-                return false;
-            }
+            if (server.challenge != challenge) { common.DPrintf($"ServerScan::InfoResponse - ignoring response from {serv}, wrong challenge {server.challenge}."); return false; }
 
             if (scanState == ScanState.NET_SCAN)
             {
-                if (!net_info.TryGetValue(serv, out var value))
-                {
-                    common.DPrintf($"ServerScan::InfoResponse NET_SCAN: reply from unknown {serv}\n");
-                    return false;
-                }
+                if (!net_info.TryGetValue(serv, out var value)) { common.DPrintf($"ServerScan::InfoResponse NET_SCAN: reply from unknown {serv}\n"); return false; }
                 var id = value;
                 net_info.Remove(serv);
                 var iserv = net_servers[id];
@@ -191,33 +182,21 @@ namespace Gengine.Framework.Async
                 server.id = 0;
 
                 // check for duplicate servers
-                for (var i = 0; i < Count; i++)
-                    if (this[i].adr == server.adr)
-                    {
-                        common.DPrintf($"ServerScan::InfoResponse LAN_SCAN: duplicate server {serv}\n");
-                        return true;
-                    }
+                for (var i = 0; i < Count; i++) if (this[i].adr == server.adr) { common.DPrintf($"ServerScan::InfoResponse LAN_SCAN: duplicate server {serv}\n"); return true; }
             }
 
             var si_map = server.serverInfo["si_map"];
             var mapDecl = declManager.FindType(DECL.MAPDEF, si_map, false);
             var mapDef = (DeclEntityDef)mapDecl;
-            if (mapDef != null)
-            {
-                var mapName = common.LanguageDictGetString(mapDef.dict.Get("name", si_map));
-                server.serverInfo["si_mapName"] = mapName;
-            }
-            else
-                server.serverInfo["si_mapName"] = si_map;
+            if (mapDef != null) { var mapName = common.LanguageDictGetString(mapDef.dict.Get("name", si_map)); server.serverInfo["si_mapName"] = mapName; }
+            else server.serverInfo["si_mapName"] = si_map;
 
             var index = Count; Add(server);
 
             // for now, don't maintain sorting when adding new info response servers
             _sortedServers.Add(index);
-            if (listGUI.IsConfigured && !IsFiltered(server))
-                GUIAdd(index, server);
-            if (listGUI.GetSelection(out _, 0) == index)
-                GUIUpdateSelected();
+            if (listGUI.IsConfigured && !IsFiltered(server)) GUIAdd(index, server);
+            if (listGUI.GetSelection(out _, 0) == index) GUIUpdateSelected();
 
             return true;
         }
@@ -229,13 +208,8 @@ namespace Gengine.Framework.Async
             incoming_lastTime = SysW.Milliseconds + INCOMING_TIMEOUT;
             var s = new InServer { id = id };
             // using IPs, not hosts
-            if (!Netadr.TryParse(srv, out s.adr, false))
-            {
-                common.DPrintf($"ServerScan::AddServer: failed to parse server {srv}\n");
-                return;
-            }
-            if (s.adr.port == 0)
-                s.adr.port = Config.PORT_SERVER;
+            if (!Netadr.TryParse(srv, out s.adr, false)) { common.DPrintf($"ServerScan::AddServer: failed to parse server {srv}\n"); return; }
+            if (s.adr.port == 0) s.adr.port = Config.PORT_SERVER;
 
             net_servers.Add(s);
         }
@@ -303,41 +277,20 @@ namespace Gengine.Framework.Async
         // called each game frame. Updates the scanner state, takes care of ongoing scans
         public void RunFrame()
         {
-            if (scanState == ScanState.IDLE)
-                return;
+            if (scanState == ScanState.IDLE) return;
 
-            if (scanState == ScanState.WAIT_ON_INIT)
-            {
-                if (SysW.Milliseconds >= endWaitTime)
-                {
-                    scanState = ScanState.IDLE;
-                    NetScan();
-                }
-                return;
-            }
+            if (scanState == ScanState.WAIT_ON_INIT) { if (SysW.Milliseconds >= endWaitTime) { scanState = ScanState.IDLE; NetScan(); } return; }
 
             var timeout_limit = SysW.Milliseconds - REPLY_TIMEOUT;
 
-            if (scanState == ScanState.LAN_SCAN)
-            {
-                if (timeout_limit > lan_pingtime)
-                {
-                    common.Printf("Scanned for servers on the LAN\n");
-                    scanState = ScanState.IDLE;
-                }
-                return;
-            }
+            if (scanState == ScanState.LAN_SCAN) { if (timeout_limit > lan_pingtime) { common.Printf("Scanned for servers on the LAN\n"); scanState = ScanState.IDLE; } return; }
 
             // if scan_state == NET_SCAN
 
             // check for timeouts
             var i = 0;
             while (i < net_info.Count)
-                if (timeout_limit > net_servers[net_info.ElementAt(i).Value].time)
-                {
-                    common.DPrintf($"timeout {net_info.ElementAt(i).Key}\n");
-                    net_info.Remove(net_info.ElementAt(i).Key);
-                }
+                if (timeout_limit > net_servers[net_info.ElementAt(i).Value].time) { common.DPrintf($"timeout {net_info.ElementAt(i).Key}\n"); net_info.Remove(net_info.ElementAt(i).Key); }
                 else i++;
 
             // possibly send more queries
@@ -363,28 +316,23 @@ namespace Gengine.Framework.Async
         public bool GetBestPing(NetworkServer serv)
         {
             var ic = Count;
-            if (ic == 0)
-                return false;
+            if (ic == 0) return false;
             serv = this[0];
-            for (var i = 0; i < ic; i++)
-                if (this[i].ping < serv.ping)
-                    serv = this[i];
+            for (var i = 0; i < ic; i++) if (this[i].ping < serv.ping) serv = this[i];
             return true;
         }
 
         public void GUIConfig(IUserInterface gui, string name)
         {
             this.gui = gui;
-            if (listGUI == null)
-                listGUI = uiManager.AllocListGUI();
+            if (listGUI == null) listGUI = uiManager.AllocListGUI();
             listGUI.Config(gui, name);
         }
 
         // update the GUI fields with information about the currently selected server
         public void GUIUpdateSelected()
         {
-            if (gui == null)
-                return;
+            if (gui == null) return;
             var i = listGUI.GetSelection(out _, 0);
             if (i == -1 || i >= Count)
             {
@@ -406,8 +354,7 @@ namespace Gengine.Framework.Async
             else
             {
                 gui.SetStateString("server_name", this[i].serverInfo["si_name"]);
-                for (var j = 0; j < 8; j++)
-                    gui.SetStateString($"player{j + 1}", this[i].clients > j ? this[i].nickname[j] : string.Empty);
+                for (var j = 0; j < 8; j++) gui.SetStateString($"player{j + 1}", this[i].clients > j ? this[i].nickname[j] : string.Empty);
                 gui.SetStateString("server_map", this[i].serverInfo.Get("si_mapName"));
                 fileSystem.FindMapScreenshot(this[i].serverInfo.Get("si_map"), out var screenshot);
                 gui.SetStateString("browser_levelshot", screenshot);
@@ -424,8 +371,7 @@ namespace Gengine.Framework.Async
             var mod = server.serverInfo.Get("fs_game")[0] != '\0';
 
             name += "\t";
-            if (server.serverInfo.Get("sv_punkbuster")[0] == '1')
-                name += "mtr_PB";
+            if (server.serverInfo.Get("sv_punkbuster")[0] == '1') name += "mtr_PB";
             name += "\t";
             if (d3xp) { name += "mtr_doom3XPIcon"; } // FIXME: even for a 'D3XP mod' could have a specific icon for this case
             else if (mod) name += "mtr_doom3Mod";
@@ -447,8 +393,7 @@ namespace Gengine.Framework.Async
             for (var i = _sortAscending ? 0 : _sortedServers.Count - 1; _sortAscending ? i < _sortedServers.Count : i >= 0;)
             {
                 var serv = this[_sortedServers[i]];
-                if (!IsFiltered(serv))
-                    GUIAdd(_sortedServers[i], serv);
+                if (!IsFiltered(serv)) GUIAdd(_sortedServers[i], serv);
                 if (_sortAscending) i++;
                 else i--;
             }
@@ -463,23 +408,19 @@ namespace Gengine.Framework.Async
             if (hasval && gui_filter_password.Integer == 1)
             {
                 // show passworded only
-                if (keyval[0] == '0')
-                    return true;
+                if (keyval[0] == '0') return true;
             }
             else if (hasval && gui_filter_password.Integer == 2)
             {
                 // show no password only
-                if (keyval[0] != '0')
-                    return true;
+                if (keyval[0] != '0') return true;
             }
             // players filter
             hasval = server.serverInfo.TryGetValue("si_maxPlayers", out keyval);
             if (hasval)
             {
-                if (gui_filter_players.Integer == 1 && server.clients == int.Parse(keyval))
-                    return true;
-                else if (gui_filter_players.Integer == 2 && (server.clients == 0 || server.clients == int.Parse(keyval)))
-                    return true;
+                if (gui_filter_players.Integer == 1 && server.clients == int.Parse(keyval)) return true;
+                else if (gui_filter_players.Integer == 2 && (server.clients == 0 || server.clients == int.Parse(keyval))) return true;
             }
             // gametype filter
             hasval = server.serverInfo.TryGetValue("si_gameType", out keyval);
@@ -488,35 +429,29 @@ namespace Gengine.Framework.Async
                 var i = 0;
                 while (_gameTypes[i] != null)
                 {
-                    if (string.Equals(keyval, _gameTypes[i], StringComparison.OrdinalIgnoreCase))
-                        break;
+                    if (string.Equals(keyval, _gameTypes[i], StringComparison.OrdinalIgnoreCase)) break;
                     i++;
                 }
-                if (_gameTypes[i] != null && i != gui_filter_gameType.Integer - 1)
-                    return true;
+                if (_gameTypes[i] != null && i != gui_filter_gameType.Integer - 1) return true;
             }
             // idle server filter
             hasval = server.serverInfo.TryGetValue("si_idleServer", out keyval);
             if (hasval && gui_filter_idle.Integer == 0)
             {
-                if (keyval == "1")
-                    return true;
+                if (keyval == "1") return true;
             }
 
             // autofilter D3XP games if the user does not has the XP installed
-            if (!fileSystem.HasD3XP && string.Equals(server.serverInfo.Get("fs_game"), "d3xp", StringComparison.OrdinalIgnoreCase))
-                return true;
+            if (!fileSystem.HasD3XP && string.Equals(server.serverInfo.Get("fs_game"), "d3xp", StringComparison.OrdinalIgnoreCase)) return true;
 
             // filter based on the game doom or XP
             if (gui_filter_game.Integer == 1) // Only Doom
             {
-                if (server.serverInfo.Get("fs_game") == null)
-                    return true;
+                if (server.serverInfo.Get("fs_game") == null) return true;
             }
             else if (gui_filter_game.Integer == 2) // Only D3XP
             {
-                if (string.Equals(server.serverInfo.Get("fs_game"), "d3xp", StringComparison.OrdinalIgnoreCase))
-                    return true;
+                if (string.Equals(server.serverInfo.Get("fs_game"), "d3xp", StringComparison.OrdinalIgnoreCase)) return true;
             }
 
             return false;
@@ -561,8 +496,7 @@ namespace Gengine.Framework.Async
         public void SetSorting(ServerSort sort)
         {
             _serverScan = this;
-            if (sort == _sort)
-                _sortAscending = !_sortAscending;
+            if (sort == _sort) _sortAscending = !_sortAscending;
             else
             {
                 _sort = sort;

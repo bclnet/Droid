@@ -13,13 +13,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="M_Local\ModelDecal.cs" />
-    <Compile Remove="M_Local\ModelOverlay.cs" />
+    <Compile Remove="GameBearShootWindow.cs" />
+    <Compile Remove="GameBustOutWindow.cs" />
+    <Compile Remove="GameSSDWindow.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
-    <ProjectReference Include="..\Gengine.Framework\Gengine.Framework.csproj" />
   </ItemGroup>
 
   <ItemGroup>

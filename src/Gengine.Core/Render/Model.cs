@@ -9,13 +9,13 @@ namespace Gengine.Render
     public static partial class ModelX
     {
         // shared between the renderer, game, and Maya export DLL
-        const string MD5_VERSION_STRING = "MD5Version";
-        const string MD5_MESH_EXT = "md5mesh";
-        const string MD5_ANIM_EXT = "md5anim";
-        const string MD5_CAMERA_EXT = "md5camera";
-        const int MD5_VERSION = 10;
+        public const string MD5_VERSION_STRING = "MD5Version";
+        public const string MD5_MESH_EXT = "md5mesh";
+        public const string MD5_ANIM_EXT = "md5anim";
+        public const string MD5_CAMERA_EXT = "md5camera";
+        public const int MD5_VERSION = 10;
 
-        const int SHADOW_CAP_INFINITE = 64;
+        public const int SHADOW_CAP_INFINITE = 64;
     }
 
     public struct SilEdge
@@ -125,7 +125,7 @@ namespace Gengine.Render
     }
 
     // the init methods may be called again on an already created model when a reloadModels is issued
-    public interface IRenderModel
+    public interface IRenderModel : IDisposable
     {
         // Loads static models only, dynamic models must be loaded by the modelManager
         void InitFromFile(string fileName);

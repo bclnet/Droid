@@ -43,10 +43,8 @@ namespace Gengine.Framework
             {
                 // average multiple frames together to smooth changes out a bit
                 var total = 0;
-                for (var i = 0; i < FPS_FRAMES; i++)
-                    total += SCR_DrawFPS_previousTimes[i];
-                if (total == 0)
-                    total = 1;
+                for (var i = 0; i < FPS_FRAMES; i++) total += SCR_DrawFPS_previousTimes[i];
+                if (total == 0) total = 1;
                 SCR_DrawFPS_fps = 10000 * FPS_FRAMES / total;
                 SCR_DrawFPS_fps = (SCR_DrawFPS_fps + 5) / 10;
 
@@ -94,8 +92,7 @@ namespace Gengine.Framework
                     outgoingCompression = AsyncNetwork.server.GetClientOutgoingCompression(i);
                     incomingCompression = AsyncNetwork.server.GetClientIncomingCompression(i);
 
-                    if (outgoingRate != -1 && incomingRate != -1)
-                        SCR_DrawTextRightAlign(y, $"client {i}: out-rate = {outgoingRate} B/s ({outgoingCompression:-2.1}%), in-rate = %d B/s ({incomingCompression:-2.1}%)");
+                    if (outgoingRate != -1 && incomingRate != -1) SCR_DrawTextRightAlign(y, $"client {i}: out-rate = {outgoingRate} B/s ({outgoingCompression:-2.1}%), in-rate = %d B/s ({incomingCompression:-2.1}%)");
                 }
 
                 AsyncNetwork.server.GetAsyncStatsAvgMsg(out var msg);
@@ -108,8 +105,7 @@ namespace Gengine.Framework
                 outgoingCompression = AsyncNetwork.client.GetOutgoingCompression;
                 incomingCompression = AsyncNetwork.client.GetIncomingCompression;
 
-                if (outgoingRate != -1 && incomingRate != -1)
-                    SCR_DrawTextRightAlign(ref y, $"out-rate = {outgoingRate} B/s ({outgoingCompression:-2.1}%), in rate = {incomingRate} B/s ({incomingCompression:-2.1}%)");
+                if (outgoingRate != -1 && incomingRate != -1) SCR_DrawTextRightAlign(ref y, $"out-rate = {outgoingRate} B/s ({outgoingCompression:-2.1}%), in rate = {incomingRate} B/s ({incomingCompression:-2.1}%)");
 
                 SCR_DrawTextRightAlign(ref y, $"packet loss = {(int)AsyncNetwork.client.IncomingPacketLoss}%, client prediction = {AsyncNetwork.client.Prediction}");
                 SCR_DrawTextRightAlign(ref y, $"predicted frames: {AsyncNetwork.client.PredictedFrames}");

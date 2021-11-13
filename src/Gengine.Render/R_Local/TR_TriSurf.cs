@@ -1,6 +1,7 @@
 //#define USE_TRI_DATA_ALLOCATOR
 #define USE_INVA // this shouldn't change anything, but previously renderbumped models seem to need it
 #define DERIVE_UNSMOOTHED_BITANGENT // instead of using the texture T vector, cross the normal and S vector for an orthogonal axis
+using System;
 using System.Diagnostics;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
@@ -1471,7 +1472,7 @@ namespace Gengine.Render
 
         #region DEFORMED SURFACES
 
-        public static DeformInfo R_BuildDeformInfo(int numVerts, DrawVert[] verts, int numIndexes, int[] indexes, bool useUnsmoothedTangents)
+        public static DeformInfo R_BuildDeformInfo(int numVerts, Span<DrawVert> verts, int numIndexes, int[] indexes, bool useUnsmoothedTangents)
         {
             DeformInfo deform;
             SrfTriangles tri;

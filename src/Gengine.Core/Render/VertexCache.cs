@@ -96,15 +96,10 @@ namespace Gengine.Render
 
         unsafe void ActuallyFree(VertCache block)
         {
-            if (block == null)
-                common.Error("VertexCache Free: NULL pointer");
+            if (block == null) common.Error("VertexCache Free: NULL pointer");
 
-            if (block.user != null)
-            {
-                // let the owner know we have purged it
-                //block.user = null;
-                block.user = null;
-            }
+            // let the owner know we have purged it
+            if (block.user != null) { block.user = null; }
 
             // temp blocks are in a shared space that won't be freed
             if (block.tag != TAG.TEMP)
@@ -116,8 +111,7 @@ namespace Gengine.Render
                 {
                     if (block.indexBuffer)
                     {
-                        if (block.vbo != currentBoundVBO_Index)
-                            qglBindBuffer(BufferTargetARB.ElementArrayBuffer, block.vbo);
+                        if (block.vbo != currentBoundVBO_Index) qglBindBuffer(BufferTargetARB.ElementArrayBuffer, block.vbo);
                         glBindBuffer(BufferTargetARB.ElementArrayBuffer, block.vbo);
                         glBufferData(BufferTargetARB.ElementArrayBuffer, 0, null, BufferUsageARB.StreamDraw);
                         glBindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
@@ -126,8 +120,7 @@ namespace Gengine.Render
                     }
                     else
                     {
-                        if (block.vbo != currentBoundVBO)
-                            qglBindBuffer(BufferTargetARB.ArrayBuffer, block.vbo);
+                        if (block.vbo != currentBoundVBO) qglBindBuffer(BufferTargetARB.ArrayBuffer, block.vbo);
                         glBindBuffer(BufferTargetARB.ArrayBuffer, block.vbo);
                         glBufferData(BufferTargetARB.ArrayBuffer, 0, null, BufferUsageARB.StreamDraw);
                         glBindBuffer(BufferTargetARB.ArrayBuffer, 0);
@@ -139,11 +132,7 @@ namespace Gengine.Render
 
             block.tag = TAG.FREE;      // mark as free
 
-            if (block.frontEndMemory != IntPtr.Zero)
-            {
-                Marshal.FreeHGlobal(block.frontEndMemory);
-                block.frontEndMemory = IntPtr.Zero;
-            }
+            if (block.frontEndMemory != IntPtr.Zero) { Marshal.FreeHGlobal(block.frontEndMemory); block.frontEndMemory = IntPtr.Zero; }
 
             block.frontEndMemoryDirty = true;
 
@@ -152,16 +141,8 @@ namespace Gengine.Render
             block.prev.next = block.next;
 
             // stick it on the front of the free list so it will be reused immediately
-            if (block.indexBuffer)
-            {
-                block.next = freeStaticIndexHeaders.next;
-                block.prev = freeStaticIndexHeaders;
-            }
-            else
-            {
-                block.next = freeStaticHeaders.next;
-                block.prev = freeStaticHeaders;
-            }
+            if (block.indexBuffer) { block.next = freeStaticIndexHeaders.next; block.prev = freeStaticIndexHeaders; }
+            else { block.next = freeStaticHeaders.next; block.prev = freeStaticHeaders; }
 
             block.next.prev = block;
             block.prev.next = block;
@@ -176,8 +157,7 @@ namespace Gengine.Render
             currentBoundVBO = VBOEmpty;
             currentBoundVBO_Index = VBOEmpty;
 
-            if (r_vertexBufferMegs.Integer < 8)
-                r_vertexBufferMegs.Integer = 8;
+            if (r_vertexBufferMegs.Integer < 8) r_vertexBufferMegs.Integer = 8;
 
             // initialize the cache memory blocks
             freeStaticHeaders.next = freeStaticHeaders.prev = freeStaticHeaders;
@@ -226,10 +206,8 @@ namespace Gengine.Render
         // Used when toggling vertex programs on or off, because the cached data isn't valid
         public void PurgeAll()
         {
-            while (staticHeaders.next != staticHeaders)
-                ActuallyFree(staticHeaders.next);
-            while (staticIndexHeaders.next != staticIndexHeaders)
-                ActuallyFree(staticIndexHeaders.next);
+            while (staticHeaders.next != staticHeaders) ActuallyFree(staticHeaders.next);
+            while (staticIndexHeaders.next != staticIndexHeaders) ActuallyFree(staticIndexHeaders.next);
 
             currentBoundVBO = VBOEmpty;
             currentBoundVBO_Index = VBOEmpty;
@@ -338,30 +316,18 @@ namespace Gengine.Render
         // The ARB_vertex_buffer_object will be bound
         public void* Position(VertCache buffer)
         {
-            if (buffer == null || buffer.tag == TAG.FREE)
-                common.FatalError("VertexCache::Position: bad vertCache_t");
+            if (buffer == null || buffer.tag == TAG.FREE) common.FatalError("VertexCache::Position: bad vertCache_t");
 
-            if (buffer.indexBuffer && !R.r_useIndexVBO.Bool)
-            {
-                UnbindIndex();
-                return (byte*)buffer.frontEndMemory + buffer.offset;
-            }
-            else if (!buffer.indexBuffer && !R.r_useVertexVBO.Bool)
-            {
-                UnbindVertex();
-                return (byte*)buffer.frontEndMemory + buffer.offset;
-            }
+            if (buffer.indexBuffer && !R.r_useIndexVBO.Bool) { UnbindIndex(); return (byte*)buffer.frontEndMemory + buffer.offset; }
+            else if (!buffer.indexBuffer && !R.r_useVertexVBO.Bool) { UnbindVertex(); return (byte*)buffer.frontEndMemory + buffer.offset; }
 
             // Create VBO if does not exist
             if (buffer.vbo == VBOEmpty)
             {
-                if (buffer.frontEndMemory == IntPtr.Zero)
-                    Console.WriteLine("MEMORY NULL");
-                fixed (uint* vbo = &buffer.vbo)
-                    qglGenBuffers(1, vbo);
+                if (buffer.frontEndMemory == IntPtr.Zero) Console.WriteLine("MEMORY NULL");
+                fixed (uint* vbo = &buffer.vbo) qglGenBuffers(1, vbo);
 
-                if (buffer.vbo > vboMax)
-                    vboMax = buffer.vbo;
+                if (buffer.vbo > vboMax) vboMax = buffer.vbo;
             }
 
             // the ARB vertex object just uses an offset
@@ -371,19 +337,11 @@ namespace Gengine.Render
                     : $"GL_ARRAY_BUFFER_ARB = {buffer.vbo} ({buffer.size} bytes)\n");
             if (buffer.indexBuffer)
             {
-                if (buffer.vbo != currentBoundVBO_Index)
-                {
-                    qglBindBuffer(BufferTargetARB.ElementArrayBuffer, buffer.vbo);
-                    currentBoundVBO_Index = buffer.vbo;
-                }
+                if (buffer.vbo != currentBoundVBO_Index) { qglBindBuffer(BufferTargetARB.ElementArrayBuffer, buffer.vbo); currentBoundVBO_Index = buffer.vbo; }
             }
             else
             {
-                if (buffer.vbo != currentBoundVBO)
-                {
-                    qglBindBuffer(BufferTargetARB.ArrayBuffer, buffer.vbo);
-                    currentBoundVBO = buffer.vbo;
-                }
+                if (buffer.vbo != currentBoundVBO) { qglBindBuffer(BufferTargetARB.ArrayBuffer, buffer.vbo); currentBoundVBO = buffer.vbo; }
             }
 
             // Update any new data
@@ -415,8 +373,7 @@ namespace Gengine.Render
             block.frontEndMemory = Marshal.AllocHGlobal(bytes + 16);
 #endif
 
-            fixed (uint* vbo = &block.vbo)
-                qglGenBuffers(1, vbo);
+            fixed (uint* vbo = &block.vbo) qglGenBuffers(1, vbo);
 
             if (indexBuffer)
             {
@@ -629,8 +586,7 @@ namespace Gengine.Render
             if (r_showVertexCache.Bool)
             {
                 int staticUseCount = 0, staticUseSize = 0;
-                for (block = staticHeaders.next; block != staticHeaders; block = block.next)
-                    if (block.frameUsed == currentFrame) { staticUseCount++; staticUseSize += block.size; }
+                for (block = staticHeaders.next; block != staticHeaders; block = block.next) if (block.frameUsed == currentFrame) { staticUseCount++; staticUseSize += block.size; }
 
                 var frameOverflow = tempOverflow ? "(OVERFLOW)" : string.Empty;
 
@@ -660,8 +616,7 @@ namespace Gengine.Render
             tempOverflow = false;
 
             // free all the deferred free headers
-            while (deferredFreeList[listNum].next != deferredFreeList[listNum])
-                ActuallyFree(deferredFreeList[listNum].next);
+            while (deferredFreeList[listNum].next != deferredFreeList[listNum]) ActuallyFree(deferredFreeList[listNum].next);
 
             // free all the frame temp headers
             block = dynamicHeaders[listNum].next;
@@ -686,8 +641,7 @@ namespace Gengine.Render
                 dynamicIndexHeaders[listNum].next = dynamicIndexHeaders[listNum].prev = dynamicIndexHeaders[listNum];
             }
 #if false
-            if (currentFrame % 60 == 0)
-                common.Printf($"Current static = {staticAllocTotal}, Max static = {staticAllocMaximum:08}, Max dynamic = {dynamicAllocMaximum:08}, Max dynamicI = {dynamicAllocMaximum_Index:08}, vboMax = {vboMax}\n");
+            if (currentFrame % 60 == 0) common.Printf($"Current static = {staticAllocTotal}, Max static = {staticAllocMaximum:08}, Max dynamic = {dynamicAllocMaximum:08}, Max dynamicI = {dynamicAllocMaximum_Index:08}, vboMax = {vboMax}\n");
 #endif
         }
 
@@ -735,29 +689,18 @@ namespace Gengine.Render
             }
 #endif
 
-            if (dynamicAllocThisFrame_Index[which] > dynamicAllocMaximum_Index)
-                dynamicAllocMaximum_Index = dynamicAllocThisFrame_Index[which];
-
-            if (dynamicAllocThisFrame[which] > dynamicAllocMaximum)
-                dynamicAllocMaximum = dynamicAllocThisFrame[which];
+            if (dynamicAllocThisFrame_Index[which] > dynamicAllocMaximum_Index) dynamicAllocMaximum_Index = dynamicAllocThisFrame_Index[which];
+            if (dynamicAllocThisFrame[which] > dynamicAllocMaximum) dynamicAllocMaximum = dynamicAllocThisFrame[which];
         }
 
         public void UnbindIndex()
         {
-            if (currentBoundVBO_Index != VBOEmpty)
-            {
-                qglBindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
-                currentBoundVBO_Index = VBOEmpty;
-            }
+            if (currentBoundVBO_Index != VBOEmpty) { qglBindBuffer(BufferTargetARB.ElementArrayBuffer, 0); currentBoundVBO_Index = VBOEmpty; }
         }
 
         public void UnbindVertex()
         {
-            if (currentBoundVBO != VBOEmpty)
-            {
-                qglBindBuffer(BufferTargetARB.ArrayBuffer, 0);
-                currentBoundVBO = VBOEmpty;
-            }
+            if (currentBoundVBO != VBOEmpty) { qglBindBuffer(BufferTargetARB.ArrayBuffer, 0); currentBoundVBO = VBOEmpty; }
         }
 
         public int ListNum

@@ -1318,7 +1318,7 @@ namespace Gengine.Render
             return false;       // not culled
         }
 
-        public static void R_AxisToModelMatrix(Matrix3x3 axis, Vector3 origin, float[] modelMatrix)
+        public static void R_AxisToModelMatrix(Matrix3x3 axis, Vector3 origin, float* modelMatrix)
         {
             modelMatrix[0] = axis[0].x;
             modelMatrix[4] = axis[1].x;
@@ -1342,7 +1342,7 @@ namespace Gengine.Render
         }
 
         // note that many of these assume a normalized matrix, and will not work with scaled axis
-        public static void R_GlobalPointToLocal(float[] modelMatrix, Vector3 i, out Vector3 o)
+        public static void R_GlobalPointToLocal(float* modelMatrix, Vector3 i, out Vector3 o)
         {
             Vector3 temp = default;
             MathX.VectorSubtract(i, modelMatrix.AsSpan(12), ref temp);
@@ -1352,13 +1352,13 @@ namespace Gengine.Render
             o.z = MathX.DotProduct(temp, modelMatrix.AsSpan(8));
         }
 
-        public static void R_GlobalVectorToLocal(float[] modelMatrix, Vector3 i, out Vector3 o)
+        public static void R_GlobalVectorToLocal(float* modelMatrix, Vector3 i, out Vector3 o)
         {
             o.x = MathX.DotProduct(i, modelMatrix.AsSpan(0));
             o.y = MathX.DotProduct(i, modelMatrix.AsSpan(4));
             o.z = MathX.DotProduct(i, modelMatrix.AsSpan(8));
         }
-        public static void R_GlobalPlaneToLocal(float[] modelMatrix, Plane i, out Plane o)
+        public static void R_GlobalPlaneToLocal(float* modelMatrix, Plane i, out Plane o)
         {
             o.a = MathX.DotProduct(i, modelMatrix.AsSpan(0));
             o.b = MathX.DotProduct(i, modelMatrix.AsSpan(4));
@@ -1815,7 +1815,7 @@ namespace Gengine.Render
 
             // numOutputVerts may be smaller if the input had duplicated or degenerate triangles it will often be larger if the input had mirrored texture seams that needed to be busted for proper tangent spaces
             public int numOutputVerts;
-            public DrawVert verts;
+            public DrawVert[] verts;
 
             public int numMirroredVerts;
             public int[] mirroredVerts;

@@ -7,6 +7,8 @@ using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Render
 {
+    #region Records
+
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     public class AseFace
     {
@@ -64,7 +66,9 @@ namespace Gengine.Render
         public List<AseObject> objects = new();
     }
 
-    unsafe static partial class ModelXAse
+    #endregion
+
+    static unsafe class ModelXAse
     {
         static void VERBOSE(string x) { if (ase.verbose) common.Printf(x); }
 
@@ -317,8 +321,7 @@ namespace Gengine.Render
 
                 ase.currentVertex++;
 
-                if (ase.currentVertex > pMesh.numTVertexes)
-                    common.Error("ase.currentVertex > pMesh.numTVertexes");
+                if (ase.currentVertex > pMesh.numTVertexes) common.Error("ase.currentVertex > pMesh.numTVertexes");
             }
             else common.Error($"Unknown token '{token}' while parsing MESH_TVERTLIST");
         }
@@ -338,8 +341,7 @@ namespace Gengine.Render
 
                 ase.currentVertex++;
 
-                if (ase.currentVertex > pMesh.numCVertexes)
-                    common.Error("ase.currentVertex > pMesh.numCVertexes");
+                if (ase.currentVertex > pMesh.numCVertexes) common.Error("ase.currentVertex > pMesh.numCVertexes");
             }
             else common.Error($"Unknown token '{token}' while parsing MESH_CVERTLIST");
         }
@@ -381,9 +383,7 @@ namespace Gengine.Render
                 f = pMesh.faces[ase.currentFace - 1];
 
                 int v;
-                for (v = 0; v < 3; v++)
-                    if (num == f.vertexNum[v])
-                        break;
+                for (v = 0; v < 3; v++) if (num == f.vertexNum[v]) break;
 
                 if (v == 3) common.Error("MESH_NORMALS vertex index doesn't match face");
 
@@ -489,10 +489,7 @@ namespace Gengine.Render
 
             return ase.model;
         }
-    }
-
-    public static partial class ModelX
-    {
+    
         public static AseModel ASE_Load(string fileName)
         {
             fileSystem.ReadFile(fileName, out var buf, out var timeStamp);

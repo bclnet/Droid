@@ -14,6 +14,7 @@ namespace System.NumericsX
         //[MethodImpl(MethodImplOptions.AggressiveInlining)] public static float* _align16(float* value) => (float*)((nint)((byte*)value + 15) & ~15);
         //[MethodImpl(MethodImplOptions.AggressiveInlining)] public static byte* _align16(byte* value) => (byte*)((nint)(value + 15) & ~15);
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void* _alloca16(void* value) => (void*)((nint)((byte*)value + 15) & ~15);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static Span<T> _alloca16T<T>(Span<T> value) => throw new NotImplementedException();
 
         // maxs
         public const int MAX_STRING_CHARS = 1024;
@@ -192,6 +193,18 @@ namespace System.NumericsX
             => BinaryPrimitives.ReverseEndianness(l);
 #endif
         public static void LittleShort(ref short l)
+#if !BIG_ENDIAN
+        { }
+#else
+            => l = BinaryPrimitives.ReverseEndianness(l);
+#endif
+        public static ushort LittleUShort(ushort l)
+#if !BIG_ENDIAN
+            => l;
+#else
+            => BinaryPrimitives.ReverseEndianness(l);
+#endif
+        public static void LittleUShort(ref ushort l)
 #if !BIG_ENDIAN
         { }
 #else
