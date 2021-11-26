@@ -40,10 +40,10 @@ namespace System.NumericsX
     public class TraceModel
     {
         // these are bit cache limits
-        internal const int MAX_TRACEMODEL_VERTS = 32;
-        internal const int MAX_TRACEMODEL_EDGES = 32;
-        internal const int MAX_TRACEMODEL_POLYS = 16;
-        internal const int MAX_TRACEMODEL_POLYEDGES = 16;
+        public const int MAX_TRACEMODEL_VERTS = 32;
+        public const int MAX_TRACEMODEL_EDGES = 32;
+        public const int MAX_TRACEMODEL_POLYS = 16;
+        public const int MAX_TRACEMODEL_POLYEDGES = 16;
 
         public TRM type;
         public int numVerts;

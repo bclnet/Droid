@@ -1,4 +1,5 @@
 using Gengine.Render;
+using System;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
 using CmHandle = System.Int32;
@@ -7,14 +8,14 @@ namespace Gengine.CM
 {
     internal class WindingList
     {
-        public int numWindings;         // number of windings
-        public FixedWinding[] w = new[CM.MAX_WINDING_LIST];    // windings
+        public int numWindings;                 // number of windings
+        public FixedWinding[] w = new FixedWinding[CM.MAX_WINDING_LIST];    // windings
         public Vector3 normal;                  // normal for all windings
         public Bounds bounds;                   // bounds of all windings in list
         public Vector3 origin;                  // origin for radius
         public float radius;                    // radius relative to origin for all windings
-        public int contents;                // winding surface contents
-        public int primitiveNum;            // number of primitive the windings came from
+        public int contents;                    // winding surface contents
+        public int primitiveNum;                // number of primitive the windings came from
     }
 
     internal class CM
@@ -46,71 +47,71 @@ namespace Gengine.CM
         public struct Vertex
         {
             public Vector3 p;                   // vertex point
-            public int checkcount;          // for multi-check avoidance
-            public uint side;               // each bit tells at which side this vertex passes one of the trace model edges
-            public uint sideSet;            // each bit tells if sidedness for the trace model edge has been calculated yet
+            public int checkcount;              // for multi-check avoidance
+            public uint side;                   // each bit tells at which side this vertex passes one of the trace model edges
+            public uint sideSet;                // each bit tells if sidedness for the trace model edge has been calculated yet
         }
 
-        public struct Edge
+        public unsafe struct Edge
         {
-            public int checkcount;          // for multi-check avoidance
+            public int checkcount;              // for multi-check avoidance
             public ushort internal_;            // a trace model can never collide with public edges
-            public ushort numUsers;         // number of polygons using this edge
-            public uint side;               // each bit tells at which side of this edge one of the trace model vertices passes
-            public uint sideSet;            // each bit tells if sidedness for the trace model vertex has been calculated yet
-            public int vertexNum[2];        // start and end point of edge
+            public ushort numUsers;             // number of polygons using this edge
+            public uint side;                   // each bit tells at which side of this edge one of the trace model vertices passes
+            public uint sideSet;                // each bit tells if sidedness for the trace model vertex has been calculated yet
+            public fixed int vertexNum[2];      // start and end point of edge
             public Vector3 normal;              // edge normal
         }
 
         public class PolygonBlock
         {
             public int bytesRemaining;
-            public byte* next;
+            public object next;
         }
 
         public class Polygon
         {
             public Bounds bounds;               // polygon bounds
-            public int checkcount;          // for multi-check avoidance
-            public int contents;            // contents behind polygon
+            public int checkcount;              // for multi-check avoidance
+            public int contents;                // contents behind polygon
             public Material material;           // material
-            public Plane plane;             // polygon plane
-            public int numEdges;            // number of edges
-            public int edges[1];            // variable sized, indexes into cm_edge_t list
+            public Plane plane;                 // polygon plane
+            public int numEdges;                // number of edges
+            public int[] edges;                 // variable sized, indexes into cm_edge_t list
         }
 
         public class PolygonRef
         {
-            public Polygon p;                  // pointer to polygon
-            public polygonRef next;             // next polygon in chain
+            public Polygon p;                   // pointer to polygon
+            public PolygonRef next;             // next polygon in chain
         }
 
         public class PolygonRefBlock
         {
-            public PolygonRef nextRef;            // next polygon reference in block
-            public PolygonRefBlock next;            // next block with polygon references
+            public PolygonRef nextRef;          // next polygon reference in block
+            public PolygonRefBlock next;        // next block with polygon references
         }
 
         public struct BrushBlock
         {
             public int bytesRemaining;
-            public byte* next;
+            public object next;
         }
 
         public class Brush
         {
-            public int checkcount;          // for multi-check avoidance
+            public int checkcount;              // for multi-check avoidance
             public Bounds bounds;               // brush bounds
-            public int contents;            // contents of brush
-            public Material material;            // material
-            public int primitiveNum;        // number of brush primitive
-            public int numPlanes;           // number of bounding planes
-            public Plane planes[1];         // variable sized
+            public int contents;                // contents of brush
+            public Material material;           // material
+            public int primitiveNum;            // number of brush primitive
+            public int numPlanes;               // number of bounding planes
+            public Plane[] planes;              // variable sized
         }
 
         public class BrushRef
         {
-            public Brush b;                 // pointer to brush
+            public Brush b;                     // pointer to brush
             public BrushRef next;               // next brush in chain
         }
 
@@ -122,42 +123,43 @@ namespace Gengine.CM
 
         public class Node
         {
-            public int planeType;          // node axial plane type
-            public float planeDist;            // node plane distance
-            public PolygonRef polygons;          // polygons in node
-            public BrushRef brushes;         // brushes in node
-            public Node parent;             // parent of this node
-            public Node children[2];        // node children
+            public int planeType;               // node axial plane type
+            public float planeDist;             // node plane distance
+            public PolygonRef polygons;         // polygons in node
+            public BrushRef brushes;            // brushes in node
+            public Node parent;                 // parent of this node
+            public Node children0;              // node children
+            public Node children1;              // node children
         }
 
         public class NodeBlock
         {
-            public Node nextNode;            // next node in block
-            public NodeBlock_s* next;               // next block with nodes
+            public Node nextNode;               // next node in block
+            public NodeBlock next;              // next block with nodes
         }
 
         public class Model
         {
-            public string name;             // model name
-            public Bounds bounds;                // model bounds
-            public int contents;           // all contents of the model ored together
-            public bool isConvex;          // set if model is convex
+            public string name;                 // model name
+            public Bounds bounds;               // model bounds
+            public int contents;                // all contents of the model ored together
+            public bool isConvex;               // set if model is convex
 
             // model geometry
-            public int maxVertices;        // size of vertex array
-            public int numVertices;        // number of vertices
-            public Vertex vertices;          // array with all vertices used by the model
-            public int maxEdges;           // size of edge array
-            public int numEdges;           // number of edges
-            public Edge edges;               // array with all edges used by the model
-            public Node node;                // first node of spatial subdivision
+            public int maxVertices;             // size of vertex array
+            public int numVertices;             // number of vertices
+            public Vertex[] vertices;             // array with all vertices used by the model
+            public int maxEdges;                // size of edge array
+            public int numEdges;                // number of edges
+            public Edge[] edges;                // array with all edges used by the model
+            public Node node;                   // first node of spatial subdivision
 
             // blocks with allocated memory
-            public NodeBlock nodeBlocks;         // list with blocks of nodes
+            public NodeBlock nodeBlocks;        // list with blocks of nodes
             public PolygonRefBlock polygonRefBlocks; // list with blocks of polygon references
-            public BrushRefBlock brushRefBlocks;     // list with blocks of brush references
-            public PolygonBlock polygonBlock;        // memory block with all polygons
-            public BrushBlock brushBlock;            // memory block with all brushes
+            public BrushRefBlock brushRefBlocks; // list with blocks of brush references
+            public PolygonBlock polygonBlock;   // memory block with all polygons
+            public BrushBlock brushBlock;       // memory block with all brushes
 
             // statistics
             public int numPolygons;
@@ -180,82 +182,82 @@ namespace Gengine.CM
 
         public class TrmVertex
         {
-            public int used;                                       // true if this vertex is used for collision detection
-            public Vector3 p;                                       // vertex position
-            public Vector3 endp;                                    // end point of vertex after movement
-            public int polygonSide;                                // side of polygon this vertex is on (rotational collision)
-            public Pluecker pl;                                  // pluecker coordinate for vertex movement
-            public Vector3 rotationOrigin;                          // rotation origin for this vertex
-            public Bounds rotationBounds;                        // rotation bounds for this vertex
+            public int used;                        // true if this vertex is used for collision detection
+            public Vector3 p;                       // vertex position
+            public Vector3 endp;                    // end point of vertex after movement
+            public int polygonSide;                 // side of polygon this vertex is on (rotational collision)
+            public Pluecker pl;                     // pluecker coordinate for vertex movement
+            public Vector3 rotationOrigin;          // rotation origin for this vertex
+            public Bounds rotationBounds;           // rotation bounds for this vertex
         }
 
-        public struct TrmEdge
+        public unsafe struct TrmEdge
         {
-            public int used;                                       // true when vertex is used for collision detection
-            public Vector3 start;                                   // start of edge
-            public Vector3 end;                                     // end of edge
-            public int vertexNum[2];                               // indexes into cm_traceWork_t->vertices
-            public Pluecker pl;                                  // pluecker coordinate for edge
-            public Vector3 cross;                                   // (z,-y,x) of cross product between edge dir and movement dir
-            public Bounds rotationBounds;                        // rotation bounds for this edge
-            public Pluecker plzaxis;                             // pluecker coordinate for rotation about the z-axis
-            public ushort bitNum;                          // vertex bit number
+            public int used;                        // true when vertex is used for collision detection
+            public Vector3 start;                   // start of edge
+            public Vector3 end;                     // end of edge
+            public fixed int vertexNum[2];          // indexes into cm_traceWork_t->vertices
+            public Pluecker pl;                     // pluecker coordinate for edge
+            public Vector3 cross;                   // (z,-y,x) of cross product between edge dir and movement dir
+            public Bounds rotationBounds;           // rotation bounds for this edge
+            public Pluecker plzaxis;                // pluecker coordinate for rotation about the z-axis
+            public ushort bitNum;                   // vertex bit number
         }
 
-        public struct TrmPolygon
+        public unsafe struct TrmPolygon
         {
             public int used;
-            public Plane plane;                                  // polygon plane
-            public int numEdges;                                   // number of edges
-            public int edges[MAX_TRACEMODEL_POLYEDGES];            // index into cm_traceWork_t->edges
-            public Bounds rotationBounds;                        // rotation bounds for this polygon
+            public Plane plane;                     // polygon plane
+            public int numEdges;                    // number of edges
+            public fixed int edges[TraceModel.MAX_TRACEMODEL_POLYEDGES];    // index into cm_traceWork_t->edges
+            public Bounds rotationBounds;           // rotation bounds for this polygon
         }
 
-        public struct TraceWork
+        public class TraceWork
         {
             public int numVerts;
-            public TrmVertex vertices[MAX_TRACEMODEL_VERTS];  // trm vertices
+            public TrmVertex[] vertices = new TrmVertex[TraceModel.MAX_TRACEMODEL_VERTS];  // trm vertices
             public int numEdges;
-            public TrmEdge edges[MAX_TRACEMODEL_EDGES + 1];       // trm edges
+            public TrmEdge[] edges = new TrmEdge[TraceModel.MAX_TRACEMODEL_EDGES + 1];       // trm edges
             public int numPolys;
-            public TrmPolygon polys[MAX_TRACEMODEL_POLYS];    // trm polygons
-            public Model model;                              // model colliding with
-            public Vector3 start;                                   // start of trace
-            public Vector3 end;                                     // end of trace
-            public Vector3 dir;                                     // trace direction
-            public Bounds bounds;                                // bounds of full trace
-            public Bounds size;                                  // bounds of transformed trm relative to start
-            public Vector3 extents;                                 // largest of abs(size[0]) and abs(size[1]) for BSP trace
-            public int contents;                                   // ignore polygons that do not have any of these contents flags
-            public Trace trace;                                  // collision detection result
+            public TrmPolygon[] polys = new TrmPolygon[TraceModel.MAX_TRACEMODEL_POLYS];    // trm polygons
+            public Model model;                     // model colliding with
+            public Vector3 start;                   // start of trace
+            public Vector3 end;                     // end of trace
+            public Vector3 dir;                     // trace direction
+            public Bounds bounds;                   // bounds of full trace
+            public Bounds size;                     // bounds of transformed trm relative to start
+            public Vector3 extents;                 // largest of abs(size[0]) and abs(size[1]) for BSP trace
+            public int contents;                    // ignore polygons that do not have any of these contents flags
+            public Trace trace;                     // collision detection result
 
-            public bool rotation;                                  // true if calculating rotational collision
-            public bool pointTrace;                                // true if only tracing a point
-            public bool positionTest;                              // true if not tracing but doing a position test
-            public bool isConvex;                                  // true if the trace model is convex
-            public bool axisIntersectsTrm;                         // true if the rotation axis intersects the trace model
-            public bool getContacts;                               // true if retrieving contacts
-            public bool quickExit;                                 // set to quickly stop the collision detection calculations
+            public bool rotation;                   // true if calculating rotational collision
+            public bool pointTrace;                 // true if only tracing a point
+            public bool positionTest;               // true if not tracing but doing a position test
+            public bool isConvex;                   // true if the trace model is convex
+            public bool axisIntersectsTrm;          // true if the rotation axis intersects the trace model
+            public bool getContacts;                // true if retrieving contacts
+            public bool quickExit;                  // set to quickly stop the collision detection calculations
 
-            public Vector3 origin;                                  // origin of rotation in model space
-            public Vector3 axis;                                    // rotation axis in model space
-            public Matrix3x3 matrix;                                  // rotates axis of rotation to the z-axis
-            public float angle;                                    // angle for rotational collision
-            public float maxTan;                                   // max tangent of half the positive angle used instead of fraction
-            public float radius;                                   // rotation radius of trm start
-            public Rotation modelVertexRotation;                 // inverse rotation for model vertices
+            public Vector3 origin;                  // origin of rotation in model space
+            public Vector3 axis;                    // rotation axis in model space
+            public Matrix3x3 matrix;                // rotates axis of rotation to the z-axis
+            public float angle;                     // angle for rotational collision
+            public float maxTan;                    // max tangent of half the positive angle used instead of fraction
+            public float radius;                    // rotation radius of trm start
+            public Rotation modelVertexRotation;    // inverse rotation for model vertices
 
-            public ContactInfo contacts;                        // array with contacts
-            public int maxContacts;                                // max size of contact array
-            public int numContacts;                                // number of contacts found
+            public ContactInfo contacts;            // array with contacts
+            public int maxContacts;                 // max size of contact array
+            public int numContacts;                 // number of contacts found
 
-            public Plane heartPlane1;                            // polygons should be near anough the trace heart planes
+            public Plane heartPlane1;               // polygons should be near anough the trace heart planes
             public float maxDistFromHeartPlane1;
             public Plane heartPlane2;
             public float maxDistFromHeartPlane2;
-            public Pluecker polygonEdgePlueckerCache[CM_MAX_POLYGON_EDGES];
-            public Pluecker polygonVertexPlueckerCache[CM_MAX_POLYGON_EDGES];
-            public Vector3 polygonRotationOriginCache[CM_MAX_POLYGON_EDGES];
+            public Pluecker[] polygonEdgePlueckerCache = new Pluecker[CM_MAX_POLYGON_EDGES];
+            public Pluecker[] polygonVertexPlueckerCache = new Pluecker[CM_MAX_POLYGON_EDGES];
+            public Vector3[] polygonRotationOriginCache = new Vector3[CM_MAX_POLYGON_EDGES];
         }
 
         #endregion
@@ -265,13 +267,35 @@ namespace Gengine.CM
         public class ProcNode
         {
             public Plane plane;
-            public int children[2];                // negative numbers are (-1 - areaNumber), 0 = solid
+            public int[] children = new int[2];                // negative numbers are (-1 - areaNumber), 0 = solid
         }
 
         #endregion
 
-        internal class CollisionModelManagerLocal : ICollisionModelManager
+        internal partial class CollisionModelManagerLocal : ICollisionModelManager
         {
+            string mapName;
+            DateTime mapFileTime;
+            int loaded;
+            // for multi-check avoidance
+            int checkCount;
+            // models
+            int maxModels;
+            int numModels;
+            Model[] models;
+            // polygons and brush for trm model
+            PolygonRef[] trmPolygons = new PolygonRef[TraceModel.MAX_TRACEMODEL_POLYS];
+            BrushRef[] trmBrushes = new BrushRef[1];
+            Material trmMaterial;
+            // for data pruning
+            int numProcNodes;
+            ProcNode procNodes;
+            // for retrieving contact points
+            bool getContacts;
+            ContactInfo contacts;
+            int maxContacts;
+            int numContacts;
+
             // load collision models from a map file
             public void LoadMap(MapFile mapFile);
             // frees all the collision models
@@ -280,7 +304,7 @@ namespace Gengine.CM
             // get clip handle for model
             public CmHandle LoadModel(string modelName, bool precache);
             // sets up a trace model for collision with other trace models
-            public cmHandle SetupTrmModel(TraceModel trm, Material material);
+            public CmHandle SetupTrmModel(TraceModel trm, Material material);
             // create trace model from a collision model, returns true if succesfull
             public bool TrmFromModel(string modelName, TraceModel trm);
 
@@ -289,7 +313,7 @@ namespace Gengine.CM
             // bounds of the model
             public bool GetModelBounds(CmHandle model, Bounds bounds);
             // all contents flags of brushes and polygons ored together
-            public bool GetModelContents(CmHandle model, int contents);
+            public bool GetModelContents(CmHandle model, out int contents);
             // get the vertex of a model
             public bool GetModelVertex(CmHandle model, int vertexNum, Vector3 vertex);
             // get the edge of a model
@@ -298,14 +322,13 @@ namespace Gengine.CM
             public bool GetModelPolygon(CmHandle model, int polygonNum, FixedWinding winding);
 
             // translates a trm and reports the first collision if any
-            public void Translation(Trace results, Vector3 start, Vector3 end, TraceModel trm, Matrix3x3 trmAxis, int contentMask, CmHandle model, Vector3 modelOrigin, Matrix3x3 modelAxis);
+            public void Translation(out Trace results, Vector3 start, Vector3 end, TraceModel trm, Matrix3x3 trmAxis, int contentMask, CmHandle model, Vector3 modelOrigin, Matrix3x3 modelAxis);
             // rotates a trm and reports the first collision if any
-            public void Rotation(Trace results, Vector3 start, Rotation rotation,
-                                            TraceModel trm, Matrix3x3 trmAxis, int contentMask, CmHandle model, Vector3 modelOrigin, Matrix3x3 modelAxis);
+            public void Rotation(Trace results, Vector3 start, Rotation rotation, TraceModel trm, Matrix3x3 trmAxis, int contentMask, CmHandle model, Vector3 modelOrigin, Matrix3x3 modelAxis);
             // returns the contents the trm is stuck in or 0 if the trm is in free space
-            public int Contents(Vector3 start, TraceModel trm, Matrix3x3 trmAxis, int contentMask, CmHandle model, Vector3 modelOrigin, Matrix3x3 modelAxis);
+            //public int Contents(in Vector3 start, TraceModel trm, in Matrix3x3 trmAxis, int contentMask, CmHandle model, in Vector3 modelOrigin, in Matrix3x3 modelAxis);
             // stores all contact points of the trm with the model, returns the number of contacts
-            public int Contacts(ContactInfo contacts, int maxContacts, Vector3 start, Vector6 dir, float depth, TraceModel trm, Matrix3x3 trmAxis, int contentMask, CmHandle model, Vector3 modelOrigin, Matrix3x3 modelAxis);
+            //public int Contacts(ContactInfo contacts, int maxContacts, in Vector3 start, in Vector6 dir, in float depth, in TraceModel trm, in Matrix3x3 trmAxis, int contentMask, CmHandle model, in Vector3 modelOrigin, in Matrix3x3 modelAxis);
             // test collision detection
             public void DebugOutput(Vector3 origin);
             // draw a model
@@ -355,15 +378,6 @@ namespace Gengine.CM
             //   									const idTraceModel* trm, const idMat3 &trmAxis, int contentMask,
             //                                   CmHandle model, const idVec3 &origin, const idMat3 &modelAxis );
 
-            //   private:			// CollisionMap_contents.cpp
-            //bool TestTrmVertsInBrush(cm_traceWork_t* tw, cm_brush_t* b);
-            //           bool TestTrmInPolygon(cm_traceWork_t* tw, cm_polygon_t* p);
-            //           cm_node_t* PointNode( const idVec3 &p, cm_model_t* model);
-            //           int PointContents( const idVec3 p, CmHandle model);
-            //   int TransformedPointContents( const idVec3 &p, CmHandle model, const idVec3 &origin, const idMat3 &modelAxis );
-            //   int ContentsTrm(trace_t* results, const idVec3 &start,
-            //   									const idTraceModel* trm, const idMat3 &trmAxis, int contentMask,
-            //                                   CmHandle model, const idVec3 &modelOrigin, const idMat3 &modelAxis );
 
             //   private:			// CollisionMap_trace.cpp
             //void TraceTrmThroughNode(cm_traceWork_t* tw, cm_node_t* node);
@@ -472,27 +486,7 @@ namespace Gengine.CM
             //   								const idVec3 &viewOrigin, const float radius);
 
             //           private:			// collision map data
-            //idStr mapName;
-            //           ID_TIME_T mapFileTime;
-            //           int loaded;
-            //           // for multi-check avoidance
-            //           int checkCount;
-            //           // models
-            //           int maxModels;
-            //           int numModels;
-            //           cm_model_t** models;
-            //           // polygons and brush for trm model
-            //           cm_polygonRef_t* trmPolygons[MAX_TRACEMODEL_POLYS];
-            //           cm_brushRef_t* trmBrushes[1];
-            //           const idMaterial* trmMaterial;
-            //           // for data pruning
-            //           int numProcNodes;
-            //           cm_procNode_t* procNodes;
-            //           // for retrieving contact points
-            //           bool getContacts;
-            //           contactInfo_t* contacts;
-            //           int maxContacts;
-            //           int numContacts;
+           
         }
 
         // for debugging
