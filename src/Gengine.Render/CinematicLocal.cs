@@ -1,8 +1,8 @@
-using System;
 using System.NumericsX.OpenStack;
 using System.Runtime.CompilerServices;
-using static System.NumericsX.Platform;
+using static Gengine.Render.TR;
 using static System.NumericsX.OpenStack.OpenStack;
+using static System.NumericsX.Platform;
 
 namespace Gengine.Render
 {
@@ -14,145 +14,9 @@ namespace Gengine.Render
         const int CIN_silent = 8;
         const int CIN_shader = 16;
 
-        public CinematicLocal()
-        {
-            image = null;
-            status = CinStatus.FMV_EOF;
-            buf = null;
-            iFile = null;
-
-            qStatus[0] = (byte**)Mem_Alloc(32768 * sizeof(byte*));
-            qStatus[1] = (byte**)Mem_Alloc(32768 * sizeof(byte*));
-        }
-
-        public override void Dispose()
-        {
-            Close();
-
-            Mem_Free(qStatus[0]); qStatus[0] = null;
-            Mem_Free(qStatus[1]); qStatus[1] = null;
-        }
-
-        public override bool InitFromFile(string qpath, bool looping)
-        {
-            ushort RoQID;
-
-            Close();
-
-            inMemory = false;
-            animationLength = 100000;
-
-            fileName = !qpath.Contains('/') && !qpath.Contains('\\') ? $"video/{qpath}" : qpath;
-
-            iFile = fileSystem.OpenFileRead(fileName);
-
-            if (iFile == null) return false;
-
-            ROQSize = iFile.Length;
-
-            this.looping = looping;
-
-            CIN_HEIGHT = DEFAULT_CIN_HEIGHT;
-            CIN_WIDTH = DEFAULT_CIN_WIDTH;
-            samplesPerPixel = 4;
-            startTime = 0;  //Sys_Milliseconds();
-            buf = null;
-
-            iFile.Read(file, 16);
-
-            RoQID = (ushort)(file[0]) + (ushort)(file[1]) * 256;
-
-            frameRate = file[6];
-            if (frameRate == 32.0f) frameRate = 1000.0f / 32.0f;
-
-            if (RoQID == ROQ_FILE)
-            {
-                RoQ_init();
-                status = CinStatus.FMV_PLAY;
-                ImageForTime(0);
-                status = (looping) ? CinStatus.FMV_PLAY : CinStatus.FMV_IDLE;
-                return true;
-            }
-
-            RoQShutdown();
-            return false;
-        }
-
-        public override CinData ImageForTime(int milliseconds)
-        {
-            CinData cinData = default;
-
-            if (milliseconds < 0) milliseconds = 0;
-
-
-            if (R.r_skipROQ.Bool) return cinData;
-
-            if (status == CinStatus.FMV_EOF || status == CinStatus.FMV_IDLE)
-            {
-                return cinData;
-            }
-
-            if (buf == null || startTime == -1)
-            {
-                if (startTime == -1)
-                {
-                    RoQReset();
-                }
-                startTime = milliseconds;
-            }
-
-            tfps = (int)(((milliseconds - startTime) * frameRate) / 1000);
-            if (tfps < 0) tfps = 0;
-            if (tfps < numQuads) { RoQReset(); buf = null; status = CinStatus.FMV_PLAY; }
-
-            if (buf == null) while (buf == null) RoQInterrupt();
-            else while (tfps != numQuads && status == CinStatus.FMV_PLAY) RoQInterrupt();
-
-            if (status == CinStatus.FMV_LOOPED)
-            {
-                status = CinStatus.FMV_PLAY;
-                while (buf == null && status == CinStatus.FMV_PLAY) RoQInterrupt();
-                startTime = milliseconds;
-            }
-
-            if (status == CinStatus.FMV_EOF)
-            {
-                if (looping)
-                {
-                    RoQReset();
-                    buf = null;
-                    if (status == CinStatus.FMV_LOOPED) status = CinStatus.FMV_PLAY;
-                    while (buf == null && status == CinStatus.FMV_PLAY) RoQInterrupt();
-                    startTime = milliseconds;
-                }
-                else { status = CinStatus.FMV_IDLE; RoQShutdown(); }
-            }
-
-            cinData.imageWidth = CIN_WIDTH;
-            cinData.imageHeight = CIN_HEIGHT;
-            cinData.status = status;
-            cinData.image = buf;
-
-            return cinData;
-        }
-
-        public override int AnimationLength
-            => animationLength;
-
-        public override void Close()
-        {
-            if (image != null) { Mem_Free((void*)image); image = null; buf = null; status = CinStatus.FMV_EOF; }
-            RoQShutdown();
-        }
-
-        public override void ResetTime(int time)
-        {
-            startTime = -1; //backEnd.viewDef ? 1000 * backEnd.viewDef.floatTime : -1;
-            status = CinStatus.FMV_PLAY;
-        }
-
-        nint mcomp[256];
-        byte** qStatus[2];
+        nint[] mcomp = new nint[256];
+        byte*[] qStatus0;
+        byte*[] qStatus1;
         string fileName;
         int CIN_WIDTH, CIN_HEIGHT;
         VFile iFile;
@@ -166,7 +30,7 @@ namespace Gengine.Render
         int samplesPerLine;
         uint roq_id;
         int screenDelta;
-        byte* buf;
+        byte[] buf;
         int samplesPerPixel;                // defaults to 2
         uint xsize, ysize, maxsize, minsize;
         int normalBuffer0;
@@ -189,6 +53,129 @@ namespace Gengine.Render
         bool smootheddouble;
         bool inMemory;
 
+        public CinematicLocal()
+        {
+            image = null;
+            status = CinStatus.FMV_EOF;
+            buf = null;
+            iFile = null;
+
+            qStatus0 = new byte*[32768];
+            qStatus1 = new byte*[32768];
+        }
+
+        public override void Dispose()
+        {
+            Close();
+
+            qStatus0 = null;
+            qStatus1 = null;
+        }
+
+        public override bool InitFromFile(string qpath, bool looping)
+        {
+            ushort RoQID;
+
+            Close();
+
+            inMemory = false;
+            animationLength = 100000;
+
+            fileName = !qpath.Contains('/') && !qpath.Contains('\\')
+                ? $"video/{qpath}"
+                : qpath;
+            iFile = fileSystem.OpenFileRead(fileName);
+            if (iFile == null) return false;
+            ROQSize = iFile.Length;
+
+            this.looping = looping;
+
+            CIN_HEIGHT = DEFAULT_CIN_HEIGHT;
+            CIN_WIDTH = DEFAULT_CIN_WIDTH;
+            samplesPerPixel = 4;
+            startTime = 0;
+            buf = null;
+
+            iFile.Read(file, 16);
+            RoQID = (ushort)(file[0] + (file[1] * 256));
+
+            frameRate = file[6];
+            if (frameRate == 32f) frameRate = 1000f / 32f;
+
+            if (RoQID == ROQ_FILE)
+            {
+                RoQ_init();
+                status = CinStatus.FMV_PLAY;
+                ImageForTime(0);
+                status = looping ? CinStatus.FMV_PLAY : CinStatus.FMV_IDLE;
+                return true;
+            }
+
+            RoQShutdown();
+            return false;
+        }
+
+        public override CinData ImageForTime(int milliseconds)
+        {
+            CinData cinData = default;
+
+            if (milliseconds < 0) milliseconds = 0;
+            if (r_skipROQ.Bool || status == CinStatus.FMV_EOF || status == CinStatus.FMV_IDLE) return cinData;
+
+            if (buf == null || startTime == -1)
+            {
+                if (startTime == -1) RoQReset();
+                startTime = milliseconds;
+            }
+
+            tfps = (int)(((milliseconds - startTime) * frameRate) / 1000);
+            if (tfps < 0) tfps = 0;
+            if (tfps < numQuads) { RoQReset(); buf = null; status = CinStatus.FMV_PLAY; }
+
+            if (buf == null) while (buf == null) RoQInterrupt();
+            else while (tfps != numQuads && status == CinStatus.FMV_PLAY) RoQInterrupt();
+
+            if (status == CinStatus.FMV_LOOPED)
+            {
+                status = CinStatus.FMV_PLAY;
+                while (buf == null && status == CinStatus.FMV_PLAY) RoQInterrupt();
+                startTime = milliseconds;
+            }
+
+            if (status == CinStatus.FMV_EOF)
+                if (looping)
+                {
+                    RoQReset();
+                    buf = null;
+                    if (status == CinStatus.FMV_LOOPED) status = CinStatus.FMV_PLAY;
+                    while (buf == null && status == CinStatus.FMV_PLAY) RoQInterrupt();
+                    startTime = milliseconds;
+                }
+                else { status = CinStatus.FMV_IDLE; RoQShutdown(); }
+
+            cinData.imageWidth = CIN_WIDTH;
+            cinData.imageHeight = CIN_HEIGHT;
+            cinData.status = (int)status;
+            cinData.image = buf;
+
+            return cinData;
+        }
+
+        public override int AnimationLength
+            => animationLength;
+
+        public override void Close()
+        {
+            if (image != null) { image = null; buf = null; status = CinStatus.FMV_EOF; }
+            RoQShutdown();
+        }
+
+        public override void ResetTime(int time)
+        {
+            startTime = -1; //: backEnd.viewDef ? 1000 * backEnd.viewDef.floatTime : -1;
+            status = CinStatus.FMV_PLAY;
+        }
+
         void RoQ_init()
         {
             RoQPlayed = 24;
@@ -205,10 +192,9 @@ namespace Gengine.Render
             roq_flags = file[14] + file[15] * 256;
         }
 
-        void blitVQQuad32fs(byte** status, string data)
+        void blitVQQuad32fs(byte** status, byte* data)
         {
-            ushort newd, celdata, code;
-            uint index, i;
+            ushort newd, celdata, code; uint index, i;
 
             newd = 0;
             celdata = 0;
@@ -216,7 +202,7 @@ namespace Gengine.Render
 
             do
             {
-                if (newd == 0) { newd = 7; celdata = data[0] + data[1] * 256; data += 2; }
+                if (newd == 0) { newd = 7; celdata = (ushort)(data[0] + data[1] * 256); data += 2; }
                 else newd--;
 
                 code = (ushort)(celdata & 0xc000);
@@ -225,15 +211,12 @@ namespace Gengine.Render
                 switch (code)
                 {
                     case 0x8000:                                                    // vq code
-                        blit8_32((byte*)&vq8[(*data) * 128], status[index], samplesPerLine);
-                        data++;
-                        index += 5;
-                        break;
+                        blit8_32((byte*)&vq8[(*data) * 128], status[index], samplesPerLine); data++; index += 5; break;
                     case 0xc000:                                                    // drop
                         index++;                                                    // skip 8x8
                         for (i = 0; i < 4; i++)
                         {
-                            if (newd == 0) { newd = 7; celdata = data[0] + data[1] * 256; data += 2; }
+                            if (newd == 0) { newd = 7; celdata = (ushort)(data[0] + data[1] * 256); data += 2; }
                             else newd--;
 
                             code = (ushort)(celdata & 0xc000);
@@ -242,35 +225,22 @@ namespace Gengine.Render
                             switch (code)
                             {                                           // code in top two bits of code
                                 case 0x8000:                                        // 4x4 vq code
-                                    blit4_32((byte*)&vq4[(*data) * 32], status[index], samplesPerLine);
-                                    data++;
-                                    break;
+                                    blit4_32((byte*)&vq4[(*data) * 32], status[index], samplesPerLine); data++; break;
                                 case 0xc000:                                        // 2x2 vq code
-                                    blit2_32((byte*)&vq2[(*data) * 8], status[index], samplesPerLine);
-                                    data++;
-                                    blit2_32((byte*)&vq2[(*data) * 8], status[index] + 8, samplesPerLine);
-                                    data++;
-                                    blit2_32((byte*)&vq2[(*data) * 8], status[index] + samplesPerLine * 2, samplesPerLine);
-                                    data++;
-                                    blit2_32((byte*)&vq2[(*data) * 8], status[index] + samplesPerLine * 2 + 8, samplesPerLine);
-                                    data++;
-                                    break;
+                                    blit2_32((byte*)&vq2[(*data) * 8], status[index], samplesPerLine); data++;
+                                    blit2_32((byte*)&vq2[(*data) * 8], status[index] + 8, samplesPerLine); data++;
+                                    blit2_32((byte*)&vq2[(*data) * 8], status[index] + samplesPerLine * 2, samplesPerLine); data++;
+                                    blit2_32((byte*)&vq2[(*data) * 8], status[index] + samplesPerLine * 2 + 8, samplesPerLine); data++; break;
                                 case 0x4000:                                        // motion compensation
-                                    move4_32(status[index] + mcomp[(*data)], status[index], samplesPerLine);
-                                    data++;
-                                    break;
+                                    move4_32(status[index] + mcomp[(*data)], status[index], samplesPerLine); data++; break;
                             }
                             index++;
                         }
                         break;
                     case 0x4000:                                                    // motion compensation
-                        move8_32(status[index] + mcomp[(*data)], status[index], samplesPerLine);
-                        data++;
-                        index += 5;
-                        break;
+                        move8_32(status[index] + mcomp[*data], status[index], samplesPerLine); data++; index += 5; break;
                     case 0x0000:
-                        index += 5;
-                        break;
+                        index += 5; break;
                 }
 
             } while (status[index] != null);
@@ -350,8 +320,7 @@ namespace Gengine.Render
         static void move8_32(byte* src, byte* dst, int spl)
         {
 #if true
-            int* dsrc, *ddst;
-            int dspl;
+            int* dsrc, ddst; int dspl;
 
             dsrc = (int*)src;
             ddst = (int*)dst;
@@ -429,8 +398,7 @@ namespace Gengine.Render
             ddst[7 * dspl + 6] = dsrc[7 * dspl + 6];
             ddst[7 * dspl + 7] = dsrc[7 * dspl + 7];
 #else
-            double* dsrc, *ddst;
-            int dspl;
+            double* dsrc, ddst; int dspl;
 
             dsrc = (double*)src;
             ddst = (double*)dst;
@@ -488,8 +456,7 @@ namespace Gengine.Render
         static void move4_32(byte* src, byte* dst, int spl)
         {
 #if true
-            int* dsrc, *ddst;
-            int dspl;
+            int* dsrc, ddst; int dspl;
 
             dsrc = (int*)src;
             ddst = (int*)dst;
@@ -515,8 +482,7 @@ namespace Gengine.Render
             ddst[3 * dspl + 2] = dsrc[3 * dspl + 2];
             ddst[3 * dspl + 3] = dsrc[3 * dspl + 3];
 #else
-            double* dsrc, *ddst;
-            int dspl;
+            double* dsrc, ddst; int dspl;
 
             dsrc = (double*)src;
             ddst = (double*)dst;
@@ -542,8 +508,7 @@ namespace Gengine.Render
         static void blit8_32(byte* src, byte* dst, int spl)
         {
 #if true
-            int* dsrc, *ddst;
-            int dspl;
+            int* dsrc, ddst; int dspl;
 
             dsrc = (int*)src;
             ddst = (int*)dst;
@@ -621,8 +586,7 @@ namespace Gengine.Render
             ddst[7 * dspl + 6] = dsrc[62];
             ddst[7 * dspl + 7] = dsrc[63];
 #else
-            double* dsrc, *ddst;
-            int dspl;
+            double* dsrc, ddst; int dspl;
 
             dsrc = (double*)src;
             ddst = (double*)dst;
@@ -680,8 +644,7 @@ namespace Gengine.Render
         static void blit4_32(byte* src, byte* dst, int spl)
         {
 #if true
-            int* dsrc, *ddst;
-            int dspl;
+            int* dsrc, ddst; int dspl;
 
             dsrc = (int*)src;
             ddst = (int*)dst;
@@ -704,8 +667,7 @@ namespace Gengine.Render
             ddst[3 * dspl + 2] = dsrc[14];
             ddst[3 * dspl + 3] = dsrc[15];
 #else
-            double* dsrc, *ddst;
-            int dspl;
+            double* dsrc, ddst; int dspl;
 
             dsrc = (double*)src;
             ddst = (double*)dst;
@@ -731,8 +693,7 @@ namespace Gengine.Render
         static void blit2_32(byte* src, byte* dst, int spl)
         {
 #if true
-            int* dsrc, *ddst;
-            int dspl;
+            int* dsrc, ddst; int dspl;
 
             dsrc = (int*)src;
             ddst = (int*)dst;
@@ -743,8 +704,7 @@ namespace Gengine.Render
             ddst[1 * dspl + 0] = dsrc[2];
             ddst[1 * dspl + 1] = dsrc[3];
 #else
-            double* dsrc, *ddst;
-            int dspl;
+            double* dsrc, ddst; int dspl;
 
             dsrc = (double*)src;
             ddst = (double*)dst;
@@ -757,7 +717,7 @@ namespace Gengine.Render
 
         ushort yuv_to_rgb(int y, int u, int v)
         {
-            int r, g, b, YY = (int)(ROQ_YY_tab[(y)]);
+            int r, g, b, YY = ROQ_YY_tab[y];
 
             r = (YY + ROQ_VR_tab[v]) >> 9;
             g = (YY + ROQ_UG_tab[u] + ROQ_VG_tab[v]) >> 8;
@@ -770,12 +730,12 @@ namespace Gengine.Render
             if (g > 63) g = 63;
             if (b > 31) b = 31;
 
-            return (ushort)((r << 11) + (g << 5) + (b));
+            return (ushort)(r << 11 + g << 5 + (b));
         }
 
         uint yuv_to_rgb24(int y, int u, int v)
         {
-            int r, g, b, YY = (int)(ROQ_YY_tab[(y)]);
+            int r, g, b, YY = ROQ_YY_tab[y];
 
             r = (YY + ROQ_VR_tab[v]) >> 6;
             g = (YY + ROQ_UG_tab[u] + ROQ_VG_tab[v]) >> 6;
@@ -788,15 +748,15 @@ namespace Gengine.Render
             if (g > 255) g = 255;
             if (b > 255) b = 255;
 
-            return LittleInt((r) + (g << 8) + (b << 16));
+            return (uint)LittleInt(r + g << 8 + b << 16);
         }
 
         void decodeCodeBook(byte* input, ushort roq_flags)
         {
             int i, j, two, four;
-            ushort* aptr, *bptr, *cptr, *dptr;
+            ushort* aptr, bptr, cptr, dptr;
             int y0, y1, y2, y3, cr, cb;
-            uint* iaptr, *ibptr, *icptr, *idptr;
+            uint* iaptr, ibptr, icptr, idptr;
 
             if (roq_flags == 0) two = four = 256;
             else
@@ -807,8 +767,7 @@ namespace Gengine.Render
             }
 
             four *= 2;
-
-            bptr = (ushort*)vq2;
+            bptr = vq2;
 
             if (!half)
             {
@@ -819,26 +778,27 @@ namespace Gengine.Render
                     {
                         for (i = 0; i < two; i++)
                         {
-                            y0 = (int)*input++;
-                            y1 = (int)*input++;
-                            y2 = (int)*input++;
-                            y3 = (int)*input++;
-                            cr = (int)*input++;
-                            cb = (int)*input++;
+                            y0 = *input++;
+                            y1 = *input++;
+                            y2 = *input++;
+                            y3 = *input++;
+                            cr = *input++;
+                            cb = *input++;
                             *bptr++ = yuv_to_rgb(y0, cr, cb);
                             *bptr++ = yuv_to_rgb(y1, cr, cb);
                             *bptr++ = yuv_to_rgb(y2, cr, cb);
                             *bptr++ = yuv_to_rgb(y3, cr, cb);
                         }
 
-                        cptr = (ushort*)vq4;
-                        dptr = (ushort*)vq8;
+                        cptr = vq4;
+                        dptr = vq8;
 
                         for (i = 0; i < four; i++)
                         {
-                            aptr = (ushort*)vq2 + (*input++) * 4;
-                            bptr = (ushort*)vq2 + (*input++) * 4;
-                            for (j = 0; j < 2; j++) VQ2TO4(aptr, bptr, cptr, dptr);
+                            aptr = vq2 + (*input++) * 4;
+                            bptr = vq2 + (*input++) * 4;
+                            for (j = 0; j < 2; j++)
+                                VQ2TO4(ref aptr, ref bptr, cptr, dptr);
                         }
                     }
                     else if (samplesPerPixel == 4)
@@ -846,12 +806,12 @@ namespace Gengine.Render
                         ibptr = (uint*)bptr;
                         for (i = 0; i < two; i++)
                         {
-                            y0 = (int)*input++;
-                            y1 = (int)*input++;
-                            y2 = (int)*input++;
-                            y3 = (int)*input++;
-                            cr = (int)*input++;
-                            cb = (int)*input++;
+                            y0 = *input++;
+                            y1 = *input++;
+                            y2 = *input++;
+                            y3 = *input++;
+                            cr = *input++;
+                            cb = *input++;
                             *ibptr++ = yuv_to_rgb24(y0, cr, cb);
                             *ibptr++ = yuv_to_rgb24(y1, cr, cb);
                             *ibptr++ = yuv_to_rgb24(y2, cr, cb);
@@ -865,7 +825,8 @@ namespace Gengine.Render
                         {
                             iaptr = (uint*)vq2 + (*input++) * 4;
                             ibptr = (uint*)vq2 + (*input++) * 4;
-                            for (j = 0; j < 2; j++) VQ2TO4(iaptr, ibptr, icptr, idptr);
+                            for (j = 0; j < 2; j++)
+                                VQ2TO4(ref iaptr, ref ibptr, icptr, idptr);
                         }
                     }
                 }
@@ -876,12 +837,12 @@ namespace Gengine.Render
                     {
                         for (i = 0; i < two; i++)
                         {
-                            y0 = (int)*input++;
-                            y1 = (int)*input++;
-                            y2 = (int)*input++;
-                            y3 = (int)*input++;
-                            cr = (int)*input++;
-                            cb = (int)*input++;
+                            y0 = *input++;
+                            y1 = *input++;
+                            y2 = *input++;
+                            y3 = *input++;
+                            cr = *input++;
+                            cb = *input++;
                             *bptr++ = yuv_to_rgb(y0, cr, cb);
                             *bptr++ = yuv_to_rgb(y1, cr, cb);
                             *bptr++ = yuv_to_rgb(((y0 * 3) + y2) / 4, cr, cb);
@@ -892,17 +853,17 @@ namespace Gengine.Render
                             *bptr++ = yuv_to_rgb(y3, cr, cb);
                         }
 
-                        cptr = (ushort*)vq4;
-                        dptr = (ushort*)vq8;
+                        cptr = vq4;
+                        dptr = vq8;
 
                         for (i = 0; i < four; i++)
                         {
-                            aptr = (ushort*)vq2 + (*input++) * 8;
-                            bptr = (ushort*)vq2 + (*input++) * 8;
+                            aptr = vq2 + (*input++) * 8;
+                            bptr = vq2 + (*input++) * 8;
                             for (j = 0; j < 2; j++)
                             {
-                                VQ2TO4(aptr, bptr, cptr, dptr);
-                                VQ2TO4(aptr, bptr, cptr, dptr);
+                                VQ2TO4(ref aptr, ref bptr, cptr, dptr);
+                                VQ2TO4(ref aptr, ref bptr, cptr, dptr);
                             }
                         }
                     }
@@ -911,12 +872,12 @@ namespace Gengine.Render
                         ibptr = (uint*)bptr;
                         for (i = 0; i < two; i++)
                         {
-                            y0 = (int)*input++;
-                            y1 = (int)*input++;
-                            y2 = (int)*input++;
-                            y3 = (int)*input++;
-                            cr = (int)*input++;
-                            cb = (int)*input++;
+                            y0 = *input++;
+                            y1 = *input++;
+                            y2 = *input++;
+                            y3 = *input++;
+                            cr = *input++;
+                            cb = *input++;
                             *ibptr++ = yuv_to_rgb24(y0, cr, cb);
                             *ibptr++ = yuv_to_rgb24(y1, cr, cb);
                             *ibptr++ = yuv_to_rgb24(((y0 * 3) + y2) / 4, cr, cb);
@@ -936,8 +897,8 @@ namespace Gengine.Render
                             ibptr = (uint*)vq2 + (*input++) * 8;
                             for (j = 0; j < 2; j++)
                             {
-                                VQ2TO4(iaptr, ibptr, icptr, idptr);
-                                VQ2TO4(iaptr, ibptr, icptr, idptr);
+                                VQ2TO4(ref iaptr, ref ibptr, icptr, idptr);
+                                VQ2TO4(ref iaptr, ref ibptr, icptr, idptr);
                             }
                         }
                     }
@@ -945,34 +906,28 @@ namespace Gengine.Render
             }
             else
             {
-                //
                 // 1/4 screen
-                //
                 if (samplesPerPixel == 2)
                 {
                     for (i = 0; i < two; i++)
                     {
-                        y0 = (int)*input;
-                        input += 2;
-                        y2 = (int)*input;
-                        input += 2;
-                        cr = (int)*input++;
-                        cb = (int)*input++;
+                        y0 = *input; input += 2;
+                        y2 = *input; input += 2;
+                        cr = *input++;
+                        cb = *input++;
                         *bptr++ = yuv_to_rgb(y0, cr, cb);
                         *bptr++ = yuv_to_rgb(y2, cr, cb);
                     }
 
-                    cptr = (ushort*)vq4;
-                    dptr = (ushort*)vq8;
+                    cptr = vq4;
+                    dptr = vq8;
 
                     for (i = 0; i < four; i++)
                     {
-                        aptr = (ushort*)vq2 + (*input++) * 2;
-                        bptr = (ushort*)vq2 + (*input++) * 2;
+                        aptr = vq2 + (*input++) * 2;
+                        bptr = vq2 + (*input++) * 2;
                         for (j = 0; j < 2; j++)
-                        {
-                            VQ2TO2(aptr, bptr, cptr, dptr);
-                        }
+                            VQ2TO2(ref aptr, ref bptr, cptr, dptr);
                     }
                 }
                 else if (samplesPerPixel == 4)
@@ -980,12 +935,10 @@ namespace Gengine.Render
                     ibptr = (uint*)bptr;
                     for (i = 0; i < two; i++)
                     {
-                        y0 = (int)*input;
-                        input += 2;
-                        y2 = (int)*input;
-                        input += 2;
-                        cr = (int)*input++;
-                        cb = (int)*input++;
+                        y0 = *input; input += 2;
+                        y2 = *input; input += 2;
+                        cr = *input++;
+                        cb = *input++;
                         *ibptr++ = yuv_to_rgb24(y0, cr, cb);
                         *ibptr++ = yuv_to_rgb24(y2, cr, cb);
                     }
@@ -998,9 +951,7 @@ namespace Gengine.Render
                         iaptr = (uint*)vq2 + (*input++) * 2;
                         ibptr = (uint*)vq2 + (*input++) * 2;
                         for (j = 0; j < 2; j++)
-                        {
-                            VQ2TO2(iaptr, ibptr, icptr, idptr);
-                        }
+                            VQ2TO2(ref iaptr, ref ibptr, icptr, idptr);
                     }
                 }
             }
@@ -1015,19 +966,19 @@ namespace Gengine.Render
             offset = screenDelta;
 
             lowx = lowy = 0;
-            bigx = xsize;
-            bigy = ysize;
+            bigx = (int)xsize;
+            bigy = (int)ysize;
 
             if (bigx > CIN_WIDTH) bigx = CIN_WIDTH;
             if (bigy > CIN_HEIGHT) bigy = CIN_HEIGHT;
 
-            if ((startX >= lowx) && (startX + quadSize) <= (bigx) && (startY + quadSize) <= (bigy) && (startY >= lowy) && quadSize <= MAXSIZE)
+            if (startX >= lowx && startX + quadSize <= bigx && (startY + quadSize) <= bigy && startY >= lowy && quadSize <= MAXSIZE)
             {
                 useY = startY;
-                scroff = image + (useY + ((CIN_HEIGHT - bigy) >> 1) + yOff) * (samplesPerLine) + (((startX + xOff)) * samplesPerPixel);
+                scroff = image + (useY + ((CIN_HEIGHT - bigy) >> 1) + yOff) * samplesPerLine + ((startX + xOff) * samplesPerPixel);
 
-                qStatus[0][onQuad] = scroff;
-                qStatus[1][onQuad++] = scroff + offset;
+                qStatus0[onQuad] = scroff;
+                qStatus1[onQuad++] = scroff + offset;
             }
 
             if (quadSize != MINSIZE)
@@ -1045,32 +996,30 @@ namespace Gengine.Render
             int numQuadCels, i, x, y;
             byte* temp;
 
-            numQuadCels = (CIN_WIDTH * CIN_HEIGHT) / (16);
+            numQuadCels = CIN_WIDTH * CIN_HEIGHT / 16;
             numQuadCels += numQuadCels / 4 + numQuadCels / 16;
             numQuadCels += 64;                            // for overflow
 
-            numQuadCels = (xsize * ysize) / (16);
+            numQuadCels = (int)(xsize * ysize / 16);
             numQuadCels += numQuadCels / 4;
             numQuadCels += 64;                            // for overflow
 
             onQuad = 0;
 
             for (y = 0; y < (int)ysize; y += 16) for (x = 0; x < (int)xsize; x += 16) recurseQuad(x, y, 16, xOff, yOff);
-
             temp = null;
-
-            for (i = (numQuadCels - 64); i < numQuadCels; i++) { qStatus[0][i] = temp; qStatus[1][i] = temp; } // eoq
+            for (i = (numQuadCels - 64); i < numQuadCels; i++) { qStatus0[i] = temp; qStatus1[i] = temp; } // eoq
         }
 
         void readQuadInfo(byte* qData)
         {
-            xsize = qData[0] + qData[1] * 256;
-            ysize = qData[2] + qData[3] * 256;
-            maxsize = qData[4] + qData[5] * 256;
-            minsize = qData[6] + qData[7] * 256;
+            xsize = (uint)(qData[0] + qData[1] * 256);
+            ysize = (uint)(qData[2] + qData[3] * 256);
+            maxsize = (uint)(qData[4] + qData[5] * 256);
+            minsize = (uint)(qData[6] + qData[7] * 256);
 
-            CIN_HEIGHT = ysize;
-            CIN_WIDTH = xsize;
+            CIN_HEIGHT = (int)ysize;
+            CIN_WIDTH = (int)xsize;
 
             samplesPerLine = CIN_WIDTH * samplesPerPixel;
             screenDelta = CIN_HEIGHT * samplesPerLine;
@@ -1093,7 +1042,7 @@ namespace Gengine.Render
 
             i = samplesPerLine;
             j = samplesPerPixel;
-            if (xsize == (ysize * 4) && !half) { j = j + j; i = i + i; }
+            if (xsize == (ysize * 4) && !half) { j += j; i += i; }
 
             for (y = 0; y < 16; y++)
             {
@@ -1109,7 +1058,6 @@ namespace Gengine.Render
             RoQ_init();
             status = CinStatus.FMV_LOOPED;
         }
-
 
         const int DEFAULT_CIN_WIDTH = 512;
         const int DEFAULT_CIN_HEIGHT = 512;
@@ -1128,7 +1076,32 @@ namespace Gengine.Render
         const int ZA_SOUND_STEREO = 0x1021;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void VQ2TO4(float a, float b, float c, float d)
+        static void VQ2TO4(ref uint* a, ref uint* b, uint* c, uint* d)
+        {
+            *c++ = a[0];
+            *d++ = a[0];
+            *d++ = a[0];
+            *c++ = a[1];
+            *d++ = a[1];
+            *d++ = a[1];
+            *c++ = b[0];
+            *d++ = b[0];
+            *d++ = b[0];
+            *c++ = b[1];
+            *d++ = b[1];
+            *d++ = b[1];
+            *d++ = a[0];
+            *d++ = a[0];
+            *d++ = a[1];
+            *d++ = a[1];
+            *d++ = b[0];
+            *d++ = b[0];
+            *d++ = b[1];
+            *d++ = b[1];
+            a += 2; b += 2;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static void VQ2TO4(ref ushort* a, ref ushort* b, ushort* c, ushort* d)
         {
             *c++ = a[0];
             *d++ = a[0];
@@ -1154,7 +1127,7 @@ namespace Gengine.Render
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void VQ2TO2(float a, float b, float c, float d)
+        static void VQ2TO2(ref uint* a, ref uint* b, uint* c, uint* d)
         {
             *c++ = *a;
             *d++ = *a;
@@ -1168,7 +1141,21 @@ namespace Gengine.Render
             *d++ = *b;
             a++; b++;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static void VQ2TO2(ref ushort* a, ref ushort* b, ushort* c, ushort* d)
+        {
+            *c++ = *a;
+            *d++ = *a;
+            *d++ = *a;
+            *c++ = *b;
+            *d++ = *b;
+            *d++ = *b;
+            *d++ = *a;
+            *d++ = *a;
+            *d++ = *b;
+            *d++ = *b;
+            a++; b++;
+        }
 
         // jpeg error handling
         static jpeg_error_mgr jerr;
@@ -1226,8 +1213,7 @@ namespace Gengine.Render
             row_stride = cinfo.output_width * cinfo.output_components;
 
             /* Make a one-row-high sample array that will go away when done with image */
-            buffer = (*cinfo.mem.alloc_sarray)
-                 ((j_common_ptr) & cinfo, JPOOL_IMAGE, row_stride, 1);
+            buffer = (*cinfo.mem.alloc_sarray) ((j_common_ptr) & cinfo, JPOOL_IMAGE, row_stride, 1);
 
             // Step 6: while (scan lines remain to be read)
             //           jpeg_read_scanlines(...);

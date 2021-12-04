@@ -95,9 +95,7 @@ namespace Gengine.Render
         public const int SCREEN_WIDTH = 640;
         public const int SCREEN_HEIGHT = 480;
 
-        //
         // functions mainly intended for editor and dmap integration
-        //
 
         // returns the frustum planes in world space
         public static void RenderLightFrustum(RenderLight renderLight, Plane[] lightFrustum) => throw new NotImplementedException();
@@ -107,6 +105,8 @@ namespace Gengine.Render
 
         // used by the view shot taker
         public static void ScreenshotFilename(ref int lastNumber, string base_, out string fileName) => throw new NotImplementedException();
+
+        public static Glconfig glConfig = new();
 
         public static CVar r_useLightPortalFlow = new("r_useLightPortalFlow", "1", CVAR.RENDERER | CVAR.BOOL, "use a more precise area reference determination");
         public static CVar r_multiSamples = new("r_multiSamples", "0", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.INTEGER, "number of antialiasing samples");

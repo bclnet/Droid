@@ -10,6 +10,7 @@ using static System.NumericsX.Platform;
 namespace Gengine.Render
 {
     #region IDs
+
     static partial class ModelXLwo
     {
         // chunk and subchunk IDs
@@ -156,6 +157,7 @@ namespace Gengine.Render
         public const int ID_SHDR = 'S' << 24 | 'H' << 16 | 'D' << 8 | 'R';
         public const int ID_DATA = 'D' << 24 | 'A' << 16 | 'T' << 8 | 'A';
     }
+
     #endregion
 
     #region Records
@@ -494,7 +496,8 @@ namespace Gengine.Render
         public uint type;
         public fixed float norm[3];
         public int nverts;
-        public lwPolVert[] v;           // array of vertex records
+        public lwPolVert[] v_;          // array of vertex records
+        public Memory<lwPolVert> v;     // Memory<array> of vertex records
     }
 
     public class lwPointList
@@ -852,18 +855,20 @@ namespace Gengine.Render
 
             plist.offset = plist.count;
             plist.count += npols;
-            var oldpol = plist.pol;
-            plist.pol = new lwPolygon[plist.count];
-            if (oldpol != null) { Array.Copy(oldpol, plist.pol, plist.offset); oldpol = null; }
+            Array.Resize(ref plist.pol, plist.count);
+            //var oldpol = plist.pol;
+            //plist.pol = new lwPolygon[plist.count];
+            //if (oldpol != null) { Array.Copy(oldpol, plist.pol, plist.offset); oldpol = null; }
 
             plist.voffset = plist.vcount;
             plist.vcount += nverts;
-            var oldpolv = plist.pol[0].v;
-            plist.pol[0].v = new lwPolVert[plist.vcount];
-            if (oldpolv != null) { Array.Copy(oldpolv, plist.pol[0].v, plist.voffset); oldpolv = null; }
+            Array.Resize(ref plist.pol[0].v_, plist.vcount);
+            //var oldpolv = plist.pol[0].v_;
+            //plist.pol[0].v_ = new lwPolVert[plist.vcount];
+            //if (oldpolv != null) { Array.Copy(oldpolv, plist.pol[0].v_, plist.voffset); oldpolv = null; }
 
             // fix up the old vertex pointers
-
+            plist.pol[0].v = plist.pol[0].v_.AsMemory();
             for (i = 1; i < plist.offset; i++) plist.pol[i].v = plist.pol[i - 1].v + plist.pol[i - 1].nverts;
 
             return true;

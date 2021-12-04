@@ -48,8 +48,7 @@ namespace Gengine.Render
         // initialize cinematic play back data
         public static void InitCinematic()
         {
-            float t_ub, t_vr, t_ug, t_vg;
-            int i;
+            float t_ub, t_vr, t_ug, t_vg; int i;
 
             // generate YUV tables
             t_ub = (1.77200f / 2.0f) * (float)(1 << 6) + 0.5f;

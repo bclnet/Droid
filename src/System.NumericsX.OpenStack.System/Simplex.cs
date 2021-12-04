@@ -1,4 +1,4 @@
-namespace Gengine.Render
+namespace System.NumericsX.OpenStack.System
 {
     public class Simplex
     {

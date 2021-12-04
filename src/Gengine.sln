@@ -29,6 +29,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.Tests", "S
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.CM", "Gengine.CM\Gengine.CM.csproj", "{6211E066-7021-4FBB-AE67-4D6EAE9D393E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.Render", "System.NumericsX.OpenStack.Render\System.NumericsX.OpenStack.Render.csproj", "{B632B073-41E4-421A-BD61-6AC62E9E970E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,10 @@ Global
 		{6211E066-7021-4FBB-AE67-4D6EAE9D393E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6211E066-7021-4FBB-AE67-4D6EAE9D393E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6211E066-7021-4FBB-AE67-4D6EAE9D393E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B632B073-41E4-421A-BD61-6AC62E9E970E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B632B073-41E4-421A-BD61-6AC62E9E970E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B632B073-41E4-421A-BD61-6AC62E9E970E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B632B073-41E4-421A-BD61-6AC62E9E970E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

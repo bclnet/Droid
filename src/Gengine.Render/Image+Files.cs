@@ -2,7 +2,6 @@ using System;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
 using System.Runtime.CompilerServices;
-using static Gengine.Lib;
 using static System.NumericsX.OpenStack.OpenStack;
 using static System.NumericsX.Platform;
 
@@ -44,7 +43,7 @@ namespace Gengine.Render
             const int palStart = 18;
             const int imgStart = 18 + (256 * 3);
 
-            var buffer = new byte[bufferSize]);
+            var buffer = new byte[bufferSize];
             //memset(buffer, 0, 18);
             buffer[1] = 1;      // color map type
             buffer[2] = 1;      // uncompressed color mapped image
