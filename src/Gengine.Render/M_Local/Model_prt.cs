@@ -223,7 +223,7 @@ namespace Gengine.Render
 		public override Bounds Bounds(RenderEntity ent)
 			=> particleSystem.bounds;
 
-        public override float DepthHack()
+        public override float DepthHack
 			=> particleSystem.depthHack;
 
 		public override int Memory

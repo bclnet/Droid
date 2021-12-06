@@ -15,7 +15,7 @@ using System.Runtime.CompilerServices;
 namespace Gengine
 {
     // https://github.com/WaveEngine/OpenGL.NET
-    public static class Lib
+    public unsafe static class Lib
     {
         public const string ENGINE_VERSION = "Doom3Quest 1.1.6";	// printed in console
         public const int BUILD_NUMBER = 1304;
@@ -37,5 +37,11 @@ namespace Gengine
 
         public static string R_GetVidModeListString(bool addCustom) => throw new NotImplementedException();
         public static string R_GetVidModeValsString(bool addCustom) => throw new NotImplementedException();
+
+        //: TODO-SET
+        public static Action<int> GL_SelectTexture;
+        public static void* R_StaticAlloc(int bytes) => throw new NotImplementedException();
+        public static void R_StaticFree(byte* value) => throw new NotImplementedException();
+        public static void R_WriteTGA(string name, byte* data, int width, int height, bool flag) => throw new NotImplementedException();
     }
 }

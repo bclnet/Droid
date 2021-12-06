@@ -877,7 +877,7 @@ namespace Gengine.Render
         // Read polygon records from a POLS chunk in an LWO2 file.  The polygons are added to the array in the lwPolygonList.
         public static bool lwGetPolygons(VFile fp, int cksize, ref lwPolygonList plist, int ptoffset)
         {
-            lwPolygon* pp; lwPolVert* pv; int i, j, flags, nv;
+            lwPolygon pp; lwPolVert pv; int i, j, flags, nv;
 
             if (cksize == 0) return true;
 
@@ -907,7 +907,7 @@ namespace Gengine.Render
                 if (!lwAllocPolygons(plist, npols, nverts)) goto Fail;
 
                 // fill in the new polygons
-                lwPolygon* polP = plist.pol;
+                lwPolygon polP = plist.pol;
                 {
                     bp = bufB;
                     pp = polP + plist.offset;

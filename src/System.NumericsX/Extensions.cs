@@ -29,9 +29,11 @@ namespace System.NumericsX
         public const int ALLOC16 = 15;
     }
 
-    public static class byteX
+    public unsafe static class byteX
     {
-        public static readonly byte[] Empty = Array.Empty<byte>();
+        //public static readonly byte[] Empty = Array.Empty<byte>();
+        public static readonly byte* empty = (byte*)-1;
+
         public const int ALLOC16 = 15;
 
         public static int MD5Checksum(byte[] buffer)

@@ -1,4 +1,5 @@
 using static System.NumericsX.Plane;
+using static System.NumericsX.Platform;
 
 namespace System.NumericsX
 {
@@ -234,7 +235,7 @@ namespace System.NumericsX
                         if (v1 == surf.edges[Math.Abs(edgeNum)].verts_(MathX.INTSIGNBITSET_(edgeNum)))
                         {
                             v1 = surf.edges[Math.Abs(edgeNum)].verts_(MathX.INTSIGNBITNOTSET_(edgeNum));
-                            UnsafeX.Swap(ref onPlaneEdges[s][i], ref onPlaneEdges[s][j]);
+                            Swap(ref onPlaneEdges[s][i], ref onPlaneEdges[s][j]);
                             break;
                         }
                     }

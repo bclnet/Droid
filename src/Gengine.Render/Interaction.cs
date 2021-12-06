@@ -15,7 +15,7 @@ partial class Interaction
     const float LIGHT_CLIP_EPSILON = 0.1f;
 }
 
-public struct SrfCullInfo
+public unsafe struct SrfCullInfo
 {
     // For each triangle a byte set to 1 if facing the light origin.
     public byte* facing;

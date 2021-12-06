@@ -448,7 +448,7 @@ namespace System.NumericsX
             if (d2 == 0f) return false;
             scale2 = d1 / d2;
 
-            if (MathX.Fabs(scale1) > MathX.Fabs(scale2)) { UnsafeX.Swap(ref scale1, ref scale2); UnsafeX.Swap(ref localEdgeNums[0], ref localEdgeNums[1]); }
+            if (MathX.Fabs(scale1) > MathX.Fabs(scale2)) { Swap(ref scale1, ref scale2); Swap(ref localEdgeNums[0], ref localEdgeNums[1]); }
 
             if (edgeNums != null) { edgeNums[0] = localEdgeNums[0]; edgeNums[1] = localEdgeNums[1]; }
             return true;

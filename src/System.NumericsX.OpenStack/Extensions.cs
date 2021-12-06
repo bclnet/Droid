@@ -39,6 +39,11 @@ namespace System.NumericsX.OpenStack
         {
             throw new NotImplementedException();
         }
+
+        public static string ExtractFileExtension(string source)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     #endregion

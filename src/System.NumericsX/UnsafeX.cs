@@ -18,13 +18,6 @@ namespace System.NumericsX
             throw new NotImplementedException();
         }
 
-        public static void Swap<T>(ref T a, ref T b)
-        {
-            var c = a;
-            a = b;
-            b = c;
-        }
-
         public static T ReadT<T>(byte[] buffer, int offset = 0)
         {
             throw new NotImplementedException();

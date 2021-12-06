@@ -99,10 +99,10 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SwapTriangles(Surface surf)
         {
-            UnsafeX.Swap(ref verts, ref surf.verts);
-            UnsafeX.Swap(ref indexes, ref surf.indexes);
-            UnsafeX.Swap(ref edges, ref surf.edges);
-            UnsafeX.Swap(ref edgeIndexes, ref surf.edgeIndexes);
+            Swap(ref verts, ref surf.verts);
+            Swap(ref indexes, ref surf.indexes);
+            Swap(ref edges, ref surf.edges);
+            Swap(ref edgeIndexes, ref surf.edgeIndexes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

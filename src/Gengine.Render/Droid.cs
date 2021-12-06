@@ -2,7 +2,7 @@ using System;
 
 namespace Gengine.Render
 {
-    class DroidEtc1
+    public class Droid
     {
         const int ETC1_ENCODED_BLOCK_SIZE = 8;
         const int ETC1_DECODED_BLOCK_SIZE = 48;

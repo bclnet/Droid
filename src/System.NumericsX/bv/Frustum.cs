@@ -342,8 +342,8 @@ namespace System.NumericsX
 
             if (BoundsCullLocalFrustum(bounds, this, indexPoints, cornerVecs)) return false;
 
-            UnsafeX.Swap(ref indexPoints[2], ref indexPoints[3]);
-            UnsafeX.Swap(ref indexPoints[6], ref indexPoints[7]);
+            Swap(ref indexPoints[2], ref indexPoints[3]);
+            Swap(ref indexPoints[6], ref indexPoints[7]);
 
             if (LocalFrustumIntersectsBounds(indexPoints, bounds)) return true;
 
@@ -368,8 +368,8 @@ namespace System.NumericsX
 
             if (BoundsCullLocalFrustum(new Bounds(-box.Extents, box.Extents), localFrustum, indexPoints, cornerVecs)) return false;
 
-            UnsafeX.Swap(ref indexPoints[2], ref indexPoints[3]);
-            UnsafeX.Swap(ref indexPoints[6], ref indexPoints[7]);
+            Swap(ref indexPoints[2], ref indexPoints[3]);
+            Swap(ref indexPoints[6], ref indexPoints[7]);
 
             if (LocalFrustumIntersectsBounds(indexPoints, new Bounds(-box.Extents, box.Extents))) return true;
 
@@ -513,13 +513,13 @@ namespace System.NumericsX
 
             if (frustum.CullLocalFrustum(localFrustum1, indexPoints1, cornerVecs1)) return false;
 
-            UnsafeX.Swap(ref indexPoints2[2], ref indexPoints2[3]);
-            UnsafeX.Swap(ref indexPoints2[6], ref indexPoints2[7]);
+            Swap(ref indexPoints2[2], ref indexPoints2[3]);
+            Swap(ref indexPoints2[6], ref indexPoints2[7]);
 
             if (LocalFrustumIntersectsFrustum(indexPoints2, localFrustum2.dNear > 0f)) return true;
 
-            UnsafeX.Swap(ref indexPoints1[2], ref indexPoints1[3]);
-            UnsafeX.Swap(ref indexPoints1[6], ref indexPoints1[7]);
+            Swap(ref indexPoints1[2], ref indexPoints1[3]);
+            Swap(ref indexPoints1[6], ref indexPoints1[7]);
 
             if (frustum.LocalFrustumIntersectsFrustum(indexPoints1, localFrustum1.dNear > 0f)) return true;
 
@@ -553,8 +553,8 @@ namespace System.NumericsX
                 if ((pointCull[i] & pointCull[j]) == 0) if (LocalLineIntersection(localPoints[i], localPoints[j])) return true;
             }
 
-            UnsafeX.Swap(ref indexPoints[2], ref indexPoints[3]);
-            UnsafeX.Swap(ref indexPoints[6], ref indexPoints[7]);
+            Swap(ref indexPoints[2], ref indexPoints[3]);
+            Swap(ref indexPoints[6], ref indexPoints[7]);
 
             // test if any edges of the frustum intersect the winding
             for (i = 0; i < 4; i++) if (winding.LineIntersection(plane, indexPoints[i], indexPoints[4 + i])) return true;

@@ -1318,7 +1318,7 @@ namespace System.NumericsX
                     v1[index_r] = v1[index_p];
                     v1[index_p] = c;
                     //: open
-                    UnsafeX.Swap(ref index[r], ref index[p]);
+                    Swap(ref index[r], ref index[p]);
                 }
 
                 v1[r] += 1f;

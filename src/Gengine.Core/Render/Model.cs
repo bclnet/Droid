@@ -174,7 +174,7 @@ namespace Gengine.Render
         void List();
 
         // reports the amount of memory (roughly) consumed by the model
-        int Memory();
+        int Memory { get; }
 
         // for reloadModels
         DateTime Timestamp { get; }

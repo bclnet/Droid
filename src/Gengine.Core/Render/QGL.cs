@@ -4,6 +4,8 @@ using static WaveEngine.Bindings.OpenGLES.GL;
 
 namespace Gengine.Render
 {
+    //(PixelType) VertexAttribPointerType.UnsignedByte
+
     public unsafe static class QGL
     {
         public const uint VBOEmpty = unchecked((uint)-1);

@@ -11,6 +11,13 @@ namespace System.NumericsX
             [FieldOffset(0)] public uint u;
         }
 
+        [StructLayout(LayoutKind.Explicit)]
+        public unsafe struct Color
+        {
+            [FieldOffset(0)] public int intVal;
+            [FieldOffset(0)] public fixed byte color[4];
+        }
+
         public static unsafe int cast_int(float v) => *(int*)&v;
         public static unsafe float cast_float(int v) => *(float*)&v;
         public static unsafe float cast_float(uint v) => *(float*)&v;

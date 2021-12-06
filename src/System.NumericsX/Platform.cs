@@ -104,6 +104,8 @@ namespace System.NumericsX
             //SIMD.Shutdown();
         }
 
+        public static void Swap<T>(ref T a, ref T b) { var c = a; a = b; b = c; }
+
         #region Endian
 
         static float FloatSwap(float f)

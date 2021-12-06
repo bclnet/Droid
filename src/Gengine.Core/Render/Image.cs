@@ -169,7 +169,7 @@ namespace Gengine.Render
         // used by callback functions to specify the actual data data goes from the bottom to the top line of the image, as OpenGL expects it
         // These perform an implicit Bind() on the current texture unit
         // FIXME: should we implement cinematics this way, instead of with explicit calls?
-        public void GenerateImage(byte[] pic, int width, int height, TF filter, bool allowDownSize, TR repeat, TD depth) => throw new NotImplementedException();
+        public void GenerateImage(byte* pic, int width, int height, TF filter, bool allowDownSize, TR repeat, TD depth) => throw new NotImplementedException();
         public void GenerateCubeImage(byte[][] pic, int size, TF filter, bool allowDownSize, TD depth) => throw new NotImplementedException();
 
         public void CopyFramebuffer(int x, int y, int width, int height, bool useOversizedBuffer) => throw new NotImplementedException();

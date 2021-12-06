@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
+using static Gengine.Render.TR;
 using static System.NumericsX.OpenStack.OpenStack;
 using GlIndex = System.Int32;
 
@@ -14,7 +15,7 @@ namespace Gengine.Render
         public float st1;
     }
 
-    public struct OverlaySurface
+    public class OverlaySurface
     {
         public int surfaceNum;
         public int surfaceId;
@@ -42,17 +43,20 @@ namespace Gengine.Render
 
             for (k = 0; k < materials.Count; k++)
             {
-                for (i = 0; i < materials[k].surfaces.Count; i++)
-                    FreeSurface(materials[k].surfaces[i]);
+                //for (i = 0; i < materials[k].surfaces.Count; i++) FreeSurface(ref materials[k].surfaces[i]);
                 materials[k].surfaces.Clear();
             }
             materials.Clear();
         }
 
-        void FreeSurface(OverlaySurface surface) { }
+        public static RenderModelOverlay Alloc()
+            => new();
 
-        public static RenderModelOverlay Alloc() => new RenderModelOverlay();
-        public static void Free(RenderModelOverlay overlay) { }
+        public static void Free(ref RenderModelOverlay overlay)
+            => overlay = null;
+
+        //void FreeSurface(ref OverlaySurface surface)
+        //    => surface = null;
 
         // Projects an overlay onto deformable geometry and can be added to a render entity to allow decals on top of dynamic models.
         // This does not generate tangent vectors, so it can't be used with light interaction shaders. Materials for overlays should always
@@ -103,10 +107,10 @@ namespace Gengine.Render
                 var cullBits = stackalloc byte[stri.numVerts];
                 var texCoords = stackalloc Vector2[stri.numVerts];
 
-                SIMDProcessor.OverlayPointCull(cullBits, texCoords, localTextureAxis, stri.verts, stri.numVerts);
+                Simd.OverlayPointCull(cullBits, texCoords, localTextureAxis, stri.verts, stri.numVerts);
 
                 var vertexRemap = stackalloc GlIndex[stri.numVerts];
-                SIMDProcessor.Memset(vertexRemap, -1, sizeof(GlIndex) * stri.numVerts);
+                Simd.Memset(vertexRemap, -1, sizeof(GlIndex) * stri.numVerts);
 
                 // find triangles that need the overlay
                 var numVerts = 0;
@@ -128,7 +132,7 @@ namespace Gengine.Render
                     for (var vnum = 0; vnum < 3; vnum++)
                     {
                         var ind = stri.indexes[index + vnum];
-                        if (vertexRemap[ind] == GlIndex - 1)
+                        if (vertexRemap[ind] == -1)
                         {
                             vertexRemap[ind] = numVerts;
 
@@ -154,20 +158,12 @@ namespace Gengine.Render
                     indexes = new GlIndex[numIndexes],
                     numIndexes = numIndexes
                 };
-                memcpy(s.verts, overlayVerts, numVerts * sizeof(OverlayVertex));
-                memcpy(s.indexes, overlayIndexes, numIndexes * sizeof(GlIndex));
 
-                for (i = 0; i < materials.Count; i++)
-                    if (materials[i].material == mtr)
-                        break;
-                if (i < materials.Count)
-                    materials[i].surfaces.Add(s);
+                for (i = 0; i < materials.Count; i++) if (materials[i].material == mtr) break;
+                if (i < materials.Count) materials[i].surfaces.Add(s);
                 else
                 {
-                    var mat = new OverlayMaterial
-                    {
-                        material = mtr
-                    };
+                    var mat = new OverlayMaterial { material = mtr };
                     mat.surfaces.Add(s);
                     materials.Add(mat);
                 }
@@ -177,7 +173,7 @@ namespace Gengine.Render
             for (i = 0; i < materials.Count; i++)
                 while (materials[i].surfaces.Count > MAX_OVERLAY_SURFACES)
                 {
-                    FreeSurface(materials[i].surfaces[0]);
+                    //FreeSurface(ref materials[i].surfaces[0]);
                     materials[i].surfaces.RemoveAt(0);
                 }
         }
@@ -192,26 +188,19 @@ namespace Gengine.Render
             SrfTriangles newTri;
             ModelSurface newSurf;
 
-            if (baseModel == null || baseModel.IsDefaultModel)
-                return;
+            if (baseModel == null || baseModel.IsDefaultModel) return;
 
             // md5 models won't have any surfaces when r_showSkel is set
-            if (baseModel.NumSurfaces == 0)
-                return;
+            if (baseModel.NumSurfaces == 0) return;
 
-            if (baseModel.IsDynamicModel != DynamicModel.DM_STATIC)
-                common.Error("RenderModelOverlay::AddOverlaySurfacesToModel: baseModel is not a static model");
+            if (baseModel.IsDynamicModel != DynamicModel.DM_STATIC) common.Error("RenderModelOverlay::AddOverlaySurfacesToModel: baseModel is not a static model");
 
             Debug.Assert(baseModel is RenderModelStatic);
             staticModel = (RenderModelStatic)baseModel;
 
             staticModel.overlaysAdded = 0;
 
-            if (materials.Count == 0)
-            {
-                staticModel.DeleteSurfacesWithNegativeId();
-                return;
-            }
+            if (materials.Count == 0) { staticModel.DeleteSurfacesWithNegativeId(); return; }
 
             for (k = 0; k < materials.Count; k++)
             {
@@ -223,7 +212,7 @@ namespace Gengine.Render
                 }
 
                 if (staticModel.FindSurfaceWithId(-1 - k, out surfaceNum))
-                    newSurf = &staticModel.surfaces[surfaceNum];
+                    newSurf = staticModel.surfaces[surfaceNum];
                 else
                 {
                     newSurf = staticModel.surfaces.Alloc();
@@ -238,7 +227,7 @@ namespace Gengine.Render
                     newSurf.geometry = R_AllocStaticTriSurf();
                     R_AllocStaticTriSurfVerts(newSurf.geometry, numVerts);
                     R_AllocStaticTriSurfIndexes(newSurf.geometry, numIndexes);
-                    SIMDProcessor.Memset(newSurf.geometry.verts, 0, numVerts * sizeof(newTri.verts[0]));
+                    Simd.Memset(newSurf.geometry.verts, 0, numVerts * sizeof(newTri.verts[0]));
                 }
                 else R_FreeStaticTriSurfVertexCaches(newSurf.geometry);
 
@@ -250,7 +239,7 @@ namespace Gengine.Render
                     surf = materials[k].surfaces[i];
 
                     // get the model surface for this overlay surface
-                    baseSurf = surf.surfaceNum < staticModel.NumSurfaces()
+                    baseSurf = surf.surfaceNum < staticModel.NumSurfaces
                         ? staticModel.Surface(surf.surfaceNum)
                         : null;
 
@@ -263,7 +252,7 @@ namespace Gengine.Render
                         else
                         {
                             // the surface with this id no longer exists
-                            FreeSurface(surf);
+                            //FreeSurface(ref surf);
                             materials[k].surfaces.RemoveAt(i);
                             i--;
                             continue;
@@ -271,8 +260,7 @@ namespace Gengine.Render
                     }
 
                     // copy indexes;
-                    for (j = 0; j < surf.numIndexes; j++)
-                        newTri.indexes[numIndexes + j] = numVerts + surf.indexes[j];
+                    for (j = 0; j < surf.numIndexes; j++) newTri.indexes[numIndexes + j] = numVerts + surf.indexes[j];
                     numIndexes += surf.numIndexes;
 
                     // copy vertices
@@ -287,7 +275,7 @@ namespace Gengine.Render
                         {
                             // This can happen when playing a demofile and a model has been changed since it was recorded, so just issue a warning and go on.
                             common.Warning("RenderModelOverlay::AddOverlaySurfacesToModel: overlay vertex out of range.  Model has probably changed since generating the overlay.");
-                            FreeSurface(surf);
+                            //FreeSurface(ref surf);
                             materials[k].surfaces.RemoveAt(i);
                             staticModel.DeleteSurfaceWithId(newSurf.id);
                             return;

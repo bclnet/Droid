@@ -4,6 +4,8 @@ namespace Gengine.Render
     {
         //public static RenderSystemLocal tr;
 
+        internal static RenderModelManagerLocal localModelManager = new();
+
         //public static readonly FrameData frameData = new();
     }
 }
