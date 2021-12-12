@@ -3,9 +3,9 @@ using System.NumericsX;
 using System.NumericsX.OpenStack;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Gengine.Lib;
 using static System.NumericsX.OpenStack.OpenStack;
 using static System.NumericsX.Platform;
-using static Gengine.Lib;
 
 namespace Gengine.Render
 {
@@ -291,7 +291,7 @@ namespace Gengine.Render
             fileSystem.WriteFile(filename, buffer, bufferSize);
         }
 
-        static void R_WritePalTGA(string filename, byte* data, byte* palette, int width, int height, bool flipVertical)
+        internal static void R_WritePalTGA(string filename, byte* data, byte[] palette, int width, int height, bool flipVertical = false)
         {
             int i;
             var bufferSize = (width * height) + (256 * 3) + 18;
@@ -720,9 +720,9 @@ namespace Gengine.Render
         // Loads six files with proper extensions
         readonly static string[] R_LoadCubeImages_cameraSides = { "_forward.tga", "_back.tga", "_left.tga", "_right.tga", "_up.tga", "_down.tga" };
         readonly static string[] R_LoadCubeImages_axisSides = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
-        static bool R_LoadCubeImages(string imgName, Image.CF extensions, byte** pics, out int outSize, out DateTime timestamp)
+        internal static bool R_LoadCubeImages(string imgName, Image.CF extensions, byte** pics, out int outSize, out DateTime timestamp)
         {
-            int i, j; int width, height, size = 0; string fullName;
+            int i, j; int size = 0; string fullName;
 
             var sides = extensions == Image.CF.CAMERA ? R_LoadCubeImages_cameraSides : R_LoadCubeImages_axisSides;
 
@@ -733,7 +733,8 @@ namespace Gengine.Render
             {
                 fullName = $"{imgName}{sides[i]}";
                 byte* pic = pics != byteX.empty ? pics[i] : null;
-                R_LoadImageProgram(fullName, ref pic, out width, out height, out var thisTime);
+                Image.TD depth = 0;
+                R_LoadImageProgram(fullName, ref pic, out var width, out var height, out var thisTime, ref depth);
                 if (thisTime == default) break;
                 if (i == 0) size = width;
                 if (width != size || height != size) { common.Warning($"Mismatched sizes on cube map '{imgName}'"); break; }

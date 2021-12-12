@@ -367,7 +367,7 @@ namespace Gengine.Render
             return true;
         }
 
-        static void R_LoadImageProgram(string name, ref byte* pic, out int width, out int height, out DateTime timestamps, Image.TD depth = 0)
+        internal static void R_LoadImageProgram(string name, ref byte* pic, out int width, out int height, out DateTime timestamps, ref Image.TD depth)
         {
             Lexer src = new();
 

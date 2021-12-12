@@ -106,7 +106,7 @@ namespace Gengine.Render
             int level = 0, size = MegaTexture.TILE_SIZE;
             while (true)
             {
-                qglTexSubImage2D(TextureTarget.Texture2d, level, localX * size, localY * size, size, size, PixelFormat.Rgba, (PixelType)VertexAttribPointerType.UnsignedByte, data);
+                qglTexSubImage2D(TextureTarget.Texture2d, level, localX * size, localY * size, size, size, PixelFormat.Rgba, VertexAttribPointerType.UnsignedByte, data);
                 level++; size >>= 1;
 
                 if (size == 0) break;

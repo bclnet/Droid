@@ -17,7 +17,7 @@ namespace Gengine.Render
     }
 
     // a cinematic stream generates an image buffer, which the caller will upload to a texture
-    public struct CinData
+    public unsafe struct CinData
     {
         public int imageWidth, imageHeight; // will be a power of 2
         public byte[] image;                // RGBA format, alpha will be 255

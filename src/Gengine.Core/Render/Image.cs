@@ -4,8 +4,7 @@ using System.Collections.Generic;
 using System.NumericsX.OpenStack;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using GLenum = System.Int32;
-using GLuint = System.Int32;
+using WaveEngine.Bindings.OpenGLES;
 
 namespace Gengine.Render
 {
@@ -78,7 +77,7 @@ namespace Gengine.Render
         public fixed uint dwReserved2[3];
     }
 
-    public unsafe class Image
+    public unsafe partial class Image
     {
         public enum TF
         {
@@ -158,56 +157,56 @@ namespace Gengine.Render
 
         // Makes this image active on the current GL texture unit. automatically enables or disables cube mapping
         // May perform file loading if the image was not preloaded. May start a background image read.
-        public bool Bind() => throw new NotImplementedException();
+        //public bool Bind() => throw new NotImplementedException();
 
         // for use with fragment programs, doesn't change any enable2D/3D/cube states
-        public void BindFragment() => throw new NotImplementedException();
+        //public void BindFragment() => throw new NotImplementedException();
 
         // deletes the texture object, but leaves the structure so it can be reloaded
-        public void PurgeImage() => throw new NotImplementedException();
+        //public void PurgeImage() => throw new NotImplementedException();
 
         // used by callback functions to specify the actual data data goes from the bottom to the top line of the image, as OpenGL expects it
         // These perform an implicit Bind() on the current texture unit
         // FIXME: should we implement cinematics this way, instead of with explicit calls?
-        public void GenerateImage(byte* pic, int width, int height, TF filter, bool allowDownSize, TR repeat, TD depth) => throw new NotImplementedException();
-        public void GenerateCubeImage(byte[][] pic, int size, TF filter, bool allowDownSize, TD depth) => throw new NotImplementedException();
+        //public void GenerateImage(byte* pic, int width, int height, TF filter, bool allowDownSize, TR repeat, TD depth) => throw new NotImplementedException();
+        //public void GenerateCubeImage(byte[][] pic, int size, TF filter, bool allowDownSize, TD depth) => throw new NotImplementedException();
 
-        public void CopyFramebuffer(int x, int y, int width, int height, bool useOversizedBuffer) => throw new NotImplementedException();
+        //public void CopyFramebuffer(int x, int y, int width, int height, bool useOversizedBuffer) => throw new NotImplementedException();
 
-        public void CopyDepthbuffer(int x, int y, int width, int height) => throw new NotImplementedException();
+        //public void CopyDepthbuffer(int x, int y, int width, int height) => throw new NotImplementedException();
 
         public void UploadScratch(void* pic, int width, int height) => throw new NotImplementedException();
 
         // just for resource tracking
-        public void SetClassification(int tag) => throw new NotImplementedException();
+        //public void SetClassification(int tag) => throw new NotImplementedException();
 
         // estimates size of the GL image based on dimensions and storage type
-        public int StorageSize() => throw new NotImplementedException();
+        //public int StorageSize => throw new NotImplementedException();
 
         // print a one line summary of the image
-        public void Print() => throw new NotImplementedException();
+        //public void Print() => throw new NotImplementedException();
 
         // check for changed timestamp on disk and reload if necessary
         public void Reload(bool force) => throw new NotImplementedException();
 
         public void AddReference() => refCount++;
 
-        public bool IsLoaded() => throw new NotImplementedException();
+        //public bool IsLoaded => throw new NotImplementedException();
 
         //==========================================================
 
-        public void GetDownsize(out int scaled_width, out int scaled_height) => throw new NotImplementedException();
+        //public void GetDownsize(out int scaled_width, out int scaled_height) => throw new NotImplementedException();
         public void MakeDefault() => throw new NotImplementedException(); // fill with a grid pattern
-        public void SetImageFilterAndRepeat() => throw new NotImplementedException();
-        public void ActuallyLoadImage(bool fromBind) => throw new NotImplementedException();
-        public int BitsForInternalFormat(int internalFormat) => throw new NotImplementedException();
+        //public void SetImageFilterAndRepeat() => throw new NotImplementedException();
+        //public void ActuallyLoadImage(bool fromBind) => throw new NotImplementedException();
+        //public int BitsForInternalFormat(int internalFormat) => throw new NotImplementedException();
         public void UploadCompressedNormalMap(int width, int height, byte[] rgba, int mipLevel) => throw new NotImplementedException();
-        public void ImageProgramStringToCompressedFileName(string imageProg, string fileName) => throw new NotImplementedException();
-        public int NumLevelsForImageSize(int width, int height) => throw new NotImplementedException();
+        //public void ImageProgramStringToCompressedFileName(string imageProg, out string fileName) => throw new NotImplementedException();
+        //public int NumLevelsForImageSize(int width, int height) => throw new NotImplementedException();
 
         // data commonly accessed is grouped here
-        public const int TEXTURE_NOT_LOADED = -1;
-        public GLuint texnum;                  // gl texture binding, will be TEXTURE_NOT_LOADED if not loaded
+        public const uint TEXTURE_NOT_LOADED = uint.MaxValue;
+        public uint texnum;                  // gl texture binding, will be TEXTURE_NOT_LOADED if not loaded
         public TT type;
         public int frameUsed;              // for texture usage in frame statistics
         public int bindCount;              // incremented each bind
@@ -237,7 +236,7 @@ namespace Gengine.Render
 
         // data for listImages
         public int uploadWidth, uploadHeight, uploadDepth; // after power of two, downsample, and MAX_TEXTURE_SIZE
-        public int internalFormat;
+        public InternalFormat internalFormat;
 
         public Image cacheUsagePrev, cacheUsageNext;    // for dynamic cache purging of old images
 
@@ -319,22 +318,22 @@ namespace Gengine.Render
         public void PrintMemInfo(MemInfo mi) => throw new NotImplementedException();
 
         // cvars
-        public static CVar image_roundDown;          // round bad sizes down to nearest power of two
-        public static CVar image_colorMipLevels;     // development aid to see texture mip usage
-        public static CVar image_downSize;               // controls texture downsampling
-        public static CVar image_filter;             // changes texture filtering on mipmapped images
-        public static CVar image_anisotropy;         // set the maximum texture anisotropy if available
-        public static CVar image_writeNormalTGA;     // debug tool to write out .tgas of the final normal maps
-        public static CVar image_writeNormalTGAPalletized;       // debug tool to write out palletized versions of the final normal maps
-        public static CVar image_writeTGA;               // debug tool to write out .tgas of the non normal maps
-        public static CVar image_preload;                // if 0, dynamically load all images
-        public static CVar image_showBackgroundLoads;    // 1 = print number of outstanding background loads
-        public static CVar image_forceDownSize;      // allows the ability to force a downsize
-        public static CVar image_downSizeSpecular;       // downsize specular
-        public static CVar image_downSizeSpecularLimit;// downsize specular limit
-        public static CVar image_downSizeBump;           // downsize bump maps
-        public static CVar image_downSizeBumpLimit;  // downsize bump limit
-        public static CVar image_downSizeLimit;      // downsize diffuse limit
+        public static CVar image_roundDown = new("image_roundDown", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "round bad sizes down to nearest power of two");          // round bad sizes down to nearest power of two
+        public static CVar image_colorMipLevels = new("image_colorMipLevels", "0", CVAR_RENDERER | CVAR_BOOL, "development aid to see texture mip usage");     // development aid to see texture mip usage
+        public static CVar image_downSize = new("image_downSize", "0", CVAR_RENDERER | CVAR_ARCHIVE, "controls texture downsampling");               // controls texture downsampling
+        public static CVar image_filter = new("image_filter", imageFilter[1], CVAR_RENDERER | CVAR_ARCHIVE, "changes texture filtering on mipmapped images", imageFilter, idCmdSystem::ArgCompletion_String<imageFilter>);             // changes texture filtering on mipmapped images
+        public static CVar image_anisotropy = new("image_anisotropy", "1", CVAR_RENDERER | CVAR_ARCHIVE, "set the maximum texture anisotropy if available");         // set the maximum texture anisotropy if available
+        public static CVar image_writeNormalTGA = new("image_writeNormalTGA", "0", CVAR_RENDERER | CVAR_BOOL, "write .tgas of the final normal maps for debugging");     // debug tool to write out .tgas of the final normal maps
+        public static CVar image_writeNormalTGAPalletized = new("image_writeNormalTGAPalletized", "0", CVAR_RENDERER | CVAR_BOOL, "write .tgas of the final palletized normal maps for debugging");       // debug tool to write out palletized versions of the final normal maps
+        public static CVar image_writeTGA = new("image_writeTGA", "0", CVAR_RENDERER | CVAR_BOOL, "write .tgas of the non normal maps for debugging");               // debug tool to write out .tgas of the non normal maps
+        public static CVar image_preload = new("image_preload", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "if 0, dynamically load all images");                // if 0, dynamically load all images
+        public static CVar image_showBackgroundLoads = new("image_showBackgroundLoads", "0", CVAR_RENDERER | CVAR_BOOL, "1 = print number of outstanding background loads");    // 1 = print number of outstanding background loads
+        public static CVar image_forceDownSize = new("image_forceDownSize", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "");      // allows the ability to force a downsize
+        public static CVar image_downSizeSpecular = new("image_downSizeSpecular", "1", CVAR_RENDERER | CVAR_ARCHIVE, "controls specular downsampling");       // downsize specular
+        public static CVar image_downSizeSpecularLimit = new("image_downSizeSpecularLimit", "64", CVAR_RENDERER | CVAR_ARCHIVE, "controls specular downsampled limit"); // downsize specular limit
+        public static CVar image_downSizeBump = new("image_downSizeBump", "1", CVAR_RENDERER | CVAR_ARCHIVE, "controls normal map downsampling");           // downsize bump maps
+        public static CVar image_downSizeBumpLimit = new("image_downSizeBumpLimit", "256", CVAR_RENDERER | CVAR_ARCHIVE, "controls normal map downsample limit");  // downsize bump limit
+        public static CVar image_downSizeLimit = new("image_downSizeLimit", "256", CVAR_RENDERER | CVAR_ARCHIVE, "controls diffuse map downsample limit");      // downsize diffuse limit
 
         // built-in images
         public Image defaultImage;
@@ -382,8 +381,8 @@ namespace Gengine.Render
         public byte[] compressedPalette = new byte[768];        // the palette that normal maps use
 
         // default filter modes for images
-        public GLenum textureMinFilter;
-        public GLenum textureMaxFilter;
+        public int textureMinFilter;
+        public int textureMaxFilter;
         public float textureAnisotropy;
 
         //public Image[] imageHashTable = new Image[FILE_HASH_SIZE];

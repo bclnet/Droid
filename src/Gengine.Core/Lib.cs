@@ -32,13 +32,18 @@ namespace Gengine
         public static ICollisionModelManager collisionModelManager;
         public static INetworkSystem networkSystem;
 
+
         public static IGame game;
         public static IGameEdit gameEdit;
+
+        //: TODO-MOVE
+        public static readonly BackEndState backEnd;
 
         public static string R_GetVidModeListString(bool addCustom) => throw new NotImplementedException();
         public static string R_GetVidModeValsString(bool addCustom) => throw new NotImplementedException();
 
         //: TODO-SET
+        public static Action GL_CheckErrors;
         public static Action<int> GL_SelectTexture;
         public static void* R_StaticAlloc(int bytes) => throw new NotImplementedException();
         public static void R_StaticFree(byte* value) => throw new NotImplementedException();

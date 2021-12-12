@@ -5,6 +5,8 @@ using static WaveEngine.Bindings.OpenGLES.GL;
 namespace Gengine.Render
 {
     //(PixelType) VertexAttribPointerType.UnsignedByte
+    //BlitFramebufferFilter.Nearest
+    //BlitFramebufferFilter.Linear
 
     public unsafe static class QGL
     {
@@ -114,12 +116,12 @@ namespace Gengine.Render
         public static void qglStencilMaskSeparate(StencilFaceDirection face, uint mask) => glStencilMaskSeparate(face, mask);
         public static void qglStencilOp(StencilOp fail, StencilOp zfail, StencilOp zpass) => glStencilOp(fail, zfail, zpass);
         public static void qglStencilOpSeparate(StencilFaceDirection face, StencilOp sfail, StencilOp dpfail, StencilOp dppass) => glStencilOpSeparate(face, sfail, dpfail, dppass);
-        public static void qglTexImage2D(TextureTarget target, int level, int internalformat, int width, int height, int border, PixelFormat format, PixelType type, void* pixels) => glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
-        public static void qglTexParameterf(TextureTarget target, TextureParameterName pname, float param) => glTexParameterf(target, pname, param);
-        public static void qglTexParameterfv(TextureTarget target, TextureParameterName pname, float* @params) => glTexParameterfv(target, pname, @params);
-        public static void qglTexParameteri(TextureTarget target, TextureParameterName pname, int param) => glTexParameteri(target, pname, param);
-        public static void qglTexParameteriv(TextureTarget target, TextureParameterName pname, int* @params) => glTexParameteriv(target, pname, @params);
-        public static void qglTexSubImage2D(TextureTarget target, int level, int xoffset, int yoffset, int width, int height, PixelFormat format, PixelType type, void* pixels) => glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
+        public static void qglTexImage2D(TextureTarget target, int level, InternalFormat internalformat, int width, int height, int border, PixelFormat format, VertexAttribPointerType type, void* pixels) => glTexImage2D(target, level, (int)internalformat, width, height, border, format, (PixelType)type, pixels);
+        public static void qglTexParameterf(TextureTarget target, GetTextureParameter pname, float param) => glTexParameterf(target, (TextureParameterName)pname, param);
+        public static void qglTexParameterfv(TextureTarget target, GetTextureParameter pname, float* @params) => glTexParameterfv(target, (TextureParameterName)pname, @params);
+        public static void qglTexParameteri(TextureTarget target, GetTextureParameter pname, int param) => glTexParameteri(target, (TextureParameterName)pname, param);
+        public static void qglTexParameteriv(TextureTarget target, GetTextureParameter pname, int* @params) => glTexParameteriv(target, (TextureParameterName)pname, @params);
+        public static void qglTexSubImage2D(TextureTarget target, int level, int xoffset, int yoffset, int width, int height, PixelFormat format, VertexAttribPointerType type, void* pixels) => glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, (PixelType)type, pixels);
         public static void qglUniform1f(int location, float v0) => glUniform1f(location, v0);
         public static void qglUniform1fv(int location, int count, float* value) => glUniform1fv(location, count, value);
         public static void qglUniform1i(int location, int v0) => glUniform1i(location, v0);
