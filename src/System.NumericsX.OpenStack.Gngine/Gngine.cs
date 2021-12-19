@@ -17,8 +17,8 @@ namespace System.NumericsX.OpenStack.Gngine
 
     public unsafe static class Gngine
     {
-        //public const string ENGINE_VERSION = "Doom3Quest 1.1.6";	// printed in console
-        //public const int BUILD_NUMBER = 1304;
+        public const string ENGINE_VERSION = "Gngine 1.0.0";	// printed in console
+        public const int BUILD_NUMBER = 1000;
 
         public static IUserInterfaceManager uiManager;
         public static ISoundSystem soundSystem;

@@ -1,7 +1,7 @@
-using Gengine.Render;
 using System.NumericsX;
+using System.NumericsX.OpenStack.Gngine.Render;
 using System.NumericsX.OpenStack.System;
-using static Gengine.Lib;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Framework

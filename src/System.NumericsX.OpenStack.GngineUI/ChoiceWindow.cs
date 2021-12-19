@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.Key;
 using static System.NumericsX.OpenStack.OpenStack;
 
@@ -164,8 +165,8 @@ namespace Gengine.UI
 
             if (injectResolutions)
             {
-                choicesStr.Set(Lib.R_GetVidModeListString(injectCustomMode));
-                choiceVals.Set(Lib.R_GetVidModeValsString(injectCustomMode));
+                choicesStr.Set(R_GetVidModeListString(injectCustomMode));
+                choiceVals.Set(R_GetVidModeValsString(injectCustomMode));
             }
             // DG end
 

@@ -1,6 +1,6 @@
 using System;
 using System.NumericsX.OpenStack.System;
-using static Gengine.Lib;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 
 namespace Gengine.Framework
 {

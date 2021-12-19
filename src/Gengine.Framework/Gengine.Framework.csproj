@@ -17,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
-    <ProjectReference Include="..\Gengine.Sound\Gengine.Sound.csproj" />
+    <ProjectReference Include="..\Gengine.Sound\System.NumericsX.OpenStack.GngineSound.csproj" />
+    <ProjectReference Include="..\System.NumericsX.OpenStack.Gngine\System.NumericsX.OpenStack.Gngine.csproj" />
   </ItemGroup>
 
   <ItemGroup>

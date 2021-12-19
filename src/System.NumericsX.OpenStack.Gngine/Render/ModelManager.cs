@@ -1,3 +1,5 @@
+using System.NumericsX.OpenStack.Gngine.Framework;
+
 namespace System.NumericsX.OpenStack.Gngine.Render
 {
     public interface IRenderModelManager

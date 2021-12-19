@@ -10,9 +10,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
     <ProjectReference Include="..\System.NumericsX.OggVorbis\System.NumericsX.OggVorbis.csproj" />
     <ProjectReference Include="..\System.NumericsX.OpenAL\System.NumericsX.OpenAL.csproj" />
+    <ProjectReference Include="..\System.NumericsX.OpenStack.Gngine\System.NumericsX.OpenStack.Gngine.csproj" />
   </ItemGroup>
 
 </Project>

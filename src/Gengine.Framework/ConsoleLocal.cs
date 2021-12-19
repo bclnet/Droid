@@ -1,10 +1,11 @@
-using Gengine.Render;
 using System;
 using System.IO;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
+using System.NumericsX.OpenStack.Gngine.Render;
 using System.NumericsX.OpenStack.System;
-using static Gengine.Lib;
+using static System.NumericsX.OpenStack.Gngine.Framework.C;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.Key;
 using static System.NumericsX.OpenStack.OpenStack;
 
@@ -326,7 +327,7 @@ namespace Gengine.Framework
 
 #if ID_CONSOLE_LOCK
                     // If the console's not already down, and we have it turned off, check for ctrl+alt
-                    if (!keyCatching && !C.com_allowConsole.Bool)
+                    if (!keyCatching && !com_allowConsole.Bool)
                         if (!KeyInput.IsDown(K_CTRL) || !KeyInput.IsDown(K_ALT)) consoleKey = false;
 #endif
 
@@ -639,10 +640,10 @@ namespace Gengine.Framework
             // only draw the notify lines if the developer cvar is set, or we are a debug build
             else if (!con_noPrint.Bool) DrawNotify();
 
-            if (C.com_showFPS.Bool) y = SCR_DrawFPS(0);
-            //if (C.com_showMemoryUsage.Bool) y = SCR_DrawMemoryUsage(y);
-            //if (C.com_showAsyncStats.Bool) y = SCR_DrawAsyncStats(y);
-            if (C.com_showSoundDecoders.Bool) y = SCR_DrawSoundDecoders(y);
+            if (com_showFPS.Bool) y = SCR_DrawFPS(0);
+            //if (com_showMemoryUsage.Bool) y = SCR_DrawMemoryUsage(y);
+            //if (com_showAsyncStats.Bool) y = SCR_DrawAsyncStats(y);
+            if (com_showSoundDecoders.Bool) y = SCR_DrawSoundDecoders(y);
         }
 
         #endregion

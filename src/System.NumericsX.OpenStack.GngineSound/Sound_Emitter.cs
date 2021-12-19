@@ -1,12 +1,13 @@
-using Gengine.Render;
 using System;
 using System.Linq;
 using System.NumericsX;
 using System.NumericsX.OpenAL;
 using System.NumericsX.OpenStack;
+using System.NumericsX.OpenStack.Gngine;
+using System.NumericsX.OpenStack.Gngine.Render;
 using System.NumericsX.OpenStack.System;
-using static Gengine.Lib;
 using static Gengine.Sound.Lib;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Sound

@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
+    <ProjectReference Include="..\System.NumericsX.OpenStack.Gngine\System.NumericsX.OpenStack.Gngine.csproj" />
   </ItemGroup>
 
   <ItemGroup>

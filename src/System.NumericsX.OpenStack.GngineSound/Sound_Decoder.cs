@@ -3,8 +3,6 @@ using System;
 using System.Diagnostics;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
-using System.NumericsX.OpenStack.System;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using static Gengine.Sound.Lib;
 using static OggVorbis.Vorbis;

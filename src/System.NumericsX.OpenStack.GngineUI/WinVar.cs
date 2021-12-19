@@ -1,10 +1,10 @@
-using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
-using static Gengine.Lib;
+using System.NumericsX.OpenStack.Gngine.Render;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 
 namespace Gengine.UI
 {

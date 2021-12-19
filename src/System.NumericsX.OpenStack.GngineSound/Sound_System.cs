@@ -1,5 +1,3 @@
-using Gengine.Framework;
-using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,10 +6,13 @@ using System.NumericsX.OpenAL;
 using System.NumericsX.OpenAL.Extensions.Creative.EFX;
 using System.NumericsX.OpenAL.Extensions.SOFT.HRTF;
 using System.NumericsX.OpenStack;
+using System.NumericsX.OpenStack.Gngine;
+using System.NumericsX.OpenStack.Gngine.Framework;
+using System.NumericsX.OpenStack.Gngine.Render;
 using System.NumericsX.OpenStack.System;
 using System.Runtime.CompilerServices;
-using static Gengine.Lib;
 using static Gengine.Sound.Lib;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Sound
@@ -457,11 +458,7 @@ namespace Gengine.Sound
             CinData ret = new();
             int i, j;
 
-            if (!isInitialized)
-            {
-                ret.memset();
-                return ret;
-            }
+            if (!isInitialized) { ret.memset(); return ret; }
 
             ISystem.EnterCriticalSection();
             if (graph == null)

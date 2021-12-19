@@ -1,11 +1,11 @@
-using Gengine.Framework;
-using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
-using static Gengine.Lib;
+using System.NumericsX.OpenStack.Gngine.Framework;
+using System.NumericsX.OpenStack.Gngine.Render;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.Key;
 using static System.NumericsX.OpenStack.OpenStack;
 

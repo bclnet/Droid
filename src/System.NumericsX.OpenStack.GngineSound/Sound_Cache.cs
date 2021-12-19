@@ -1,12 +1,12 @@
 //#define USE_SOUND_CACHE_ALLOCATOR
-using Gengine.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.NumericsX;
 using System.NumericsX.OpenAL;
 using System.NumericsX.OpenStack;
-using static Gengine.Lib;
+using System.NumericsX.OpenStack.Gngine.Framework;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Sound

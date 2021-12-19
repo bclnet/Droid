@@ -1,3 +1,4 @@
+using System.NumericsX.OpenStack.Gngine.Framework;
 using System.NumericsX.OpenStack.Gngine.Render;
 using ChannelType = System.Int32; // the game uses its own series of enums, and we don't want to require casts
 
@@ -13,7 +14,7 @@ namespace System.NumericsX.OpenStack.Gngine
         public int soundShaderFlags;        // SSF_* bit flags
         public int soundClass;              // for global fading of sounds
 
-        internal void memset()
+        public void memset()
         {
             throw new NotImplementedException();
         }
@@ -133,7 +134,7 @@ namespace System.NumericsX.OpenStack.Gngine
         public const int SSF_NO_FLICKER = 1 << 8;   // always return 1.0 for volume queries
         public const int SSF_NO_DUPS = 1 << 9;  // try not to play the same sound twice in a row
 
-        internal const int SOUND_MAX_LIST_WAVS = 32;
+        public const int SOUND_MAX_LIST_WAVS = 32;
         // sound classes are used to fade most sounds down inside cinematics, leaving dialog flagged with a non-zero class full volume
         const int SOUND_MAX_CLASSES = 4;
 

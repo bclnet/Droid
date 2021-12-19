@@ -22,7 +22,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public byte[] image;                // RGBA format, alpha will be 255
         public int status;
 
-        internal void memset()
+        public void memset()
         {
             throw new NotImplementedException();
         }

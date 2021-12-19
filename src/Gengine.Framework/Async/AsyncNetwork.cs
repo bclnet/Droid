@@ -2,7 +2,8 @@ using System;
 using System.NumericsX;
 using System.NumericsX.OpenStack;
 using System.NumericsX.OpenStack.System;
-using static Gengine.Lib;
+using static System.NumericsX.OpenStack.Gngine.Framework.C;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.OpenStack;
 
 namespace Gengine.Framework.Async
@@ -316,7 +317,7 @@ namespace Gengine.Framework.Async
             // don't let a server spawn with singleplayer game type - it will crash
             if (string.Equals(cvarSystem.GetCVarString("si_gameType"), "singleplayer", StringComparison.OrdinalIgnoreCase))
                 cvarSystem.SetCVarString("si_gameType", "deathmatch");
-            C.com_asyncInput.Bool = false;
+            com_asyncInput.Bool = false;
             // make sure the current system state is compatible with net_serverDedicated
             switch (cvarSystem.GetCVarInteger("net_serverDedicated"))
             {
@@ -342,7 +343,7 @@ namespace Gengine.Framework.Async
         {
             if (server.IsActive) { common.Printf("already running a server\n"); return; }
             if (args.Count != 2) { common.Printf("USAGE: connect <serverName>\n"); return; }
-            C.com_asyncInput.Bool = false;
+            com_asyncInput.Bool = false;
             client.ConnectToServer(args[1]);
         }
 

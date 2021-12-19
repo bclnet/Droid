@@ -1,5 +1,3 @@
-using Gengine.Framework;
-using Gengine.Render;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,8 +5,11 @@ using System.NumericsX;
 using System.NumericsX.OpenAL;
 using System.NumericsX.OpenAL.Extensions.Creative.EFX;
 using System.NumericsX.OpenStack;
-using static Gengine.Lib;
+using System.NumericsX.OpenStack.Gngine;
+using System.NumericsX.OpenStack.Gngine.Framework;
+using System.NumericsX.OpenStack.Gngine.Render;
 using static Gengine.Sound.Lib;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.OpenStack;
 using static System.NumericsX.Platform;
 

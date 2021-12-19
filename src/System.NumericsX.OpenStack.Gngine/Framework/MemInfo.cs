@@ -1,4 +1,4 @@
-namespace System.NumericsX.OpenStack.Gngine
+namespace System.NumericsX.OpenStack.Gngine.Framework
 {
     public struct MemInfo
     {
