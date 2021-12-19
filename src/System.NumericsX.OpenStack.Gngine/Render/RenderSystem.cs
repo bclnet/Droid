@@ -1,10 +1,6 @@
-using Gengine.Framework;
-using System;
-using System.NumericsX;
-using System.NumericsX.OpenStack;
 using GlIndex = System.Int32;
 
-namespace Gengine.Render
+namespace System.NumericsX.OpenStack.Gngine.Render
 {
     // Contains variables specific to the OpenGL configuration being run right now. These are constant once the OpenGL subsystem is initialized.
     public class Glconfig

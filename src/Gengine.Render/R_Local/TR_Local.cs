@@ -13,14 +13,6 @@ namespace Gengine.Render
     public static partial class TR
     {
         static bool Doom3Quest_useScreenLayer => false;
-
-        // everything that is needed by the backend needs to be double buffered to allow it to run in parallel on a dual cpu machine
-        const int SMP_FRAMES = 1;
-        const int FALLOFF_TEXTURE_SIZE = 64;
-        const float DEFAULT_FOG_DISTANCE = 500f;
-        const int FOG_ENTER_SIZE = 64;
-        const float FOG_ENTER = (FOG_ENTER_SIZE + 1f) / (FOG_ENTER_SIZE * 2);
-        // picky to get the bilerp correct at terminator
     }
 
     // ScreenRect gets carried around with each drawSurf, so it makes sense to keep it compact, instead of just using the idBounds class

@@ -1,14 +1,11 @@
-using Gengine.Framework;
-using System;
-using System.NumericsX;
-using System.NumericsX.OpenStack;
+using System.NumericsX.OpenStack.Gngine.Framework;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using WaveEngine.Bindings.OpenGLES;
-using static Gengine.Lib;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.OpenStack;
 
-namespace Gengine.Render
+namespace System.NumericsX.OpenStack.Gngine.Render
 {
     public enum ImageState
     {

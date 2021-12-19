@@ -1,8 +1,7 @@
-using System;
 using WaveEngine.Bindings.OpenGLES;
 using static WaveEngine.Bindings.OpenGLES.GL;
 
-namespace Gengine.Render
+namespace System.NumericsX.OpenStack.Gngine.Render
 {
     //(PixelType) VertexAttribPointerType.UnsignedByte
     //BlitFramebufferFilter.Nearest

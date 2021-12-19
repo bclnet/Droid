@@ -2,9 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <ApplicationIcon />
-    <OutputType>Library</OutputType>
-    <StartupObject />
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -14,21 +11,12 @@
 
   <ItemGroup>
     <Compile Remove="Render\Core\CinematicLocal.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="Framework\Console.cpp" />
-    <None Remove="Framework\Console.h" />
-    <None Remove="Framework\EventLoop.h" />
-    <None Remove="Framework\KeyInput.cpp" />
-    <None Remove="Framework\KeyInput.h" />
-    <None Remove="Framework\Session.cpp" />
-    <None Remove="Framework\Session.h" />
-    <None Remove="Framework\Session_local.h" />
+    <Compile Remove="VertexCache.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="Render\Core\CinematicLocal.cs" />
+    <None Include="Render\VertexCache.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,10 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\System.NumericsX.OpenStack.System\System.NumericsX.OpenStack.System.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+    <ProjectReference Include="..\System.NumericsX.OpenStack\System.NumericsX.OpenStack.csproj" />
   </ItemGroup>
 
 </Project>

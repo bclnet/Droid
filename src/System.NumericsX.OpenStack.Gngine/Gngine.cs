@@ -1,21 +1,10 @@
-using Gengine.CM;
-using Gengine.Framework;
-using Gengine.Framework.Async;
-using Gengine.Render;
-using Gengine.Sound;
-using Gengine.UI;
-using System;
-using System.NumericsX.OpenStack;
-using System.Runtime.CompilerServices;
-//using GL_INDEX_TYPE = System.UInt32; // GL_UNSIGNED_INT
-//using GlIndex = System.Int32;
-[assembly: InternalsVisibleTo("Gengine.CM")]
-[assembly: InternalsVisibleTo("Gengine.Framework")]
-[assembly: InternalsVisibleTo("Gengine.Render")]
-[assembly: InternalsVisibleTo("Gengine.Sound")]
-[assembly: InternalsVisibleTo("Gengine.UI")]
+using System.NumericsX.OpenStack.Gngine.CM;
+using System.NumericsX.OpenStack.Gngine.Framework;
+using System.NumericsX.OpenStack.Gngine.Framework.Async;
+using System.NumericsX.OpenStack.Gngine.Render;
+using System.NumericsX.OpenStack.Gngine.UI;
 
-namespace Gengine
+namespace System.NumericsX.OpenStack.Gngine
 {
     public struct GameCallbacks
     {
@@ -26,11 +15,10 @@ namespace Gengine
         public void Reset() => throw new NotImplementedException();
     }
 
-    // https://github.com/WaveEngine/OpenGL.NET
-    public unsafe static class Lib
+    public unsafe static class Gngine
     {
-        public const string ENGINE_VERSION = "Doom3Quest 1.1.6";	// printed in console
-        public const int BUILD_NUMBER = 1304;
+        //public const string ENGINE_VERSION = "Doom3Quest 1.1.6";	// printed in console
+        //public const int BUILD_NUMBER = 1304;
 
         public static IUserInterfaceManager uiManager;
         public static ISoundSystem soundSystem;

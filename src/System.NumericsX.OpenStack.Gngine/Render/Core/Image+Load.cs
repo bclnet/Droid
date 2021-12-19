@@ -1,14 +1,13 @@
-using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using WaveEngine.Bindings.OpenGLES;
-using static Gengine.Lib;
-using static Gengine.Render.QGL;
-using static Gengine.Render.R;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
+using static System.NumericsX.OpenStack.Gngine.Render.QGL;
+using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.OpenStack;
 
-namespace Gengine.Render
+namespace System.NumericsX.OpenStack.Gngine.Render
 {
     unsafe partial class Image
     {

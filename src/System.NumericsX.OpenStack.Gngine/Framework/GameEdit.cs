@@ -1,10 +1,7 @@
-using Gengine.Render;
-using Gengine.Sound;
 using System.Collections.Generic;
-using System.NumericsX;
-using System.NumericsX.OpenStack;
+using System.NumericsX.OpenStack.Gngine.Render;
 
-namespace Gengine.Framework
+namespace System.NumericsX.OpenStack.Gngine.Framework
 {
     public class RefSound
     {

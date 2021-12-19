@@ -1,13 +1,10 @@
-using System;
-using System.NumericsX;
-using System.NumericsX.OpenStack;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using static Gengine.Lib;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.OpenStack;
 using static System.NumericsX.Platform;
 
-namespace Gengine.Render
+namespace System.NumericsX.OpenStack.Gngine.Render
 {
     unsafe partial class Image
     {

@@ -1,9 +1,7 @@
-using System;
-using System.NumericsX.OpenStack;
 using System.Runtime.InteropServices;
-using static Gengine.Lib;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 
-namespace Gengine.Render
+namespace System.NumericsX.OpenStack.Gngine.Render
 {
     // cinematic states
     public enum CinStatus
