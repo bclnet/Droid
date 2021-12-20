@@ -9,16 +9,16 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DefineConstants>TRACE;ID_DEDICATED_;ID_CONSOLE_LOCK;ID_ENFORCE_KEY</DefineConstants>
+    <DefineConstants>TRACE;ID_DEDICATED_</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="UsercmdGenLocal.cs" />
+    <Compile Remove="GameBearShootWindow.cs" />
+    <Compile Remove="GameBustOutWindow.cs" />
+    <Compile Remove="GameSSDWindow.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Gengine.Sound\System.NumericsX.OpenStack.GngineSound.csproj" />
-    <ProjectReference Include="..\System.NumericsX.OpenStack.Gngine.Sound\System.NumericsX.OpenStack.Gngine.Sound.csproj" />
     <ProjectReference Include="..\System.NumericsX.OpenStack.Gngine\System.NumericsX.OpenStack.Gngine.csproj" />
   </ItemGroup>
 

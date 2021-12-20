@@ -9,9 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX", "System.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.Framework", "Gengine.Framework\Gengine.Framework.csproj", "{E1DFA2E3-57D0-425C-AF8A-40F04E3F163B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.GngineSound", "System.NumericsX.OpenStack.GngineSound\System.NumericsX.OpenStack.GngineSound.csproj", "{BC8872C7-6187-48D0-B5B9-B8FBF2633777}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.Gngine.Sound", "System.NumericsX.OpenStack.Gngine.Sound\System.NumericsX.OpenStack.Gngine.Sound.csproj", "{BC8872C7-6187-48D0-B5B9-B8FBF2633777}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.GngineUI", "System.NumericsX.OpenStack.GngineUI\System.NumericsX.OpenStack.GngineUI.csproj", "{0D4423B1-60B6-4623-AD97-BB3E423AB91B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.Gngine.UI", "System.NumericsX.OpenStack.Gngine.UI\System.NumericsX.OpenStack.Gngine.UI.csproj", "{0D4423B1-60B6-4623-AD97-BB3E423AB91B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.Render", "Gengine.Render\Gengine.Render.csproj", "{6AD36A58-AB17-41EF-8F88-B2F802C36D32}"
 EndProject
@@ -25,9 +25,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.Tests", "System.NumericsX.Tests\System.NumericsX.Tests.csproj", "{D862DC05-EF7F-4930-9A33-D349724A0B50}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.CM", "Gengine.CM\Gengine.CM.csproj", "{6211E066-7021-4FBB-AE67-4D6EAE9D393E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.Gngine.CM", "System.NumericsX.OpenStack.Gngine.CM\System.NumericsX.OpenStack.Gngine.CM.csproj", "{6211E066-7021-4FBB-AE67-4D6EAE9D393E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.Gngine", "System.NumericsX.OpenStack.Gngine\System.NumericsX.OpenStack.Gngine.csproj", "{B632B073-41E4-421A-BD61-6AC62E9E970E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.Gngine.Framework", "System.NumericsX.OpenStack.Gngine.Framework\System.NumericsX.OpenStack.Gngine.Framework.csproj", "{ACFC7CA6-3277-46A2-971A-8D441F5CA59C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.Gngine.Render", "System.NumericsX.OpenStack.Gngine.Render\System.NumericsX.OpenStack.Gngine.Render.csproj", "{DB1B0734-DD24-41B7-8E7D-553A535A2FE7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -87,6 +91,14 @@ Global
 		{B632B073-41E4-421A-BD61-6AC62E9E970E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B632B073-41E4-421A-BD61-6AC62E9E970E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B632B073-41E4-421A-BD61-6AC62E9E970E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACFC7CA6-3277-46A2-971A-8D441F5CA59C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACFC7CA6-3277-46A2-971A-8D441F5CA59C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACFC7CA6-3277-46A2-971A-8D441F5CA59C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACFC7CA6-3277-46A2-971A-8D441F5CA59C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB1B0734-DD24-41B7-8E7D-553A535A2FE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB1B0734-DD24-41B7-8E7D-553A535A2FE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB1B0734-DD24-41B7-8E7D-553A535A2FE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB1B0734-DD24-41B7-8E7D-553A535A2FE7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

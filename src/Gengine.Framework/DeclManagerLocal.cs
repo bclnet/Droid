@@ -1,6 +1,5 @@
 //#define USE_COMPRESSED_DECLS
 #define GET_HUFFMAN_FREQUENCIES
-using Gengine.Sound;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,6 +8,7 @@ using System.NumericsX.OpenStack;
 using System.NumericsX.OpenStack.Gngine;
 using System.NumericsX.OpenStack.Gngine.Framework;
 using System.NumericsX.OpenStack.Gngine.Render;
+using System.NumericsX.OpenStack.Gngine.Sound;
 using System.Runtime.CompilerServices;
 using System.Text;
 using static Gengine.Framework.Lib;
