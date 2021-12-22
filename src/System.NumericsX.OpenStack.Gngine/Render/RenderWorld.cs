@@ -181,11 +181,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public int jointNumber;     // md5 joint nearest to the hit triangle
     }
 
-    static partial class RenderWorldX
-    {
-        public const int NUM_PORTAL_ATTRIBUTES = 3;
-    }
-
     public enum PortalConnection
     {
         PS_BLOCK_NONE = 0,
@@ -194,11 +189,13 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         PS_BLOCK_LOCATION = 2,      // game map location strings often stop in hallways
         PS_BLOCK_AIR = 4,           // windows between pressurized and unpresurized areas
 
-        PS_BLOCK_ALL = (1 << RenderWorldX.NUM_PORTAL_ATTRIBUTES) - 1
+        PS_BLOCK_ALL = (1 << IRenderWorld.NUM_PORTAL_ATTRIBUTES) - 1
     }
 
     public interface IRenderWorld
     {
+        public const int NUM_PORTAL_ATTRIBUTES = 3;
+
         public const string PROC_FILE_EXT = "proc";
         public const string PROC_FILE_ID = "mapProcFile003";
 
@@ -351,22 +348,76 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         // Line drawing for debug visualization
         void DebugClearLines(int time);     // a time of 0 will clear all lines and text
-        void DebugLine(Vector4 color, Vector3 start, Vector3 end, int lifetime = 0, bool depthTest = false);
-        void DebugArrow(Vector4 color, Vector3 start, Vector3 end, int size, int lifetime = 0);
-        void DebugWinding(Vector4 color, Winding w, Vector3 origin, Matrix3x3 axis, int lifetime = 0, bool depthTest = false);
-        void DebugCircle(Vector4 color, Vector3 origin, Vector3 dir, float radius, int numSteps, int lifetime = 0, bool depthTest = false);
-        void DebugSphere(Vector4 color, Sphere sphere, int lifetime = 0, bool depthTest = false);
-        void DebugBounds(Vector4 color, Bounds bounds, Vector3 org = default, int lifetime = 0);
-        void DebugBox(Vector4 color, Box box, int lifetime = 0);
-        void DebugFrustum(Vector4 color, Frustum frustum, bool showFromOrigin = false, int lifetime = 0);
-        void DebugCone(Vector4 color, Vector3 apex, Vector3 dir, float radius1, float radius2, int lifetime = 0);
-        void DebugAxis(Vector3 origin, Matrix3x3 axis);
+        void DebugLine(in Vector4 color, in Vector3 start, in Vector3 end, int lifetime = 0, bool depthTest = false);
+        void DebugArrow(in Vector4 color, in Vector3 start, in Vector3 end, int size, int lifetime = 0);
+        void DebugWinding(in Vector4 color, Winding w, in Vector3 origin, Matrix3x3 axis, int lifetime = 0, bool depthTest = false);
+        void DebugCircle(in Vector4 color, in Vector3 origin, in Vector3 dir, float radius, int numSteps, int lifetime = 0, bool depthTest = false);
+        void DebugSphere(in Vector4 color, in Sphere sphere, int lifetime = 0, bool depthTest = false);
+        void DebugBounds(in Vector4 color, in Bounds bounds, in Vector3 org = default, int lifetime = 0);
+        void DebugBox(in Vector4 color, in Box box, int lifetime = 0);
+        void DebugFrustum(in Vector4 color, Frustum frustum, bool showFromOrigin = false, int lifetime = 0);
+        void DebugCone(in Vector4 color, in Vector3 apex, in Vector3 dir, float radius1, float radius2, int lifetime = 0);
+        void DebugScreenRect(in Vector4 color, ScreenRect rect, ViewDef viewDef, int lifetime = 0);
+        void DebugAxis(in Vector3 origin, in Matrix3x3 axis);
 
         // Polygon drawing for debug visualization.
         void DebugClearPolygons(int time);      // a time of 0 will clear all polygons
-        void DebugPolygon(Vector4 color, Winding winding, int lifeTime = 0, bool depthTest = false);
+        void DebugPolygon(in Vector4 color, Winding winding, int lifeTime = 0, bool depthTest = false);
 
         // Text drawing for debug visualization.
-        void DrawText(string text, Vector3 origin, float scale, Vector4 color, Matrix3x3 viewAxis, int align = 1, int lifetime = 0, bool depthTest = false);
+        void DrawText(string text, in Vector3 origin, float scale, Vector4 color, in Matrix3x3 viewAxis, int align = 1, int lifetime = 0, bool depthTest = false);
+    }
+
+    // --- WORLD LOCAL --- //
+
+    // assume any lightDef or entityDef index above this is an internal error
+    partial class R
+    {
+        const int LUDICROUS_INDEX = 10000;
+    }
+
+    public class Portal
+    {
+        public int intoArea;       // area this portal leads to
+        public Winding w;               // winding points have counter clockwise ordering seen this area
+        public Plane plane;          // view must be on the positive side of the plane to cross
+        public Portal next;         // next portal of the area
+        public DoublePortal doublePortal;
+    }
+
+    public class DoublePortal
+    {
+        public Portal portals0;
+        public Portal portals1;
+        public int blockingBits;   // PS_BLOCK_VIEW, PS_BLOCK_AIR, etc, set by doors that shut them off
+
+        // A portal will be considered closed if it is past the fog-out point in a fog volume.  We only support a single fog volume over each portal.
+        public IRenderLight fogLight;
+        public DoublePortal nextFoggedPortal;
+    }
+
+    public class PortalArea
+    {
+        public int areaNum;
+        public int[] connectedAreaNum = new int[IRenderWorld.NUM_PORTAL_ATTRIBUTES];    // if two areas have matching connectedAreaNum, they are
+                                                                                        // not separated by a portal with the apropriate PS_BLOCK_* blockingBits
+        public int viewCount;      // set by R_FindViewLightsAndEntities
+        public Portal portals;      // never changes after load
+        public AreaReference entityRefs;     // head/tail of doubly linked list, may change
+        public AreaReference lightRefs;      // head/tail of doubly linked list, may change
+    }
+
+    partial class R
+    {
+        const int CHILDREN_HAVE_MULTIPLE_AREAS = -2;
+        const int AREANUM_SOLID = -1;
+    }
+
+    public struct AreaNode
+    {
+        Plane plane;
+        int children0;        // negative numbers are (-1 - areaNumber), 0 = solid
+        int children1;        // negative numbers are (-1 - areaNumber), 0 = solid
+        int commonChildrenArea; // if all children are either solid or a single area, this is the area number, else CHILDREN_HAVE_MULTIPLE_AREAS
     }
 }

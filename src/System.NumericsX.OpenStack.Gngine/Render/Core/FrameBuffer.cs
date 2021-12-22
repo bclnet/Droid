@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
 using WaveEngine.Bindings.OpenGLES;
 using static System.NumericsX.OpenStack.Gngine.Render.QGL;
-using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.OpenStack;
+using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static WaveEngine.Bindings.OpenGLES.GL;
 
 namespace System.NumericsX.OpenStack.Gngine.Render

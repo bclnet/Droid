@@ -141,7 +141,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
     public class NewShaderStage
     {
-        const int MAX_FRAGMENT_IMAGES = 8;
+        public const int MAX_FRAGMENT_IMAGES = 8;
         const int MAX_VERTEX_PARMS = 4;
 
         public int vertexProgram;

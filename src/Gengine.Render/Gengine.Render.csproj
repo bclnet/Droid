@@ -13,6 +13,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="R_Local\**" />
+    <EmbeddedResource Remove="R_Local\**" />
+    <None Remove="R_Local\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Gengine.Core\Gengine.Core.csproj" />
     <ProjectReference Include="..\Gengine.Framework\Gengine.Framework.csproj" />
   </ItemGroup>

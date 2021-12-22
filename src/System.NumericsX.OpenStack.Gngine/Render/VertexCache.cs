@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using WaveEngine.Bindings.OpenGLES;
 using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.Gngine.Render.QGL;
+using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.OpenStack;
 using static WaveEngine.Bindings.OpenGLES.GL;
 
@@ -598,7 +599,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // if our total static count is above our working memory limit, start purging things
             while (staticAllocTotal > r_vertexBufferMegs.Integer * 1024 * 1024) { } // free the least recently used
 #endif
-            currentFrame = R.frameCount;
+            currentFrame = tr.frameCount;
 
             listNum = currentFrame % NUM_VERTEX_FRAMES;
 

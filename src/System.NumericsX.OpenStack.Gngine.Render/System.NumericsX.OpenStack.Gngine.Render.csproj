@@ -16,6 +16,41 @@
     <Compile Remove="GameBearShootWindow.cs" />
     <Compile Remove="GameBustOutWindow.cs" />
     <Compile Remove="GameSSDWindow.cs" />
+    <Compile Remove="TR_Backend.cs" />
+    <Compile Remove="TR_Deform.cs" />
+    <Compile Remove="TR_Font.cs" />
+    <Compile Remove="TR_GuiSurf.cs" />
+    <Compile Remove="TR_Light.cs" />
+    <Compile Remove="TR_LightRun.cs" />
+    <Compile Remove="TR_OrderIndexes.cs" />
+    <Compile Remove="TR_Polytope.cs" />
+    <Compile Remove="TR_Render.cs" />
+    <Compile Remove="TR_RenderTools.cs" />
+    <Compile Remove="TR_ShadowBounds.cs" />
+    <Compile Remove="TR_StencilShadow.cs" />
+    <Compile Remove="TR_SubView.cs" />
+    <Compile Remove="TR_Trace.cs" />
+    <Compile Remove="TR_TriSurf.cs" />
+    <Compile Remove="TR_TurboShadow.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="TR_Backend.cs" />
+    <None Include="TR_Deform.cs" />
+    <None Include="TR_Font.cs" />
+    <None Include="TR_GuiSurf.cs" />
+    <None Include="TR_Light.cs" />
+    <None Include="TR_LightRun.cs" />
+    <None Include="TR_OrderIndexes.cs" />
+    <None Include="TR_Polytope.cs" />
+    <None Include="TR_Render.cs" />
+    <None Include="TR_RenderTools.cs" />
+    <None Include="TR_ShadowBounds.cs" />
+    <None Include="TR_StencilShadow.cs" />
+    <None Include="TR_SubView.cs" />
+    <None Include="TR_Trace.cs" />
+    <None Include="TR_TriSurf.cs" />
+    <None Include="TR_TurboShadow.cs" />
   </ItemGroup>
 
   <ItemGroup>

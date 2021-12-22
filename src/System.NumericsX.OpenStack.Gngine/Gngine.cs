@@ -37,7 +37,9 @@ namespace System.NumericsX.OpenStack.Gngine
         public static GameCallbacks gameCallbacks;
 
         //: TODO-MOVE
-        public static readonly BackEndState backEnd;
+        //public static readonly BackEndState backEnd;
+        //public static readonly IRenderSystem tr;
+        //public static readonly Glconfig glConfig;
 
         public static string R_GetVidModeListString(bool addCustom) => throw new NotImplementedException();
         public static string R_GetVidModeValsString(bool addCustom) => throw new NotImplementedException();
