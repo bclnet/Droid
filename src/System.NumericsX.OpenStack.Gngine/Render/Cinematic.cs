@@ -19,13 +19,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
     public unsafe struct CinData
     {
         public int imageWidth, imageHeight; // will be a power of 2
-        public byte[] image;                // RGBA format, alpha will be 255
+        public byte* image;                // RGBA format, alpha will be 255
         public int status;
-
-        public void memset()
-        {
-            throw new NotImplementedException();
-        }
     }
 
     public unsafe class Cinematic

@@ -42,8 +42,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         {
             Close();
 
-            if (mbIsReadingFromMemory && mpbData != null)
-                mpbData = null;
+            if (mbIsReadingFromMemory && mpbData != null) mpbData = null;
 
             mpwfx = default;
         }
@@ -57,15 +56,13 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             mpbData = null;
             mpbDataCur = 0;
 
-            if (strFileName == null)
-                return -1;
+            if (strFileName == null) return -1;
 
             var name = strFileName;
 
             // note: used to only check for .wav when making a build
             name = PathX.SetFileExtension(name, ".ogg");
-            if (fileSystem.ReadFile(name, out var _) != -1)
-                return OpenOGG(name, out pwfx);
+            if (fileSystem.ReadFile(name, out var _) != -1) return OpenOGG(name, out pwfx);
 
             mpwfx = default;
 
@@ -80,11 +77,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             mdwSize = (int)(mck.cksize / sizeof(short));
             mMemSize = (int)mck.cksize;
 
-            if (mck.cksize != 0xffffffff)
-            {
-                pwfx = mpwfx.Format;
-                return 0;
-            }
+            if (mck.cksize != 0xffffffff) { pwfx = mpwfx.Format; return 0; }
             return -1;
         }
 
@@ -109,8 +102,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             PcmWaveFormat pcmWaveFormat;  // Temp PCM structure to load in.
 
             mpwfx = default;
-            fixed (void* mckRiff_ = &mckRiff)
-                mhmmio.Read((byte*)mckRiff_, 12);
+            fixed (void* mckRiff_ = &mckRiff) mhmmio.Read((byte*)mckRiff_, 12);
             Debug.Assert(!isOgg);
             mckRiff.ckid = LittleInt(mckRiff.ckid);
             mckRiff.cksize = LittleUInt(mckRiff.cksize);
@@ -118,15 +110,13 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             mckRiff.dwDataOffset = 12;
 
             // Check to make sure this is a valid wave file
-            if (mckRiff.ckid != SoundSystemLocal.fourcc_riff || mckRiff.fccType != SoundSystemLocal.mmioFOURCC('W', 'A', 'V', 'E'))
-                return -1;
+            if (mckRiff.ckid != SoundSystemLocal.fourcc_riff || mckRiff.fccType != SoundSystemLocal.mmioFOURCC('W', 'A', 'V', 'E')) return -1;
 
             // Search the input file for for the 'fmt ' chunk.
             ckIn.dwDataOffset = 12;
             do
             {
-                if (mhmmio.Read((byte*)&ckIn, 8) != 8)
-                    return -1;
+                if (mhmmio.Read((byte*)&ckIn, 8) != 8) return -1;
                 Debug.Assert(!isOgg);
                 ckIn.ckid = LittleInt(ckIn.ckid);
                 ckIn.cksize = LittleUInt(ckIn.cksize);
@@ -138,8 +128,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 return -1;
 
             // Read the 'fmt ' chunk into <pcmWaveFormat>.
-            if (mhmmio.Read((byte*)&pcmWaveFormat, sizeof(PcmWaveFormat)) != sizeof(PcmWaveFormat))
-                return -1;
+            if (mhmmio.Read((byte*)&pcmWaveFormat, sizeof(PcmWaveFormat)) != sizeof(PcmWaveFormat)) return -1;
             Debug.Assert(!isOgg);
             pcmWaveFormat.wf.wFormatTag = (WAVE_FORMAT_TAG)LittleShort((short)pcmWaveFormat.wf.wFormatTag);
             pcmWaveFormat.wf.nChannels = LittleShort(pcmWaveFormat.wf.nChannels);
@@ -152,25 +141,19 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             mpwfx.memcpy(ref pcmWaveFormat);
 
             // Allocate the waveformatex_t, but if its not pcm format, read the next word, and thats how many extra bytes to allocate.
-            if (pcmWaveFormat.wf.wFormatTag == WAVE_FORMAT_TAG.PCM)
-                mpwfx.Format.cbSize = 0;
+            if (pcmWaveFormat.wf.wFormatTag == WAVE_FORMAT_TAG.PCM) mpwfx.Format.cbSize = 0;
             else
             {
                 return -1;  // we don't handle these (32 bit wavefiles, etc)
 #if false
                 // Read in length of extra bytes.
                 word cbExtraBytes = 0L;
-                if (mhmmio.Read((char*)&cbExtraBytes, sizeof(word)) != sizeof(word))
-                    return -1;
+                if (mhmmio.Read((char*)&cbExtraBytes, sizeof(word)) != sizeof(word)) return -1;
 
                 mpwfx.Format.cbSize = cbExtraBytes;
 
                 // Now, read those extra bytes into the structure, if cbExtraAlloc != 0.
-                if (mhmmio.Read((char*)(((byte*)&(mpwfx.Format.cbSize)) + sizeof(word)), cbExtraBytes) != cbExtraBytes)
-                {
-                    memset(&mpwfx, 0, sizeof(waveformatextensible_t));
-                    return -1;
-                }
+                if (mhmmio.Read((char*)(((byte*)&(mpwfx.Format.cbSize)) + sizeof(word)), cbExtraBytes) != cbExtraBytes) { memset(&mpwfx, 0, sizeof(waveformatextensible_t)); return -1; }
 #endif
             }
 
@@ -180,24 +163,20 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         // Resets the internal mck pointer so reading starts from the beginning of the file again
         public unsafe int ResetFile()
         {
-            if (mbIsReadingFromMemory)
-                mpbDataCur = 0;
+            if (mbIsReadingFromMemory) mpbDataCur = 0;
             else
             {
-                if (mhmmio == null)
-                    return -1;
+                if (mhmmio == null) return -1;
 
                 // Seek to the data
-                if (mhmmio.Seek(mckRiff.dwDataOffset + sizeof(int), FS_SEEK.SET) == -1)
-                    return -1;
+                if (mhmmio.Seek(mckRiff.dwDataOffset + sizeof(int), FS_SEEK.SET) == -1) return -1;
 
                 // Search the input file for for the 'fmt ' chunk.
                 mck.ckid = 0;
                 do
                 {
                     byte ioin;
-                    if (mhmmio.Read(&ioin, 1) == 0)
-                        return -1;
+                    if (mhmmio.Read(&ioin, 1) == 0) return -1;
                     mck.ckid = (mck.ckid >> 8) | (ioin << 24);
                 } while (mck.ckid != SoundSystemLocal.mmioFOURCC('d', 'a', 't', 'a'));
 
@@ -220,10 +199,8 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             else if (mbIsReadingFromMemory)
             {
                 if (mpbDataCur == 0) return -1;
-                if (mpbDataCur + dwSizeToRead > mulDataSize)
-                    dwSizeToRead = mulDataSize - mpbDataCur;
-                fixed (void* mpbDataCur_ = &mpbData[mpbDataCur])
-                    Simd.Memcpy(pBuffer, mpbDataCur_, dwSizeToRead);
+                if (mpbDataCur + dwSizeToRead > mulDataSize) dwSizeToRead = mulDataSize - mpbDataCur;
+                fixed (void* mpbDataCur_ = &mpbData[mpbDataCur]) Simd.Memcpy(pBuffer, mpbDataCur_, dwSizeToRead);
                 mpbDataCur += dwSizeToRead;
 
                 pdwSizeRead?.Invoke(dwSizeToRead);

@@ -67,8 +67,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
         internal unsafe void memcpy(ref PcmWaveFormat pcmWaveFormat)
         {
-            fixed (PcmWaveFormat* _ = &pcmWaveFormat)
-                this = *(WaveformatExtensible*)_;
+            fixed (PcmWaveFormat* _ = &pcmWaveFormat) this = *(WaveformatExtensible*)_;
         }
     }
 
@@ -132,20 +131,13 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         {
             pwfx = default;
             mhmmio = fileSystem.OpenFileRead(strFileName);
-            if (mhmmio == null)
-                return -1;
+            if (mhmmio == null) return -1;
 
             ISystem.EnterCriticalSection(CRITICAL_SECTION.SECTION_ONE);
 
             var ov = new OggVorbis_File();
 
-            if (OggVorbis.ov_openFile(mhmmio, ov) < 0)
-            {
-                ISystem.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE);
-                fileSystem.CloseFile(mhmmio);
-                mhmmio = null;
-                return -1;
-            }
+            if (OggVorbis.ov_openFile(mhmmio, ov) < 0) { ISystem.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE); fileSystem.CloseFile(mhmmio); mhmmio = null; return -1; }
 
             mfileTime = mhmmio.Timestamp;
 
@@ -302,16 +294,11 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
         public unsafe virtual void Decode(SoundSample sample, int sampleOffset44k, int sampleCount44k, float* dest)
         {
-            if (sample.objectInfo.wFormatTag != lastFormat || sample != lastSample)
-                ClearDecoder();
+            if (sample.objectInfo.wFormatTag != lastFormat || sample != lastSample) ClearDecoder();
 
             lastDecodeTime = soundSystemLocal.CurrentSoundTime;
 
-            if (failed)
-            {
-                UnsafeX.InitBlock(dest, 0, sampleCount44k * sizeof(float));
-                return;
-            }
+            if (failed) { UnsafeX.InitBlock(dest, 0, sampleCount44k * sizeof(float)); return; }
 
             // samples can be decoded both from the sound thread and the main thread for shakes
             ISystem.EnterCriticalSection(CRITICAL_SECTION.SECTION_ONE);
@@ -323,8 +310,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             };
             ISystem.LeaveCriticalSection(CRITICAL_SECTION.SECTION_ONE);
 
-            if (readSamples44k < sampleCount44k)
-                UnsafeX.InitBlock(dest + readSamples44k, 0, (sampleCount44k - readSamples44k) * sizeof(float));
+            if (readSamples44k < sampleCount44k) UnsafeX.InitBlock(dest + readSamples44k, 0, (sampleCount44k - readSamples44k) * sizeof(float));
         }
 
         public virtual void ClearDecoder()
@@ -367,8 +353,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             var readSamples = size - pos < sampleCount * sizeof(short) ? (size - pos) / sizeof(short) : sampleCount;
 
             // duplicate samples for 44kHz output
-            fixed (byte* _ = &first.v[first.o + pos])
-                Simd.UpSamplePCMTo44kHz(dest, (short*)_, readSamples, sample.objectInfo.nSamplesPerSec, sample.objectInfo.nChannels);
+            fixed (byte* _ = &first.v[first.o + pos]) Simd.UpSamplePCMTo44kHz(dest, (short*)_, readSamples, sample.objectInfo.nSamplesPerSec, sample.objectInfo.nChannels);
 
             return readSamples << shift;
         }
@@ -385,31 +370,17 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             if (lastSample == null)
             {
                 // make sure there is enough space for another decoder
-                if (ISampleDecoder.decoderMemoryAllocator.FreeBlockMemory < ISampleDecoder.MIN_OGGVORBIS_MEMORY)
-                    return 0;
-                if (sample.nonCacheData == null)
-                {
-                    Debug.Assert(false);  // this should never happen
-                    failed = true;
-                    return 0;
-                }
+                if (ISampleDecoder.decoderMemoryAllocator.FreeBlockMemory < ISampleDecoder.MIN_OGGVORBIS_MEMORY) return 0;
+
+                if (sample.nonCacheData == null) { Debug.Assert(false); failed = true; return 0; } // this should never happen
                 file.SetData(sample.nonCacheData.Value, sample.objectMemSize);
-                if (OggVorbis.ov_openFile(file, ogg) < 0)
-                {
-                    failed = true;
-                    return 0;
-                }
+                if (OggVorbis.ov_openFile(file, ogg) < 0) { failed = true; return 0; }
                 lastFormat = WAVE_FORMAT_TAG.OGG;
                 lastSample = sample;
             }
 
             // seek to the right offset if necessary
-            if (sampleOffset != lastSampleOffset)
-                if (ov_pcm_seek(ogg, sampleOffset / sample.objectInfo.nChannels) != 0)
-                {
-                    failed = true;
-                    return 0;
-                }
+            if (sampleOffset != lastSampleOffset && ov_pcm_seek(ogg, sampleOffset / sample.objectInfo.nChannels) != 0) { failed = true; return 0; }
 
             lastSampleOffset = sampleOffset;
 
@@ -420,16 +391,8 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             {
                 float** samples;
                 var ret = (int)ov_read_float(ogg, &samples, totalSamples / sample.objectInfo.nChannels, null);
-                if (ret == 0)
-                {
-                    failed = true;
-                    break;
-                }
-                if (ret < 0)
-                {
-                    failed = true;
-                    return 0;
-                }
+                if (ret == 0) { failed = true; break; }
+                if (ret < 0) { failed = true; return 0; }
                 ret *= sample.objectInfo.nChannels;
 
                 Simd.UpSampleOGGTo44kHz(dest + (readSamples << shift), samples, ret, sample.objectInfo.nSamplesPerSec, sample.objectInfo.nChannels);

@@ -89,9 +89,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         {
             get
             {
-                for (var i = 0; i < numEntries; i++)
-                    if (entries[i] != null && entries[i].defaultSound)
-                        return true;
+                for (var i = 0; i < numEntries; i++) if (entries[i] != null && entries[i].defaultSound) return true;
                 return false;
             }
         }
@@ -113,10 +111,8 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         {
             int i; var ret = false;
 
-            for (i = 0; i < numLeadins; i++)
-                if (leadins[i].objectInfo.wFormatTag == WAVE_FORMAT_TAG.OGG) { common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{leadins[i].name}'"); ret = true; }
-            for (i = 0; i < numEntries; i++)
-                if (entries[i].objectInfo.wFormatTag == WAVE_FORMAT_TAG.OGG) { common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{entries[i].name}'"); ret = true; }
+            for (i = 0; i < numLeadins; i++) if (leadins[i].objectInfo.wFormatTag == WAVE_FORMAT_TAG.OGG) { common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{leadins[i].name}'"); ret = true; }
+            for (i = 0; i < numEntries; i++) if (entries[i].objectInfo.wFormatTag == WAVE_FORMAT_TAG.OGG) { common.Warning($"sound shader '{Name}' has shakes and uses OGG file '{entries[i].name}'"); ret = true; }
             return ret;
         }
 
@@ -145,17 +141,12 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             speakerMask = 0;
             altSound = null;
 
-            for (i = 0; i < ISoundSystem.SOUND_MAX_LIST_WAVS; i++)
-            {
-                leadins[i] = null;
-                entries[i] = null;
-            }
+            for (i = 0; i < ISoundSystem.SOUND_MAX_LIST_WAVS; i++) { leadins[i] = null; entries[i] = null; }
             numEntries = 0;
             numLeadins = 0;
 
             var maxSamples = SoundSystemLocal.s_maxSoundsPerShader.Integer;
-            if (C.com_makingBuild.Bool || maxSamples <= 0 || maxSamples > ISoundSystem.SOUND_MAX_LIST_WAVS)
-                maxSamples = ISoundSystem.SOUND_MAX_LIST_WAVS;
+            if (C.com_makingBuild.Bool || maxSamples <= 0 || maxSamples > ISoundSystem.SOUND_MAX_LIST_WAVS) maxSamples = ISoundSystem.SOUND_MAX_LIST_WAVS;
 
             string tokenS;
             while (true)
@@ -284,6 +275,5 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             if (parms.shakes > 0f) CheckShakesAndOgg();
             return true;
         }
-
     }
 }

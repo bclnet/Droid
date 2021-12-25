@@ -35,20 +35,14 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         {
             float fadeDb;
 
-            if (current44kHz >= fadeEnd44kHz)
-            {
-                fadeDb = fadeEndVolume;
-            }
+            if (current44kHz >= fadeEnd44kHz) fadeDb = fadeEndVolume;
             else if (current44kHz > fadeStart44kHz)
             {
-                float fraction = (fadeEnd44kHz - fadeStart44kHz);
-                float over = (current44kHz - fadeStart44kHz);
+                float fraction = fadeEnd44kHz - fadeStart44kHz;
+                float over = current44kHz - fadeStart44kHz;
                 fadeDb = fadeStartVolume + (fadeEndVolume - fadeStartVolume) * over / fraction;
             }
-            else
-            {
-                fadeDb = fadeStartVolume;
-            }
+            else fadeDb = fadeStartVolume;
             return fadeDb;
         }
     }
@@ -101,8 +95,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
             // get the channel's samples
             chan.GatherChannelSamples(playPos.time * 2, neededSamples, src);
-            for (i = 0; i < neededSamples >> 1; i++)
-                spline[i] = src[i * 2];
+            for (i = 0; i < neededSamples >> 1; i++) spline[i] = src[i * 2];
 
             // interpolate channel
             zeroedPos = playPos.time;
@@ -189,8 +182,10 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             if (state == PLAYBACK.ADVANCING) curPosition = newPosition;
         }
 
-        public bool IsActive => active;
-        public FracTime CurrentPosition => curPosition;
+        public bool IsActive
+            => active;
+        public FracTime CurrentPosition
+            => curPosition;
     }
 
     public class SoundChannel : IDisposable
@@ -236,8 +231,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             leadinSample = null;
             trigger44kHzTime = 0;
             stopped = false;
-            for (var j = 0; j < 6; j++)
-                lastV[j] = 0f;
+            for (var j = 0; j < 6; j++) lastV[j] = 0f;
             parms.memset();
 
             triggered = false;
@@ -250,19 +244,14 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         public void Start()
         {
             triggerState = true;
-            if (decoder == null)
-                decoder = ISampleDecoder.Alloc();
+            if (decoder == null) decoder = ISampleDecoder.Alloc();
         }
 
         public void Stop()
         {
             triggerState = false;
             stopped = true;
-            if (decoder != null)
-            {
-                ISampleDecoder.Free(decoder);
-                decoder = null;
-            }
+            if (decoder != null) { ISampleDecoder.Free(decoder); decoder = null; }
         }
 
         // free OpenAL resources if any
@@ -278,15 +267,13 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             {
                 AL.GetError();
                 AL.DeleteBuffers(3, ref openalStreamingBuffer[0]);
-                if (AL.GetError() == ALError.NoError)
-                    openalStreamingBuffer[0] = openalStreamingBuffer[1] = openalStreamingBuffer[2] = 0;
+                if (AL.GetError() == ALError.NoError) openalStreamingBuffer[0] = openalStreamingBuffer[1] = openalStreamingBuffer[2] = 0;
             }
             if (lastopenalStreamingBuffer[0] != 0 && lastopenalStreamingBuffer[1] != 0 && lastopenalStreamingBuffer[2] != 0)
             {
                 AL.GetError();
                 AL.DeleteBuffers(3, ref lastopenalStreamingBuffer[0]);
-                if (AL.GetError() == ALError.NoError)
-                    lastopenalStreamingBuffer[0] = lastopenalStreamingBuffer[1] = lastopenalStreamingBuffer[2] = 0;
+                if (AL.GetError() == ALError.NoError) lastopenalStreamingBuffer[0] = lastopenalStreamingBuffer[1] = lastopenalStreamingBuffer[2] = 0;
             }
         }
 
@@ -313,11 +300,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
                 // grab part of the leadin sample
                 var leadin = leadinSample;
-                if (leadin == null || sampleOffset44k < 0 || sampleCount44k <= 0)
-                {
-                    UnsafeX.InitBlock(dest_p, 0, sampleCount44k * sizeof(float));
-                    return;
-                }
+                if (leadin == null || sampleOffset44k < 0 || sampleCount44k <= 0) { UnsafeX.InitBlock(dest_p, 0, sampleCount44k * sizeof(float)); return; }
 
                 if (sampleOffset44k < leadin.LengthIn44kHzSamples)
                 {
@@ -333,19 +316,11 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 }
 
                 // if not looping, zero fill any remaining spots
-                if (soundShader == null || (parms.soundShaderFlags & ISoundSystem.SSF_LOOPING) == 0)
-                {
-                    UnsafeX.InitBlock(dest_p, 0, sampleCount44k * sizeof(float));
-                    return;
-                }
+                if (soundShader == null || (parms.soundShaderFlags & ISoundSystem.SSF_LOOPING) == 0) { UnsafeX.InitBlock(dest_p, 0, sampleCount44k * sizeof(float)); return; }
 
                 // fill the remainder with looped samples
                 var loop = soundShader.entries[0];
-                if (loop != null)
-                {
-                    UnsafeX.InitBlock(dest_p, 0, sampleCount44k * sizeof(float));
-                    return;
-                }
+                if (loop != null) { UnsafeX.InitBlock(dest_p, 0, sampleCount44k * sizeof(float)); return; }
 
                 sampleOffset44k -= leadin.LengthIn44kHzSamples;
                 while (sampleCount44k > 0)
@@ -384,8 +359,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         // They are never truly freed, just marked so they can be reused by the soundWorld
         public virtual void Free(bool immediate)
         {
-            if (removeStatus != REMOVE_STATUS.ALIVE)
-                return;
+            if (removeStatus != REMOVE_STATUS.ALIVE) return;
 
             if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf($"FreeSound ({index},{(immediate ? 1 : 0)})\n");
             if (soundWorld != null && soundWorld.writeDemo != null)
@@ -402,8 +376,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         // the parms specified will be the default overrides for all sounds started on this emitter. null is acceptable for parms
         public virtual void UpdateEmitter(Vector3 origin, int listenerId, SoundShaderParms parms)
         {
-            if (parms == null)
-                common.Error("SoundEmitterLocal::UpdateEmitter: null parms");
+            if (parms == null) common.Error("SoundEmitterLocal::UpdateEmitter: null parms");
             if (soundWorld != null && soundWorld.writeDemo != null)
             {
                 soundWorld.writeDemo.WriteInt((int)VFileDemo.DS.SOUND);
@@ -453,8 +426,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             OverrideParms(chanParms, this.parms, out chanParms);
             chanParms.soundShaderFlags |= shaderFlags;
 
-            if (chanParms.shakes > 0f)
-                shader2.CheckShakesAndOgg();
+            if (chanParms.shakes > 0f) shader2.CheckShakesAndOgg();
 
             // this is the sample time it will be first mixed
             var start44kHz = soundWorld.fpa[0] != null
@@ -542,8 +514,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 var end = SysW.Milliseconds;
                 session.TimeHitch(end - start);
                 // recalculate start44kHz, because loading may have taken a fair amount of time
-                if (soundWorld.fpa[0] == null)
-                    start44kHz = soundSystemLocal.Current44kHzTime + Simd.MIXBUFFER_SAMPLES;
+                if (soundWorld.fpa[0] == null) start44kHz = soundSystemLocal.Current44kHzTime + Simd.MIXBUFFER_SAMPLES;
             }
 
             if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf($"'{chan.leadinSample.name}'\n");
@@ -573,8 +544,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             // return length of sound in milliseconds
             var length = chan.leadinSample.LengthIn44kHzSamples;
 
-            if (chan.leadinSample.objectInfo.nChannels == 2)
-                length /= 2;    // stereo samples
+            if (chan.leadinSample.objectInfo.nChannels == 2) length /= 2;    // stereo samples
 
             // adjust the start time based on diversity for looping sounds, so they don't all start at the same point
             if ((chan.parms.soundShaderFlags & ISoundSystem.SSF_LOOPING) != 0 && chan.leadinSample.LengthIn44kHzSamples == 0)
@@ -620,8 +590,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
                 OverrideParms(chan.parms, parms, out chan.parms);
 
-                if (chan.parms.shakes > 0f && chan.soundShader != null)
-                    chan.soundShader.CheckShakesAndOgg();
+                if (chan.parms.shakes > 0f && chan.soundShader != null) chan.soundShader.CheckShakesAndOgg();
             }
         }
 
@@ -655,8 +624,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 chan.ALStop();
 
                 // if this was an onDemand sound, purge the sample now
-                if (chan.leadinSample.onDemand)
-                    chan.leadinSample.PurgeSoundSample();
+                if (chan.leadinSample.onDemand) chan.leadinSample.PurgeSoundSample();
 
                 chan.leadinSample = null;
                 chan.soundShader = null;
@@ -731,11 +699,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
         public void Clear()
         {
-            for (var i = 0; i < SoundSystemLocal.SOUND_MAX_CHANNELS; i++)
-            {
-                channels[i].ALStop();
-                channels[i].Clear();
-            }
+            for (var i = 0; i < SoundSystemLocal.SOUND_MAX_CHANNELS; i++) { channels[i].ALStop(); channels[i].Clear(); }
 
             removeStatus = REMOVE_STATUS.SAMPLEFINISHED;
             distance = 0f;
@@ -789,8 +753,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                     if ((chan.parms.soundShaderFlags & ISoundSystem.SSF_LOOPING) == 0)
                     {
                         var state = (int)ALSourceState.Playing;
-                        if (AL.IsSource(chan.openalSource))
-                            AL.GetSource(chan.openalSource, ALGetSourcei.SourceState, out state);
+                        if (AL.IsSource(chan.openalSource)) AL.GetSource(chan.openalSource, ALGetSourcei.SourceState, out state);
                         var slow = GetSlowChannel(chan);
                         if (soundWorld.slowmoActive && slow.IsActive)
                         {
@@ -798,8 +761,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                             {
                                 chan.Stop();
                                 // if this was an onDemand sound, purge the sample now
-                                if (chan.leadinSample.onDemand)
-                                    chan.leadinSample.PurgeSoundSample();
+                                if (chan.leadinSample.onDemand) chan.leadinSample.PurgeSoundSample();
                             }
                         }
                         else if (chan.trigger44kHzTime + chan.leadinSample.LengthIn44kHzSamples < current44kHzTime || chan.stopped)
@@ -810,18 +772,15 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                             chan.ALStop();
 
                             // if this was an onDemand sound, purge the sample now
-                            if (chan.leadinSample.onDemand)
-                                chan.leadinSample.PurgeSoundSample();
+                            if (chan.leadinSample.onDemand) chan.leadinSample.PurgeSoundSample();
                         }
                     }
 
                     // free decoder memory if no sound was decoded for a while
-                    if (chan.decoder != null && chan.decoder.LastDecodeTime < current44kHzTime - SoundSystemLocal.SOUND_DECODER_FREE_DELAY)
-                        chan.decoder.ClearDecoder();
+                    if (chan.decoder != null && chan.decoder.LastDecodeTime < current44kHzTime - SoundSystemLocal.SOUND_DECODER_FREE_DELAY) chan.decoder.ClearDecoder();
 
                     hasActive = true;
-                    if (chan.parms.shakes > 0f)
-                        hasShakes = true;
+                    if (chan.parms.shakes > 0f) hasShakes = true;
                 }
             }
 
@@ -830,8 +789,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             {
                 playing = false;
                 // this can now be reused by the next request for a new soundEmitter
-                if (removeStatus == REMOVE_STATUS.WAITSAMPLEFINISHED)
-                    removeStatus = REMOVE_STATUS.SAMPLEFINISHED;
+                if (removeStatus == REMOVE_STATUS.WAITSAMPLEFINISHED) removeStatus = REMOVE_STATUS.SAMPLEFINISHED;
             }
         }
 

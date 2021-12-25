@@ -76,8 +76,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
     public static partial class R
     {
+        internal static Func<int> tr_frameCount => throw new NotImplementedException();
+        internal static Func<Vector3> tr_ambientLightVector => throw new NotImplementedException();
+
         public static readonly BackEndState backEnd;
-        public static readonly IRenderSystem tr;
+        //public static readonly IRenderSystem tr;
         public static readonly Glconfig glConfig;     // outside of TR since it shouldn't be cleared during ref re-init
 
         // font support
@@ -110,6 +113,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
     unsafe partial class R
     {
+        #region cvars
+
         // cvars
         public static readonly CVar r_mode = new("r_mode", "3", CVAR.ARCHIVE | CVAR.RENDERER | CVAR.INTEGER, "video mode number");                   // video mode number
         public static readonly CVar r_displayRefresh = new("r_displayRefresh", "0", CVAR.RENDERER | CVAR.INTEGER | CVAR.NOCHEAT, "optional display refresh rate option for vid mode", 0f, 200f);         // optional display refresh rate option for vid mode
@@ -271,6 +276,104 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static CVar r_scaleMenusTo43 = new("r_scaleMenusTo43", "1", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.BOOL, "Scale menus, fullscreen videos and PDA to 4:3 aspect ratio");
         public static CVar r_customWidth = new("r_customWidth", "720", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.INTEGER, "custom screen width. set r_mode to -1 to activate");
         public static CVar r_customHeight = new("r_customHeight", "486", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.INTEGER, "custom screen height. set r_mode to -1 to activate");
+
+        #endregion
+
+        #region GL wrapper/helper functions
+
+        //        //public static void GL_SelectTexture(int unit);
+        //        public static void GL_CheckErrors();
+        //        //public static void GL_ClearStateDelta();
+        //        //public static void GL_State(int stateVector);
+        //        //public static void GL_Cull(int cullType);
+
+        public const int GLS_SRCBLEND_ZERO = 0x00000001;
+        public const int GLS_SRCBLEND_ONE = 0x0;
+        public const int GLS_SRCBLEND_DST_COLOR = 0x00000003;
+        public const int GLS_SRCBLEND_ONE_MINUS_DST_COLOR = 0x00000004;
+        public const int GLS_SRCBLEND_SRC_ALPHA = 0x00000005;
+        public const int GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA = 0x00000006;
+        public const int GLS_SRCBLEND_DST_ALPHA = 0x00000007;
+        public const int GLS_SRCBLEND_ONE_MINUS_DST_ALPHA = 0x00000008;
+        public const int GLS_SRCBLEND_ALPHA_SATURATE = 0x00000009;
+        public const int GLS_SRCBLEND_BITS = 0x0000000f;
+
+        public const int GLS_DSTBLEND_ZERO = 0x0;
+        public const int GLS_DSTBLEND_ONE = 0x00000020;
+        public const int GLS_DSTBLEND_SRC_COLOR = 0x00000030;
+        public const int GLS_DSTBLEND_ONE_MINUS_SRC_COLOR = 0x00000040;
+        public const int GLS_DSTBLEND_SRC_ALPHA = 0x00000050;
+        public const int GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA = 0x00000060;
+        public const int GLS_DSTBLEND_DST_ALPHA = 0x00000070;
+        public const int GLS_DSTBLEND_ONE_MINUS_DST_ALPHA = 0x00000080;
+        public const int GLS_DSTBLEND_BITS = 0x000000f0;
+
+        // these masks are the inverse, meaning when set the glColorMask value will be 0, preventing that channel from being written
+        public const int GLS_DEPTHMASK = 0x00000100;
+        public const int GLS_REDMASK = 0x00000200;
+        public const int GLS_GREENMASK = 0x00000400;
+        public const int GLS_BLUEMASK = 0x00000800;
+        public const int GLS_ALPHAMASK = 0x00001000;
+        public const int GLS_COLORMASK = (GLS_REDMASK | GLS_GREENMASK | GLS_BLUEMASK);
+
+        public const int GLS_DEPTHFUNC_ALWAYS = 0x00010000;
+        public const int GLS_DEPTHFUNC_EQUAL = 0x00020000;
+        public const int GLS_DEPTHFUNC_LESS = 0x0;
+
+        public const int GLS_DEFAULT = GLS_DEPTHFUNC_ALWAYS;
+
+        //        public static void R_Init();
+        //        public static void R_InitOpenGL();
+
+        //        //public static void R_DoneFreeType();
+
+        //        public static void R_SetColorMappings();
+
+        //        public static void R_ScreenShot_f(CmdArgs args);
+
+        //        public static bool R_CheckExtension(string name);
+
+        #endregion
+
+        #region IMPLEMENTATION SPECIFIC FUNCTIONS
+
+        //        public struct GlimpParms
+        //        {
+        //            public int width;
+        //            public int height;
+        //            public bool fullScreen;
+        //            public bool stereo;
+        //            public int displayHz;
+        //            public int multiSamples;
+        //        }
+
+        //        public static bool GLimp_Init(GlimpParms parms);
+        //        // If the desired mode can't be set satisfactorily, false will be returned. The renderer will then reset the glimpParms to "safe mode" of 640x480 fullscreen and try again.  If that also fails, the error will be fatal.
+
+        //        public static bool GLimp_SetScreenParms(GlimpParms parms);
+        //        // will set up gl up with the new parms
+
+        //        public static void GLimp_Shutdown();
+        //        // Destroys the rendering context, closes the window, resets the resolution, and resets the gamma ramps.
+
+        public static void GLimp_SetupFrame(int a) => throw new NotImplementedException();
+
+        public static void GLimp_SwapBuffers() => throw new NotImplementedException();
+        //        // Calls the system specific swapbuffers routine, and may also perform other system specific cvar checks that happen every frame. This will not be called if 'r_drawBuffer GL_FRONT'
+
+        //        public static void GLimp_SetGamma(ushort[] red, ushort[] green, ushort[] blue);
+        //        // Sets the hardware gamma ramps for gamma and brightness adjustment. These are now taken as 16 bit values, so we can take full advantage of dacs with >8 bits of precision
+
+        //        const int GRAB_ENABLE = 1 << 0;
+        //        const int GRAB_REENABLE = 1 << 1;
+        //        const int GRAB_HIDECURSOR = 1 << 2;
+        //        const int GRAB_SETSTATE = 1 << 3;
+
+        //        public static void GLimp_GrabInput(int flags);
+
+        //        public static void GLimp_WindowActive(bool active);
+
+        #endregion
     }
 
     public interface IRenderSystem
@@ -282,9 +385,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public const int FOG_ENTER_SIZE = 64;
         public const float FOG_ENTER = (FOG_ENTER_SIZE + 1f) / (FOG_ENTER_SIZE * 2);
 
-        int frameCount { get; }
-        ViewDef viewDef { get; }
-        Vector4 ambientLightVector { get; }
+        //int frameCount { get; }
+        //ViewDef viewDef { get; }
+        //Vector4 ambientLightVector { get; }
 
         // set up cvars and basic data structures, but don't init OpenGL, so it can also be used for dedicated servers
         void Init();

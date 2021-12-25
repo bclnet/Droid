@@ -16,8 +16,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         public SoundEffect() => effect = 0;
         public void Dispose()
         {
-            if (soundSystemLocal.alIsEffect(effect))
-                soundSystemLocal.alDeleteEffects(1, ref effect);
+            if (soundSystemLocal.alIsEffect(effect)) soundSystemLocal.alDeleteEffects(1, ref effect);
         }
 
         public bool Alloc()
@@ -44,12 +43,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
         public bool FindEffect(string name, out int effect)
         {
-            for (var i = 0; i < effects.Count; i++)
-                if (effects[i].name == name)
-                {
-                    effect = effects[i].effect;
-                    return true;
-                }
+            for (var i = 0; i < effects.Count; i++) if (effects[i].name == name) { effect = effects[i].effect; return true; }
             effect = default;
             return false;
         }
@@ -67,8 +61,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             {
                 var effect = new SoundEffect();
                 if (!effect.Alloc()) { Clear(); return false; }
-                if (ReadEffect(src, effect))
-                    effects.Add(effect);
+                if (ReadEffect(src, effect)) effects.Add(effect);
             }
 
             return true;
@@ -161,7 +154,8 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         }
 
 #if EFX_VERBOSE
-        public static void EFXprintf(string fmt, params object[] args) => common.Printf(fmt, args);
+        public static void EFXprintf(string fmt, params object[] args)
+            => common.Printf(fmt, args);
 #else
 		public static void EFXprintf(string fmt, params object[] args) { }
 #endif

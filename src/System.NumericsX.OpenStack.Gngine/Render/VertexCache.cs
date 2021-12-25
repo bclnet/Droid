@@ -599,7 +599,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // if our total static count is above our working memory limit, start purging things
             while (staticAllocTotal > r_vertexBufferMegs.Integer * 1024 * 1024) { } // free the least recently used
 #endif
-            currentFrame = tr.frameCount;
+            currentFrame = tr_frameCount();
 
             listNum = currentFrame % NUM_VERTEX_FRAMES;
 

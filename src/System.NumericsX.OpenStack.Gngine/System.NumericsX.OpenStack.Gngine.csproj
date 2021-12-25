@@ -10,12 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Render\Core\CinematicLocal.cs" />
     <Compile Remove="VertexCache.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Render\Core\CinematicLocal.cs" />
     <None Include="Render\VertexCache.cs" />
   </ItemGroup>
 

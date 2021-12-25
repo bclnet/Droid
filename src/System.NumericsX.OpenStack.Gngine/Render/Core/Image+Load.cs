@@ -563,7 +563,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {
                 var cin = cinematic.ImageForTime(cinmaticNextTime);
                 if (texnum == TEXTURE_NOT_LOADED) fixed (uint* texnumU = &texnum) qglGenTextures(1, texnumU);
-                if (cin.image != null) fixed (byte* cin_imageB = cin.image) UploadScratch(cin_imageB, cin.imageWidth, cin.imageHeight);
+                if (cin.image != null) UploadScratch(cin.image, cin.imageWidth, cin.imageHeight);
                 //else globalImages.blackImage.Bind();
                 return;
             }

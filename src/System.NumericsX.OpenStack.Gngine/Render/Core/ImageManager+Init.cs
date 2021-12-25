@@ -226,9 +226,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // flat normal map for default bunp mapping
             for (i = 0; i < 4; i++)
             {
-                data[0, i, red] = (byte)(255 * renderSystem.ambientLightVector.x);
-                data[0, i, 1] = (byte)(255 * renderSystem.ambientLightVector.y);
-                data[0, i, 2] = (byte)(255 * renderSystem.ambientLightVector.z);
+                var ambientLightVector = tr_ambientLightVector();
+                data[0, i, red] = (byte)(255 * ambientLightVector.x);
+                data[0, i, 1] = (byte)(255 * ambientLightVector.y);
+                data[0, i, 2] = (byte)(255 * ambientLightVector.z);
                 data[0, i, alpha] = 255;
             }
             var pics = stackalloc byte*[6];

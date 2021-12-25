@@ -21,6 +21,9 @@ namespace System.NumericsX
 
     public unsafe static partial class Jpeg
     {
+        public const int TRUE = 1;
+        public const int FALSE = 0;
+
         internal const string LibraryName = "jpeg9d";
 
         // Version IDs for the JPEG library. Might be useful for tests like "#if JPEG_LIB_VERSION >= 90".
@@ -184,8 +187,8 @@ namespace System.NumericsX
 
     partial class Jpeg
     {
-        const J_DCT_METHOD JDCT_DEFAULT = J_DCT_METHOD.JDCT_ISLOW;
-        const J_DCT_METHOD JDCT_FASTEST = J_DCT_METHOD.JDCT_IFAST;
+        public const J_DCT_METHOD JDCT_DEFAULT = J_DCT_METHOD.JDCT_ISLOW;
+        public const J_DCT_METHOD JDCT_FASTEST = J_DCT_METHOD.JDCT_IFAST;
     }
 
     // Dithering options for decompression.
@@ -261,13 +264,21 @@ namespace System.NumericsX
         public jpeg_component_info* comp_info;
         // comp_info[i] describes component that appears i'th in SOF
 
-        //[MarshalAs(UnmanagedType.ByValArray, SizeConst = Jpeg.NUM_QUANT_TBLS)]
-        public fixed JQUANT_TBL* quant_tbl_ptrs[Jpeg.NUM_QUANT_TBLS];
+        public JQUANT_TBL* quant_tbl_ptrs0; //: [Jpeg.NUM_QUANT_TBLS]
+        public JQUANT_TBL* quant_tbl_ptrs1; //: [Jpeg.NUM_QUANT_TBLS]
+        public JQUANT_TBL* quant_tbl_ptrs2; //: [Jpeg.NUM_QUANT_TBLS]
+        public JQUANT_TBL* quant_tbl_ptrs3; //: [Jpeg.NUM_QUANT_TBLS]
         public fixed int q_scale_factor[Jpeg.NUM_QUANT_TBLS];
         // ptrs to coefficient quantization tables, or NULL if not defined, and corresponding scale factors (percentage, initialized 100).
 
-        public fixed JHUFF_TBL* dc_huff_tbl_ptrs[Jpeg.NUM_HUFF_TBLS];
-        public fixed JHUFF_TBL* ac_huff_tbl_ptrs[Jpeg.NUM_HUFF_TBLS];
+        public JHUFF_TBL* dc_huff_tbl_ptrs0; //: [Jpeg.NUM_HUFF_TBLS] 
+        public JHUFF_TBL* dc_huff_tbl_ptrs1; //: [Jpeg.NUM_HUFF_TBLS] 
+        public JHUFF_TBL* dc_huff_tbl_ptrs2; //: [Jpeg.NUM_HUFF_TBLS] 
+        public JHUFF_TBL* dc_huff_tbl_ptrs3; //: [Jpeg.NUM_HUFF_TBLS] 
+        public JHUFF_TBL* ac_huff_tbl_ptrs0; //: [Jpeg.NUM_HUFF_TBLS] 
+        public JHUFF_TBL* ac_huff_tbl_ptrs1; //: [Jpeg.NUM_HUFF_TBLS] 
+        public JHUFF_TBL* ac_huff_tbl_ptrs2; //: [Jpeg.NUM_HUFF_TBLS] 
+        public JHUFF_TBL* ac_huff_tbl_ptrs3; //: [Jpeg.NUM_HUFF_TBLS] 
         // ptrs to Huffman coding tables, or NULL if not defined
 
         public fixed Byte arith_dc_L[Jpeg.NUM_ARITH_TBLS]; // L values for DC arith-coding tables
@@ -330,7 +341,10 @@ namespace System.NumericsX
 
         // These fields are valid during any one scan. They describe the components and MCUs actually appearing in the scan.
         public int comps_in_scan;               // # of JPEG components in this scan
-        public fixed jpeg_component_info* cur_comp_info[Jpeg.MAX_COMPS_IN_SCAN];
+        public jpeg_component_info* cur_comp_info0; //: [Jpeg.MAX_COMPS_IN_SCAN]
+        public jpeg_component_info* cur_comp_info1; //: [Jpeg.MAX_COMPS_IN_SCAN]
+        public jpeg_component_info* cur_comp_info2; //: [Jpeg.MAX_COMPS_IN_SCAN]
+        public jpeg_component_info* cur_comp_info3; //: [Jpeg.MAX_COMPS_IN_SCAN]
         // *cur_comp_info[i] describes component that appears i'th in SOS
 
         public JDIMENSION MCUs_per_row;         // # of MCUs across the image
@@ -458,11 +472,20 @@ namespace System.NumericsX
 
         // Quantization and Huffman tables are carried forward across input datastreams when processing abbreviated JPEG datastreams.
 
-        public JQUANT_TBL* quant_tbl_ptrs[Jpeg.NUM_QUANT_TBLS];
+        public JQUANT_TBL* quant_tbl_ptrs0; //: [Jpeg.NUM_QUANT_TBLS]
+        public JQUANT_TBL* quant_tbl_ptrs1; //: [Jpeg.NUM_QUANT_TBLS]
+        public JQUANT_TBL* quant_tbl_ptrs2; //: [Jpeg.NUM_QUANT_TBLS]
+        public JQUANT_TBL* quant_tbl_ptrs3; //: [Jpeg.NUM_QUANT_TBLS]
         // ptrs to coefficient quantization tables, or NULL if not defined
 
-        public JHUFF_TBL* dc_huff_tbl_ptrs[Jpeg.NUM_HUFF_TBLS];
-        public JHUFF_TBL* ac_huff_tbl_ptrs[Jpeg.NUM_HUFF_TBLS];
+        public JHUFF_TBL* dc_huff_tbl_ptrs0; //: [Jpeg.NUM_HUFF_TBLS]
+        public JHUFF_TBL* dc_huff_tbl_ptrs1; //: [Jpeg.NUM_HUFF_TBLS]
+        public JHUFF_TBL* dc_huff_tbl_ptrs2; //: [Jpeg.NUM_HUFF_TBLS]
+        public JHUFF_TBL* dc_huff_tbl_ptrs3; //: [Jpeg.NUM_HUFF_TBLS]
+        public JHUFF_TBL* ac_huff_tbl_ptrs0; //: [Jpeg.NUM_HUFF_TBLS]
+        public JHUFF_TBL* ac_huff_tbl_ptrs1; //: [Jpeg.NUM_HUFF_TBLS]
+        public JHUFF_TBL* ac_huff_tbl_ptrs2; //: [Jpeg.NUM_HUFF_TBLS]
+        public JHUFF_TBL* ac_huff_tbl_ptrs3; //: [Jpeg.NUM_HUFF_TBLS]
         // ptrs to Huffman coding tables, or NULL if not defined
 
         // These parameters are never carried across datastreams, since they are given in SOF/SOS markers or defined to be reset by SOI.
@@ -502,7 +525,7 @@ namespace System.NumericsX
 
         // Aside from the specific data retained from APPn markers known to the library, the uninterpreted contents of any or all APPn and COM markers
         // can be saved in a list for examination by the application.
-        public jpeg_saved_marker_ptr marker_list; // Head of list of saved markers
+        public jpeg_marker_struct* marker_list; // Head of list of saved markers
 
         // Remaining fields are known throughout decompressor, but generally should not be touched by a surrounding application.
 
@@ -525,7 +548,10 @@ namespace System.NumericsX
         // Note that the decompressor output side must not use these fields.
 
         internal int comps_in_scan;             // # of JPEG components in this scan
-        internal fixed jpeg_component_info* cur_comp_info[Jpeg.MAX_COMPS_IN_SCAN];
+        internal jpeg_component_info* cur_comp_info0; //: [Jpeg.MAX_COMPS_IN_SCAN]
+        internal jpeg_component_info* cur_comp_info1; //: [Jpeg.MAX_COMPS_IN_SCAN]
+        internal jpeg_component_info* cur_comp_info2; //: [Jpeg.MAX_COMPS_IN_SCAN]
+        internal jpeg_component_info* cur_comp_info3; //: [Jpeg.MAX_COMPS_IN_SCAN]
         // *cur_comp_info[i] describes component that appears i'th in SOS
 
         internal JDIMENSION MCUs_per_row;       // # of MCUs across the image

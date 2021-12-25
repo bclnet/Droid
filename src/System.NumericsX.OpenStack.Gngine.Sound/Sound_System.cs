@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.NumericsX.OpenAL;
@@ -8,6 +7,7 @@ using System.NumericsX.OpenStack.Gngine.Framework;
 using System.NumericsX.OpenStack.Gngine.Render;
 using System.NumericsX.OpenStack.System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.Gngine.Sound.Lib;
 using static System.NumericsX.OpenStack.OpenStack;
@@ -57,7 +57,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         public bool stereo;
     }
 
-    public class SoundSystemLocal : ISoundSystem
+    public unsafe class SoundSystemLocal : ISoundSystem
     {
         public static int mmioFOURCC(char ch0, char ch1, char ch2, char ch3) => ch0 | ch1 << 8 | ch2 << 16 | ch3 << 24;
         public const int fourcc_riff = 'R' | 'I' << 8 | 'F' << 16 | 'F' << 24;
@@ -92,11 +92,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             Array.Clear(meterTops, 0, meterTops.Length);
             Array.Clear(meterTopsTime, 0, meterTopsTime.Length);
 
-            for (var i = -600; i < 600; i++)
-            {
-                var pt = i * 0.1f;
-                volumesDB[i + 600] = (float)Math.Pow(2f, (pt * (1f / 6f)));
-            }
+            for (var i = -600; i < 600; i++) { var pt = i * 0.1f; volumesDB[i + 600] = (float)Math.Pow(2f, pt * (1f / 6f)); }
 
             // make a 16 byte aligned finalMixBuffer
             finalMixBuffer = realAccum; // (float*)((((intptr_t)realAccum) + 15) & ~15);
@@ -109,12 +105,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             lastCheckTime = 0;
 
             // DG: no point in initializing OpenAL if sound is disabled with s_noSound
-            if (s_noSound.Bool)
-            {
-                common.Printf("Sound disabled with s_noSound 1 !\n");
-                openalDevice = ALDevice.Null;
-                openalContext = ALContext.Null;
-            }
+            if (s_noSound.Bool) { common.Printf("Sound disabled with s_noSound 1 !\n"); openalDevice = ALDevice.Null; openalContext = ALContext.Null; }
             else
             {
                 // set up openal device and context
@@ -325,8 +316,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
         public virtual bool ShutdownHW()
         {
-            if (!isInitialized)
-                return false;
+            if (!isInitialized) return false;
 
             shutdown = true;        // don't do anything at AsyncUpdate() time
             SysW.Sleep(100);     // sleep long enough to make sure any async sound talking to hardware has returned
@@ -335,7 +325,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
             isInitialized = false;
 
-            graph = null;
+            if (graph != null) { Marshal.FreeHGlobal((IntPtr)graph); graph = null; }
             return true;
         }
 
@@ -343,10 +333,9 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         // called from async sound thread when com_asyncSound == 2
         // DG: using this for the "traditional" sound updates that only happen about every 100ms(and lead to delays between 1 and 110ms between
         // starting a sound in gamecode and it being played), for people who like that..
-        public unsafe virtual int AsyncUpdate(int time)
+        public virtual int AsyncUpdate(int time)
         {
-            if (!isInitialized || shutdown)
-                return 0;
+            if (!isInitialized || shutdown) return 0;
 
             // here we do it in samples ( overflows in 27 hours or so )
             var dwCurrentWritePos = MathX.Ftol(SysW.Milliseconds * 44.1f) % (Simd.MIXBUFFER_SAMPLES * ROOM_SLICES_IN_BUFFER);
@@ -378,16 +367,14 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             // FIXME: we don't handle sound wrap-around correctly yet
             if (newSoundTime > 0x6fffffff) buffers = 0;
 
-            if (newSoundTime - CurrentSoundTime > Simd.MIXBUFFER_SAMPLES)
-                soundStats.missedWindow++;
+            if (newSoundTime - CurrentSoundTime > Simd.MIXBUFFER_SAMPLES) soundStats.missedWindow++;
 
             // enable audio hardware caching
             ALC.SuspendContext(openalContext);
 
             // let the active sound world mix all the channels in unless muted or avi demo recording
             if (!muted && currentSoundWorld != null && currentSoundWorld.fpa[0] == null)
-                fixed (float* finalMixBuffer_ = finalMixBuffer)
-                    currentSoundWorld.MixLoop(newSoundTime, numSpeakers, finalMixBuffer_);
+                fixed (float* finalMixBuffer_ = finalMixBuffer) currentSoundWorld.MixLoop(newSoundTime, numSpeakers, finalMixBuffer_);
 
             // disable audio hardware caching (this updates ALL settings since last alcSuspendContext)
             ALC.ProcessContext(openalContext);
@@ -403,10 +390,9 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         // DG: using this now for 60Hz sound updates called from async sound thread when com_asyncSound is 3 or 1
         // also called from main thread if com_asyncSound == 0 (those were the default values used in dhewm3 on unix-likes (except mac) or rest)
         // with this, once every async tic new sounds are started and existing ones updated, instead of once every ~100ms.
-        public unsafe virtual int AsyncUpdateWrite(int time)
+        public virtual int AsyncUpdateWrite(int time)
         {
-            if (!isInitialized || shutdown)
-                return 0;
+            if (!isInitialized || shutdown) return 0;
 
             var sampleTime = (int)(time * 44.1f);
             var numSpeakers = s_numberOfSpeakers.Integer;
@@ -416,8 +402,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
             // let the active sound world mix all the channels in unless muted or avi demo recording
             if (!muted && currentSoundWorld != null && currentSoundWorld.fpa[0] == null)
-                fixed (float* finalMixBuffer_ = finalMixBuffer)
-                    currentSoundWorld.MixLoop(sampleTime, numSpeakers, finalMixBuffer_);
+                fixed (float* finalMixBuffer_ = finalMixBuffer) currentSoundWorld.MixLoop(sampleTime, numSpeakers, finalMixBuffer_);
 
             // disable audio hardware caching (this updates ALL settings since last alcSuspendContext)
             ALC.ProcessContext(openalContext);
@@ -429,17 +414,15 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
         // direct mixing called from the sound driver thread for OSes that support it
         // Mac OSX version. The system uses it's own thread and an IOProc callback
-        public unsafe virtual int AsyncMix(int soundTime, float* mixBuffer)
+        public virtual int AsyncMix(int soundTime, float* mixBuffer)
         {
-            if (!isInitialized || shutdown)
-                return 0;
+            if (!isInitialized || shutdown) return 0;
 
             var inTime = SysW.Milliseconds;
             var numSpeakers = s_numberOfSpeakers.Integer;
 
             // let the active sound world mix all the channels in unless muted or avi demo recording
-            if (!muted && currentSoundWorld != null && currentSoundWorld.fpa[0] == null)
-                currentSoundWorld.MixLoop(soundTime, numSpeakers, mixBuffer);
+            if (!muted && currentSoundWorld != null && currentSoundWorld.fpa[0] == null) currentSoundWorld.MixLoop(soundTime, numSpeakers, mixBuffer);
 
             CurrentSoundTime = soundTime;
 
@@ -452,108 +435,95 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         static readonly uint[] ImageForTime_colors = { 0xff007f00, 0xff007f7f, 0xff00007f, 0xff00ff00, 0xff00ffff, 0xff0000ff };
         public unsafe virtual CinData ImageForTime(int milliseconds, bool waveform)
         {
-            CinData ret = new();
+            CinData ret = default;
             int i, j;
 
-            if (!isInitialized) { ret.memset(); return ret; }
+            if (!isInitialized) return ret;
 
             ISystem.EnterCriticalSection();
-            if (graph == null)
-                graph = new byte[256 * 128 * 4];
-            Array.Clear(graph, 0, 256 * 128 * 4);
-            fixed (byte* graphB = graph)
+            if (graph == null) graph = (byte*)Marshal.AllocHGlobal(256 * 128 * 4);
+            Unsafe.InitBlock(graph, 0, 256 * 128 * 4);
+            var graphI = (uint*)graph;
+            var accum = finalMixBuffer;  // unfortunately, these are already clamped
+            var time = SysW.Milliseconds;
+            var numSpeakers = s_numberOfSpeakers.Integer;
+
+            if (!waveform)
             {
-                var graphI = (uint*)graphB;
-                var accum = finalMixBuffer;  // unfortunately, these are already clamped
-                var time = SysW.Milliseconds;
-                var numSpeakers = s_numberOfSpeakers.Integer;
-
-                if (!waveform)
+                for (j = 0; j < numSpeakers; j++)
                 {
-                    for (j = 0; j < numSpeakers; j++)
+                    var meter = 0;
+                    for (i = 0; i < Simd.MIXBUFFER_SAMPLES; i++)
                     {
-                        var meter = 0;
-                        for (i = 0; i < Simd.MIXBUFFER_SAMPLES; i++)
-                        {
-                            var result = MathX.Fabs(accum[i * numSpeakers + j]);
-                            if (result > meter) meter = (int)result;
-                        }
+                        var result = MathX.Fabs(accum[i * numSpeakers + j]);
+                        if (result > meter) meter = (int)result;
+                    }
 
-                        meter /= 256;       // 32768 becomes 128
-                        if (meter > 128) meter = 128;
-                        int offset, xsize;
-                        if (numSpeakers == 6) { offset = j * 40; xsize = 20; }
-                        else { offset = j * 128; xsize = 63; }
-                        int x, y;
-                        var color = 0xff00ff00;
-                        for (y = 0; y < 128; y++)
-                        {
-                            for (x = 0; x < xsize; x++)
-                                graphI[(127 - y) * 256 + offset + x] = color;
+                    meter /= 256;       // 32768 becomes 128
+                    if (meter > 128) meter = 128;
+                    int offset, xsize;
+                    if (numSpeakers == 6) { offset = j * 40; xsize = 20; }
+                    else { offset = j * 128; xsize = 63; }
+                    int x, y;
+                    var color = 0xff00ff00;
+                    for (y = 0; y < 128; y++)
+                    {
+                        for (x = 0; x < xsize; x++) graphI[(127 - y) * 256 + offset + x] = color;
 #if false
                         if (y == 80) color = 0xff00ffff;
                         else if (y == 112) color = 0xff0000ff;
 #endif
-                            if (y > meter) break;
-                        }
+                        if (y > meter) break;
+                    }
 
-                        if (meter > meterTops[j]) { meterTops[j] = meter; meterTopsTime[j] = time + s_meterTopTime.Integer; }
-                        else if (time > meterTopsTime[j] && meterTops[j] > 0) { meterTops[j]--; if (meterTops[j] != 0) meterTops[j]--; }
-                    }
-                    for (j = 0; j < numSpeakers; j++)
-                    {
-                        var meter = meterTops[j];
-                        int offset, xsize;
-                        if (numSpeakers == 6) { offset = j * 40; xsize = 20; }
-                        else { offset = j * 128; xsize = 63; }
-                        int x, y;
-                        uint color;
-                        if (meter <= 80) color = 0xff007f00;
-                        else if (meter <= 112) color = 0xff007f7f;
-                        else color = 0xff00007f;
-                        for (y = meter; y < 128 && y < meter + 4; y++)
-                            for (x = 0; x < xsize; x++)
-                                graphI[(127 - y) * 256 + offset + x] = color;
-                    }
+                    if (meter > meterTops[j]) { meterTops[j] = meter; meterTopsTime[j] = time + s_meterTopTime.Integer; }
+                    else if (time > meterTopsTime[j] && meterTops[j] > 0) { meterTops[j]--; if (meterTops[j] != 0) meterTops[j]--; }
                 }
-                else
+                for (j = 0; j < numSpeakers; j++)
                 {
-                    for (j = 0; j < numSpeakers; j++)
+                    var meter = meterTops[j];
+                    int offset, xsize;
+                    if (numSpeakers == 6) { offset = j * 40; xsize = 20; }
+                    else { offset = j * 128; xsize = 63; }
+                    int x, y;
+                    uint color;
+                    if (meter <= 80) color = 0xff007f00;
+                    else if (meter <= 112) color = 0xff007f7f;
+                    else color = 0xff00007f;
+                    for (y = meter; y < 128 && y < meter + 4; y++) for (x = 0; x < xsize; x++) graphI[(127 - y) * 256 + offset + x] = color;
+                }
+            }
+            else
+            {
+                for (j = 0; j < numSpeakers; j++)
+                {
+                    var xx = 0; float fmeter;
+                    var step = Simd.MIXBUFFER_SAMPLES / 256;
+                    for (i = 0; i < Simd.MIXBUFFER_SAMPLES; i += step)
                     {
-                        var xx = 0; float fmeter;
-                        var step = Simd.MIXBUFFER_SAMPLES / 256;
-                        for (i = 0; i < Simd.MIXBUFFER_SAMPLES; i += step)
-                        {
-                            fmeter = 0f;
-                            for (var x = 0; x < step; x++)
-                            {
-                                var result = accum[(i + x) * numSpeakers + j];
-                                result /= 32768f;
-                                fmeter += result;
-                            }
-                            fmeter /= 4f;
-                            if (fmeter < -1f) fmeter = -1f;
-                            else if (fmeter > 1f) fmeter = 1f;
-                            var meter = (int)(fmeter * 63f);
-                            graphI[(meter + 64) * 256 + xx] = ImageForTime_colors[j];
+                        fmeter = 0f;
+                        for (var x = 0; x < step; x++) { var result = accum[(i + x) * numSpeakers + j]; result /= 32768f; fmeter += result; }
+                        fmeter /= 4f;
+                        if (fmeter < -1f) fmeter = -1f;
+                        else if (fmeter > 1f) fmeter = 1f;
+                        var meter = (int)(fmeter * 63f);
+                        graphI[(meter + 64) * 256 + xx] = ImageForTime_colors[j];
 
-                            if (meter < 0) meter = -meter;
-                            if (meter > meterTops[xx]) { meterTops[xx] = meter; meterTopsTime[xx] = time + 100; }
-                            else if (time > meterTopsTime[xx] && meterTops[xx] > 0) { meterTops[xx]--; if (meterTops[xx] != 0) meterTops[xx]--; }
-                            xx++;
-                        }
-                    }
-                    for (i = 0; i < 256; i++)
-                    {
-                        var meter = meterTops[i];
-                        for (var y = -meter; y < meter; y++)
-                            graphI[(y + 64) * 256 + i] = ImageForTime_colors[j];
+                        if (meter < 0) meter = -meter;
+                        if (meter > meterTops[xx]) { meterTops[xx] = meter; meterTopsTime[xx] = time + 100; }
+                        else if (time > meterTopsTime[xx] && meterTops[xx] > 0) { meterTops[xx]--; if (meterTops[xx] != 0) meterTops[xx]--; }
+                        xx++;
                     }
                 }
-                ret.imageHeight = 128;
-                ret.imageWidth = 256;
-                ret.image = graph;
+                for (i = 0; i < 256; i++)
+                {
+                    var meter = meterTops[i];
+                    for (var y = -meter; y < meter; y++) graphI[(y + 64) * 256 + i] = ImageForTime_colors[j];
+                }
             }
+            ret.imageHeight = 128;
+            ret.imageWidth = 256;
+            ret.image = graph;
             ISystem.LeaveCriticalSection();
             return ret;
         }
@@ -618,8 +588,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
         public virtual void BeginLevelLoad()
         {
-            if (!isInitialized)
-                return;
+            if (!isInitialized) return;
 
             soundCache.BeginLevelLoad();
             if (efxloaded)
@@ -631,12 +600,10 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
         public virtual void EndLevelLoad(string mapString)
         {
-            if (!isInitialized)
-                return;
+            if (!isInitialized) return;
 
             soundCache.EndLevelLoad();
-            if (!useEFXReverb)
-                return;
+            if (!useEFXReverb) return;
 
             var efxname = "efxs/";
             var mapname = mapString;
@@ -710,23 +677,19 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                     var fx = fxList[k];
 
                     // skip if we're not the right channel
-                    if (fx.Channel != i)
-                        continue;
+                    if (fx.Channel != i) continue;
 
                     // get samples and continuity
                     fx.GetContinuitySamples(out iF[-1], out iF[-2], out oF[-1], out oF[-2]);
-                    for (j = 0; j < numSamples; j++)
-                        iF[j] = samples[j * numSpeakers + i] * s_enviroSuitVolumeScale.Float;
+                    for (j = 0; j < numSamples; j++) iF[j] = samples[j * numSpeakers + i] * s_enviroSuitVolumeScale.Float;
 
                     // process fx loop
-                    for (j = 0; j < numSamples; j++)
-                        fx.ProcessSample(iF + j, oF + j);
+                    for (j = 0; j < numSamples; j++) fx.ProcessSample(iF + j, oF + j);
 
                     // store samples and continuity
                     fx.SetContinuitySamples(iF[numSamples - 2], iF[numSamples - 3], oF[numSamples - 2], oF[numSamples - 3]);
 
-                    for (j = 0; j < numSamples; j++)
-                        samples[j * numSpeakers + i] = oF[j];
+                    for (j = 0; j < numSamples; j++) samples[j * numSpeakers + i] = oF[j];
                 }
             }
         }
@@ -797,8 +760,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             for (var i = 0; i < openalSourceCount; i++)
                 if (openalSources[i].handle == handle)
                 {
-                    if (openalSources[i].chan != null)
-                        openalSources[i].chan.openalSource = 0;
+                    if (openalSources[i].chan != null) openalSources[i].chan.openalSource = 0;
 
                     // Initialize structure
                     openalSources[i].startTime = 0;
@@ -814,8 +776,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         const int CheckDeviceAndRecoverIfNeeded_maxRetries = 20;
         public bool CheckDeviceAndRecoverIfNeeded()
         {
-            if (alcResetDeviceSOFT == null)
-                return true; // we can't check or reset, just pretend everything is fine..
+            if (alcResetDeviceSOFT == null) return true; // we can't check or reset, just pretend everything is fine..
 
             var curTime = (uint)SysW.Milliseconds;
             if (curTime - lastCheckTime >= 1000) // check once per second
@@ -827,7 +788,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 if (connected != 0) { resetRetryCount = 0; return true; }
                 if (resetRetryCount == 0) { common.Warning("OpenAL device disconnected! Will try to reconnect.."); resetRetryCount = 1; }
                 else if (resetRetryCount > CheckDeviceAndRecoverIfNeeded_maxRetries)
-                { // give up after 20 seconds
+                {   // give up after 20 seconds
                     if (resetRetryCount == CheckDeviceAndRecoverIfNeeded_maxRetries + 1)
                     {
                         common.Warning("OpenAL device still disconnected! Giving up!");
@@ -870,7 +831,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         public int[] meterTops = new int[256];
         public int[] meterTopsTime = new int[256];
 
-        public byte[] graph;
+        public byte* graph;
 
         public float[] volumesDB = new float[1200];      // dB to float volume conversion
 
@@ -964,8 +925,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         // this is called from the main thread
         static void SoundReloadSounds_f(CmdArgs args)
         {
-            if (soundSystemLocal.soundCache == null)
-                return;
+            if (soundSystemLocal.soundCache == null) return;
             var force = args.Count == 2;
             soundSystem.SetMute(true);
             soundSystemLocal.soundCache.ReloadSounds(force);
@@ -1150,8 +1110,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
         public override void Initialize()
         {
-            if (initialized)
-                return;
+            if (initialized) return;
 
             initialized = true;
             maxlen = 50000;

@@ -82,11 +82,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         // Completely nukes the current cache
         public void ReloadSounds(bool force)
         {
-            for (var i = 0; i < listCache.Count; i++)
-            {
-                var def = listCache[i];
-                def?.Reload(force);
-            }
+            for (var i = 0; i < listCache.Count; i++) { var def = listCache[i]; def?.Reload(force); }
         }
 
         // Mark all file based images as currently unused, but don't free anything.  Calls to ImageFromFile() will
@@ -145,15 +141,12 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 return;
 
             // count
-            for (i = 0; i < listCache.Count; i++, num++)
-                if (listCache[i] == null)
-                    break;
+            for (i = 0; i < listCache.Count; i++, num++) if (listCache[i] == null) break;
 
             // sort first
             sortIndex = new int[num];
 
-            for (i = 0; i < num; i++)
-                sortIndex[i] = i;
+            for (i = 0; i < num; i++) sortIndex[i] = i;
 
             for (i = 0; i < num - 1; i++)
                 for (j = i + 1; j < num; j++)
@@ -170,8 +163,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 var sample = listCache[sortIndex[i]];
 
                 // this is strange
-                if (sample == null)
-                    continue;
+                if (sample == null) continue;
 
                 total += sample.objectMemSize;
                 f.Printf($"{sample.objectMemSize:n} {sample.name}\n");
@@ -306,8 +298,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             objectMemSize = fh.MemorySize;
 
             nonCacheData = SoundCache.soundCacheAllocator.Alloc(objectMemSize);
-            fixed (byte* nonCacheData_ = nonCacheData.Value)
-                fh.Read(nonCacheData_, objectMemSize, null);
+            fixed (byte* nonCacheData_ = nonCacheData.Value) fh.Read(nonCacheData_, objectMemSize, null);
 
             // optionally convert it to 22kHz to save memory
             CheckForDownSample();
@@ -332,8 +323,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 {
                     AL.GetError();
                     AL.GenBuffers(1, ref openalBuffer);
-                    if (AL.GetError() != ALError.NoError)
-                        common.Error("SoundCache: error generating OpenAL hardware buffer");
+                    if (AL.GetError() != ALError.NoError) common.Error("SoundCache: error generating OpenAL hardware buffer");
                     if (AL.IsBuffer(openalBuffer))
                     {
                         var decoder = ISampleDecoder.Alloc();
@@ -390,13 +380,8 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             {
                 // check the timestamp
                 var newTimestamp = NewTimeStamp;
-                if (newTimestamp == DateTime.MinValue)
-                {
-                    if (!defaultSound) { common.Warning($"Couldn't load sound '{name}' using default"); MakeDefault(); }
-                    return;
-                }
-                if (newTimestamp == timestamp)
-                    return; // don't need to reload it
+                if (newTimestamp == DateTime.MinValue) { if (!defaultSound) { common.Warning($"Couldn't load sound '{name}' using default"); MakeDefault(); } return; }
+                if (newTimestamp == timestamp) return; // don't need to reload it
             }
 
             common.Printf($"reloading {name}\n");
@@ -432,8 +417,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 var nonCacheDataS = (short*)nonCacheDataB;
                 var convertedS = (short*)convertedB;
                 if (objectInfo.nChannels == 1)
-                    for (var i = 0; i < shortSamples; i++)
-                        convertedS[i] = nonCacheDataS[i * 2];
+                    for (var i = 0; i < shortSamples; i++) convertedS[i] = nonCacheDataS[i * 2];
                 else
                     for (var i = 0; i < shortSamples; i += 2)
                     {
@@ -454,13 +438,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         {
             offset = unchecked((int)(offset & 0xfffffffe));
 
-            if (objectSize == 0 || offset < 0 || offset > objectSize * sizeof(short) || nonCacheData == null)
-            {
-                output = default;
-                position = 0;
-                size = 0;
-                return false;
-            }
+            if (objectSize == 0 || offset < 0 || offset > objectSize * sizeof(short) || nonCacheData == null) { output = default; position = 0; size = 0; return false; }
 
             output = (nonCacheData.Value, offset);
             position = 0;

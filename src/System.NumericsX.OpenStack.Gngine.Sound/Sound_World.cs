@@ -65,8 +65,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         // this is called from the main thread
         public virtual void StopAllSounds()
         {
-            for (var i = 0; i < emitters.Count; i++)
-                emitters[i].StopSound(ISoundSystem.SCHANNEL_ANY);
+            for (var i = 0; i < emitters.Count; i++) emitters[i].StopSound(ISoundSystem.SCHANNEL_ANY);
         }
 
         // get a new emitter that can play sounds in this world
@@ -75,8 +74,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         {
             var emitter = AllocLocalSoundEmitter();
 
-            if (SoundSystemLocal.s_showStartSound.Integer != 0)
-                common.Printf($"AllocSoundEmitter = {emitter.index}\n");
+            if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf($"AllocSoundEmitter = {emitter.index}\n");
             if (writeDemo != null)
             {
                 writeDemo.WriteInt((int)VFileDemo.DS.SOUND);
@@ -90,10 +88,8 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         // for load games
         public virtual ISoundEmitter EmitterForIndex(int index)
         {
-            if (index == 0)
-                return null;
-            if (index >= emitters.Count)
-                common.Error($"SoundWorldLocal::EmitterForIndex: {index} > {emitters.Count}");
+            if (index == 0) return null;
+            if (index >= emitters.Count) common.Error($"SoundWorldLocal::EmitterForIndex: {index} > {emitters.Count}");
             return emitters[index];
         }
 
@@ -103,16 +99,14 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         {
             var amp = 0f; int localTime;
 
-            if (SoundSystemLocal.s_constantAmplitude.Float >= 0f)
-                return 0f;
+            if (SoundSystemLocal.s_constantAmplitude.Float >= 0f) return 0f;
 
             localTime = soundSystemLocal.Current44kHzTime;
 
             for (var i = 1; i < emitters.Count; i++)
             {
                 var sound = emitters[i];
-                if (!sound.hasShakes)
-                    continue;
+                if (!sound.hasShakes) continue;
                 amp += FindAmplitude(sound, localTime, listererPosition, ISoundSystem.SCHANNEL_ANY, true);
             }
             return amp;
@@ -124,11 +118,9 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         {
             int current44kHzTime;
 
-            if (!soundSystemLocal.isInitialized)
-                return;
+            if (!soundSystemLocal.isInitialized) return;
 
-            if (pause44kHz >= 0)
-                return;
+            if (pause44kHz >= 0) return;
 
             if (writeDemo != null)
             {
@@ -145,8 +137,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             // we usually expect gameTime to be increasing by 16 or 32 msec, but when a cinematic is fast-forward skipped through, it can jump by a significant
             // amount, while the hardware 44kHz position will not have changed accordingly, which would make sounds (like long character speaches) continue from the
             // old time.  Fix this by killing all non-looping sounds
-            if (gameTime > gameMsec + 500)
-                OffsetSoundTime((int)(-(gameTime - gameMsec) * 0.001f * 44100f));
+            if (gameTime > gameMsec + 500) OffsetSoundTime((int)(-(gameTime - gameMsec) * 0.001f * 44100f));
 
             gameMsec = gameTime;
             game44kHz = fpa[0] != null
@@ -161,8 +152,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             listenerAreaName = areaName.ToLowerInvariant();
 
             listenerArea = rw != null ? rw.PointInArea(listenerQU) : 0; // where are we?
-            if (listenerArea < 0)
-                return;
+            if (listenerArea < 0) return;
 
             ForegroundUpdate(current44kHzTime);
         }
@@ -170,16 +160,14 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         // fade all sounds in the world with a given shader soundClass to is in Db (sigh), over is in seconds
         public virtual void FadeSoundClasses(int soundClass, float to, float over)
         {
-            if (soundClass < 0 || soundClass >= ISoundSystem.SOUND_MAX_CLASSES)
-                common.Error($"SoundWorldLocal::FadeSoundClasses: bad soundClass {soundClass}");
+            if (soundClass < 0 || soundClass >= ISoundSystem.SOUND_MAX_CLASSES) common.Error($"SoundWorldLocal::FadeSoundClasses: bad soundClass {soundClass}");
 
             var fade = soundClassFade[soundClass];
 
             var length44kHz = soundSystemLocal.MillisecondsToSamples((int)(over * 1000));
 
             // if it is already fading to this volume at this rate, don't change it
-            if (fade.fadeEndVolume == to && fade.fadeEnd44kHz - fade.fadeStart44kHz == length44kHz)
-                return;
+            if (fade.fadeEndVolume == to && fade.fadeEnd44kHz - fade.fadeStart44kHz == length44kHz) return;
 
             var start44kHz = fpa[0] != null
                 ? lastAVI44kHz + Simd.MIXBUFFER_SAMPLES // if we are recording an AVI demo, don't use hardware time
@@ -215,11 +203,9 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         {
             int index; SoundEmitterLocal def;
 
-            if (readDemo == null)
-                return;
+            if (readDemo == null) return;
 
-            if (readDemo.ReadInt(out int dc) == 0)
-                return;
+            if (readDemo.ReadInt(out int dc) == 0) return;
 
             switch ((SCMD)dc)
             {
@@ -243,8 +229,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                     break;
                 case SCMD.ALLOC_EMITTER:
                     readDemo.ReadInt(out index);
-                    if (index < 1 || index > emitters.Count)
-                        common.Error("SoundWorldLocal::ProcessDemoCommand: bad emitter number");
+                    if (index < 1 || index > emitters.Count) common.Error("SoundWorldLocal::ProcessDemoCommand: bad emitter number");
                     if (index == emitters.Count)
                     {
                         // append a brand new one
@@ -331,15 +316,12 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             if (localSound != null && channel == -1) localSound.StopSound(ISoundSystem.SCHANNEL_ANY);
             else if (localSound != null) localSound.StopSound(channel);
 
-            if (string.IsNullOrEmpty(name))
-                return;
+            if (string.IsNullOrEmpty(name)) return;
 
             var shader = declManager.FindSound(name);
-            if (shader == null)
-                return;
+            if (shader == null) return;
 
-            if (localSound == null)
-                localSound = AllocLocalSoundEmitter();
+            if (localSound == null) localSound = AllocLocalSoundEmitter();
 
             var diversity = PlayShaderDirectly_rnd.RandomFloat();
 
@@ -352,22 +334,14 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         // pause and unpause the sound world
         public virtual void Pause()
         {
-            if (pause44kHz >= 0)
-            {
-                common.Warning("SoundWorldLocal::Pause: already paused");
-                return;
-            }
+            if (pause44kHz >= 0) { common.Warning("SoundWorldLocal::Pause: already paused"); return; }
 
             pause44kHz = soundSystemLocal.Current44kHzTime;
         }
 
         public virtual void UnPause()
         {
-            if (pause44kHz < 0)
-            {
-                common.Warning("SoundWorldLocal::UnPause: not paused");
-                return;
-            }
+            if (pause44kHz < 0) { common.Warning("SoundWorldLocal::UnPause: not paused"); return; }
 
             var offset44kHz = soundSystemLocal.Current44kHzTime - pause44kHz;
             OffsetSoundTime(offset44kHz);
@@ -430,18 +404,15 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
                 name = $"{aviDemoPath}{aviDemoName}.wav";
                 wO = fileSystem.OpenFileWrite(name);
-                if (wO == null)
-                    common.Error($"Couldn't write {name}");
+                if (wO == null) common.Error($"Couldn't write {name}");
 
                 name = $"{aviDemoPath}channel_right.raw";
                 rL = fileSystem.OpenFileRead(name);
-                if (rL == null)
-                    common.Error($"Couldn't open {name}");
+                if (rL == null) common.Error($"Couldn't open {name}");
 
                 name = $"{aviDemoPath }channel_left.raw";
                 lL = fileSystem.OpenFileRead(name);
-                if (lL == null)
-                    common.Error($"Couldn't open {name}");
+                if (lL == null) common.Error($"Couldn't open {name}");
 
                 var numSamples = rL.Length / 2;
                 Mminfo info;
@@ -513,12 +484,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             {
                 var def = emitters[i];
 
-                if (def.removeStatus != REMOVE_STATUS.ALIVE)
-                {
-                    var skip = -1;
-                    savefile.Write(skip);
-                    continue;
-                }
+                if (def.removeStatus != REMOVE_STATUS.ALIVE) { var skip = -1; savefile.Write(skip); continue; }
 
                 savefile.WriteInt(i);
 
@@ -528,8 +494,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 WriteToSaveGameSoundShaderParams(savefile, def.parms);
                 savefile.WriteFloat(def.amplitude);
                 savefile.WriteInt(def.ampTime);
-                for (var k = 0; k < SoundSystemLocal.SOUND_MAX_CHANNELS; k++)
-                    WriteToSaveGameSoundChannel(savefile, def.channels[k]);
+                for (var k = 0; k < SoundSystemLocal.SOUND_MAX_CHANNELS; k++) WriteToSaveGameSoundChannel(savefile, def.channels[k]);
                 savefile.WriteFloat(def.distance);
                 savefile.WriteBool(def.hasShakes);
                 savefile.WriteInt(def.lastValidPortalArea);
@@ -606,10 +571,8 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             for (i = 1; i < num; i++)
             {
                 savefile.ReadInt(out handle);
-                if (handle < 0)
-                    continue;
-                if (handle != i)
-                    common.Error("SoundWorldLocal::ReadFromSaveGame: index mismatch");
+                if (handle < 0) continue;
+                if (handle != i) common.Error("SoundWorldLocal::ReadFromSaveGame: index mismatch");
                 def = emitters[i];
 
                 def.removeStatus = REMOVE_STATUS.ALIVE;
@@ -620,8 +583,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 ReadFromSaveGameSoundShaderParams(savefile, def.parms);
                 savefile.ReadFloat(out def.amplitude);
                 savefile.ReadInt(out def.ampTime);
-                for (int k = 0; k < SoundSystemLocal.SOUND_MAX_CHANNELS; k++)
-                    ReadFromSaveGameSoundChannel(savefile, def.channels[k]);
+                for (var k = 0; k < SoundSystemLocal.SOUND_MAX_CHANNELS; k++) ReadFromSaveGameSoundChannel(savefile, def.channels[k]);
                 savefile.ReadFloat(out def.distance);
                 savefile.ReadBool(out def.hasShakes);
                 savefile.ReadInt(out def.lastValidPortalArea);
@@ -636,14 +598,12 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
                 while (channel >= 0)
                 {
-                    if (channel > SoundSystemLocal.SOUND_MAX_CHANNELS)
-                        common.Error("SoundWorldLocal::ReadFromSaveGame: channel > SOUND_MAX_CHANNELS");
+                    if (channel > SoundSystemLocal.SOUND_MAX_CHANNELS) common.Error("SoundWorldLocal::ReadFromSaveGame: channel > SOUND_MAX_CHANNELS");
 
                     var chan = def.channels[channel];
 
-                    if (chan.decoder == null)
-                        // The pointer in the save file is not valid, so we grab a new one
-                        chan.decoder = ISampleDecoder.Alloc();
+                    // The pointer in the save file is not valid, so we grab a new one
+                    if (chan.decoder == null) chan.decoder = ISampleDecoder.Alloc();
 
                     savefile.ReadString(out soundShader);
                     chan.soundShader = (SoundShader)declManager.FindSound(soundShader);
@@ -660,11 +620,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                     chan.openalStreamingOffset = currentSoundTime - chan.trigger44kHzTime;
 
                     // adjust the hardware fade time
-                    if (chan.channelFade.fadeStart44kHz != 0)
-                    {
-                        chan.channelFade.fadeStart44kHz += soundTimeOffset;
-                        chan.channelFade.fadeEnd44kHz += soundTimeOffset;
-                    }
+                    if (chan.channelFade.fadeStart44kHz != 0) { chan.channelFade.fadeStart44kHz += soundTimeOffset; chan.channelFade.fadeEnd44kHz += soundTimeOffset; }
 
                     // next command
                     savefile.ReadInt(out channel);
@@ -703,8 +659,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             ch.decoder = null;
             saveGame.ReadFloat(out ch.diversity);
             saveGame.ReadFloat(out ch.lastVolume);
-            for (var m = 0; m < 6; m++)
-                saveGame.ReadFloat(out ch.lastV[m]);
+            for (var m = 0; m < 6; m++) saveGame.ReadFloat(out ch.lastV[m]);
             saveGame.ReadInt(out ch.channelFade.fadeStart44kHz);
             saveGame.ReadInt(out ch.channelFade.fadeEnd44kHz);
             saveGame.ReadFloat(out ch.channelFade.fadeStartVolume);
@@ -736,8 +691,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             saveGame.WriteInt(0 /* ch.decoder */ );
             saveGame.WriteFloat(ch.diversity);
             saveGame.WriteFloat(ch.lastVolume);
-            for (int m = 0; m < 6; m++)
-                saveGame.WriteFloat(ch.lastV[m]);
+            for (var m = 0; m < 6; m++) saveGame.WriteFloat(ch.lastV[m]);
             saveGame.WriteInt(ch.channelFade.fadeStart44kHz);
             saveGame.WriteInt(ch.channelFade.fadeEnd44kHz);
             saveGame.WriteFloat(ch.channelFade.fadeStartVolume);
@@ -829,9 +783,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 }
             }
 
-            for (i = 0; i < emitters.Count; i++)
-                if (emitters[i] != null)
-                    emitters[i] = null;
+            for (i = 0; i < emitters.Count; i++) if (emitters[i] != null) emitters[i] = null;
             localSound = null;
         }
 
@@ -855,11 +807,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
                     soundSystemLocal.alGenAuxiliaryEffectSlots(1, ref listenerSlot);
                     var e = AL.GetError();
-                    if (e != ALError.NoError)
-                    {
-                        common.Warning($"SoundWorldLocal::Init: alGenAuxiliaryEffectSlots failed: 0x{e}");
-                        listenerSlot = 0;
-                    }
+                    if (e != ALError.NoError) { common.Warning($"SoundWorldLocal::Init: alGenAuxiliaryEffectSlots failed: 0x{e}"); listenerSlot = 0; }
                 }
 
                 if (!soundSystemLocal.alIsFilter(listenerFilter))
@@ -868,11 +816,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
                     soundSystemLocal.alGenFilters(1, ref listenerFilter);
                     var e = AL.GetError();
-                    if (e != ALError.NoError)
-                    {
-                        common.Warning($"SoundWorldLocal::Init: alGenFilters failed: 0x{e}");
-                        listenerFilter = 0;
-                    }
+                    if (e != ALError.NoError) { common.Warning($"SoundWorldLocal::Init: alGenFilters failed: 0x{e}"); listenerFilter = 0; }
                     else
                     {
                         soundSystemLocal.alFilteri(listenerFilter, FilterInteger.FilterType, (int)FilterType.Lowpass);
@@ -892,8 +836,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             pause44kHz = -1;
             lastAVI44kHz = 0;
 
-            for (var i = 0; i < ISoundSystem.SOUND_MAX_CLASSES; i++)
-                soundClassFade[i].Clear();
+            for (var i = 0; i < ISoundSystem.SOUND_MAX_CLASSES; i++) soundClassFade[i].Clear();
 
             // fill in the 0 index spot
             var placeHolder = new SoundEmitterLocal();
@@ -916,14 +859,12 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         {
             int j, k; SoundEmitterLocal def;
 
-            if (!soundSystemLocal.isInitialized)
-                return;
+            if (!soundSystemLocal.isInitialized) return;
 
             ISystem.EnterCriticalSection();
 
             // if we are recording an AVI demo, don't use hardware time
-            if (fpa[0] != null)
-                current44kHzTime = lastAVI44kHz;
+            if (fpa[0] != null) current44kHzTime = lastAVI44kHz;
 
             // check to see if each sound is visible or not speed up by checking maxdistance to origin
             // although the sound may still need to play if it has just become occluded so it can ramp down to 0
@@ -931,14 +872,12 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             {
                 def = emitters[j];
 
-                if (def.removeStatus >= REMOVE_STATUS.SAMPLEFINISHED)
-                    continue;
+                if (def.removeStatus >= REMOVE_STATUS.SAMPLEFINISHED) continue;
 
                 // see if our last channel just finished
                 def.CheckForCompletion(current44kHzTime);
 
-                if (!def.playing)
-                    continue;
+                if (!def.playing) continue;
 
                 // update virtual origin / distance, etc
                 def.Spatialize(listenerPos, listenerArea, rw);
@@ -973,8 +912,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                             var chan = def.channels[k];
 
                             // see if we have a sound triggered on this channel
-                            if (!chan.triggerState)
-                                continue;
+                            if (!chan.triggerState) continue;
 
                             var min = chan.parms.minDistance;
                             var max = chan.parms.maxDistance;
@@ -996,14 +934,12 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 if (gui != null)
                 {
                     var foo = gui.GetStage(0);
-                    if (foo.texture.cinematic == null)
-                        foo.texture.cinematic = new SndWindow();
+                    if (foo.texture.cinematic == null) foo.texture.cinematic = new SndWindow();
                 }
             }
 
             // optionally dump out the generated sound
-            if (fpa[0] != null)
-                AVIUpdate();
+            if (fpa[0] != null) AVIUpdate();
         }
 
         public void OffsetSoundTime(int offset44kHz)
@@ -1012,14 +948,12 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
             for (i = 0; i < emitters.Count; i++)
             {
-                if (emitters[i] == null)
-                    continue;
+                if (emitters[i] == null) continue;
                 for (j = 0; j < SoundSystemLocal.SOUND_MAX_CHANNELS; j++)
                 {
                     var chan = emitters[i].channels[j];
 
-                    if (!chan.triggerState)
-                        continue;
+                    if (!chan.triggerState) continue;
 
                     chan.trigger44kHzTime += offset44kHz;
                 }
@@ -1041,8 +975,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 if (def.removeStatus >= REMOVE_STATUS.SAMPLEFINISHED)
                 {
                     index = i;
-                    if (SoundSystemLocal.s_showStartSound.Integer != 0)
-                        common.Printf($"sound: recycling sound def {i}\n");
+                    if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf($"sound: recycling sound def {i}\n");
                     break;
                 }
             }
@@ -1057,8 +990,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 index = emitters.Add_(def);
                 ISystem.LeaveCriticalSection();
 
-                if (SoundSystemLocal.s_showStartSound.Integer != 0)
-                    common.Printf($"sound: appended new sound def {index}\n");
+                if (SoundSystemLocal.s_showStartSound.Integer != 0) common.Printf($"sound: appended new sound def {index}\n");
             }
 
             def.Clear();
@@ -1093,15 +1025,10 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             {
                 for (var i = 0; i < 6; i++)
                 {
-                    if (i == 3)
-                    {
-                        ears[i] = SoundSystemLocal.s_subFraction.Float;     // subwoofer
-                        continue;
-                    }
+                    if (i == 3) { ears[i] = SoundSystemLocal.s_subFraction.Float; continue; } // subwoofer
                     var dot = ovec * CalcEars_speakerVector[i];
                     ears[i] = (SoundSystemLocal.s_dotbias6.Float + dot) / (1f + SoundSystemLocal.s_dotbias6.Float);
-                    if (ears[i] < SoundSystemLocal.s_minVolume6.Float)
-                        ears[i] = SoundSystemLocal.s_minVolume6.Float;
+                    if (ears[i] < SoundSystemLocal.s_minVolume6.Float) ears[i] = SoundSystemLocal.s_minVolume6.Float;
                 }
             }
             else
@@ -1134,19 +1061,16 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
             // fetch the actual wave file and see if it's valid
             var sample = chan.leadinSample;
-            if (sample == null)
-                return;
+            if (sample == null) return;
 
             // if you don't want to hear all the beeps from missing sounds
-            if (sample.defaultSound && !SoundSystemLocal.s_playDefaultSound.Bool)
-                return;
+            if (sample.defaultSound && !SoundSystemLocal.s_playDefaultSound.Bool) return;
 
             // get the actual shader
             var shader = chan.soundShader;
 
             // this might happen if the foreground thread just deleted the sound emitter
-            if (shader == null)
-                return;
+            if (shader == null) return;
 
             var maxd = parms.maxDistance;
             var mind = parms.minDistance;
@@ -1158,20 +1082,15 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             var noOcclusion = (parms.soundShaderFlags & ISoundSystem.SSF_NO_OCCLUSION) != 0 || !SoundSystemLocal.s_useOcclusion.Bool;
 
             // speed goes from 1 to 0.2
-            if (SoundSystemLocal.s_slowAttenuate.Bool && slowmoActive && !chan.disallowSlow)
-                maxd *= slowmoSpeed;
+            if (SoundSystemLocal.s_slowAttenuate.Bool && slowmoActive && !chan.disallowSlow) maxd *= slowmoSpeed;
 
             // stereo samples are always omni
-            if (sample.objectInfo.nChannels == 2)
-                omni = true;
+            if (sample.objectInfo.nChannels == 2) omni = true;
 
             // if the sound is playing from the current listener, it will not be spatialized at all
-            if (sound.listenerId == listenerPrivateId)
-                global = true;
+            if (sound.listenerId == listenerPrivateId) global = true;
 
-            //
             // see if it's in range
-            //
 
             // convert volumes from decibels to float scale
 
@@ -1230,14 +1149,11 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             else spatializedOriginInMeters = Vector3.origin;
 
             // if it is a private sound, set the volume to zero unless we match the listenerId
-            if ((parms.soundShaderFlags & ISoundSystem.SSF_PRIVATE_SOUND) != 0 && sound.listenerId != listenerPrivateId)
-                volume = 0;
-            if ((parms.soundShaderFlags & ISoundSystem.SSF_ANTI_PRIVATE_SOUND) != 0 && sound.listenerId == listenerPrivateId)
-                volume = 0;
+            if ((parms.soundShaderFlags & ISoundSystem.SSF_PRIVATE_SOUND) != 0 && sound.listenerId != listenerPrivateId) volume = 0;
+            if ((parms.soundShaderFlags & ISoundSystem.SSF_ANTI_PRIVATE_SOUND) != 0 && sound.listenerId == listenerPrivateId) volume = 0;
 
             // do we have anything to add?
-            if (volume < SoundSystemLocal.SND_EPSILON && chan.lastVolume < SoundSystemLocal.SND_EPSILON)
-                return;
+            if (volume < SoundSystemLocal.SND_EPSILON && chan.lastVolume < SoundSystemLocal.SND_EPSILON) return;
             chan.lastVolume = volume;
 
             // fetch the sound from the cache as 44kHz, 16 bit samples
@@ -1249,14 +1165,12 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 // allocate and initialize hardware source
                 if (sound.removeStatus < REMOVE_STATUS.SAMPLEFINISHED)
                 {
-                    if (!AL.IsSource(chan.openalSource))
-                        chan.openalSource = soundSystemLocal.AllocOpenALSource(chan, !chan.leadinSample.hardwareBuffer || !chan.soundShader.entries[0].hardwareBuffer || looping, chan.leadinSample.objectInfo.nChannels == 2);
+                    if (!AL.IsSource(chan.openalSource)) chan.openalSource = soundSystemLocal.AllocOpenALSource(chan, !chan.leadinSample.hardwareBuffer || !chan.soundShader.entries[0].hardwareBuffer || looping, chan.leadinSample.objectInfo.nChannels == 2);
 
                     if (AL.IsSource(chan.openalSource))
                     {
                         // stop source if needed..
-                        if (chan.triggered)
-                            AL.SourceStop(chan.openalSource);
+                        if (chan.triggered) AL.SourceStop(chan.openalSource);
 
                         // update source parameters
                         if (global || omni)
@@ -1318,8 +1232,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                             {
                                 AL.GetSource(chan.openalSource, ALGetSourcei.BuffersProcessed, out finishedbuffers);
                                 AL.SourceUnqueueBuffers(chan.openalSource, finishedbuffers, ref buffers[0]);
-                                if (finishedbuffers == 3)
-                                    chan.triggered = true;
+                                if (finishedbuffers == 3) chan.triggered = true;
                             }
 
                             for (j = 0; j < finishedbuffers; j++)
@@ -1336,16 +1249,11 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                                 chan.openalStreamingOffset += Simd.MIXBUFFER_SAMPLES;
                             }
 
-                            if (finishedbuffers != 0)
-                                AL.SourceQueueBuffers(chan.openalSource, finishedbuffers, ref buffers[0]);
+                            if (finishedbuffers != 0) AL.SourceQueueBuffers(chan.openalSource, finishedbuffers, ref buffers[0]);
                         }
 
                         // (re)start if needed..
-                        if (chan.triggered)
-                        {
-                            AL.SourcePlay(chan.openalSource);
-                            chan.triggered = false;
-                        }
+                        if (chan.triggered) { AL.SourcePlay(chan.openalSource); chan.triggered = false; }
                     }
                 }
 #if true
@@ -1380,36 +1288,28 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                     if (global || omni)
                     {
                         // same for all speakers
-                        for (var i = 0; i < 6; i++)
-                            ears[i] = SoundSystemLocal.s_globalFraction.Float * volume;
+                        for (var i = 0; i < 6; i++) ears[i] = SoundSystemLocal.s_globalFraction.Float * volume;
                         ears[3] = SoundSystemLocal.s_subFraction.Float * volume;       // subwoofer
 
                     }
                     else
                     {
                         CalcEars(numSpeakers, spatializedOriginInMeters, listenerPos, listenerAxis, ears, spatialize);
-                        for (var i = 0; i < 6; i++)
-                            ears[i] *= volume;
+                        for (var i = 0; i < 6; i++) ears[i] *= volume;
                     }
 
                     // if the mask is 0, it really means do every channel
                     if (mask == 0) mask = 255;
                     // cleared mask bits set the mix volume to zero
-                    for (var i = 0; i < 6; i++)
-                        if ((mask & (1 << i)) == 0)
-                            ears[i] = 0;
+                    for (var i = 0; i < 6; i++) if ((mask & (1 << i)) == 0) ears[i] = 0;
 
                     // if sounds are generally normalized, using a mixing volume over 1.0 will almost always cause clipping noise.  If samples aren't normalized, there
                     // is a good call to allow overvolumes
                     if (SoundSystemLocal.s_clipVolumes.Bool && (parms.soundShaderFlags & ISoundSystem.SSF_UNCLAMPED) == 0)
-                        for (var i = 0; i < 6; i++)
-                            if (ears[i] > 1f)
-                                ears[i] = 1f;
+                        for (var i = 0; i < 6; i++) if (ears[i] > 1f) ears[i] = 1f;
 
                     // if this is the very first mixing block, set the lastV to the current volume
-                    if (current44kHz == chan.trigger44kHzTime)
-                        for (j = 0; j < 6; j++)
-                            chan.lastV[j] = ears[j];
+                    if (current44kHz == chan.trigger44kHzTime) for (j = 0; j < 6; j++) chan.lastV[j] = ears[j];
 
                     if (numSpeakers == 6)
                     {
@@ -1422,8 +1322,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                         else Simd.MixSoundTwoSpeakerStereo(finalMixBuffer, alignedInputSamples, Simd.MIXBUFFER_SAMPLES, chan.lastV, ears);
                     }
 
-                    for (j = 0; j < 6; j++)
-                        chan.lastV[j] = ears[j];
+                    for (j = 0; j < 6; j++) chan.lastV[j] = ears[j];
                 }
 #endif
             }
@@ -1440,11 +1339,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             int i, j; SoundEmitterLocal sound;
 
             // if noclip flying outside the world, leave silence
-            if (listenerArea == -1)
-            {
-                AL.Listener(ALListenerf.Gain, 0f);
-                return;
-            }
+            if (listenerArea == -1) { AL.Listener(ALListenerf.Gain, 0f); return; }
 
             // update the listener position and orientation
             var listenerPosition0 = -listenerPos.y;
@@ -1501,11 +1396,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                         var chan = sound.channels[j];
 
                         // see if we have a sound triggered on this channel
-                        if (!chan.triggerState)
-                        {
-                            chan.ALStop();
-                            continue;
-                        }
+                        if (!chan.triggerState) { chan.ALStop(); continue; }
 
                         AddChannelContribution(sound, chan, current44kHz, numSpeakers, finalMixBuffer);
                     }
@@ -1515,42 +1406,34 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             for (i = 1; i < emitters.Count; i++)
             {
                 sound = emitters[i];
-                if (sound == null)
-                    continue;
+                if (sound == null) continue;
                 // if no channels are active, do nothing
-                if (!sound.playing)
-                    continue;
+                if (!sound.playing) continue;
                 // run through all the channels
                 for (j = 0; j < SoundSystemLocal.SOUND_MAX_CHANNELS; j++)
                 {
                     var chan = sound.channels[j];
 
                     // see if we have a sound triggered on this channel
-                    if (!chan.triggerState)
-                    {
-                        chan.ALStop();
-                        continue;
-                    }
+                    if (!chan.triggerState) { chan.ALStop(); continue; }
 
                     AddChannelContribution(sound, chan, current44kHz, numSpeakers, finalMixBuffer);
                 }
             }
 
             // TODO port to OpenAL
-            if (false && enviroSuitActive)
-                soundSystemLocal.DoEnviroSuit(finalMixBuffer, Simd.MIXBUFFER_SAMPLES, numSpeakers);
+            if (false && enviroSuitActive) soundSystemLocal.DoEnviroSuit(finalMixBuffer, Simd.MIXBUFFER_SAMPLES, numSpeakers);
         }
 
         // this is called by the main thread writes one block of sound samples if enough time has passed
         // This can be used to write wave files even if no sound hardware exists
         public unsafe void AVIUpdate()
         {
-            if (game44kHz - lastAVI44kHz < Simd.MIXBUFFER_SAMPLES)
-                return;
+            if (game44kHz - lastAVI44kHz < Simd.MIXBUFFER_SAMPLES) return;
 
             var numSpeakers = SoundSystemLocal.s_numberOfSpeakers.Integer;
 
-            float* mix = stackalloc float[Simd.MIXBUFFER_SAMPLES * 6 + 16]; mix = (float*)_alloca16(mix);
+            var mix = stackalloc float[Simd.MIXBUFFER_SAMPLES * 6 + 16]; mix = (float*)_alloca16(mix);
 
             Simd.Memset(mix, 0, Simd.MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
 
@@ -1585,23 +1468,17 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         public void ResolveOrigin(int stackDepth, SoundPortalTrace prevStack, int soundArea, float dist, Vector3 soundOrigin, SoundEmitterLocal def)
         {
             // we can't possibly hear the sound through this chain of portals
-            if (dist >= def.distance)
-                return;
+            if (dist >= def.distance) return;
 
             if (soundArea == listenerArea)
             {
                 var fullDist = dist + (soundOrigin - listenerQU).LengthFast;
-                if (fullDist < def.distance)
-                {
-                    def.distance = fullDist;
-                    def.spatializedOrigin = soundOrigin;
-                }
+                if (fullDist < def.distance) { def.distance = fullDist; def.spatializedOrigin = soundOrigin; }
                 return;
             }
 
             // don't spend too much time doing these calculations in big maps
-            if (stackDepth == MAX_PORTAL_TRACE_DEPTH)
-                return;
+            if (stackDepth == MAX_PORTAL_TRACE_DEPTH) return;
 
             SoundPortalTrace newStack = new();
             newStack.portalArea = soundArea;
@@ -1621,16 +1498,12 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
                 // what area are we about to go look at
                 var otherArea = re.areas[0];
-                if (re.areas[0] == soundArea)
-                    otherArea = re.areas[1];
+                if (re.areas[0] == soundArea) otherArea = re.areas[1];
 
                 // if this area is already in our portal chain, don't bother looking into it
                 SoundPortalTrace prev;
-                for (prev = prevStack; prev != null; prev = prev.prevStack)
-                    if (prev.portalArea == otherArea)
-                        break;
-                if (prev != null)
-                    continue;
+                for (prev = prevStack; prev != null; prev = prev.prevStack) if (prev.portalArea == otherArea) break;
+                if (prev != null) continue;
 
                 // pick a point on the portal to serve as our virtual sound origin
 #if true
@@ -1638,8 +1511,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 re.w.GetPlane(out var pl);
 
                 Vector3 dir = listenerQU - soundOrigin;
-                if (!pl.RayIntersection(soundOrigin, dir, out var scale))
-                    source = re.w.Center;
+                if (!pl.RayIntersection(soundOrigin, dir, out var scale)) source = re.w.Center;
                 else
                 {
                     source = soundOrigin + scale * dir;
@@ -1741,8 +1613,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             // work out the distance from the listener to the emitter
             float dlen;
 
-            if (!sound.playing)
-                return 0;
+            if (!sound.playing) return 0;
 
             if (listenerPosition != null)
             {
@@ -1759,11 +1630,9 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             {
                 var chan = sound.channels[i];
 
-                if (!chan.triggerState)
-                    continue;
+                if (!chan.triggerState) continue;
 
-                if (channel != ISoundSystem.SCHANNEL_ANY && chan.triggerChannel != channel)
-                    continue;
+                if (channel != ISoundSystem.SCHANNEL_ANY && chan.triggerChannel != channel) continue;
 
                 parms = chan.parms;
 
@@ -1773,8 +1642,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
                 // check for screen shakes
                 var shakes = parms.shakes;
-                if (shakesOnly && shakes <= 0f)
-                    continue;
+                if (shakesOnly && shakes <= 0f) continue;
 
                 // calculate volume
                 if (listenerPosition == null) volume = 1f; // just look at the raw wav data for light shader evaluation
@@ -1782,8 +1650,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 {
                     volume = parms.volume;
                     volume = soundSystemLocal.dB2Scale(volume);
-                    if (shakesOnly)
-                        volume *= shakes;
+                    if (shakesOnly) volume *= shakes;
 
                     if (listenerPosition != null && (parms.soundShaderFlags & ISoundSystem.SSF_GLOBAL) == 0)
                     {
@@ -1795,8 +1662,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                         else if (dlen > mind)
                         {
                             var frac = MathX.ClampFloat(0, 1, 1f - ((dlen - mind) / (maxd - mind)));
-                            if (SoundSystemLocal.s_quadraticFalloff.Bool)
-                                frac *= frac;
+                            if (SoundSystemLocal.s_quadraticFalloff.Bool) frac *= frac;
                             volume *= frac;
                         }
                     }
@@ -1809,8 +1675,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 if (listenerPosition == null && (chan.parms.soundShaderFlags & ISoundSystem.SSF_NO_FLICKER) != 0)
                 {
                     // the NO_FLICKER option is to allow a light to still play a sound, but not have it effect the intensity
-                    for (j = 0; j < (AMPLITUDE_SAMPLES); j++)
-                        sourceBuffer[j] = (j & 1) != 0 ? 32767f : -32767f;
+                    for (j = 0; j < (AMPLITUDE_SAMPLES); j++) sourceBuffer[j] = (j & 1) != 0 ? 32767f : -32767f;
                 }
                 else
                 {
@@ -1825,26 +1690,20 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                             fixed (byte* amplitudeDataB = amplitudeData.Value)
                             {
                                 var amplitudeDataS = (short*)amplitudeDataB;
-                                for (j = 0; j < AMPLITUDE_SAMPLES; j++)
-                                    sourceBuffer[j] = (j & 1) != 0 ? amplitudeDataS[offset / 512 * 2] : amplitudeDataS[offset / 512 * 2 + 1];
+                                for (j = 0; j < AMPLITUDE_SAMPLES; j++) sourceBuffer[j] = (j & 1) != 0 ? amplitudeDataS[offset / 512 * 2] : amplitudeDataS[offset / 512 * 2 + 1];
                             }
                     }
                     // get actual sample data
                     else chan.GatherChannelSamples(offset, AMPLITUDE_SAMPLES, sourceBuffer);
                 }
                 activeChannelCount++;
-                if (activeChannelCount == 1)
-                    // store to the buffer
-                    for (j = 0; j < AMPLITUDE_SAMPLES; j++)
-                        sumBuffer[j] = volume * sourceBuffer[j];
+                // store to the buffer
+                if (activeChannelCount == 1) for (j = 0; j < AMPLITUDE_SAMPLES; j++) sumBuffer[j] = volume * sourceBuffer[j];
                 // add to the buffer
-                else
-                    for (j = 0; j < AMPLITUDE_SAMPLES; j++)
-                        sumBuffer[j] += volume * sourceBuffer[j];
+                else for (j = 0; j < AMPLITUDE_SAMPLES; j++) sumBuffer[j] += volume * sourceBuffer[j];
             }
 
-            if (activeChannelCount == 0)
-                return 0f;
+            if (activeChannelCount == 0) return 0f;
 
             var high = -32767f;
             var low = 32767f;
