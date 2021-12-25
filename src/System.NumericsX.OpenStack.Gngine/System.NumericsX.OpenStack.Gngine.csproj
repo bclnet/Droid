@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\System.NumericsX.Jpeg\System.NumericsX.Jpeg.csproj" />
     <ProjectReference Include="..\System.NumericsX.OpenStack.System\System.NumericsX.OpenStack.System.csproj" />
     <ProjectReference Include="..\System.NumericsX.OpenStack\System.NumericsX.OpenStack.csproj" />
   </ItemGroup>

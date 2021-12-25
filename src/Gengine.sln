@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.Gngine.Render", "System.NumericsX.OpenStack.Gngine.Render\System.NumericsX.OpenStack.Gngine.Render.csproj", "{DB1B0734-DD24-41B7-8E7D-553A535A2FE7}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.Jpeg", "System.NumericsX.Jpeg\System.NumericsX.Jpeg.csproj", "{6174F24C-D1C4-4772-AD82-353922955224}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +101,10 @@ Global
 		{DB1B0734-DD24-41B7-8E7D-553A535A2FE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB1B0734-DD24-41B7-8E7D-553A535A2FE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB1B0734-DD24-41B7-8E7D-553A535A2FE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6174F24C-D1C4-4772-AD82-353922955224}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6174F24C-D1C4-4772-AD82-353922955224}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6174F24C-D1C4-4772-AD82-353922955224}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6174F24C-D1C4-4772-AD82-353922955224}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

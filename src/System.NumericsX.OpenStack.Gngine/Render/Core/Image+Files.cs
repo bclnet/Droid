@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.OpenStack;
+using static System.NumericsX.Jpeg;
 using static System.NumericsX.Platform;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
@@ -526,7 +527,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         static void LoadJPG(string filename, ref byte* pic, out int width, out int height, out DateTime timestamp)
         {
-            throw new NotImplementedException();
 #if false
             // This struct contains the JPEG decompression parameters and pointers to working space (which is allocated as needed by the JPEG library).
             jpeg_decompress_struct cinfo;
@@ -538,10 +538,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             jpeg_error_mgr jerr;
             // More stuff
-            JSAMPARRAY buffer;      // Output row buffer
+            byte*** buffer;     // Output row buffer
             int row_stride;     // physical row width in output buffer
             byte* out_;
-            byte* fbuffer;
+            byte[] fbuffer;
             byte* bbuf;
 
             // In this example we want to open the input file before doing anything else, so that the setjmp() error recovery below can assume the file is open.
@@ -554,7 +554,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             VFile f;
 
             f = fileSystem.OpenFileRead(filename);
-            if (f == null) { width = default; height = default; return; }
+            if (f == null) { width = default; height = default; timestamp = default; return; }
             len = f.Length;
             timestamp = f.Timestamp;
             // just getting timestamp
@@ -633,21 +633,18 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             // Step 7: Finish decompression
 
-            jpeg_finish_decompress(&cinfo);
-            // We can ignore the return value since suspension is not possible with the stdio data source.
+            jpeg_finish_decompress(&cinfo); // We can ignore the return value since suspension is not possible with the stdio data source.
 
             // Step 8: Release JPEG decompression object
 
-            // This is an important step since it will release a good deal of memory.
-            jpeg_destroy_decompress(&cinfo);
+            jpeg_destroy_decompress(&cinfo); // This is an important step since it will release a good deal of memory.
 
             // After finish_decompress, we can close the input file. Here we postpone it until after no more JPEG errors are possible,
             // so as to simplify the setjmp error logic above.  (Actually, I don't think that jpeg_destroy can do an error exit, but why assume anything...)
-            Mem_Free(fbuffer);
+            fbuffer = null;
 
-            // At this point you may want to check to see whether any corrupt-data warnings occurred (test whether jerr.pub.num_warnings is nonzero).
-            // And we're done!
 #endif
+            throw new NotImplementedException();
         }
 
         #endregion

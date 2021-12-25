@@ -1,10 +1,10 @@
 using System.NumericsX.OpenStack;
 using System.Runtime.CompilerServices;
-using static Gengine.Render.R;
 using static System.NumericsX.OpenStack.OpenStack;
+using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.Platform;
 
-namespace System.NumericsX.OpenStack.Gengine.Render
+namespace System.NumericsX.OpenStack.Gngine.Render
 {
     public unsafe class CinematicLocal : Cinematic
     {
@@ -24,11 +24,11 @@ namespace System.NumericsX.OpenStack.Gengine.Render
         int tfps;
         int RoQPlayed;
         int ROQSize;
-        uint RoQFrameSize;
+        int RoQFrameSize;
         int onQuad;
         int numQuads;
         int samplesPerLine;
-        uint roq_id;
+        int roq_id;
         int screenDelta;
         byte[] buf;
         int samplesPerPixel;                // defaults to 2
@@ -37,7 +37,8 @@ namespace System.NumericsX.OpenStack.Gengine.Render
         int roq_flags;
         int roqF0;
         int roqF1;
-        int t[2];
+        int t0;
+        int t1;
         int roqFPS;
         int drawX, drawY;
 
@@ -128,7 +129,7 @@ namespace System.NumericsX.OpenStack.Gengine.Render
                 startTime = milliseconds;
             }
 
-            tfps = (int)(((milliseconds - startTime) * frameRate) / 1000);
+            tfps = (int)((milliseconds - startTime) * frameRate / 1000);
             if (tfps < 0) tfps = 0;
             if (tfps < numQuads) { RoQReset(); buf = null; status = CinStatus.FMV_PLAY; }
 
@@ -196,9 +197,7 @@ namespace System.NumericsX.OpenStack.Gengine.Render
         {
             ushort newd, celdata, code; uint index, i;
 
-            newd = 0;
-            celdata = 0;
-            index = 0;
+            newd = 0; celdata = 0; index = 0;
 
             do
             {
@@ -210,10 +209,9 @@ namespace System.NumericsX.OpenStack.Gengine.Render
 
                 switch (code)
                 {
-                    case 0x8000:                                                    // vq code
-                        blit8_32((byte*)&vq8[(*data) * 128], status[index], samplesPerLine); data++; index += 5; break;
-                    case 0xc000:                                                    // drop
-                        index++;                                                    // skip 8x8
+                    case 0x8000: blit8_32((byte*)&vq8[(*data) * 128], status[index], samplesPerLine); data++; index += 5; break; // vq code
+                    case 0xc000: // drop
+                        index++; // skip 8x8
                         for (i = 0; i < 4; i++)
                         {
                             if (newd == 0) { newd = 7; celdata = (ushort)(data[0] + data[1] * 256); data += 2; }
@@ -222,25 +220,23 @@ namespace System.NumericsX.OpenStack.Gengine.Render
                             code = (ushort)(celdata & 0xc000);
                             celdata <<= 2;
 
+                            // code in top two bits of code
                             switch (code)
-                            {                                           // code in top two bits of code
-                                case 0x8000:                                        // 4x4 vq code
-                                    blit4_32((byte*)&vq4[(*data) * 32], status[index], samplesPerLine); data++; break;
-                                case 0xc000:                                        // 2x2 vq code
+                            {
+                                case 0x8000: blit4_32((byte*)&vq4[(*data) * 32], status[index], samplesPerLine); data++; break; // 4x4 vq code
+                                case 0xc000: // 2x2 vq code
                                     blit2_32((byte*)&vq2[(*data) * 8], status[index], samplesPerLine); data++;
                                     blit2_32((byte*)&vq2[(*data) * 8], status[index] + 8, samplesPerLine); data++;
                                     blit2_32((byte*)&vq2[(*data) * 8], status[index] + samplesPerLine * 2, samplesPerLine); data++;
                                     blit2_32((byte*)&vq2[(*data) * 8], status[index] + samplesPerLine * 2 + 8, samplesPerLine); data++; break;
-                                case 0x4000:                                        // motion compensation
-                                    move4_32(status[index] + mcomp[(*data)], status[index], samplesPerLine); data++; break;
+
+                                case 0x4000: move4_32(status[index] + mcomp[(*data)], status[index], samplesPerLine); data++; break; // motion compensation
                             }
                             index++;
                         }
                         break;
-                    case 0x4000:                                                    // motion compensation
-                        move8_32(status[index] + mcomp[*data], status[index], samplesPerLine); data++; index += 5; break;
-                    case 0x0000:
-                        index += 5; break;
+                    case 0x4000: move8_32(status[index] + mcomp[*data], status[index], samplesPerLine); data++; index += 5; break; // motion compensation
+                    case 0x0000: index += 5; break;
                 }
 
             } while (status[index] != null);
@@ -275,10 +271,10 @@ namespace System.NumericsX.OpenStack.Gengine.Render
             switch (roq_id)
             {
                 case ROQ_QUAD_VQ:
-                    if ((numQuads & 1) != 0) { normalBuffer0 = t[1]; RoQPrepMcomp(roqF0, roqF1); blitVQQuad32fs(qStatus[1], framedata); buf = image + screenDelta; }
-                    else { normalBuffer0 = t[0]; RoQPrepMcomp(roqF0, roqF1); blitVQQuad32fs(qStatus[0], framedata); buf = image; }
+                    if ((numQuads & 1) != 0) { normalBuffer0 = t1; RoQPrepMcomp(roqF0, roqF1); blitVQQuad32fs(qStatus1, framedata); buf = image + screenDelta; }
+                    else { normalBuffer0 = t0; RoQPrepMcomp(roqF0, roqF1); blitVQQuad32fs(qStatus0, framedata); buf = image; }
                     // first frame
-                    if (numQuads == 0) memcpy(image + screenDelta, image, samplesPerLine * ysize);
+                    if (numQuads == 0) Unsafe.CopyBlock(image + screenDelta, image, (uint)(samplesPerLine * ysize));
                     numQuads++;
                     dirty = true;
                     break;
@@ -288,7 +284,7 @@ namespace System.NumericsX.OpenStack.Gengine.Render
                 case ROQ_QUAD_INFO: if (numQuads == -1) { readQuadInfo(framedata); setupQuad(0, 0); } if (numQuads != 1) numQuads = 0; break;
                 case ROQ_PACKET: inMemory = roq_flags != 0; RoQFrameSize = 0; break;         // for header
                 case ROQ_QUAD_HANG: RoQFrameSize = 0; break;
-                case ROQ_QUAD_JPEG: if (numQuads == 0) { normalBuffer0 = t[0]; JPEGBlit(image, framedata, RoQFrameSize); memcpy(image + screenDelta, image, samplesPerLine * ysize); numQuads++; } break;
+                case ROQ_QUAD_JPEG: if (numQuads == 0) { normalBuffer0 = t[0]; JPEGBlit(image, framedata, RoQFrameSize); Unsafe.CopyBlock(image + screenDelta, image, (uint)(samplesPerLine * ysize)); numQuads++; } break;
                 default: status = CinStatus.FMV_EOF; break;
             }
 
@@ -304,8 +300,8 @@ namespace System.NumericsX.OpenStack.Gengine.Render
             roq_id = framedata[0] + framedata[1] * 256;
             RoQFrameSize = framedata[2] + framedata[3] * 256 + framedata[4] * 65536;
             roq_flags = framedata[6] + framedata[7] * 256;
-            roqF0 = (byte)framedata[7];
-            roqF1 = (byte)framedata[6];
+            roqF0 = framedata[7];
+            roqF1 = framedata[6];
 
             if (RoQFrameSize > 65536 || roq_id == 0x1084) { common.DPrintf("roq_size>65536||roq_id==0x1084\n"); status = CinStatus.FMV_EOF; if (looping) RoQReset(); return; }
             if (inMemory && status != CinStatus.FMV_EOF) { inMemory = false; framedata += 8; goto redump; }
@@ -797,8 +793,7 @@ namespace System.NumericsX.OpenStack.Gengine.Render
                         {
                             aptr = vq2 + (*input++) * 4;
                             bptr = vq2 + (*input++) * 4;
-                            for (j = 0; j < 2; j++)
-                                VQ2TO4(ref aptr, ref bptr, cptr, dptr);
+                            for (j = 0; j < 2; j++) VQ2TO4(ref aptr, ref bptr, cptr, dptr);
                         }
                     }
                     else if (samplesPerPixel == 4)
@@ -825,8 +820,7 @@ namespace System.NumericsX.OpenStack.Gengine.Render
                         {
                             iaptr = (uint*)vq2 + (*input++) * 4;
                             ibptr = (uint*)vq2 + (*input++) * 4;
-                            for (j = 0; j < 2; j++)
-                                VQ2TO4(ref iaptr, ref ibptr, icptr, idptr);
+                            for (j = 0; j < 2; j++) VQ2TO4(ref iaptr, ref ibptr, icptr, idptr);
                         }
                     }
                 }
@@ -860,11 +854,7 @@ namespace System.NumericsX.OpenStack.Gengine.Render
                         {
                             aptr = vq2 + (*input++) * 8;
                             bptr = vq2 + (*input++) * 8;
-                            for (j = 0; j < 2; j++)
-                            {
-                                VQ2TO4(ref aptr, ref bptr, cptr, dptr);
-                                VQ2TO4(ref aptr, ref bptr, cptr, dptr);
-                            }
+                            for (j = 0; j < 2; j++) { VQ2TO4(ref aptr, ref bptr, cptr, dptr); VQ2TO4(ref aptr, ref bptr, cptr, dptr); }
                         }
                     }
                     else if (samplesPerPixel == 4)
@@ -895,11 +885,7 @@ namespace System.NumericsX.OpenStack.Gengine.Render
                         {
                             iaptr = (uint*)vq2 + (*input++) * 8;
                             ibptr = (uint*)vq2 + (*input++) * 8;
-                            for (j = 0; j < 2; j++)
-                            {
-                                VQ2TO4(ref iaptr, ref ibptr, icptr, idptr);
-                                VQ2TO4(ref iaptr, ref ibptr, icptr, idptr);
-                            }
+                            for (j = 0; j < 2; j++) { VQ2TO4(ref iaptr, ref ibptr, icptr, idptr); VQ2TO4(ref iaptr, ref ibptr, icptr, idptr); }
                         }
                     }
                 }
@@ -926,8 +912,7 @@ namespace System.NumericsX.OpenStack.Gengine.Render
                     {
                         aptr = vq2 + (*input++) * 2;
                         bptr = vq2 + (*input++) * 2;
-                        for (j = 0; j < 2; j++)
-                            VQ2TO2(ref aptr, ref bptr, cptr, dptr);
+                        for (j = 0; j < 2; j++) VQ2TO2(ref aptr, ref bptr, cptr, dptr);
                     }
                 }
                 else if (samplesPerPixel == 4)
@@ -950,8 +935,7 @@ namespace System.NumericsX.OpenStack.Gengine.Render
                     {
                         iaptr = (uint*)vq2 + (*input++) * 2;
                         ibptr = (uint*)vq2 + (*input++) * 2;
-                        for (j = 0; j < 2; j++)
-                            VQ2TO2(ref iaptr, ref ibptr, icptr, idptr);
+                        for (j = 0; j < 2; j++) VQ2TO2(ref iaptr, ref ibptr, icptr, idptr);
                     }
                 }
             }
@@ -1029,8 +1013,8 @@ namespace System.NumericsX.OpenStack.Gengine.Render
             half = false;
             smootheddouble = false;
 
-            t[0] = (0 - (ptrdiff_t)image) + (ptrdiff_t)image + screenDelta;
-            t[1] = (0 - ((ptrdiff_t)image + screenDelta)) + (ptrdiff_t)image;
+            t0 = (0 - (ptrdiff_t)image) + (ptrdiff_t)image + screenDelta;
+            t1 = (0 - ((ptrdiff_t)image + screenDelta)) + (ptrdiff_t)image;
 
             drawX = CIN_WIDTH;
             drawY = CIN_HEIGHT;
@@ -1213,7 +1197,7 @@ namespace System.NumericsX.OpenStack.Gengine.Render
             row_stride = cinfo.output_width * cinfo.output_components;
 
             /* Make a one-row-high sample array that will go away when done with image */
-            buffer = (*cinfo.mem.alloc_sarray) ((j_common_ptr) & cinfo, JPOOL_IMAGE, row_stride, 1);
+            buffer = (*cinfo.mem.alloc_sarray)((j_common_ptr) & cinfo, JPOOL_IMAGE, row_stride, 1);
 
             // Step 6: while (scan lines remain to be read)
             //           jpeg_read_scanlines(...);
