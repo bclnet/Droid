@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.NumericsX.OpenStack.Gngine.Framework;
 using GlIndex = System.Int32;
 
@@ -76,13 +77,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
     public static partial class R
     {
-        internal static Func<int> tr_frameCount => throw new NotImplementedException();
-        internal static Func<Vector3> tr_ambientLightVector => throw new NotImplementedException();
-
-        public static readonly BackEndState backEnd;
-        //public static readonly IRenderSystem tr;
-        public static readonly Glconfig glConfig;     // outside of TR since it shouldn't be cleared during ref re-init
-
         // font support
         public const int GLYPH_START = 0;
         public const int GLYPH_END = 255;
@@ -376,7 +370,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         #endregion
     }
 
-    public interface IRenderSystem
+    public abstract class IRenderSystem
     {
         // everything that is needed by the backend needs to be double buffered to allow it to run in parallel on a dual cpu machine
         public const int SMP_FRAMES = 1;
@@ -390,73 +384,73 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         //Vector4 ambientLightVector { get; }
 
         // set up cvars and basic data structures, but don't init OpenGL, so it can also be used for dedicated servers
-        void Init();
+        public abstract void Init();
 
         // only called before quitting
-        void Shutdown();
+        public abstract void Shutdown();
 
-        void InitOpenGL();
+        public abstract void InitOpenGL();
 
-        void ShutdownOpenGL();
+        public abstract void ShutdownOpenGL();
 
-        bool IsOpenGLRunning { get; }
+        public abstract bool IsOpenGLRunning { get; }
 
-        bool IsFullScreen { get; }
-        int ScreenWidth { get; }
-        int ScreenHeight { get; }
-        float FOV { get; }
-        int Refresh { get; }
+        public abstract bool IsFullScreen { get; }
+        public abstract int ScreenWidth { get; }
+        public abstract int ScreenHeight { get; }
+        public abstract float FOV { get; }
+        public abstract int Refresh { get; }
 
         // allocate a renderWorld to be used for drawing
-        IRenderWorld AllocRenderWorld();
-        void FreeRenderWorld(IRenderWorld rw);
+        public abstract IRenderWorld AllocRenderWorld();
+        public abstract void FreeRenderWorld(IRenderWorld rw);
 
         // All data that will be used in a level should be registered before rendering any frames to prevent disk hits,
         // but they can still be registered at a later time if necessary.
-        void BeginLevelLoad();
-        void EndLevelLoad();
+        public abstract void BeginLevelLoad();
+        public abstract void EndLevelLoad();
 
         // font support
-        bool RegisterFont(string fontName, FontInfoEx font);
+        public abstract bool RegisterFont(string fontName, FontInfoEx font);
 
         // GUI drawing just involves shader parameter setting and axial image subsections
-        void SetColor(Vector4 rgba);
-        void SetColor4(float r, float g, float b, float a);
-        void SetHudOpacity(float opacity);
+        public abstract void SetColor(Vector4 rgba);
+        public abstract void SetColor4(float r, float g, float b, float a);
+        public abstract void SetHudOpacity(float opacity);
 
-        void DrawStretchPic(DrawVert[] verts, GlIndex[] indexes, int vertCount, int indexCount, Material material, bool clip = true, float min_x = 0f, float min_y = 0f, float max_x = 640f, float max_y = 480f);
-        void DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, Material material);
+        public abstract void DrawStretchPic(DrawVert[] verts, GlIndex[] indexes, int vertCount, int indexCount, Material material, bool clip = true, float min_x = 0f, float min_y = 0f, float max_x = 640f, float max_y = 480f);
+        public abstract void DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, Material material);
 
-        void DrawStretchTri(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 t1, Vector2 t2, Vector2 t3, Material material);
-        void GlobalToNormalizedDeviceCoordinates(Vector3 global, Vector3 ndc);
-        void GetGLSettings(out int width, out int height);
-        void PrintMemInfo(MemInfo mi);
+        public abstract void DrawStretchTri(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 t1, Vector2 t2, Vector2 t3, Material material);
+        public abstract void GlobalToNormalizedDeviceCoordinates(Vector3 global, Vector3 ndc);
+        public abstract void GetGLSettings(out int width, out int height);
+        public abstract void PrintMemInfo(MemInfo mi);
 
-        void DrawSmallChar(int x, int y, int ch, Material material);
-        void DrawSmallStringExt(int x, int y, string s, Vector4 setColor, bool forceColor, Material material);
-        void DrawBigChar(int x, int y, int ch, Material material);
-        void DrawBigStringExt(int x, int y, string s, Vector4 setColor, bool forceColor, Material material);
+        public abstract void DrawSmallChar(int x, int y, int ch, Material material);
+        public abstract void DrawSmallStringExt(int x, int y, string s, Vector4 setColor, bool forceColor, Material material);
+        public abstract void DrawBigChar(int x, int y, int ch, Material material);
+        public abstract void DrawBigStringExt(int x, int y, string s, Vector4 setColor, bool forceColor, Material material);
 
         // dump all 2D drawing so far this frame to the demo file
-        void WriteDemoPics();
+        public abstract void WriteDemoPics();
 
         // draw the 2D pics that were saved out with the current demo frame
-        void DrawDemoPics();
+        public abstract void DrawDemoPics();
 
         // FIXME: add an interface for arbitrary point/texcoord drawing
 
         // a frame cam consist of 2D drawing and potentially multiple 3D scenes window sizes are needed to convert SCREEN_WIDTH / SCREEN_HEIGHT values
-        void BeginFrame(int windowWidth, int windowHeight);
+        public abstract void BeginFrame(int windowWidth, int windowHeight);
 
         // if the pointers are not NULL, timing info will be returned
-        void EndFrame(out int frontEndMsec, out int backEndMsec);
+        public abstract void EndFrame(out int frontEndMsec, out int backEndMsec);
 
         // Will automatically tile render large screen shots if necessary
         // Samples is the number of jittered frames for anti-aliasing
         // If ref == NULL, session->updateScreen will be used
         // This will perform swapbuffers, so it is NOT an approppriate way to generate image files that happen during gameplay, as for savegame
         // markers.  Use WriteRender() instead.
-        void TakeScreenshot(int width, int height, string fileName, int samples, RenderView ref_);
+        public abstract void TakeScreenshot(int width, int height, string fileName, int samples, RenderView ref_);
 
         // the render output can be cropped down to a subset of the real screen, as for save-game reviews and split-screen multiplayer.  Users of the renderer
         // will not know the actual pixel size of the area they are rendering to
@@ -465,19 +459,98 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         // to render to a texture, first set the crop size with makePowerOfTwo = true, then perform all desired rendering, then capture to an image
         // if the specified physical dimensions are larger than the current cropped region, they will be cut down to fit
-        void CropRenderSize(int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false);
-        void CaptureRenderToImage(string imageName);
+        public abstract void CropRenderSize(int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false);
+        public abstract void CaptureRenderToImage(string imageName);
         // fixAlpha will set all the alpha channel values to 0xff, which allows screen captures
         // to use the default tga loading code without having dimmed down areas in many places
-        void CaptureRenderToFile(string fileName, bool fixAlpha = false);
-        void UnCrop();
+        public abstract void CaptureRenderToFile(string fileName, bool fixAlpha = false);
+        public abstract void UnCrop();
 
         // the image has to be already loaded ( most straightforward way would be through a FindMaterial )
         // texture filter / mipmapping / repeat won't be modified by the upload
         // returns false if the image wasn't found
-        bool UploadImage(string imageName, byte[] data, int width, int height);
+        public abstract bool UploadImage(string imageName, byte[] data, int width, int height);
 
-        void DirectFrameBufferStart();
-        void DirectFrameBufferEnd();
+        public abstract void DirectFrameBufferStart();
+        public abstract void DirectFrameBufferEnd();
+
+        // fields
+
+        public bool multithreadActive = false;
+
+        public bool useSpinLock = true;
+        public int spinLockDelay = 1000;
+        public float hudOpacity = 0f;
+
+        public bool windowActive = false; // True when the app is at the foreground and not minimised
+
+        public volatile bool backendThreadRun = false;
+        public volatile bool backendFinished = true;
+        public volatile bool imagesFinished = false;
+
+        public volatile bool backendThreadShutdown = false;
+
+        public volatile FrameData fdToRender = null;
+        public volatile int vertListToRender = 0;
+
+        // These are set if the backend should save pixels
+        public volatile RenderCrop pixelsCrop = null;
+        public volatile byte[] pixels = null;
+
+        // For FPS limiting
+        public uint lastRenderTime = 0;
+
+        // renderer globals
+        public bool registered;        // cleared at shutdown, set at InitOpenGL
+
+        public bool takingScreenshot;
+
+        public int frameCount;     // incremented every frame
+        public int viewCount;      // incremented every view (twice a scene if subviewed) and every R_MarkFragments call
+
+        public int staticAllocCount;   // running total of bytes allocated
+
+        public float frameShaderTime;  // shader time for all non-world 2D rendering
+
+        public int[] viewportOffset = new int[2];  // for doing larger-than-window tiled renderings
+        public int[] tiledViewport = new int[2];
+
+        public Vector4 ambientLightVector;  // used for "ambient bump mapping"
+
+        public float sortOffset;               // for determinist sorting of equal sort materials
+
+        public List<IRenderWorld> worlds;
+
+        public IRenderWorld primaryWorld;
+        public RenderView primaryRenderView;
+        public ViewDef primaryView;
+        // many console commands need to know which world they should operate on
+
+        public Material defaultMaterial;
+        public Image testImage;
+        public Cinematic testVideo;
+        public float testVideoStartTime;
+
+        public Image ambientCubeImage;  // hack for testing dependent ambient lighting
+
+        public ViewDef viewDef;
+
+        public PerformanceCounters pc;                   // performance counters
+
+        public DrawSurfsCommand lockSurfacesCmd; // use this when r_lockSurfaces = 1
+
+        public ViewEntity identitySpace;     // can use if we don't know viewDef->worldSpace is valid
+
+        public RenderCrop[] renderCrops = new RenderCrop[RenderCrop.MAX_RENDER_CROPS];
+        public int currentRenderCrop;
+
+        // GUI drawing variables for surface creation
+        public int guiRecursionLevel;      // to prevent infinite overruns
+        //public GuiModel guiModel;
+        //public GuiModel demoGuiModel;
+
+        // DG: remember the original glConfig.vidWidth/Height values that get overwritten in BeginFrame() so they can be reset in EndFrame() (Editors tend to mess up the viewport by using BeginFrame())
+        public int origWidth;
+        public int origHeight;
     }
 }

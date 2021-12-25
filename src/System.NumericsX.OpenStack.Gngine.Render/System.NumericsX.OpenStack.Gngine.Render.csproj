@@ -16,6 +16,24 @@
     <Compile Remove="GameBearShootWindow.cs" />
     <Compile Remove="GameBustOutWindow.cs" />
     <Compile Remove="GameSSDWindow.cs" />
+    <Compile Remove="Interaction.cs" />
+    <Compile Remove="TR\TR_Backend.cs" />
+    <Compile Remove="TR\TR_Deform.cs" />
+    <Compile Remove="TR\TR_Font.cs" />
+    <Compile Remove="TR\TR_GuiSurf.cs" />
+    <Compile Remove="TR\TR_Light.cs" />
+    <Compile Remove="TR\TR_LightRun.cs" />
+    <Compile Remove="TR\TR_Local.cs" />
+    <Compile Remove="TR\TR_OrderIndexes.cs" />
+    <Compile Remove="TR\TR_Polytope.cs" />
+    <Compile Remove="TR\TR_Render.cs" />
+    <Compile Remove="TR\TR_RenderTools.cs" />
+    <Compile Remove="TR\TR_ShadowBounds.cs" />
+    <Compile Remove="TR\TR_StencilShadow.cs" />
+    <Compile Remove="TR\TR_SubView.cs" />
+    <Compile Remove="TR\TR_Trace.cs" />
+    <Compile Remove="TR\TR_TriSurf.cs" />
+    <Compile Remove="TR\TR_TurboShadow.cs" />
     <Compile Remove="TR_Backend.cs" />
     <Compile Remove="TR_Deform.cs" />
     <Compile Remove="TR_GuiSurf.cs" />
@@ -34,29 +52,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="TR_Backend.cs" />
-    <None Include="TR_Deform.cs" />
-    <None Include="TR_GuiSurf.cs" />
-    <None Include="TR_Light.cs" />
-    <None Include="TR_LightRun.cs" />
-    <None Include="TR_OrderIndexes.cs" />
-    <None Include="TR_Polytope.cs" />
-    <None Include="TR_Render.cs" />
-    <None Include="TR_RenderTools.cs" />
-    <None Include="TR_ShadowBounds.cs" />
-    <None Include="TR_StencilShadow.cs" />
-    <None Include="TR_SubView.cs" />
-    <None Include="TR_Trace.cs" />
-    <None Include="TR_TriSurf.cs" />
-    <None Include="TR_TurboShadow.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\System.NumericsX.OpenStack.Gngine\System.NumericsX.OpenStack.Gngine.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="TR\" />
   </ItemGroup>
 
 </Project>

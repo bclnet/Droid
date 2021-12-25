@@ -3,6 +3,8 @@ using System.NumericsX.OpenStack.Gngine.Framework;
 using System.NumericsX.OpenStack.Gngine.Framework.Async;
 using System.NumericsX.OpenStack.Gngine.Render;
 using System.NumericsX.OpenStack.Gngine.UI;
+using System.Runtime.InteropServices;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace System.NumericsX.OpenStack.Gngine
 {
@@ -15,7 +17,7 @@ namespace System.NumericsX.OpenStack.Gngine
         public void Reset() => throw new NotImplementedException();
     }
 
-    public unsafe static class Gngine
+    public unsafe static partial class Gngine
     {
         public const string ENGINE_VERSION = "Gngine 1.0.0";	// printed in console
         public const int BUILD_NUMBER = 1000;
@@ -37,17 +39,16 @@ namespace System.NumericsX.OpenStack.Gngine
         public static GameCallbacks gameCallbacks;
 
         //: TODO-MOVE
-        //public static readonly BackEndState backEnd;
-        //public static readonly IRenderSystem tr;
-        //public static readonly Glconfig glConfig;
+        public static readonly IRenderSystem tr;
+        public static readonly Glconfig glConfig;
 
         public static string R_GetVidModeListString(bool addCustom) => throw new NotImplementedException();
         public static string R_GetVidModeValsString(bool addCustom) => throw new NotImplementedException();
+        public static string R_ClearCommandChain() => throw new NotImplementedException();
 
         //: TODO-SET
         public static Action GL_CheckErrors;
         public static Action<int> GL_SelectTexture;
-        public static void* R_StaticAlloc(int bytes) => throw new NotImplementedException();
-        public static void R_StaticFree(byte* value) => throw new NotImplementedException();
+        public static Action<FrameData> R_FreeDeferredTriSurfs;
     }
 }
