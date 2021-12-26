@@ -20,7 +20,7 @@ namespace System.NumericsX
         int maxChildrenPerNode;
 
         Node root;
-        BlockAlloc<Node> nodeAllocator = new(128, new Node());
+        BlockAlloc<Node> nodeAllocator = new(128);
 
         public BTree(int maxChildrenPerNode)
         {

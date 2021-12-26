@@ -1,13 +1,15 @@
 using System.Diagnostics;
+using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace System.NumericsX
 {
-    public class DynamicAlloc<T>
+    public class DynamicAlloc<T> where T : new()
     {
         int baseBlockSize;
         int minBlockSize;
-        int sizeofT;
-        Func<int, T[]> factory;
+        //int sizeofT;
+        //Func<int, T[]> factory;
 
         int numUsedBlocks;          // number of used blocks
         int usedBlockMemory;        // total memory in used blocks
@@ -16,12 +18,12 @@ namespace System.NumericsX
         int numResizes;
         int numFrees;
 
-        public DynamicAlloc(int baseBlockSize, int minBlockSize, int sizeofT, Func<int, T[]> factory)
+        public DynamicAlloc(int baseBlockSize, int minBlockSize) //, int sizeofT, Func<int, T[]> factory)
         {
             this.baseBlockSize = baseBlockSize;
             this.minBlockSize = minBlockSize;
-            this.sizeofT = sizeofT;
-            this.factory = factory;
+            //this.sizeofT = sizeofT;
+            //this.factory = factory;
             Clear();
         }
 
@@ -45,9 +47,12 @@ namespace System.NumericsX
         {
             numAllocs++;
             if (num <= 0) return default;
+            var model = new T();
+            var sizeofT = Marshal.SizeOf(model);
+            var value = Enumerable.Repeat(model, num).ToArray();
             numUsedBlocks++;
             usedBlockMemory += num * sizeofT;
-            var block = new DynamicElement<T> { Value = factory(num * sizeofT) }; block.Memory = block.Value.AsMemory();
+            var block = new DynamicElement<T> { Value = value }; block.Memory = block.Value.AsMemory();
             return block;
         }
 

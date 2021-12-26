@@ -11,7 +11,7 @@ namespace System.NumericsX.OpenStack.Gngine
 {
     unsafe static partial class Gngine
     {
-        static FrameData frameData;
+        public static FrameData frameData;
         public static readonly BackEndState backEnd;
 
         const uint NUM_FRAME_DATA = 2;
@@ -130,7 +130,7 @@ namespace System.NumericsX.OpenStack.Gngine
             return buf;
         }
 
-        public static void R_StaticFree(byte* data)
+        public static void R_StaticFree(void* data)
         {
             tr.pc.c_free++;
             Marshal.FreeHGlobal((IntPtr)data);

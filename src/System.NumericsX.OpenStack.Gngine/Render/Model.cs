@@ -1,4 +1,5 @@
 //using GL_INDEX_TYPE = System.UInt32; // GL_UNSIGNED_INT
+using System.Runtime.InteropServices;
 using GlIndex = System.Int32;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
@@ -41,8 +42,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
     }
 
     // our only drawing geometry type
-    public unsafe class SrfTriangles
+    public unsafe class SrfTriangles : BlockAllocElement<SrfTriangles>
     {
+        public static int sizeOf = Marshal.SizeOf(new SrfTriangles());
+
         public Bounds bounds;                   // for culling
 
         public int ambientViewCount;            // if == tr.viewCount, it is visible this view
@@ -91,6 +94,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public VertCache ambientCache;              // DrawVert
         public VertCache lightingCache;             // lightingCache_t
         public VertCache shadowCache;               // shadowCache_t
+
+        internal void memset()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     //List<SrfTriangles> TriList;

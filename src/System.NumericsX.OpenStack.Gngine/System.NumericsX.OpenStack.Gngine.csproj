@@ -10,6 +10,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Render\Core\ModelDecal.cs" />
+    <Compile Remove="Render\Core\ModelOverlay.cs" />
+    <Compile Remove="Render\Core\TR_TriSurf.cs" />
     <Compile Remove="VertexCache.cs" />
   </ItemGroup>
 

@@ -71,7 +71,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         bool tempOverflow;      // had to alloc a temp in static memory
 
-        BlockAlloc<VertCache> headerAllocator = new BlockAlloc<VertCache>(1024, new VertCache());
+        BlockAlloc<VertCache> headerAllocator = new BlockAlloc<VertCache>(1024);
 
         VertCache freeStaticHeaders;    // head of doubly linked list
         VertCache freeStaticIndexHeaders;    // head of doubly linked list

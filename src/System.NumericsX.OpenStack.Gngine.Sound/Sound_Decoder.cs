@@ -218,7 +218,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         const int MIN_OGGVORBIS_MEMORY = 768 * 1024;
         // Thread safe decoder memory allocator. Each OggVorbis decoder consumes about 150kB of memory.
         internal static DynamicBlockAlloc<byte> decoderMemoryAllocator = new(1 << 20, 128, 0, x => new byte[x]);
-        internal static BlockAlloc<SampleDecoderLocal> sampleDecoderAllocator = new(64, new SampleDecoderLocal());
+        internal static BlockAlloc<SampleDecoderLocal> sampleDecoderAllocator = new(64);
 
         static DynamicElement<byte> decoder_malloc(int size)
         {

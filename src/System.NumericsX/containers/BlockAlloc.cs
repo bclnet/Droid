@@ -7,7 +7,7 @@ namespace System.NumericsX
         internal BlockAllocElement<T> _next;
     }
 
-    public class BlockAlloc<T> where T : BlockAllocElement<T>
+    public class BlockAlloc<T> where T : BlockAllocElement<T>, new()
     {
         class Block
         {
@@ -22,10 +22,10 @@ namespace System.NumericsX
         int total;
         int active;
 
-        public BlockAlloc(int blockSize, BlockAllocElement<T> model)
+        public BlockAlloc(int blockSize)
         {
             this.blockSize = blockSize;
-            this.model = model;
+            this.model = new T();
         }
 
         public void Shutdown()

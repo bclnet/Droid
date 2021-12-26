@@ -12,9 +12,9 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
     public class SoundCache
     {
 #if USE_SOUND_CACHE_ALLOCATOR
-		public static DynamicBlockAlloc<byte> soundCacheAllocator = new(1 << 20, 1 << 10, x => new byte[x]);
+		public static DynamicBlockAlloc<byte> soundCacheAllocator = new(1 << 20, 1 << 10);
 #else
-        public static DynamicAlloc<byte> soundCacheAllocator = new(1 << 20, 1 << 10, 0, x => new byte[x]);
+        public static DynamicAlloc<byte> soundCacheAllocator = new(1 << 20, 1 << 10);
 #endif
 
         bool insideLevelLoad;

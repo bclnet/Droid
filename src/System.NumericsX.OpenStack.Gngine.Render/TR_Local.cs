@@ -15,38 +15,38 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public void ForceUpdate() => throw new NotImplementedException();
         public int Index => 0;
 
-        public RenderLight parms;                    // specification
-        public bool lightHasMoved;         // the light has changed its position since it was first added, so the prelight model is not valid
-        public float[] modelMatrix = new float[16];      // this is just a rearrangement of parms.axis and parms.origin
-        public RenderWorldLocal world;
-        public int index;                  // in world lightdefs
-        public int areaNum;                // if not -1, we may be able to cull all the light's interactions if !viewDef->connectedAreas[areaNum]
-        public int lastModifiedFrameNum;   // to determine if it is constantly changing, and should go in the dynamic frame memory, or kept in the cached memory
-        public bool archived;              // for demo writing
+        //public RenderLight parms;                    // specification
+        //public bool lightHasMoved;         // the light has changed its position since it was first added, so the prelight model is not valid
+        //public float[] modelMatrix = new float[16];      // this is just a rearrangement of parms.axis and parms.origin
+        //public RenderWorldLocal world;
+        //public int index;                  // in world lightdefs
+        //public int areaNum;                // if not -1, we may be able to cull all the light's interactions if !viewDef->connectedAreas[areaNum]
+        //public int lastModifiedFrameNum;   // to determine if it is constantly changing, and should go in the dynamic frame memory, or kept in the cached memory
+        //public bool archived;              // for demo writing
 
-        // derived information
-        public Plane[] lightProject = new Plane[4];
+        //// derived information
+        //public Plane[] lightProject = new Plane[4];
 
-        public Material lightShader;          // guaranteed to be valid, even if parms.shader isn't
-        public Image falloffImage;
+        //public Material lightShader;          // guaranteed to be valid, even if parms.shader isn't
+        //public Image falloffImage;
 
-        public Vector3 globalLightOrigin;       // accounting for lightCenter and parallel
+        //public Vector3 globalLightOrigin;       // accounting for lightCenter and parallel
 
-        public Plane[] frustum = new Plane[6];             // in global space, positive side facing out, last two are front/back
-        public Winding[] frustumWindings = new Winding[6];      // used for culling
-        public SrfTriangles frustumTris;            // triangulated frustumWindings[]
+        //public Plane[] frustum = new Plane[6];             // in global space, positive side facing out, last two are front/back
+        //public Winding[] frustumWindings = new Winding[6];      // used for culling
+        //public SrfTriangles frustumTris;            // triangulated frustumWindings[]
 
-        public int numShadowFrustums;      // one for projected lights, usually six for point lights
-        public ShadowFrustum[] shadowFrustums = new ShadowFrustum[6];
+        //public int numShadowFrustums;      // one for projected lights, usually six for point lights
+        //public ShadowFrustum[] shadowFrustums = new ShadowFrustum[6];
 
-        public int viewCount;              // if == tr.viewCount, the light is on the viewDef->viewLights list
-        public ViewLight viewLight;
+        //public int viewCount;              // if == tr.viewCount, the light is on the viewDef->viewLights list
+        //public ViewLight viewLight;
 
-        public AreaReference references;                // each area the light is present in will have a lightRef
-        public Interaction firstInteraction;        // doubly linked list
-        public Interaction lastInteraction;
+        //public AreaReference references;                // each area the light is present in will have a lightRef
+        //public Interaction firstInteraction;        // doubly linked list
+        //public Interaction lastInteraction;
 
-        public DoublePortal foggedPortals;
+        //public DoublePortal foggedPortals;
     }
 
     public class RenderEntityLocal : IRenderEntity
@@ -63,38 +63,38 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public void ProjectOverlay(Plane[] localTextureAxis, Material material) => throw new NotImplementedException();
         public void RemoveDecals() => throw new NotImplementedException();
 
-        public RenderEntity parms;
+        //public RenderEntity parms;
 
-        public float[] modelMatrix = new float[16];      // this is just a rearrangement of parms.axis and parms.origin
+        //public float[] modelMatrix = new float[16];      // this is just a rearrangement of parms.axis and parms.origin
 
-        public RenderWorldLocal world;
-        public int index;                  // in world entityDefs
+        //public RenderWorldLocal world;
+        //public int index;                  // in world entityDefs
 
-        public int lastModifiedFrameNum;   // to determine if it is constantly changing, and should go in the dynamic frame memory, or kept in the cached memory
-        public bool archived;              // for demo writing
+        //public int lastModifiedFrameNum;   // to determine if it is constantly changing, and should go in the dynamic frame memory, or kept in the cached memory
+        //public bool archived;              // for demo writing
 
-        public IRenderModel dynamicModel;            // if parms.model->IsDynamicModel(), this is the generated data
-        public int dynamicModelFrameCount; // continuously animating dynamic models will recreate dynamicModel if this doesn't == tr.viewCount
-        public IRenderModel cachedDynamicModel;
+        //public IRenderModel dynamicModel;            // if parms.model->IsDynamicModel(), this is the generated data
+        //public int dynamicModelFrameCount; // continuously animating dynamic models will recreate dynamicModel if this doesn't == tr.viewCount
+        //public IRenderModel cachedDynamicModel;
 
-        public Bounds referenceBounds;       // the local bounds used to place entityRefs, either from parms or a model
+        //public Bounds referenceBounds;       // the local bounds used to place entityRefs, either from parms or a model
 
-        // a viewEntity_t is created whenever a idRenderEntityLocal is considered for inclusion in a given view, even if it turns out to not be visible
-        public int viewCount;              // if tr.viewCount == viewCount, viewEntity is valid, but the entity may still be off screen
-        public ViewEntity viewEntity;                // in frame temporary memory
+        //// a viewEntity_t is created whenever a idRenderEntityLocal is considered for inclusion in a given view, even if it turns out to not be visible
+        //public int viewCount;              // if tr.viewCount == viewCount, viewEntity is valid, but the entity may still be off screen
+        //public ViewEntity viewEntity;                // in frame temporary memory
 
-        public int visibleCount;
-        // if tr.viewCount == visibleCount, at least one ambient surface has actually been added by R_AddAmbientDrawsurfs
-        // note that an entity could still be in the view frustum and not be visible due to portal passing
+        //public int visibleCount;
+        //// if tr.viewCount == visibleCount, at least one ambient surface has actually been added by R_AddAmbientDrawsurfs
+        //// note that an entity could still be in the view frustum and not be visible due to portal passing
 
-        public RenderModelDecal decals;                 // chain of decals that have been projected on this model
-        public RenderModelOverlay overlay;              // blood overlays on animated models
+        //public RenderModelDecal decals;                 // chain of decals that have been projected on this model
+        //public RenderModelOverlay overlay;              // blood overlays on animated models
 
-        public AreaReference entityRefs;                // chain of all references
-        public Interaction firstInteraction;        // doubly linked list
-        public Interaction lastInteraction;
+        //public AreaReference entityRefs;                // chain of all references
+        //public Interaction firstInteraction;        // doubly linked list
+        //public Interaction lastInteraction;
 
-        public bool needsPortalSky;
+        //public bool needsPortalSky;
     }
 
 
