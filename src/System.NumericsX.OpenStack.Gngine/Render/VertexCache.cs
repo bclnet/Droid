@@ -389,7 +389,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             return block;
         }
 
-
         // automatically freed at the end of the next frame used for specular texture coordinates and gui drawing, which will change every frame.
         // will return NULL if the vertex cache is completely full As with Position(), this may not actually be a pointer you can access.
         //
@@ -575,7 +574,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // updates the counter for determining which temp space to use and which blocks can be purged Also prints debugging info when enabled
-        static bool EndFrame_bOnce = true;
+        static bool EndFrame_once = true;
         public void EndFrame()
         {
             VertCache block;
@@ -592,8 +591,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     $"static alloc:{staticCountThisFrame + staticCountThisFrame_Index}={(staticAllocThisFrame + staticAllocThisFrame_Index) / 1024}k used:{staticUseCount}={staticUseSize / 1024}k total:{staticCountTotal}={staticAllocTotal / 1024}k\n");
             }
 
-            if (staticAllocTotal > r_vertexBufferMegs.Integer * 1024 * 1024)
-                if (EndFrame_bOnce) { common.Printf($"VBO size exceeds {r_vertexBufferMegs.Integer}MB. Consider updating r_vertexBufferMegs.\n"); EndFrame_bOnce = false; }
+            if (EndFrame_once && staticAllocTotal > r_vertexBufferMegs.Integer * 1024 * 1024) { common.Printf($"VBO size exceeds {r_vertexBufferMegs.Integer}MB. Consider updating r_vertexBufferMegs.\n"); EndFrame_once = false; }
 
 #if false
             // if our total static count is above our working memory limit, start purging things
@@ -647,6 +645,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         const uint GL_MAP_INVALIDATE_RANGE_BIT = 0x0004;
         const uint GL_MAP_UNSYNCHRONIZED_BIT = 0x0020;
         const uint GL_MAP_WRITE_BIT = 0x0002;
+
         public unsafe void BeginBackEnd(int which)
         {
             //LOGI("BeginBackEnd list = %d, size index = %d, size = %d", listNum,dynamicAllocThisFrame_Index,dynamicAllocThisFrame);

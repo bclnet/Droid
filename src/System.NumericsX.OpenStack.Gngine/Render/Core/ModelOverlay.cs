@@ -1,12 +1,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.NumericsX;
-using System.NumericsX.OpenStack;
-using static Gengine.Render.TR;
+using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.OpenStack;
 using GlIndex = System.Int32;
 
-namespace Gengine.Render
+namespace System.NumericsX.OpenStack.Gngine.Render
 {
     public struct OverlayVertex
     {
@@ -31,7 +29,7 @@ namespace Gengine.Render
         public List<OverlaySurface> surfaces;
     }
 
-    public class RenderModelOverlay
+    public unsafe class RenderModelOverlay
     {
         const int MAX_OVERLAY_SURFACES = 16;
 
@@ -43,7 +41,7 @@ namespace Gengine.Render
 
             for (k = 0; k < materials.Count; k++)
             {
-                //for (i = 0; i < materials[k].surfaces.Count; i++) FreeSurface(ref materials[k].surfaces[i]);
+                for (i = 0; i < materials[k].surfaces.Count; i++) FreeSurface(materials[k].surfaces[i]);
                 materials[k].surfaces.Clear();
             }
             materials.Clear();
@@ -55,8 +53,7 @@ namespace Gengine.Render
         public static void Free(ref RenderModelOverlay overlay)
             => overlay = null;
 
-        //void FreeSurface(ref OverlaySurface surface)
-        //    => surface = null;
+        void FreeSurface(OverlaySurface surface) { }
 
         // Projects an overlay onto deformable geometry and can be added to a render entity to allow decals on top of dynamic models.
         // This does not generate tangent vectors, so it can't be used with light interaction shaders. Materials for overlays should always
@@ -71,10 +68,8 @@ namespace Gengine.Render
             for (surfNum = 0; surfNum < model.NumSurfaces; surfNum++)
             {
                 var surf = model.Surface(surfNum);
-                if (surf.geometry.numVerts > maxVerts)
-                    maxVerts = surf.geometry.numVerts;
-                if (surf.geometry.numIndexes > maxIndexes)
-                    maxIndexes = surf.geometry.numIndexes;
+                if (surf.geometry.numVerts > maxVerts) maxVerts = surf.geometry.numVerts;
+                if (surf.geometry.numIndexes > maxIndexes) maxIndexes = surf.geometry.numIndexes;
             }
 
             // make temporary buffers for the building process
@@ -85,29 +80,28 @@ namespace Gengine.Render
             for (surfNum = 0; surfNum < model.NumBaseSurfaces; surfNum++)
             {
                 var surf = model.Surface(surfNum);
-                if (surf.geometry == null || surf.shader == null)
-                    continue;
+                if (surf.geometry == null || surf.shader == null) continue;
 
                 // some surfaces can explicitly disallow overlays
-                if (!surf.shader.AllowOverlays)
-                    continue;
+                if (!surf.shader.AllowOverlays) continue;
 
                 var stri = surf.geometry;
+                var stri_verts = stri.verts.Value; var stri_indexes = stri.indexes.Value;
 
                 // try to cull the whole surface along the first texture axis
                 var d = stri.bounds.PlaneDistance(localTextureAxis[0]);
-                if (d < 0f || d > 1f)
-                    continue;
+                if (d < 0f || d > 1f) continue;
 
                 // try to cull the whole surface along the second texture axis
                 d = stri.bounds.PlaneDistance(localTextureAxis[1]);
-                if (d < 0f || d > 1f)
-                    continue;
+                if (d < 0f || d > 1f) continue;
 
                 var cullBits = stackalloc byte[stri.numVerts];
                 var texCoords = stackalloc Vector2[stri.numVerts];
 
-                Simd.OverlayPointCull(cullBits, texCoords, localTextureAxis, stri.verts, stri.numVerts);
+                fixed (Plane* localTextureAxisP = localTextureAxis)
+                fixed (DrawVert* vertsD = stri_verts)
+                    Simd.OverlayPointCull(cullBits, texCoords, localTextureAxisP, vertsD, stri.numVerts);
 
                 var vertexRemap = stackalloc GlIndex[stri.numVerts];
                 Simd.Memset(vertexRemap, -1, sizeof(GlIndex) * stri.numVerts);
@@ -118,20 +112,19 @@ namespace Gengine.Render
                 var triNum = 0;
                 for (var index = 0; index < stri.numIndexes; index += 3, triNum++)
                 {
-                    var v1 = stri.indexes[index + 0];
-                    var v2 = stri.indexes[index + 1];
-                    var v3 = stri.indexes[index + 2];
+                    var v1 = stri_indexes[index + 0];
+                    var v2 = stri_indexes[index + 1];
+                    var v3 = stri_indexes[index + 2];
 
                     // skip triangles completely off one side
-                    if ((cullBits[v1] & cullBits[v2] & cullBits[v3]) != 0)
-                        continue;
+                    if ((cullBits[v1] & cullBits[v2] & cullBits[v3]) != 0) continue;
 
                     // we could do more precise triangle culling, like the light interaction does, if desired
 
                     // keep this triangle
                     for (var vnum = 0; vnum < 3; vnum++)
                     {
-                        var ind = stri.indexes[index + vnum];
+                        var ind = stri_indexes[index + vnum];
                         if (vertexRemap[ind] == -1)
                         {
                             vertexRemap[ind] = numVerts;
@@ -146,8 +139,7 @@ namespace Gengine.Render
                     }
                 }
 
-                if (numIndexes == 0)
-                    continue;
+                if (numIndexes == 0) continue;
 
                 var s = new OverlaySurface
                 {
@@ -159,23 +151,13 @@ namespace Gengine.Render
                     numIndexes = numIndexes
                 };
 
-                for (i = 0; i < materials.Count; i++) if (materials[i].material == mtr) break;
+                for (i = 0; i < materials.Count; i++) if (materials[i].material == material) break;
                 if (i < materials.Count) materials[i].surfaces.Add(s);
-                else
-                {
-                    var mat = new OverlayMaterial { material = mtr };
-                    mat.surfaces.Add(s);
-                    materials.Add(mat);
-                }
+                else { var mat = new OverlayMaterial { material = material }; mat.surfaces.Add(s); materials.Add(mat); }
             }
 
             // remove the oldest overlay surfaces if there are too many per material
-            for (i = 0; i < materials.Count; i++)
-                while (materials[i].surfaces.Count > MAX_OVERLAY_SURFACES)
-                {
-                    //FreeSurface(ref materials[i].surfaces[0]);
-                    materials[i].surfaces.RemoveAt(0);
-                }
+            for (i = 0; i < materials.Count; i++) while (materials[i].surfaces.Count > MAX_OVERLAY_SURFACES) { FreeSurface(materials[i].surfaces[0]); materials[i].surfaces.RemoveAt(0); }
         }
 
         // Creates new model surfaces for baseModel, which should be a static instantiation of a dynamic model.
@@ -211,15 +193,13 @@ namespace Gengine.Render
                     numIndexes += materials[k].surfaces[i].numIndexes;
                 }
 
-                if (staticModel.FindSurfaceWithId(-1 - k, out surfaceNum))
-                    newSurf = staticModel.surfaces[surfaceNum];
-                else
+                if (staticModel.FindSurfaceWithId(-1 - k, out surfaceNum)) newSurf = staticModel.surfaces[surfaceNum];
+                else staticModel.surfaces.Add(newSurf = new ModelSurface
                 {
-                    newSurf = staticModel.surfaces.Alloc();
-                    newSurf.geometry = null;
-                    newSurf.shader = materials[k].material;
-                    newSurf.id = -1 - k;
-                }
+                    geometry = null,
+                    shader = materials[k].material,
+                    id = -1 - k
+                });
 
                 if (newSurf.geometry == null || newSurf.geometry.numVerts < numVerts || newSurf.geometry.numIndexes < numIndexes)
                 {
@@ -227,11 +207,12 @@ namespace Gengine.Render
                     newSurf.geometry = R_AllocStaticTriSurf();
                     R_AllocStaticTriSurfVerts(newSurf.geometry, numVerts);
                     R_AllocStaticTriSurfIndexes(newSurf.geometry, numIndexes);
-                    Simd.Memset(newSurf.geometry.verts, 0, numVerts * sizeof(newTri.verts[0]));
+                    fixed (DrawVert* vertsD = newSurf.geometry.verts.Value) Simd.Memset(vertsD, 0, numVerts * sizeof(DrawVert));
                 }
                 else R_FreeStaticTriSurfVertexCaches(newSurf.geometry);
 
                 newTri = newSurf.geometry;
+                var newTri_verts = newTri.verts.Value; var newTri_indexes = newTri.indexes.Value;
                 numVerts = numIndexes = 0;
 
                 for (i = 0; i < materials[k].surfaces.Count; i++)
@@ -247,29 +228,23 @@ namespace Gengine.Render
                     if (baseSurf == null || baseSurf.id != surf.surfaceId)
                     {
                         // find the surface with the correct id
-                        if (staticModel.FindSurfaceWithId(surf.surfaceId, out surf.surfaceNum))
-                            baseSurf = staticModel.Surface(surf.surfaceNum);
-                        else
-                        {
-                            // the surface with this id no longer exists
-                            //FreeSurface(ref surf);
-                            materials[k].surfaces.RemoveAt(i);
-                            i--;
-                            continue;
-                        }
+                        if (staticModel.FindSurfaceWithId(surf.surfaceId, out surf.surfaceNum)) baseSurf = staticModel.Surface(surf.surfaceNum);
+                        // the surface with this id no longer exists
+                        else { FreeSurface(surf); materials[k].surfaces.RemoveAt(i); i--; continue; }
                     }
 
                     // copy indexes;
-                    for (j = 0; j < surf.numIndexes; j++) newTri.indexes[numIndexes + j] = numVerts + surf.indexes[j];
+                    for (j = 0; j < surf.numIndexes; j++) newTri_indexes[numIndexes + j] = numVerts + surf.indexes[j];
                     numIndexes += surf.numIndexes;
 
                     // copy vertices
+                    var baseSurf_geometry_verts = baseSurf.geometry.verts.Value;
                     for (j = 0; j < surf.numVerts; j++)
                     {
                         var overlayVert = surf.verts[j];
 
-                        newTri.verts[numVerts].st.x = overlayVert.st0;
-                        newTri.verts[numVerts].st.y = overlayVert.st1;
+                        newTri_verts[numVerts].st.x = overlayVert.st0;
+                        newTri_verts[numVerts].st.y = overlayVert.st1;
 
                         if (overlayVert.vertexNum >= baseSurf.geometry.numVerts)
                         {
@@ -280,7 +255,7 @@ namespace Gengine.Render
                             staticModel.DeleteSurfaceWithId(newSurf.id);
                             return;
                         }
-                        newTri.verts[numVerts].xyz = baseSurf.geometry.verts[overlayVert.vertexNum].xyz;
+                        newTri_verts[numVerts].xyz = baseSurf_geometry_verts[overlayVert.vertexNum].xyz;
                         numVerts++;
                     }
                 }

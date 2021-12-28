@@ -1,11 +1,7 @@
-using System.NumericsX.OpenStack.Gngine.CM;
-using System.NumericsX.OpenStack.Gngine.Framework;
-using System.NumericsX.OpenStack.Gngine.Framework.Async;
 using System.NumericsX.OpenStack.Gngine.Render;
-using System.NumericsX.OpenStack.Gngine.UI;
 using System.Runtime.InteropServices;
-using static System.NumericsX.OpenStack.OpenStack;
 using static System.NumericsX.OpenStack.Gngine.Render.R;
+using static System.NumericsX.OpenStack.OpenStack;
 
 namespace System.NumericsX.OpenStack.Gngine
 {
@@ -19,6 +15,21 @@ namespace System.NumericsX.OpenStack.Gngine
         static volatile uint smpFrame;
 
         const int MEMORY_BLOCK_SIZE = 0x100000;
+
+        public static ScreenRect R_ScreenRectFromViewFrustumBounds(Bounds bounds)
+            => new()
+            {
+                x1 = (short)MathX.FtoiFast(0.5f * (1f - bounds[1].y) * (tr.viewDef.viewport.x2 - tr.viewDef.viewport.x1)),
+                x2 = (short)MathX.FtoiFast(0.5f * (1f - bounds[0].y) * (tr.viewDef.viewport.x2 - tr.viewDef.viewport.x1)),
+                y1 = (short)MathX.FtoiFast(0.5f * (1f + bounds[0].z) * (tr.viewDef.viewport.y2 - tr.viewDef.viewport.y1)),
+                y2 = (short)MathX.FtoiFast(0.5f * (1f + bounds[1].z) * (tr.viewDef.viewport.y2 - tr.viewDef.viewport.y1))
+            };
+
+        static Vector4[] R_ShowColoredScreenRect_colors = { colorRed, colorGreen, colorBlue, colorYellow, colorMagenta, colorCyan, colorWhite, colorPurple };
+        public static void R_ShowColoredScreenRect(ScreenRect rect, int colorIndex)
+        {
+            if (!rect.IsEmpty) tr.viewDef.renderWorld.DebugScreenRect(R_ShowColoredScreenRect_colors[colorIndex & 7], rect, tr.viewDef);
+        }
 
         public static void R_ToggleSmpFrame()
         {
@@ -129,11 +140,22 @@ namespace System.NumericsX.OpenStack.Gngine
             Simd.Memset(buf, 0, bytes);
             return buf;
         }
+        public static T R_ClearedStaticAllocT<T>() where T : new()
+        {
+            tr.pc.c_alloc++;
+            tr.staticAllocCount += Marshal.SizeOf<T>();
+            return new T();
+        }
 
         public static void R_StaticFree(void* data)
         {
             tr.pc.c_free++;
             Marshal.FreeHGlobal((IntPtr)data);
+        }
+        public static void R_StaticFreeT<T>(ref T data)
+        {
+            tr.pc.c_free++;
+            data = default;
         }
 
         // This data will be automatically freed when the current frame's back end completes.

@@ -76,6 +76,7 @@ namespace System.NumericsX
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { fixed (float* p = &a) return p[index]; }
+            set { fixed (float* p = &a) p[index] = value; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

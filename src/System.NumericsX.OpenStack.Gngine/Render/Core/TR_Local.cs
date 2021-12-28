@@ -128,9 +128,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
     }
 
     // areas have references to hold all the lights and entities in them
-    public class AreaReference
+    public class AreaReference : BlockAllocElement<AreaReference>
     {
-        public AreaReference areaNext;              // chain in the area
+        //public AreaReference areaNext;              // chain in the area
         public AreaReference areaPrev;
         public AreaReference ownerNext;             // chain on either the entityDef or lightDef
         public IRenderEntity entity;                    // only one of entity / light will be non-NULL
@@ -175,8 +175,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public ViewLight viewLight;
 
         public AreaReference references;                // each area the light is present in will have a lightRef
-        //public Interaction firstInteraction;        // doubly linked list
-        //public Interaction lastInteraction;
+        public Interaction firstInteraction;        // doubly linked list
+        public Interaction lastInteraction;
 
         public DoublePortal foggedPortals;
     }
@@ -265,12 +265,23 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public DrawSurf translucentInteractions;   // get shadows from everything
     }
 
+    public unsafe delegate void ForEyeDelegate(float* matrix);
     // a viewEntity is created whenever a idRenderEntityLocal is considered for inclusion in the current view, but it may still turn out to be culled.
     // viewEntity are allocated on the frame temporary stack memory a viewEntity contains everything that the back end needs out of a idRenderEntityLocal,
     // which the front end may be modifying simultaniously if running in SMP mode. A single entityDef can generate multiple viewEntity_t in a single frame, as when seen in a mirror
     [StructLayout(LayoutKind.Explicit)]
     public unsafe struct ViewEntity_Union
     {
+        public void eyeView(int eye, ForEyeDelegate action)
+        {
+            switch (eye)
+            {
+                case 0: fixed (float* matrixF = eyeViewMatrix0) action(matrixF); return;
+                case 1: fixed (float* matrixF = eyeViewMatrix1) action(matrixF); return;
+                case 2: fixed (float* matrixF = eyeViewMatrix2) action(matrixF); return;
+                default: throw new ArgumentOutOfRangeException(nameof(eye));
+            }
+        }
         // local coords to left/right/center eye coords
         [FieldOffset(0)] public fixed float eyeViewMatrix0[16];
         [FieldOffset(0)] public fixed float eyeViewMatrix1[16];
@@ -297,6 +308,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public float[] modelMatrix = new float[16];      // local coords to global coords
 
         public ViewEntity_Union u;
+
+        internal void memset()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     // viewDefs are allocated on the frame temporary stack memory
@@ -461,11 +477,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         // the currently building command list commands can be inserted at the front if needed, as for required dynamically generated textures
         public EmptyCommand cmdHead, cmdTail;     // may be of other command type based on commandId
-    }
-
-    partial class R
-    {
-        public static readonly FrameData frameData = new();
     }
 
     public class PerformanceCounters

@@ -1,6 +1,3 @@
-using System;
-using System.NumericsX;
-using System.NumericsX.OpenStack;
 using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.OpenStack;
@@ -9,19 +6,12 @@ using GlIndex = System.Int32;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
 {
-    public partial class Interaction
-    {
-        internal static readonly SrfTriangles LIGHT_TRIS_DEFERRED = new();
-        internal static readonly byte[] LIGHT_CULL_ALL_FRONT = Array.Empty<byte>();
-        const float LIGHT_CLIP_EPSILON = 0.1f;
-    }
-
     public unsafe struct SrfCullInfo
     {
         // For each triangle a byte set to 1 if facing the light origin.
         public byte* facing;
         // For each vertex a byte with the bits [0-5] set if the vertex is at the back side of the corresponding clip plane. If the 'cullBits' pointer equals LIGHT_CULL_ALL_FRONT all vertices are at the front of all the clip planes.
-        public byte[] cullBits;
+        public byte* cullBits;
         // Clip planes in surface space used to calculate the cull bits.
         public Plane[] localClipPlanes;
     }
@@ -39,14 +29,18 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public SrfCullInfo cullInfo;
     }
 
-    class AreaNumRef
+    public class AreaNumRef : BlockAllocElement<AreaNumRef>
     {
         public AreaNumRef next;
         public int areaNum;
     }
 
-    partial class Interaction
+    public unsafe partial class Interaction : BlockAllocElement<Interaction>
     {
+        //internal static readonly SrfTriangles LIGHT_TRIS_DEFERRED = new();
+        //internal static readonly byte[] LIGHT_CULL_ALL_FRONT = Array.Empty<byte>();
+        //const float LIGHT_CLIP_EPSILON = 0.1f;
+
         // this may be 0 if the light and entity do not actually intersect -1 = an untested interaction
         public int numSurfaces;
 
@@ -115,7 +109,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             else edef.lastInteraction = interaction;
 
             // update the interaction table
-            if (renderWorld.interactionTable)
+            if (renderWorld.interactionTable != null)
             {
                 var index = ldef.index * renderWorld.interactionTableWidth + edef.index;
                 if (renderWorld.interactionTable[index] != null) common.Error("Interaction::AllocAndLink: non null table entry");
@@ -131,7 +125,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         {
             // clear the table pointer
             var renderWorld = this.lightDef.world;
-            if (renderWorld.interactionTable)
+            if (renderWorld.interactionTable != null)
             {
                 var index = this.lightDef.index * renderWorld.interactionTableWidth + this.entityDef.index;
                 if (renderWorld.interactionTable[index] != this) common.Error("Interaction::UnlinkAndFree: interactionTable wasn't set");
@@ -234,18 +228,18 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // If we know that we are "off to the side" of an infinite shadow volume, we can draw it without caps in zpass mode
         static bool R_PotentiallyInsideInfiniteShadow(SrfTriangles occluder, in Vector3 localView, in Vector3 localLight)
         {
-            Bounds exp;
+            Bounds exp = default;
 
             // expand the bounds to account for the near clip plane, because the view could be mathematically outside, but if the near clip plane chops a volume edge, the zpass rendering would fail.
             float znear = R.r_znear.Float;
             if (tr.viewDef.renderView.cramZNear) znear *= 0.25f;
             float stretch = znear * 2;  // in theory, should vary with FOV
-            exp[0][0] = occluder.bounds[0][0] - stretch;
-            exp[0][1] = occluder.bounds[0][1] - stretch;
-            exp[0][2] = occluder.bounds[0][2] - stretch;
-            exp[1][0] = occluder.bounds[1][0] + stretch;
-            exp[1][1] = occluder.bounds[1][1] + stretch;
-            exp[1][2] = occluder.bounds[1][2] + stretch;
+            exp.b0.x = occluder.bounds.b0.x - stretch;
+            exp.b0.y = occluder.bounds.b0.y - stretch;
+            exp.b0.z = occluder.bounds.b0.z - stretch;
+            exp.b1.x = occluder.bounds.b1.x + stretch;
+            exp.b1.y = occluder.bounds.b1.y + stretch;
+            exp.b1.z = occluder.bounds.b1.z + stretch;
 
             if (exp.ContainsPoint(localView)) return true;
             if (exp.ContainsPoint(localLight)) return true;
@@ -282,7 +276,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // the view is definitely not inside the projected shadow
             return false;
         }
-
 
         // makes sure all necessary light surfaces and shadow surfaces are created, and calls R_LinkLightSurf() for each one
         // If the model doesn't have any surfaces that need interactions with this type of light, it can be skipped, but we might need to instantiate the dynamic model to find out
@@ -444,7 +437,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // Called when a entityDef and a lightDef are both present in a portalArea, and might be visible.Performs cull checking before doing the expensive computations.
         // References tr.viewCount so lighting surfaces will only be created if the ambient surface is visible, otherwise it will be marked as deferred.
         // The results of this are cached and valid until the light or entity change.
-        void CreateInteraction(RenderModel model)
+        void CreateInteraction(IRenderModel model)
         {
             Material lightShader = lightDef.lightShader;
             Material shader;
@@ -453,7 +446,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             tr.pc.c_createInteractions++;
 
-            bounds = model.Bounds(&entityDef.parms);
+            bounds = model.Bounds(entityDef.parms);
 
             // if it doesn't contact the light frustum, none of the surfaces will
             if (R_CullLocalBox(bounds, entityDef.modelMatrix, 6, lightDef.frustum)) { MakeEmpty(); return; }
@@ -465,7 +458,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (bounds[1].x - bounds[0].x > 3000) shadowGen = SG_STATIC;
 
             // create slots for each of the model's surfaces
-            numSurfaces = model.NumSurfaces();
+            numSurfaces = model.NumSurfaces;
             surfaces = R_ClearedStaticAllocMany<SurfaceInteraction>(numSurfaces);
 
             interactionGenerated = false;
@@ -512,12 +505,12 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 if (HasShadows && shader.SurfaceCastsShadow && tri.silEdges != null)
                 {
                     // if the light has an optimized shadow volume, don't create shadows for any models that are part of the base areas
-                    if (lightDef.parms.prelightModel == null || !model.IsStaticWorldModel() || !r_useOptimizedShadows.Bool)
+                    if (lightDef.parms.prelightModel == null || !model.IsStaticWorldModel || !r_useOptimizedShadows.Bool)
                     {
                         // this is the only place during gameplay (outside the utilities) that R_CreateShadowVolume() is called
                         sint.shadowTris = R_CreateShadowVolume(entityDef, tri, lightDef, shadowGen, sint.cullInfo);
                         if (sint.shadowTris != null)
-                            if (shader.Coverage != MC.OPAQUE || (!r_skipSuppress.Bool && entityDef.parms.suppressSurfaceInViewID))
+                            if (shader.Coverage != MC.OPAQUE || (!r_skipSuppress.Bool && entityDef.parms.suppressSurfaceInViewID != 0))
                             {
                                 // if any surface is a shadow-casting perforated or translucent surface, or the base surface is suppressed in the view (world weapon shadows) we can't use
                                 // the external shadow optimizations because we can see through some of the faces
@@ -637,7 +630,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
     }
 
-    unsafe partial class TR
+    unsafe partial class R
     {
         // Determines which triangles of the surface are facing towards the light origin.
         // The facing array should be allocated with one extra index than the number of surface triangles, which will be used to handle dangling edge silhouettes.
@@ -645,7 +638,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         {
             if (cullInfo.facing != null) return;
 
-            R_GlobalPointToLocal(ent.modelMatrix, light.globalLightOrigin, out var localLightOrigin);
+            Vector3 localLightOrigin;
+            fixed (float* modelMatrixF = ent.modelMatrix) R_GlobalPointToLocal(modelMatrixF, light.globalLightOrigin, out localLightOrigin);
 
             var numFaces = tri.numIndexes / 3;
 
@@ -657,15 +651,15 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             var planeSide = stackalloc float[numFaces + floatX.ALLOC16]; planeSide = (float*)_alloca16(planeSide);
 
             // exact geometric cull against face
-            Simd.Dotcp(planeSide, localLightOrigin, tri.facePlanes, numFaces);
-            Simd.CmpGE(cullInfo.facing, planeSide, 0.0f, numFaces);
+            fixed (Plane* facePlanesP = tri.facePlanes.Value) Simd.Dotcp(planeSide, localLightOrigin, facePlanesP, numFaces);
+            Simd.CmpGE(cullInfo.facing, planeSide, 0f, numFaces);
 
             cullInfo.facing[numFaces] = 1;  // for dangling edges to reference
         }
 
         // We want to cull a little on the sloppy side, because the pre-clipping of geometry to the lights in dmap will give many cases that are right
         // at the border we throw things out on the border, because if any one vertex is clearly inside, the entire triangle will be accepted.
-        static void R_CalcInteractionCullBits(RenderEntityLocal ent, SrfTriangles tri, RenderLightLocal light, ref SrfCullInfo cullInfo)
+        static void R_CalcInteractionCullBits(IRenderEntity ent, SrfTriangles tri, IRenderLight light, ref SrfCullInfo cullInfo)
         {
             int i, frontBits;
 
@@ -676,17 +670,17 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // cull the triangle surface bounding box
             for (i = 0; i < 6; i++)
             {
-                R_GlobalPlaneToLocal(ent.modelMatrix, -light.frustum[i], cullInfo.localClipPlanes[i]);
+                fixed (float* modelMatrixF = ent.modelMatrix) R_GlobalPlaneToLocal(modelMatrixF, -light.frustum[i], out cullInfo.localClipPlanes[i]);
 
                 // get front bits for the whole surface
-                if (tri.bounds.PlaneDistance(cullInfo.localClipPlanes[i]) >= LIGHT_CLIP_EPSILON) frontBits |= 1 << i;
+                if (tri.bounds.PlaneDistance(cullInfo.localClipPlanes[i]) >= Interaction.LIGHT_CLIP_EPSILON) frontBits |= 1 << i;
             }
 
             // if the surface is completely inside the light frustum
-            if (frontBits == ((1 << 6) - 1)) { cullInfo.cullBits = LIGHT_CULL_ALL_FRONT; return; }
+            if (frontBits == ((1 << 6) - 1)) { cullInfo.cullBits = Interaction.LIGHT_CULL_ALL_FRONT; return; }
 
             cullInfo.cullBits = (byte*)R_StaticAlloc(tri.numVerts * sizeof(byte));
-            Simd.Memset(cullInfo.cullBits, 0, tri.numVerts * sizeof(byte);
+            Simd.Memset(cullInfo.cullBits, 0, tri.numVerts * sizeof(byte));
 
             var planeSide = stackalloc float[tri.numVerts + floatX.ALLOC16]; planeSide = (float*)_alloca16(planeSide);
 
@@ -694,47 +688,45 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {
                 // if completely infront of this clipping plane
                 if ((frontBits & (1 << i)) != 0) continue;
-                Simd.Dotpd(planeSide, cullInfo.localClipPlanes[i], tri.verts, tri.numVerts);
-                Simd.CmpLT(cullInfo.cullBits, i, planeSide, LIGHT_CLIP_EPSILON, tri.numVerts);
+                fixed (DrawVert* vertsD = tri.verts.Value) Simd.Dotpd(planeSide, cullInfo.localClipPlanes[i], vertsD, tri.numVerts);
+                Simd.CmpLTb(cullInfo.cullBits, (byte)i, planeSide, Interaction.LIGHT_CLIP_EPSILON, tri.numVerts);
             }
         }
 
         static void R_FreeInteractionCullInfo(SrfCullInfo cullInfo)
         {
-            if (cullInfo.facing != null)
-            {
-                R_StaticFree(cullInfo.facing);
-                cullInfo.facing = null;
-            }
+            if (cullInfo.facing != null) { R_StaticFree(cullInfo.facing); cullInfo.facing = null; }
             if (cullInfo.cullBits != null)
             {
-                if (cullInfo.cullBits != LIGHT_CULL_ALL_FRONT) R_StaticFree(cullInfo.cullBits);
+                if (cullInfo.cullBits != Interaction.LIGHT_CULL_ALL_FRONT) R_StaticFree(cullInfo.cullBits);
                 cullInfo.cullBits = null;
             }
         }
 
         struct ClipTri
         {
-            const int MAX_CLIPPED_POINTS = 20;
+            public const int MAX_CLIPPED_POINTS = 20;
             public int numVerts;
-            public Vector3 verts = new Vector3[MAX_CLIPPED_POINTS];
+            public Vector3 verts00; public Vector3 verts01; public Vector3 verts02; public Vector3 verts03; public Vector3 verts04;
+            public Vector3 verts05; public Vector3 verts06; public Vector3 verts07; public Vector3 verts08; public Vector3 verts09; 
+            public Vector3 verts10; public Vector3 verts11; public Vector3 verts12; public Vector3 verts13; public Vector3 verts14;
+            public Vector3 verts15; public Vector3 verts16; public Vector3 verts17; public Vector3 verts18; public Vector3 verts19;
         }
 
         // Clips a triangle from one buffer to another, setting edge flags The returned buffer may be the same as inNum if no clipping is done If entirely clipped away, clipTris[returned].numVerts == 0
         // I have some worries about edge flag cases when polygons are clipped multiple times near the epsilon.
         static int R_ChopWinding(ClipTri* clipTris, int inNum, in Plane plane)
         {
-            ClipTri i, o;
-            var dists = stackalloc float[MAX_CLIPPED_POINTS];
-            var sides = stackalloc int[MAX_CLIPPED_POINTS];
+            var dists = stackalloc float[ClipTri.MAX_CLIPPED_POINTS];
+            var sides = stackalloc int[ClipTri.MAX_CLIPPED_POINTS];
             var counts = stackalloc int[3];
             float dot;
             int i2, j;
             Vector3 mid;
             bool front;
 
-            i = &clipTris[inNum];
-            o = &clipTris[inNum ^ 1];
+            ref ClipTri i = ref clipTris[inNum];
+            ref ClipTri o = ref clipTris[inNum ^ 1];
             counts[0] = counts[1] = counts[2] = 0;
 
             // determine sides for each point
@@ -743,14 +735,14 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {
                 dot = i.verts[i2] * plane.Normal + plane[3];
                 dists[i2] = dot;
-                if (dot < LIGHT_CLIP_EPSILON) sides[i2] = SIDE_BACK; // slop onto the back
-                else { sides[i2] = SIDE_FRONT; if (dot > LIGHT_CLIP_EPSILON) front = true; }
+                if (dot < Interaction.LIGHT_CLIP_EPSILON) sides[i2] = SIDE_BACK; // slop onto the back
+                else { sides[i2] = SIDE_FRONT; if (dot > Interaction.LIGHT_CLIP_EPSILON) front = true; }
                 counts[sides[i2]]++;
             }
 
             // if none in front, it is completely clipped away
             if (!front) { i.numVerts = 0; return inNum; }
-            if (!counts[SIDE_BACK]) return inNum;       // inout stays the same
+            if (counts[SIDE_BACK] == 0) return inNum;       // inout stays the same
 
             // avoid wrapping checks by duplicating first value to end
             sides[i] = sides[0];
@@ -784,9 +776,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             int i, p; var pingPong = stackalloc ClipTri[2];
 
             pingPong[0].numVerts = 3;
-            pingPong[0].verts[0] = a;
-            pingPong[0].verts[1] = b;
-            pingPong[0].verts[2] = c;
+            pingPong[0].verts00 = a;
+            pingPong[0].verts01 = b;
+            pingPong[0].verts02 = c;
 
             p = 0;
             for (i = 0; i < 6; i++)
@@ -800,14 +792,15 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // The resulting surface will be a subset of the original triangles, it will never clip triangles, but it may cull on a per-triangle basis.
-        static SrfTriangles R_CreateLightTris(RenderEntityLocal ent, SrfTriangles tri, RenderLightLocal light, Material shader, in SrfCullInfo cullInfo)
+        static SrfTriangles R_CreateLightTris(IRenderEntity ent, SrfTriangles tri, IRenderLight light, Material shader, ref SrfCullInfo cullInfo)
         {
             int i, numIndexes;
             GlIndex[] indexes;
             SrfTriangles newTri;
             int c_backfaced, c_distance;
-            Bounds bounds;
-            bool includeBackFaces, faceNum;
+            Bounds bounds = default;
+            bool includeBackFaces; int faceNum;
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
 
             tr.pc.c_createLightTris++;
             c_backfaced = 0;
@@ -830,8 +823,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             R_ReferenceStaticTriSurfVerts(newTri, tri);
 
             // calculate cull information
-            if (!includeBackFaces) R_CalcInteractionFacing(ent, tri, light, cullInfo);
-            R_CalcInteractionCullBits(ent, tri, light, cullInfo);
+            if (!includeBackFaces) R_CalcInteractionFacing(ent, tri, light, ref cullInfo);
+            R_CalcInteractionCullBits(ent, tri, light, ref cullInfo);
 
             // if the surface is completely inside the light frustum
             if (cullInfo.cullBits == Interaction.LIGHT_CULL_ALL_FRONT)
@@ -850,19 +843,21 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     R_AllocStaticTriSurfIndexes(newTri, tri.numIndexes);
 
                     // back face cull the individual triangles
-                    indexes = newTri.indexes;
+                    indexes = newTri.indexes.Value;
                     var facing = cullInfo.facing;
-                    for (faceNum = i = 0; i < tri.numIndexes; i += 3, faceNum++)
+                    for (faceNum = 0, i = 0; i < tri.numIndexes; i += 3, faceNum++)
                     {
                         if (facing[faceNum] != 0) { c_backfaced++; continue; }
-                        indexes[numIndexes + 0] = tri.indexes[i + 0];
-                        indexes[numIndexes + 1] = tri.indexes[i + 1];
-                        indexes[numIndexes + 2] = tri.indexes[i + 2];
+                        indexes[numIndexes + 0] = tri_indexes[i + 0];
+                        indexes[numIndexes + 1] = tri_indexes[i + 1];
+                        indexes[numIndexes + 2] = tri_indexes[i + 2];
                         numIndexes += 3;
                     }
 
                     // get bounds for the surface
-                    Simd.MinMaxdi(bounds[0], bounds[1], tri.verts, indexes, numIndexes);
+                    fixed (DrawVert* vertsD = tri_verts)
+                    fixed (GlIndex* indexesG = indexes)
+                        Simd.MinMaxdi(out bounds.b0, out bounds.b1, vertsD, indexesG, numIndexes);
 
                     // decrease the size of the memory block to the size of the number of used indexes
                     R_ResizeStaticTriSurfIndexes(newTri, numIndexes);
@@ -875,7 +870,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 R_AllocStaticTriSurfIndexes(newTri, tri.numIndexes);
 
                 // cull individual triangles
-                indexes = newTri.indexes;
+                indexes = newTri.indexes.Value;
                 var facing = cullInfo.facing;
                 var cullBits = cullInfo.cullBits;
                 for (faceNum = i = 0; i < tri.numIndexes; i += 3, faceNum++)
@@ -883,23 +878,21 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     int i1, i2, i3;
 
                     // if we aren't self shadowing, let back facing triangles get through so the smooth shaded bump maps light all the way around
-                    if (!includeBackFaces)
-                        if (facing[faceNum] == 0) { c_backfaced++; continue; } // back face cull
+                    if (!includeBackFaces && facing[faceNum] == 0) { c_backfaced++; continue; } // back face cull
 
-                    i1 = tri.indexes[i + 0];
-                    i2 = tri.indexes[i + 1];
-                    i3 = tri.indexes[i + 2];
+                    i1 = tri_indexes[i + 0];
+                    i2 = tri_indexes[i + 1];
+                    i3 = tri_indexes[i + 2];
 
                     // fast cull outside the frustum. if all three points are off one plane side, it definately isn't visible
                     if (cullBits[i1] != 0 & cullBits[i2] != 0 & cullBits[i3] != 0) { c_distance++; continue; }
 
-                    if (r_usePreciseTriangleInteractions.Bool)
-                        // do a precise clipped cull if none of the points is completely inside the frustum. note that we do not actually use the clipped triangle, which would have Z fighting issues.
-                        if (cullBits[i1] != 0 && cullBits[i2] != 0 && cullBits[i3] != 0)
-                        {
-                            var cull = cullBits[i1] | cullBits[i2] | cullBits[i3];
-                            if (!R_ClipTriangleToLight(tri.verts[i1].xyz, tri.verts[i2].xyz, tri.verts[i3].xyz, cull, cullInfo.localClipPlanes)) continue;
-                        }
+                    // do a precise clipped cull if none of the points is completely inside the frustum. note that we do not actually use the clipped triangle, which would have Z fighting issues.
+                    if (r_usePreciseTriangleInteractions.Bool && cullBits[i1] != 0 && cullBits[i2] != 0 && cullBits[i3] != 0)
+                    {
+                        var cull = cullBits[i1] | cullBits[i2] | cullBits[i3];
+                        if (!R_ClipTriangleToLight(tri_verts[i1].xyz, tri_verts[i2].xyz, tri_verts[i3].xyz, cull, cullInfo.localClipPlanes)) continue;
+                    }
 
                     // add to the list
                     indexes[numIndexes + 0] = i1;
@@ -909,7 +902,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 }
 
                 // get bounds for the surface
-                Simd.MinMaxdi(bounds[0], bounds[1], tri.verts, indexes, numIndexes);
+                fixed (DrawVert* vertsD = tri_verts)
+                fixed (GlIndex* indexesG = indexes)
+                    Simd.MinMaxdi(out bounds.b0, out bounds.b1, vertsD, indexesG, numIndexes);
 
                 // decrease the size of the memory block to the size of the number of used indexes
                 R_ResizeStaticTriSurfIndexes(newTri, numIndexes);
@@ -928,7 +923,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 lightTris = 0, lightTriVerts = 0, lightTriIndexes = 0,
                 shadowTris = 0, shadowTriVerts = 0, shadowTriIndexes = 0;
 
-            for (var i = 0; i < tr.primaryWorld.entityDefs.Num(); i++)
+            for (var i = 0; i < tr.primaryWorld.entityDefs.Count; i++)
             {
                 var def = tr.primaryWorld.entityDefs[i];
                 if (def == null) continue;
@@ -938,7 +933,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 for (var inter = def.firstInteraction; inter != null; inter = inter.entityNext)
                 {
                     interactions++;
-                    total += inter.MemoryUsed();
+                    total += inter.MemoryUsed;
 
                     if (inter.IsDeferred) { deferredInteractions++; continue; }
                     if (inter.IsEmpty) { emptyInteractions++; continue; }
@@ -946,13 +941,13 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     for (var j = 0; j < inter.numSurfaces; j++)
                     {
                         var srf = inter.surfaces[j];
-                        if (srf.lightTris && srf.lightTris != Interaction.LIGHT_TRIS_DEFERRED)
+                        if (srf.lightTris != null && srf.lightTris != Interaction.LIGHT_TRIS_DEFERRED)
                         {
                             lightTris++;
                             lightTriVerts += srf.lightTris.numVerts;
                             lightTriIndexes += srf.lightTris.numIndexes;
                         }
-                        if (srf.shadowTris)
+                        if (srf.shadowTris != null)
                         {
                             shadowTris++;
                             shadowTriVerts += srf.shadowTris.numVerts;

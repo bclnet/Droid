@@ -1,17 +1,11 @@
 #define DYNAMIC_BLOCK_ALLOC_CHECK
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace System.NumericsX
 {
-    public class DynamicElement<T>
-    {
-        public T[] Value;
-        public GCHandle ValueHandle;
-        public Memory<T> Memory;
-    }
-
-    class DynamicBlock<T> : DynamicElement<T>
+    class DynamicBlock<T> : DynamicElement<T> where T : new()
     {
         public int Size => Math.Abs(size);
         public void SetSize(int s, bool isBaseBlock) => size = isBaseBlock ? -s : s;
@@ -28,7 +22,7 @@ namespace System.NumericsX
         public BTree<DynamicBlock<T>, int>.Node node;			// node in the B-Tree with free blocks
     }
 
-    public class DynamicBlockAlloc<T>
+    public class DynamicBlockAlloc<T> where T : new()
     {
         int baseBlockSize;
         int minBlockSize;
@@ -61,13 +55,17 @@ namespace System.NumericsX
         {
             this.baseBlockSize = baseBlockSize;
             this.minBlockSize = minBlockSize;
-            this.sizeofT = sizeofT;
-            this.factory = factory;
+            this.sizeofT = Marshal.SizeOf<T>();
+            this.factory = num => Enumerable.Repeat(new T(), num).ToArray();
         }
+        public DynamicBlockAlloc()
+            => Clear();
 
-        public DynamicBlockAlloc() => Clear();
-        public void Dispose() => Shutdown();
-        public void Init() => freeTree.Init();
+        public void Dispose()
+            => Shutdown();
+
+        public void Init()
+            => freeTree.Init();
 
         public void Shutdown()
         {
@@ -95,7 +93,7 @@ namespace System.NumericsX
 
             for (var i = numBaseBlocks; i < numBlocks; i++)
             {
-                block = new DynamicBlock<T> { Value = factory(baseBlockSize) }; block.Memory = block.Value.AsMemory();
+                block = new DynamicBlock<T> { Value = factory(baseBlockSize) }; // block.Memory = block.Value.AsMemory();
                 if (pinMemory) block.ValueHandle = GCHandle.Alloc(block.Value);
                 if (lockMemory) throw new NotImplementedException(); //sys.LockMemory(block.Buffer, baseBlockSize);
 #if DYNAMIC_BLOCK_ALLOC_CHECK
@@ -157,8 +155,7 @@ namespace System.NumericsX
         {
             numAllocs++;
 
-            if (num <= 0)
-                return null;
+            if (num <= 0) return null;
 
             var block = AllocInternal(num);
             if (block == null) return null;
@@ -171,7 +168,6 @@ namespace System.NumericsX
 
             numUsedBlocks++;
             usedBlockMemory += block.Size;
-
             return block;
         }
 
@@ -193,7 +189,6 @@ namespace System.NumericsX
 #endif
 
             usedBlockMemory += block.Size;
-
             return block;
         }
 
@@ -274,7 +269,7 @@ namespace System.NumericsX
             else if (allowAllocs)
             {
                 var allocSize = Math.Max(baseBlockSize, alignedBytes);
-                block = new DynamicBlock<T> { Value = factory(allocSize) }; block.Memory = block.Value.AsMemory();
+                block = new DynamicBlock<T> { Value = factory(allocSize) }; //block.Memory = block.Value.AsMemory();
                 if (pinMemory) block.ValueHandle = GCHandle.Alloc(block.Value);
                 if (lockMemory) throw new NotImplementedException(); //sys.LockMemory(block, baseBlockSize);
 #if DYNAMIC_BLOCK_ALLOC_CHECK
@@ -332,7 +327,7 @@ namespace System.NumericsX
             // if the unused space at the end of this block is large enough to hold a block with at least one element
             if (block.Size - alignedBytes < Math.Max(minBlockSize, sizeofT)) return block;
 
-            var newBlock = new DynamicBlock<T> { Value = block.Value, Memory = block.Value.AsMemory(alignedBytes) };
+            var newBlock = new DynamicBlock<T> { Value = block.Value }; //, Memory = block.Value.AsMemory(alignedBytes) };
 #if DYNAMIC_BLOCK_ALLOC_CHECK
             Array.Copy(blockId, newBlock.id, newBlock.id.Length);
             newBlock.allocator = this;

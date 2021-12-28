@@ -769,9 +769,13 @@ namespace System.NumericsX
 
         // Old 3D vector macros, should no longer be used.
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float DotProduct(in Vector3 a, Span<float> b) => a.x * b[0] + a.y * b[1] + a.z * b[2];
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float DotProduct(in Vector3 a, float* b) => a.x * b[0] + a.y * b[1] + a.z * b[2];
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)] public static float DotProduct(in Vector3 a, Span<float> b) => a.x * b[0] + a.y * b[1] + a.z * b[2];
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float DotProduct(in Plane a, float* b) => a.a * b[0] + a.b * b[1] + a.c * b[2];
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static float DotProduct(in Plane a, Span<float> b) => a.a * b[0] + a.b * b[1] + a.c * b[2];
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorSubtract(in Vector3 a, Span<float> b, ref Vector3 c) { c.x = a.x - b[0]; c.y = a.y - b[1]; c.z = a.z - b[2]; }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorSubtract(in Vector3 a, float* b, ref Vector3 c) { c.x = a.x - b[0]; c.y = a.y - b[1]; c.z = a.z - b[2]; }
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorSubtract(in Vector3 a, Span<float> b, ref Vector3 c) { c.x = a.x - b[0]; c.y = a.y - b[1]; c.z = a.z - b[2]; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorSubtract(in Vector3 a, in Vector3 b, float[] c) { c[0] = a.x - b.x; c[1] = a.y - b.y; c[2] = a.z - b.z; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorSubtract(in Vector3 a, in Vector3 b, float* c) { c[0] = a.x - b.x; c[1] = a.y - b.y; c[2] = a.z - b.z; }
         [MethodImpl(MethodImplOptions.AggressiveInlining)] public static void VectorAdd(in Vector3 a, in Vector3 b, float[] c) { c[0] = a.x + b.x; c[1] = a.y + b.y; c[2] = a.z + b.z; }

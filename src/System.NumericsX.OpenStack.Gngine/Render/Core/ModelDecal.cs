@@ -1,13 +1,12 @@
 using System.Diagnostics;
-using System.NumericsX;
-using System.NumericsX.OpenStack;
 using System.Runtime.InteropServices;
-using static Gengine.Render.TR;
+using static System.NumericsX.OpenStack.Gngine.Render.R;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.OpenStack;
 using static System.NumericsX.Platform;
 using GlIndex = System.Int32;
 
-namespace Gengine.Render
+namespace System.NumericsX.OpenStack.Gngine.Render
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct DecalProjectionInfo
@@ -159,6 +158,7 @@ namespace Gengine.Render
                 if (!localInfo.force && !surf.shader.AllowOverlays) continue;
 
                 var stri = surf.geometry;
+                var stri_verts = stri.verts.Value; var stri_indexes = stri.indexes.Value; var stri_facePlanes = stri.facePlanes.Value;
 
                 // if the triangle bounds do not overlap with projection bounds
                 if (!localInfo.projectionBounds.IntersectsBounds(stri.bounds)) continue;
@@ -167,28 +167,30 @@ namespace Gengine.Render
                 byte* cullBits = stackalloc byte[stri.numVerts + byteX.ALLOC16]; cullBits = (byte*)_alloca16(cullBits);
 
                 // catagorize all points by the planes
-                Simd.DecalPointCull(cullBits, localInfo.boundingPlanes, stri.verts, stri.numVerts);
+                fixed (Plane* boundingPlanesP = localInfo.boundingPlanes)
+                fixed (DrawVert* vertsD = stri_verts)
+                    Simd.DecalPointCull(cullBits, boundingPlanesP, vertsD, stri.numVerts);
 
                 // find triangles inside the projection volume
                 for (int triNum = 0, index = 0; index < stri.numIndexes; index += 3, triNum++)
                 {
-                    var v1 = stri.indexes[index + 0];
-                    var v2 = stri.indexes[index + 1];
-                    var v3 = stri.indexes[index + 2];
+                    var v1 = stri_indexes[index + 0];
+                    var v2 = stri_indexes[index + 1];
+                    var v3 = stri_indexes[index + 2];
 
                     // skip triangles completely off one side
                     if (cullBits[v1] != 0 & cullBits[v2] != 0 & cullBits[v3] != 0) continue;
 
                     // skip back facing triangles
-                    if (stri.facePlanes != null && stri.facePlanesCalculated && stri.facePlanes[triNum].Normal * localInfo.boundingPlanes[NUM_DECAL_BOUNDING_PLANES - 2].Normal < -0.1f) continue;
+                    if (stri.facePlanes != null && stri.facePlanesCalculated && stri_facePlanes[triNum].Normal * localInfo.boundingPlanes[NUM_DECAL_BOUNDING_PLANES - 2].Normal < -0.1f) continue;
 
                     // create a winding with texture coordinates for the triangle
                     FixedWinding fw = default;
                     fw.NumPoints = 3;
                     if (localInfo.parallel)
-                        for (int j = 0; j < 3; j++)
+                        for (var j = 0; j < 3; j++)
                         {
-                            fw[j] = stri.verts[stri.indexes[index + j]].xyz;
+                            fw[j] = stri_verts[stri_indexes[index + j]].xyz;
                             fw[j].s = localInfo.textureAxis[0].Distance(fw[j].ToVec3());
                             fw[j].t = localInfo.textureAxis[1].Distance(fw[j].ToVec3());
                         }
@@ -197,7 +199,7 @@ namespace Gengine.Render
                         {
                             Vector3 dir;
 
-                            fw[j] = stri.verts[stri.indexes[index + j]].xyz;
+                            fw[j] = stri.verts[stri_indexes[index + j]].xyz;
                             dir = fw[j].ToVec3() - localInfo.projectionOrigin;
                             if (!localInfo.boundingPlanes[NUM_DECAL_BOUNDING_PLANES - 1].RayIntersection(fw[j].ToVec3(), dir, out var scale)) scale = 0f;
                             dir = fw[j].ToVec3() + scale * dir;

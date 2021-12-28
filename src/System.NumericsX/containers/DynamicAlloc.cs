@@ -8,8 +8,8 @@ namespace System.NumericsX
     {
         int baseBlockSize;
         int minBlockSize;
-        //int sizeofT;
-        //Func<int, T[]> factory;
+        int sizeofT;
+        Func<int, T[]> factory;
 
         int numUsedBlocks;          // number of used blocks
         int usedBlockMemory;        // total memory in used blocks
@@ -18,12 +18,12 @@ namespace System.NumericsX
         int numResizes;
         int numFrees;
 
-        public DynamicAlloc(int baseBlockSize, int minBlockSize) //, int sizeofT, Func<int, T[]> factory)
+        public DynamicAlloc(int baseBlockSize, int minBlockSize)
         {
             this.baseBlockSize = baseBlockSize;
             this.minBlockSize = minBlockSize;
-            //this.sizeofT = sizeofT;
-            //this.factory = factory;
+            this.sizeofT = Marshal.SizeOf<T>();
+            this.factory = num => Enumerable.Repeat(new T(), num).ToArray();
             Clear();
         }
 
@@ -46,26 +46,14 @@ namespace System.NumericsX
         public DynamicElement<T> Alloc(int num)
         {
             numAllocs++;
+
             if (num <= 0) return default;
-            var model = new T();
-            var sizeofT = Marshal.SizeOf(model);
-            var value = Enumerable.Repeat(model, num).ToArray();
+
             numUsedBlocks++;
             usedBlockMemory += num * sizeofT;
-            var block = new DynamicElement<T> { Value = value }; block.Memory = block.Value.AsMemory();
+            var block = new DynamicElement<T> { Value = factory(num) }; //block.Memory = block.Value.AsMemory();
             return block;
         }
-
-        //public K[] Alloc<K>(int num)
-        //{
-        //    numAllocs++;
-        //    if (num <= 0)
-        //        return default;
-        //    numUsedBlocks++;
-        //    throw new NotImplementedException();
-        //    //usedBlockMemory += num * sizeof(type);
-        //    //return Mem_Alloc16(num * sizeof(type));
-        //}
 
         public DynamicElement<T> Resize(DynamicElement<T> ptr, int num)
         {

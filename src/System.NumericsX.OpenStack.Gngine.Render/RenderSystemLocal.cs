@@ -5,19 +5,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 {
     partial class TR
     {
-        public static ScreenRect R_ScreenRectFromViewFrustumBounds(Bounds bounds)
-            => new()
-            {
-                x1 = (short)MathX.FtoiFast(0.5f * (1f - bounds[1].y) * (tr.viewDef.viewport.x2 - tr.viewDef.viewport.x1)),
-                x2 = (short)MathX.FtoiFast(0.5f * (1f - bounds[0].y) * (tr.viewDef.viewport.x2 - tr.viewDef.viewport.x1)),
-                y1 = (short)MathX.FtoiFast(0.5f * (1f + bounds[0].z) * (tr.viewDef.viewport.y2 - tr.viewDef.viewport.y1)),
-                y2 = (short)MathX.FtoiFast(0.5f * (1f + bounds[1].z) * (tr.viewDef.viewport.y2 - tr.viewDef.viewport.y1))
-            };
-        static Vector4[] R_ShowColoredScreenRect_colors = { colorRed, colorGreen, colorBlue, colorYellow, colorMagenta, colorCyan, colorWhite, colorPurple };
-        public static void R_ShowColoredScreenRect(ScreenRect rect, int colorIndex)
-        {
-            if (!rect.IsEmpty) tr.viewDef.renderWorld.DebugScreenRect(R_ShowColoredScreenRect_colors[colorIndex & 7], rect, tr.viewDef);
-        }
+
     }
 
 

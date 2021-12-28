@@ -261,7 +261,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             for (var i = 0; i < tri.numVerts; i++)
             {
-                ref DrawVert v = ref tri.verts[i];
+                ref DrawVert v = ref tri.verts.Value[i];
                 if (v.st.x <= origin.st.x && v.st.y <= origin.st.y) origin = v;
                 if (v.st.x >= axis[0].st.x && v.st.y <= axis[0].st.y) axis[0] = v;
                 if (v.st.x <= axis[1].st.x && v.st.y >= axis[1].st.y) axis[1] = v;

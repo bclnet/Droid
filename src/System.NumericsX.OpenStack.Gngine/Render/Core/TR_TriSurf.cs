@@ -5,11 +5,14 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using static System.NumericsX.OpenStack.OpenStack;
 using static System.NumericsX.OpenStack.Gngine.Gngine;
+using static System.NumericsX.OpenStack.Gngine.Render.R;
+using static System.NumericsX.Platform;
 using GlIndex = System.Int32;
+using System.Runtime.InteropServices;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
 {
-    unsafe partial class TR
+    unsafe partial class R
     {
         const int MAX_SIL_EDGES = 0x10000;
         const int SILEDGE_HASH_SIZE = 1024;
@@ -74,6 +77,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         {
             R_StaticFree(silEdges);
             silEdgeHash.Free();
+
             srfTrianglesAllocator.Shutdown();
             triVertexAllocator.Shutdown();
             triIndexAllocator.Shutdown();
@@ -121,7 +125,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // For memory profiling
         public static int R_TriSurfMemory(SrfTriangles tri)
         {
-            int total = 0;
+            var total = 0;
 
             if (tri == null) return total;
 
@@ -266,9 +270,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             R_AllocStaticTriSurfIndexes(newTri, tri.numIndexes);
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
-            Unsafe.CopyBlock(newTri.verts, tri.verts, (uint)(tri.numVerts * sizeof(DrawVert)));
-            Unsafe.CopyBlock(newTri.indexes, tri.indexes, (uint)(tri.numIndexes * sizeof(GlIndex)));
-
+            fixed (DrawVert* vertsA = newTri.verts.Value, vertsB = tri.verts.Value) Unsafe.CopyBlock(vertsA, vertsB, (uint)(tri.numVerts * sizeof(DrawVert)));
+            fixed (GlIndex* indexesA = newTri.indexes.Value, indexesB = tri.indexes.Value) Unsafe.CopyBlock(indexesA, indexesB, (uint)(tri.numIndexes * sizeof(GlIndex)));
             return newTri;
         }
 
@@ -334,6 +337,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_RangeCheckIndexes(SrfTriangles tri)
         {
             int i;
+            var tri_indexes = tri.indexes.Value;
 
             if (tri.numIndexes < 0) common.Error("R_RangeCheckIndexes: numIndexes < 0");
             if (tri.numVerts < 0) common.Error("R_RangeCheckIndexes: numVerts < 0");
@@ -341,27 +345,23 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // must specify an integral number of triangles
             if (tri.numIndexes % 3 != 0) common.Error("R_RangeCheckIndexes: numIndexes %% 3");
 
-            for (i = 0; i < tri.numIndexes; i++) if (tri.indexes[i] < 0 || tri.indexes[i] >= tri.numVerts) common.Error("R_RangeCheckIndexes: index out of range");
+            for (i = 0; i < tri.numIndexes; i++) if (tri_indexes[i] < 0 || tri_indexes[i] >= tri.numVerts) common.Error("R_RangeCheckIndexes: index out of range");
 
             // this should not be possible unless there are unused verts
-            if (tri.numVerts > tri.numIndexes)
-            {
-                // FIXME: find the causes of these
-                // common.Printf( "R_RangeCheckIndexes: tri.numVerts > tri.numIndexes\n" );
-            }
+            //if (tri.numVerts > tri.numIndexes) common.Printf("R_RangeCheckIndexes: tri.numVerts > tri.numIndexes\n"); // FIXME: find the causes of these
         }
 
         public static void R_BoundTriSurf(SrfTriangles tri)
-            => Simd.MinMaxd(out tri.bounds[0], out tri.bounds[1], tri.verts, tri.numVerts);
+        {
+            fixed (DrawVert* vertsD = tri.verts.Value) Simd.MinMaxd(out tri.bounds[0], out tri.bounds[1], vertsD, tri.numVerts);
+        }
 
-        static int R_CreateSilRemap(SrfTriangles tri)
+        static int* R_CreateSilRemap(SrfTriangles tri)
         {
             int c_removed, c_unique;
-            int remap;
             int i, j, hashKey;
-            DrawVert v1, v2;
 
-            remap = R_ClearedStaticAllocMany<int>(tri.numVerts);
+            var remap = (int*)R_ClearedStaticAlloc(tri.numVerts * sizeof(int));
 
             if (!r_useSilRemap.Bool)
             {
@@ -369,19 +369,19 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 return remap;
             }
 
-            HashIndex hash(1024, tri.numVerts);
+            HashIndex hash = new(1024, tri.numVerts);
 
             c_removed = 0;
             c_unique = 0;
             for (i = 0; i < tri.numVerts; i++)
             {
-                v1 = &tri.verts[i];
+                ref DrawVert v1 = ref tri.verts.Value[i];
 
                 // see if there is an earlier vert that it can map to
                 hashKey = hash.GenerateKey(v1.xyz);
                 for (j = hash.First(hashKey); j >= 0; j = hash.Next(j))
                 {
-                    v2 = &tri.verts[j];
+                    ref DrawVert v2 = ref tri.verts.Value[j];
                     if (v2.xyz.x == v1.xyz.z && v2.xyz.y == v1.xyz.y && v2.xyz.z == v1.xyz.z) { c_removed++; remap[i] = j; break; }
                 }
                 if (j < 0) { c_unique++; remap[i] = i; hash.Add(hashKey, i); }
@@ -393,131 +393,132 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // Uniquing vertexes only on xyz before creating sil edges reduces the edge count by about 20% on Q3 models
         public static void R_CreateSilIndexes(SrfTriangles tri)
         {
-            int i;
-            int* remap;
+            int i; int* remap;
 
             if (tri.silIndexes != null) { triSilIndexAllocator.Free(tri.silIndexes); tri.silIndexes = null; }
             remap = R_CreateSilRemap(tri);
 
             // remap indexes to the first one
             tri.silIndexes = triSilIndexAllocator.Alloc(tri.numIndexes);
-            for (i = 0; i < tri.numIndexes; i++) tri.silIndexes[i] = remap[tri.indexes[i]];
+            var tri_silIndexes = tri.silIndexes.Value; var tri_indexes = tri.indexes.Value;
+            for (i = 0; i < tri.numIndexes; i++) tri_silIndexes[i] = remap[tri_indexes[i]];
             R_StaticFree(remap);
         }
 
-        void R_CreateDupVerts(SrfTriangles tri)
+        static void R_CreateDupVerts(SrfTriangles tri)
         {
             int i;
+            var tri_indexes = tri.indexes.Value; var tri_silIndexes = tri.silIndexes.Value;
 
-            int* remap = (int*)_alloca16(tri.numVerts * sizeof(remap[0]));
+            int* remap = stackalloc int[tri.numVerts * sizeof(int) + intX.ALLOC16]; remap = (int*)_alloca16(remap);
 
             // initialize vertex remap in case there are unused verts
             for (i = 0; i < tri.numVerts; i++) remap[i] = i;
 
             // set the remap based on how the silhouette indexes are remapped
-            for (i = 0; i < tri.numIndexes; i++) remap[tri.indexes[i]] = tri.silIndexes[i];
+            for (i = 0; i < tri.numIndexes; i++) remap[tri_indexes[i]] = tri_silIndexes[i];
 
             // create duplicate vertex index based on the vertex remap
             // GB Also protecting this as I think it has got too big
             // DG: windows only has a 1MB stack and it could happen that we try to allocate >1MB here (in lost mission mod, game/le_hell map), causing a stack overflow to prevent that, use heap allocation if it's >600KB
-            var allocaSize = tri.numVerts * 2 * sizeof(tempDupVerts[0]);
-            var tempDupVerts = allocaSize < 600000 ? (int*)_alloca16(allocaSize) : (int*)Mem_Alloc16(allocaSize);
+            var allocaSize = tri.numVerts * 2 * sizeof(int);
+            var tempDupVertsB = allocaSize < 600000 ? stackalloc int[allocaSize + intX.ALLOC16] : new int[allocaSize + intX.ALLOC16];
+            fixed (int* tempDupVertsI = tempDupVertsB)
+            {
+                var tempDupVerts = (int*)_alloca16(tempDupVertsI);
 
-            //int * tempDupVerts = (int *) _alloca16( tri.numVerts * 2 * sizeof( tempDupVerts[0] ) );
-            tri.numDupVerts = 0;
-            for (i = 0; i < tri.numVerts; i++)
-                if (remap[i] != i)
-                {
-                    tempDupVerts[tri.numDupVerts * 2 + 0] = i;
-                    tempDupVerts[tri.numDupVerts * 2 + 1] = remap[i];
-                    tri.numDupVerts++;
-                }
+                tri.numDupVerts = 0;
+                for (i = 0; i < tri.numVerts; i++) if (remap[i] != i) { tempDupVerts[tri.numDupVerts * 2 + 0] = i; tempDupVerts[tri.numDupVerts * 2 + 1] = remap[i]; tri.numDupVerts++; }
 
-            tri.dupVerts = triDupVertAllocator.Alloc(tri.numDupVerts * 2);
-            memcpy(tri.dupVerts, tempDupVerts, tri.numDupVerts * 2 * sizeof(tri.dupVerts[0]));
-
-            if (allocaSize >= 600000) Mem_Free16(tempDupVerts);
+                tri.dupVerts = triDupVertAllocator.Alloc(tri.numDupVerts * 2);
+                fixed (int* dupVertsI = tri.dupVerts.Value) Unsafe.CopyBlock(dupVertsI, tempDupVerts, (uint)(tri.numDupVerts * 2 * sizeof(int)));
+            }
         }
 
         // Writes the facePlanes values, overwriting existing ones if present
         public static void R_DeriveFacePlanes(SrfTriangles tri)
         {
-            Plane planes;
-
             if (tri.facePlanes == null) R_AllocStaticTriSurfPlanes(tri, tri.numIndexes);
-            planes = tri.facePlanes;
 
 #if true
-            Simd.DeriveTriPlanes(planes, tri.verts, tri.numVerts, tri.indexes, tri.numIndexes);
+            fixed (Plane* planesP = tri.facePlanes.Value)
+            fixed (DrawVert* vertsD = tri.verts.Value)
+            fixed (GlIndex* indexesG = tri.indexes.Value)
+                Simd.DeriveTriPlanesi(planesP, vertsD, tri.numVerts, indexesG, tri.numIndexes);
 #else
-
-            for (int i = 0; i < tri.numIndexes; i += 3, planes++)
+            var tri_facePlanes = tri.facePlanes.Value;
+            var tri_indexes = tri.indexes.Value;
+            var tri_verts = tri.verts.Value;
+            fixed (Plane* planesP = tri_facePlanes)
             {
-                int i1, i2, i3;
-                idVec3 d1, d2, normal;
-                idVec3* v1, *v2, *v3;
+                Plane* plane = planesP;
+                for (var i = 0; i < tri.numIndexes; i += 3, plane++)
+                {
+                    int i1, i2, i3;
+                    Vector3 d1, d2, normal;
 
-                i1 = tri.indexes[i + 0];
-                i2 = tri.indexes[i + 1];
-                i3 = tri.indexes[i + 2];
+                    i1 = tri_indexes[i + 0];
+                    i2 = tri_indexes[i + 1];
+                    i3 = tri_indexes[i + 2];
 
-                v1 = &tri.verts[i1].xyz;
-                v2 = &tri.verts[i2].xyz;
-                v3 = &tri.verts[i3].xyz;
+                    ref Vector3 v1 = ref tri_verts[i1].xyz;
+                    ref Vector3 v2 = ref tri_verts[i2].xyz;
+                    ref Vector3 v3 = ref tri_verts[i3].xyz;
 
-                d1[0] = v2.x - v1.x;
-                d1[1] = v2.y - v1.y;
-                d1[2] = v2.z - v1.z;
+                    d1.x = v2.x - v1.x;
+                    d1.y = v2.y - v1.y;
+                    d1.z = v2.z - v1.z;
 
-                d2[0] = v3.x - v1.x;
-                d2[1] = v3.y - v1.y;
-                d2[2] = v3.z - v1.z;
+                    d2.x = v3.x - v1.x;
+                    d2.y = v3.y - v1.y;
+                    d2.z = v3.z - v1.z;
 
-                normal[0] = d2.y * d1.z - d2.z * d1.y;
-                normal[1] = d2.z * d1.x - d2.x * d1.z;
-                normal[2] = d2.x * d1.y - d2.y * d1.x;
+                    normal.x = d2.y * d1.z - d2.z * d1.y;
+                    normal.y = d2.z * d1.x - d2.x * d1.z;
+                    normal.z = d2.x * d1.y - d2.y * d1.x;
 
-                float sqrLength, invLength;
+                    float sqrLength, invLength;
 
-                sqrLength = normal.x * normal.x + normal.y * normal.y + normal.z * normal.z;
-                invLength = idMath::RSqrt(sqrLength);
+                    sqrLength = normal.x * normal.x + normal.y * normal.y + normal.z * normal.z;
+                    invLength = MathX.RSqrt(sqrLength);
 
-                (*planes)[0] = normal[0] * invLength;
-                (*planes)[1] = normal[1] * invLength;
-                (*planes)[2] = normal[2] * invLength;
+                    plane->a = normal.x * invLength;
+                    plane->b = normal.y * invLength;
+                    plane->c = normal.z * invLength;
 
-                planes.FitThroughPoint(*v1);
+                    plane->FitThroughPoint(v1);
+                }
             }
-
 #endif
-
             tri.facePlanesCalculated = true;
         }
-
 
         // Averages together the contributions of all faces that are used by a vertex, creating drawVert.normal
         public static void R_CreateVertexNormals(SrfTriangles tri)
         {
             int i, j;
-            Plane planes;
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value; var tri_silIndexes = tri.silIndexes.Value;
 
-            for (i = 0; i < tri.numVerts; i++) tri.verts[i].normal.Zero();
+            for (i = 0; i < tri.numVerts; i++) tri_verts[i].normal.Zero();
 
             if (tri.facePlanes == null || !tri.facePlanesCalculated) R_DeriveFacePlanes(tri);
             if (tri.silIndexes == null) R_CreateSilIndexes(tri);
-            planes = tri.facePlanes;
-            for (i = 0; i < tri.numIndexes; i += 3, planes++)
-                for (j = 0; j < 3; j++)
-                {
-                    var index = tri.silIndexes[i + j];
-                    tri.verts[index].normal += planes.Normal();
-                }
+            fixed (Plane* planesP = tri.facePlanes.Value)
+            {
+                Plane* plane = planesP;
+                for (i = 0; i < tri.numIndexes; i += 3, plane++)
+                    for (j = 0; j < 3; j++)
+                    {
+                        var index = tri_silIndexes[i + j];
+                        tri_verts[index].normal += plane->Normal;
+                    }
+            }
 
             // normalize and replicate from silIndexes to all indexes
             for (i = 0; i < tri.numIndexes; i++)
             {
-                tri.verts[tri.indexes[i]].normal = tri.verts[tri.silIndexes[i]].normal;
-                tri.verts[tri.indexes[i]].normal.Normalize();
+                tri_verts[tri_indexes[i]].normal = tri_verts[tri_silIndexes[i]].normal;
+                tri_verts[tri_indexes[i]].normal.Normalize();
             }
         }
 
@@ -555,22 +556,21 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             numSilEdges++;
         }
 
-        static int SilEdgeSort(in SilEdge a, in SilEdge b)
+        static int SilEdgeSort(SilEdge* a, SilEdge* b)
         {
-            if (a.p1 < b.p1) return -1;
-            if (a.p1 > b.p1) return 1;
-            if (a.p2 < b.p2) return -1;
-            if (a.p2 > b.p2) return 1;
-            return 0;
+            if (a->p1 < b->p1) return -1;
+            else if (a->p1 > b->p1) return 1;
+            else if (a->p2 < b->p2) return -1;
+            else if (a->p2 > b->p2) return 1;
+            else return 0;
         }
 
         // If the surface will not deform, coplanar edges (polygon interiors) can never create silhouette plains, and can be omited
         static int c_coplanarSilEdges, c_totalSilEdges;
         static void R_IdentifySilEdges(SrfTriangles tri, bool omitCoplanarEdges)
         {
-            int i;
-            int numTris;
-            int shared, single;
+            int i, numTris, shared, single;
+            var tri_verts = tri.verts.Value; var tri_silIndexes = tri.silIndexes.Value;
 
             omitCoplanarEdges = false;  // optimization doesn't work for some reason
 
@@ -587,9 +587,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {
                 int i1, i2, i3;
 
-                i1 = tri.silIndexes[i * 3 + 0];
-                i2 = tri.silIndexes[i * 3 + 1];
-                i3 = tri.silIndexes[i * 3 + 2];
+                i1 = tri_silIndexes[i * 3 + 0];
+                i2 = tri_silIndexes[i * 3 + 1];
+                i3 = tri_silIndexes[i * 3 + 2];
 
                 // create the edges
                 R_DefineEdge(i1, i2, i);
@@ -601,56 +601,52 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             // if we know that the vertexes aren't going to deform, we can remove interior triangulation edges on otherwise planar polygons. I earlier believed that I could also remove concave
             // edges, because they are never silhouettes in the conventional sense, but they are still needed to balance out all the true sil edges for the shadow algorithm to function
-            int c_coplanarCulled;
+            var c_coplanarCulled = 0;
 
-            c_coplanarCulled = 0;
             if (omitCoplanarEdges)
             {
                 for (i = 0; i < numSilEdges; i++)
                 {
-                    int i1, i2, i3;
-                    Plane plane;
-                    int base_;
-                    int j;
-                    float d;
+                    int i1, i2, i3, base_, j; float d;
+                    Plane plane = default;
 
                     if (silEdges[i].p2 == numPlanes) continue; // the fake dangling edge
 
                     base_ = silEdges[i].p1 * 3;
-                    i1 = tri.silIndexes[base_ + 0];
-                    i2 = tri.silIndexes[base_ + 1];
-                    i3 = tri.silIndexes[base_ + 2];
+                    i1 = tri_silIndexes[base_ + 0];
+                    i2 = tri_silIndexes[base_ + 1];
+                    i3 = tri_silIndexes[base_ + 2];
 
-                    plane.FromPoints(tri.verts[i1].xyz, tri.verts[i2].xyz, tri.verts[i3].xyz);
+                    plane.FromPoints(tri_verts[i1].xyz, tri_verts[i2].xyz, tri_verts[i3].xyz);
 
                     // check to see if points of second triangle are not coplanar
                     base_ = silEdges[i].p2 * 3;
                     for (j = 0; j < 3; j++)
                     {
-                        i1 = tri.silIndexes[base_ + j];
-                        d = plane.Distance(tri.verts[i1].xyz);
+                        i1 = tri_silIndexes[base_ + j];
+                        d = plane.Distance(tri_verts[i1].xyz);
                         if (d != 0) break; // even a small epsilon causes problems
                     }
 
                     if (j == 3)
                     {
                         // we can cull this sil edge
-                        memmove(&silEdges[i], &silEdges[i + 1], (numSilEdges - i - 1) * sizeof(silEdges[i]));
+                        Unsafe.CopyBlock(&silEdges[i], &silEdges[i + 1], (uint)((numSilEdges - i - 1) * sizeof(SilEdge)));
                         c_coplanarCulled++;
                         numSilEdges--;
                         i--;
                     }
                 }
-                if (c_coplanarCulled)
+                if (c_coplanarCulled != 0)
                 {
                     c_coplanarSilEdges += c_coplanarCulled;
-                    //			common.Printf( "%i of %i sil edges coplanar culled\n", c_coplanarCulled, c_coplanarCulled + numSilEdges );
+                    //common.Printf($"{c_coplanarCulled} of {c_coplanarCulled + numSilEdges} sil edges coplanar culled\n");
                 }
             }
             c_totalSilEdges += numSilEdges;
 
             // sort the sil edges based on plane number
-            qsort(silEdges, numSilEdges, sizeof(silEdges[0]), SilEdgeSort);
+            UnsafeX.QuickSort(silEdges, numSilEdges, sizeof(SilEdge), (a, b) => SilEdgeSort((SilEdge*)a, (SilEdge*)b));
 
             // count up the distribution. a perfectly built model should only have shared edges, but most models will have some interpenetration and dangling edges
             shared = 0;
@@ -659,122 +655,113 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 if (silEdges[i].p2 == numPlanes) single++;
                 else shared++;
 
-            tri.perfectHull = !single;
+            tri.perfectHull = single == 0;
 
             tri.numSilEdges = numSilEdges;
             tri.silEdges = triSilEdgeAllocator.Alloc(numSilEdges);
-            memcpy(tri.silEdges, silEdges, numSilEdges * sizeof(tri.silEdges[0]));
+            fixed (SilEdge* silEdgesI = tri.silEdges.Value) Unsafe.CopyBlock(silEdgesI, silEdges, (uint)(numSilEdges * sizeof(SilEdge)));
         }
 
         // Returns true if the texture polarity of the face is negative, false if it is positive or zero
         static bool R_FaceNegativePolarity(SrfTriangles tri, int firstIndex)
         {
-            DrawVert a, b, c;
-            float area;
-            float d0[5], d1[5];
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
 
-            a = tri.verts + tri.indexes[firstIndex + 0];
-            b = tri.verts + tri.indexes[firstIndex + 1];
-            c = tri.verts + tri.indexes[firstIndex + 2];
+            ref DrawVert a = ref tri_verts[tri_indexes[firstIndex + 0]];
+            ref DrawVert b = ref tri_verts[tri_indexes[firstIndex + 1]];
+            ref DrawVert c = ref tri_verts[tri_indexes[firstIndex + 2]];
 
-            d0[3] = b.st[0] - a.st[0];
-            d0[4] = b.st[1] - a.st[1];
+            var d03 = b.st.x - a.st.x;
+            var d04 = b.st.y - a.st.y;
+            var d13 = c.st.x - a.st.x;
+            var d14 = c.st.y - a.st.y;
 
-            d1[3] = c.st[0] - a.st[0];
-            d1[4] = c.st[1] - a.st[1];
-
-            area = d0[3] * d1[4] - d0[4] * d1[3];
-            if (area >= 0) return false;
-            return true;
+            var area = d03 * d14 - d04 * d13;
+            return area < 0f;
         }
 
         struct FaceTangents
         {
-            public Vector3 tangents[2];
+            public const int ALLOC16 = 1;
+            public Vector3 tangents0;
+            public Vector3 tangents1;
             public bool negativePolarity;
             public bool degenerate;
         }
 
-        static void R_DeriveFaceTangents(SrfTriangles tri, FaceTangents faceTangents)
+        static void R_DeriveFaceTangents(SrfTriangles tri, FaceTangents* faceTangents)
         {
-            int i;
-            int c_textureDegenerateFaces;
-            int c_positive, c_negative;
-            FaceTangents ft;
-            DrawVert a, b, c;
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
 
             // calculate tangent vectors for each face in isolation
-            c_positive = 0;
-            c_negative = 0;
-            c_textureDegenerateFaces = 0;
-            for (i = 0; i < tri.numIndexes; i += 3)
+            int c_positive = 0, c_negative = 0, c_textureDegenerateFaces = 0;
+
+            float* d0 = stackalloc float[5], d1 = stackalloc float[5];
+            for (var i = 0; i < tri.numIndexes; i += 3)
             {
-                float area;
-                Vector3 temp;
-                float d0[5], d1[5];
+                float area; Vector3 temp;
 
-                ft = &faceTangents[i / 3];
+                ref FaceTangents ft = ref faceTangents[i / 3];
 
-                a = tri.verts + tri.indexes[i + 0];
-                b = tri.verts + tri.indexes[i + 1];
-                c = tri.verts + tri.indexes[i + 2];
+                ref DrawVert a = ref tri_verts[tri_indexes[i + 0]];
+                ref DrawVert b = ref tri_verts[tri_indexes[i + 1]];
+                ref DrawVert c = ref tri_verts[tri_indexes[i + 2]];
 
-                d0[0] = b.xyz[0] - a.xyz[0];
-                d0[1] = b.xyz[1] - a.xyz[1];
-                d0[2] = b.xyz[2] - a.xyz[2];
-                d0[3] = b.st[0] - a.st[0];
-                d0[4] = b.st[1] - a.st[1];
+                d0[0] = b.xyz.x - a.xyz.x;
+                d0[1] = b.xyz.y - a.xyz.y;
+                d0[2] = b.xyz.z - a.xyz.z;
+                d0[3] = b.st.x - a.st.x;
+                d0[4] = b.st.y - a.st.y;
 
-                d1[0] = c.xyz[0] - a.xyz[0];
-                d1[1] = c.xyz[1] - a.xyz[1];
-                d1[2] = c.xyz[2] - a.xyz[2];
-                d1[3] = c.st[0] - a.st[0];
-                d1[4] = c.st[1] - a.st[1];
+                d1[0] = c.xyz.x - a.xyz.x;
+                d1[1] = c.xyz.y - a.xyz.y;
+                d1[2] = c.xyz.z - a.xyz.z;
+                d1[3] = c.st.x - a.st.x;
+                d1[4] = c.st.y - a.st.y;
 
                 area = d0[3] * d1[4] - d0[4] * d1[3];
-                if (fabs(area) < 1e-20f)
+                if ((float)Math.Abs(area) < 1e-20f)
                 {
                     ft.negativePolarity = false;
                     ft.degenerate = true;
-                    ft.tangents[0].Zero();
-                    ft.tangents[1].Zero();
+                    ft.tangents0.Zero();
+                    ft.tangents1.Zero();
                     c_textureDegenerateFaces++;
                     continue;
                 }
-                if (area > 0.0f) { ft.negativePolarity = false; c_positive++; }
+                if (area > 0f) { ft.negativePolarity = false; c_positive++; }
                 else { ft.negativePolarity = true; c_negative++; }
                 ft.degenerate = false;
 
 #if USE_INVA
-                float inva = area < 0.0f ? -1 : 1;      // was = 1.0f / area;
+                var inva = area < 0f ? -1f : 1f;      // was = 1f / area;
 
-                temp[0] = (d0[0] * d1[4] - d0[4] * d1[0]) * inva;
-                temp[1] = (d0[1] * d1[4] - d0[4] * d1[1]) * inva;
-                temp[2] = (d0[2] * d1[4] - d0[4] * d1[2]) * inva;
+                temp.x = (d0[0] * d1[4] - d0[4] * d1[0]) * inva;
+                temp.y = (d0[1] * d1[4] - d0[4] * d1[1]) * inva;
+                temp.z = (d0[2] * d1[4] - d0[4] * d1[2]) * inva;
                 temp.Normalize();
-                ft.tangents[0] = temp;
+                ft.tangents0 = temp;
 
-                temp[0] = (d0[3] * d1[0] - d0[0] * d1[3]) * inva;
-                temp[1] = (d0[3] * d1[1] - d0[1] * d1[3]) * inva;
-                temp[2] = (d0[3] * d1[2] - d0[2] * d1[3]) * inva;
+                temp.x = (d0[3] * d1[0] - d0[0] * d1[3]) * inva;
+                temp.y = (d0[3] * d1[1] - d0[1] * d1[3]) * inva;
+                temp.z = (d0[3] * d1[2] - d0[2] * d1[3]) * inva;
                 temp.Normalize();
-                ft.tangents[1] = temp;
+                ft.tangents1 = temp;
 #else
-                temp[0] = (d0[0] * d1[4] - d0[4] * d1[0]);
-                temp[1] = (d0[1] * d1[4] - d0[4] * d1[1]);
-                temp[2] = (d0[2] * d1[4] - d0[4] * d1[2]);
+                temp.x = (d0[0] * d1[4] - d0[4] * d1[0]);
+                temp.y = (d0[1] * d1[4] - d0[4] * d1[1]);
+                temp.z = (d0[2] * d1[4] - d0[4] * d1[2]);
                 temp.Normalize();
-                ft.tangents[0] = temp;
+                ft.tangents0 = temp;
 
-                temp[0] = (d0[3] * d1[0] - d0[0] * d1[3]);
-                temp[1] = (d0[3] * d1[1] - d0[1] * d1[3]);
-                temp[2] = (d0[3] * d1[2] - d0[2] * d1[3]);
+                temp.x = (d0[3] * d1[0] - d0[0] * d1[3]);
+                temp.y = (d0[3] * d1[1] - d0[1] * d1[3]);
+                temp.z = (d0[3] * d1[2] - d0[2] * d1[3]);
                 temp.Normalize();
-                ft.tangents[1] = temp;
+                ft.tangents1 = temp;
 #endif
             }
         }
-
 
         // Modifies the surface to bust apart any verts that are shared by both positive and negative texture polarities, so tangent space smoothing at the vertex doesn't degenerate.
         // This will create some identical vertexes (which will eventually get different tangent vectors), so never optimize the resulting mesh, or it will get the mirrored edges back.
@@ -782,73 +769,76 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // sets mirroredVerts and mirroredVerts[]
         struct TangentVert
         {
-            public bool polarityUsed[2];
+            public const int ALLOC16 = 2;
+            public bool polarityUsed0;
+            public bool polarityUsed1;
             public int negativeRemap;
         }
 
         static void R_DuplicateMirroredVertexes(SrfTriangles tri)
         {
-            TangentVert tverts, vert;
-            int i, j;
-            int totalVerts;
-            int numMirror;
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value; var tri_mirroredVerts = tri.mirroredVerts.Value;
+
+            int i, j, totalVerts, numMirror;
 
             //GB Also protecting this as I think it has got too big
             //DG: windows only has a 1MB stack and it could happen that we try to allocate >1MB here (in lost mission mod, game/le_hell map), causing a stack overflow to prevent that, use heap allocation if it's >600KB
-            var allocaSize = tri.numVerts * sizeof( *tverts );
-            if (allocaSize < 600000) tverts = (tangentVert_t*)_alloca16(allocaSize);
-            else tverts = (tangentVert_t*)Mem_Alloc16(allocaSize);
-            //tverts = (tangentVert_t *)_alloca16( tri.numVerts * sizeof( *tverts ) );
-            memset(tverts, 0, tri.numVerts * sizeof( *tverts) );
-
-            // determine texture polarity of each surface
-
-            // mark each vert with the polarities it uses
-            for (i = 0; i < tri.numIndexes; i += 3)
+            var allocaSize = tri.numVerts * sizeof(TangentVert);
+            var tvertsB = allocaSize < 600000 ? stackalloc TangentVert[allocaSize + TangentVert.ALLOC16] : new TangentVert[allocaSize + TangentVert.ALLOC16];
+            fixed (TangentVert* tvertsT = tvertsB)
             {
-                int polarity;
+                var tverts = (TangentVert*)_alloca16(tvertsT);
+                Unsafe.InitBlock(tverts, 0, (uint)(tri.numVerts * sizeof(TangentVert)));
 
-                polarity = R_FaceNegativePolarity(tri, i);
-                for (j = 0; j < 3; j++) tverts[tri.indexes[i + j]].polarityUsed[polarity] = true;
-            }
+                // determine texture polarity of each surface
 
-            // now create new verts as needed
-            totalVerts = tri.numVerts;
-            for (i = 0; i < tri.numVerts; i++)
-            {
-                vert = &tverts[i];
-                if (vert.polarityUsed[0] && vert.polarityUsed[1]) { vert.negativeRemap = totalVerts; totalVerts++; }
-            }
+                // mark each vert with the polarities it uses
+                for (i = 0; i < tri.numIndexes; i += 3)
+                {
+                    var polarity = R_FaceNegativePolarity(tri, i);
+                    for (j = 0; j < 3; j++)
+                        if (polarity) tverts[tri_indexes[i + j]].polarityUsed1 = true;
+                        else tverts[tri_indexes[i + j]].polarityUsed0 = true;
+                }
 
-            tri.numMirroredVerts = totalVerts - tri.numVerts;
+                // now create new verts as needed
+                totalVerts = tri.numVerts;
+                for (i = 0; i < tri.numVerts; i++)
+                {
+                    ref TangentVert vert = ref tverts[i];
+                    if (vert.polarityUsed0 && vert.polarityUsed1) { vert.negativeRemap = totalVerts; totalVerts++; }
+                }
 
-            // now create the new list
-            if (totalVerts == tri.numVerts) { tri.mirroredVerts = null; return; }
+                tri.numMirroredVerts = totalVerts - tri.numVerts;
 
-            tri.mirroredVerts = triMirroredVertAllocator.Alloc(tri.numMirroredVerts);
+                // now create the new list
+                if (totalVerts == tri.numVerts) { tri.mirroredVerts = null; return; }
+
+                tri.mirroredVerts = triMirroredVertAllocator.Alloc(tri.numMirroredVerts);
 
 #if USE_TRI_DATA_ALLOCATOR
-            tri.verts = triVertexAllocator.Resize(tri.verts, totalVerts);
+                tri.verts = triVertexAllocator.Resize(tri.verts, totalVerts);
 #else
-            DrawVert oldVerts = tri.verts;
-            R_AllocStaticTriSurfVerts(tri, totalVerts);
-            memcpy(tri.verts, oldVerts, tri.numVerts * sizeof(tri.verts[0]));
-            triVertexAllocator.Free(oldVerts);
+                DynamicElement<DrawVert> oldVerts = tri.verts;
+                R_AllocStaticTriSurfVerts(tri, totalVerts);
+                fixed (DrawVert* vertsA = tri.verts.Value, vertsB = oldVerts.Value) Unsafe.CopyBlock(vertsA, vertsB, (uint)(tri.numVerts * sizeof(DrawVert)));
+                triVertexAllocator.Free(oldVerts);
 #endif
+                tri_verts = tri.verts.Value;
 
-            // create the duplicates
-            numMirror = 0;
-            for (i = 0; i < tri.numVerts; i++)
-            {
-                j = tverts[i].negativeRemap;
-                if (j != 0) { tri.verts[j] = tri.verts[i]; tri.mirroredVerts[numMirror] = i; numMirror++; }
+                // create the duplicates
+                numMirror = 0;
+                for (i = 0; i < tri.numVerts; i++)
+                {
+                    j = tverts[i].negativeRemap;
+                    if (j != 0) { tri_verts[j] = tri_verts[i]; tri_mirroredVerts[numMirror] = i; numMirror++; }
+                }
+
+                tri.numVerts = totalVerts;
+                // change the indexes
+                for (i = 0; i < tri.numIndexes; i++) if (tverts[tri_indexes[i]].negativeRemap != 0 && R_FaceNegativePolarity(tri, 3 * (i / 3))) tri_indexes[i] = tverts[tri_indexes[i]].negativeRemap;
+                tri.numVerts = totalVerts;
             }
-
-            tri.numVerts = totalVerts;
-            // change the indexes
-            for (i = 0; i < tri.numIndexes; i++) if (tverts[tri.indexes[i]].negativeRemap && R_FaceNegativePolarity(tri, 3 * (i / 3))) tri.indexes[i] = tverts[tri.indexes[i]].negativeRemap;
-            tri.numVerts = totalVerts;
-            if (allocaSize >= 600000) Mem_Free16(tverts);
         }
 
         // Build texture space tangents for bump mapping
@@ -863,64 +853,67 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // this version only handles bilateral symetry
         static void R_DeriveTangentsWithoutNormals(SrfTriangles tri)
         {
-            int i, j; FaceTangents faceTangents, ft; DrawVert* vert;
+            int i, j;
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
 
             // DG: windows only has a 1MB stack and it could happen that we try to allocate >1MB here (in lost mission mod, game/le_hell map), causing a stack overflow to prevent that, use heap allocation if it's >600KB
-            var allocaSize = sizeof(faceTangents[0]) * tri.numIndexes / 3;
-            faceTangents = allocaSize < 600000 ? (FaceTangents*)_alloca16(allocaSize) : (FaceTangents*)Mem_Alloc16(allocaSize);
-
-            R_DeriveFaceTangents(tri, faceTangents);
-
-            // clear the tangents
-            for (i = 0; i < tri.numVerts; i++)
+            var allocaSize = sizeof(FaceTangents) * tri.numIndexes / 3;
+            var faceTangentsB = allocaSize < 600000 ? stackalloc FaceTangents[allocaSize + FaceTangents.ALLOC16] : new FaceTangents[allocaSize + FaceTangents.ALLOC16];
+            fixed (FaceTangents* faceTangentsF = faceTangentsB)
             {
-                tri.verts[i].tangents0.Zero();
-                tri.verts[i].tangents1.Zero();
-            }
+                var faceTangents = (FaceTangents*)_alloca16(faceTangentsF);
 
-            // sum up the neighbors
-            for (i = 0; i < tri.numIndexes; i += 3)
-            {
-                ft = &faceTangents[i / 3];
+                R_DeriveFaceTangents(tri, faceTangents);
 
-                // for each vertex on this face
-                for (j = 0; j < 3; j++)
+                // clear the tangents
+                for (i = 0; i < tri.numVerts; i++)
                 {
-                    vert = &tri.verts[tri.indexes[i + j]];
-
-                    vert->tangents0 += ft.tangents0;
-                    vert->tangents1 += ft.tangents1;
+                    tri_verts[i].tangents0.Zero();
+                    tri_verts[i].tangents1.Zero();
                 }
-            }
+
+                // sum up the neighbors
+                for (i = 0; i < tri.numIndexes; i += 3)
+                {
+                    ref FaceTangents ft = ref faceTangents[i / 3];
+
+                    // for each vertex on this face
+                    for (j = 0; j < 3; j++)
+                    {
+                        ref DrawVert vert = ref tri_verts[tri_indexes[i + j]];
+
+                        vert.tangents0 += ft.tangents0;
+                        vert.tangents1 += ft.tangents1;
+                    }
+                }
 
 #if false
-            // sum up both sides of the mirrored verts so the S vectors exactly mirror, and the T vectors are equal
-            for (i = 0; i < tri.numMirroredVerts; i++)
-            {
-                DrawVert v1, v2;
+                // sum up both sides of the mirrored verts so the S vectors exactly mirror, and the T vectors are equal
+                for (i = 0; i < tri.numMirroredVerts; i++)
+                {
+                    DrawVert v1, v2;
 
-                v1 = &tri.verts[tri.numVerts - tri.numMirroredVerts + i];
-                v2 = &tri.verts[tri.mirroredVerts[i]];
+                    v1 = ref tri_verts[tri.numVerts - tri.numMirroredVerts + i];
+                    v2 = ref tri_verts[tri_mirroredVerts[i]];
 
-                v1.tangents[0] -= v2.tangents[0];
-                v1.tangents[1] += v2.tangents[1];
+                    v1.tangents[0] -= v2.tangents[0];
+                    v1.tangents[1] += v2.tangents[1];
 
-                v2.tangents[0] = vec3_origin - v1.tangents[0];
-                v2.tangents[1] = v1.tangents[1];
-            }
+                    v2.tangents[0] = Vector3.origin - v1.tangents[0];
+                    v2.tangents[1] = v1.tangents[1];
+                }
 #endif
 
-            // project the summed vectors onto the normal plane and normalize.  The tangent vectors will not necessarily be orthogonal to each other, but they will be orthogonal to the surface normal.
-            for (i = 0; i < tri.numVerts; i++)
-            {
-                vert = &tri.verts[i];
-                vert->tangents0 -= vert->tangents0 * vert->normal * vert->normal; vert->tangents0.Normalize();
-                vert->tangents1 -= vert->tangents1 * vert->normal * vert->normal; vert->tangents1.Normalize();
+                // project the summed vectors onto the normal plane and normalize.  The tangent vectors will not necessarily be orthogonal to each other, but they will be orthogonal to the surface normal.
+                for (i = 0; i < tri.numVerts; i++)
+                {
+                    ref DrawVert vert = ref tri_verts[i];
+                    vert.tangents0 -= vert.tangents0 * vert.normal * vert.normal; vert.tangents0.Normalize();
+                    vert.tangents1 -= vert.tangents1 * vert.normal * vert.normal; vert.tangents1.Normalize();
+                }
+
+                tri.tangentsCalculated = true;
             }
-
-            tri.tangentsCalculated = true;
-
-            if (allocaSize >= 600000) Mem_Free16(faceTangents);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -932,102 +925,100 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             o.z = v[2] * ilength;
         }
 
-        // Find the largest triangle that uses each vertex
-        struct IndexSort_
+
+        struct IndexSort
         {
             public int vertexNum;
             public int faceNum;
         }
 
-        static int IndexSort(IndexSort_ a, IndexSort_ b)
+        static int IndexSortCompar(IndexSort* a, IndexSort* b)
         {
-            if (a.vertexNum < b.vertexNum) return -1;
-            if (a.vertexNum > b.vertexNum) return 1;
+            if (a->vertexNum < b->vertexNum) return -1;
+            if (a->vertexNum > b->vertexNum) return 1;
             return 0;
         }
 
+        // Find the largest triangle that uses each vertex
         static void R_BuildDominantTris(SrfTriangles tri)
         {
             int i, j;
-            DominantTri dt;
-            var ind = R_StaticAllocMany<IndexSort_>(tri.numIndexes);
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
 
-            for (i = 0; i < tri.numIndexes; i++)
-            {
-                ind[i].vertexNum = tri.indexes[i];
-                ind[i].faceNum = i / 3;
-            }
-            qsort(ind, tri.numIndexes, sizeof( *ind), IndexSort );
+            var ind = (IndexSort*)R_StaticAlloc(tri.numIndexes);
 
-            tri.dominantTris = dt = triDominantTrisAllocator.Alloc(tri.numVerts);
-            memset(dt, 0, tri.numVerts * sizeof(dt[0]));
+            for (i = 0; i < tri.numIndexes; i++) { ind[i].vertexNum = tri_indexes[i]; ind[i].faceNum = i / 3; }
+            UnsafeX.QuickSort(ind, tri.numIndexes, sizeof(IndexSort), (a, b) => IndexSortCompar((IndexSort*)a, (IndexSort*)b));
 
+            tri.dominantTris = triDominantTrisAllocator.Alloc(tri.numVerts);
+            var dt = tri.dominantTris.Value;
+            fixed (DominantTri* dominantTrisD = dt) Unsafe.InitBlock(dominantTrisD, 0, (uint)(tri.numVerts * sizeof(DominantTri)));
+
+            float* d0 = stackalloc float[5], d1 = stackalloc float[5];
             for (i = 0; i < tri.numIndexes; i += j)
             {
-                float maxArea = 0;
-                int vertNum = ind[i].vertexNum;
+                var maxArea = 0f;
+                var vertNum = ind[i].vertexNum;
                 for (j = 0; i + j < tri.numIndexes && ind[i + j].vertexNum == vertNum; j++)
                 {
-                    float d0[5], d1[5];
-                    DrawVert a, b, c;
                     Vector3 normal, tangent, bitangent;
 
-                    int i1 = tri.indexes[ind[i + j].faceNum * 3 + 0];
-                    int i2 = tri.indexes[ind[i + j].faceNum * 3 + 1];
-                    int i3 = tri.indexes[ind[i + j].faceNum * 3 + 2];
+                    int i1 = tri_indexes[ind[i + j].faceNum * 3 + 0];
+                    int i2 = tri_indexes[ind[i + j].faceNum * 3 + 1];
+                    int i3 = tri_indexes[ind[i + j].faceNum * 3 + 2];
 
-                    a = tri.verts + i1;
-                    b = tri.verts + i2;
-                    c = tri.verts + i3;
+                    ref DrawVert a = ref tri_verts[i1];
+                    ref DrawVert b = ref tri_verts[i2];
+                    ref DrawVert c = ref tri_verts[i3];
 
-                    d0[0] = b.xyz[0] - a.xyz[0];
-                    d0[1] = b.xyz[1] - a.xyz[1];
-                    d0[2] = b.xyz[2] - a.xyz[2];
-                    d0[3] = b.st[0] - a.st[0];
-                    d0[4] = b.st[1] - a.st[1];
+                    d0[0] = b.xyz.x - a.xyz.x;
+                    d0[1] = b.xyz.y - a.xyz.y;
+                    d0[2] = b.xyz.z - a.xyz.z;
+                    d0[3] = b.st.x - a.st.x;
+                    d0[4] = b.st.y - a.st.y;
 
-                    d1[0] = c.xyz[0] - a.xyz[0];
-                    d1[1] = c.xyz[1] - a.xyz[1];
-                    d1[2] = c.xyz[2] - a.xyz[2];
-                    d1[3] = c.st[0] - a.st[0];
-                    d1[4] = c.st[1] - a.st[1];
+                    d1[0] = c.xyz.x - a.xyz.x;
+                    d1[1] = c.xyz.y - a.xyz.y;
+                    d1[2] = c.xyz.z - a.xyz.z;
+                    d1[3] = c.st.x - a.st.x;
+                    d1[4] = c.st.y - a.st.y;
 
-                    normal[0] = (d1[1] * d0[2] - d1[2] * d0[1]);
-                    normal[1] = (d1[2] * d0[0] - d1[0] * d0[2]);
-                    normal[2] = (d1[0] * d0[1] - d1[1] * d0[0]);
+                    normal.x = d1[1] * d0[2] - d1[2] * d0[1];
+                    normal.y = d1[2] * d0[0] - d1[0] * d0[2];
+                    normal.z = d1[0] * d0[1] - d1[1] * d0[0];
 
-                    float area = normal.Length();
+                    var area = normal.Length;
 
                     // if this is smaller than what we already have, skip it
                     if (area < maxArea) continue;
                     maxArea = area;
 
                     if (i1 == vertNum) { dt[vertNum].v2 = i2; dt[vertNum].v3 = i3; }
-                    else if (i2 == verNum) { dt[vertNum].v2 = i3; dt[vertNum].v3 = i1; }
+                    else if (i2 == vertNum) { dt[vertNum].v2 = i3; dt[vertNum].v3 = i1; }
                     else { dt[vertNum].v2 = i1; dt[vertNum].v3 = i2; }
-                    float len = area;
+                    var len = area;
                     if (len < 0.001f) len = 0.001f;
-                    dt[vertNum].normalizationScale[2] = 1.0f / len;     // normal
+                    dt[vertNum].normalizationScale[2] = 1f / len;     // normal
 
                     // texture area
                     area = d0[3] * d1[4] - d0[4] * d1[3];
 
-                    tangent[0] = (d0[0] * d1[4] - d0[4] * d1[0]);
-                    tangent[1] = (d0[1] * d1[4] - d0[4] * d1[1]);
-                    tangent[2] = (d0[2] * d1[4] - d0[4] * d1[2]);
-                    len = tangent.Length();
+                    tangent.x = d0[0] * d1[4] - d0[4] * d1[0];
+                    tangent.y = d0[1] * d1[4] - d0[4] * d1[1];
+                    tangent.z = d0[2] * d1[4] - d0[4] * d1[2];
+                    len = tangent.Length;
                     if (len < 0.001f) len = 0.001f;
                     dt[vertNum].normalizationScale[0] = (area > 0 ? 1 : -1) / len;  // tangents[0]
 
-                    bitangent[0] = (d0[3] * d1[0] - d0[0] * d1[3]);
-                    bitangent[1] = (d0[3] * d1[1] - d0[1] * d1[3]);
-                    bitangent[2] = (d0[3] * d1[2] - d0[2] * d1[3]);
-                    len = bitangent.Length();
+                    bitangent.x = (d0[3] * d1[0] - d0[0] * d1[3]);
+                    bitangent.y = (d0[3] * d1[1] - d0[1] * d1[3]);
+                    bitangent.z = (d0[3] * d1[2] - d0[2] * d1[3]);
+                    len = bitangent.Length;
                     if (len < 0.001f) len = 0.001f;
 #if DERIVE_UNSMOOTHED_BITANGENT
                     dt[vertNum].normalizationScale[1] = (area > 0 ? 1 : -1);
 #else
-        dt[vertNum].normalizationScale[1] = (area > 0 ? 1 : -1) / len;  // tangents[1]
+                    dt[vertNum].normalizationScale[1] = (area > 0 ? 1 : -1) / len;  // tangents[1]
 #endif
                 }
             }
@@ -1041,199 +1032,197 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (tri.tangentsCalculated) return;
 
 #if true
-
-            Simd.DeriveUnsmoothedTangents(tri.verts, tri.dominantTris, tri.numVerts);
-
+            fixed (DrawVert* verts = tri.verts.Value)
+            fixed (DominantTri* dominantTris = tri.dominantTris.Value)
+                Simd.DeriveUnsmoothedTangents(verts, dominantTris, tri.numVerts);
 #else
+            var tri_verts = tri.verts.Value; var tri_dominantTris = tri.dominantTris.Value;
+            float* d0 = stackalloc float[5], d1 = stackalloc float[5];
+            for (var i = 0; i < tri.numVerts; i++)
+            {
+                Vector3 temp;
+                ref DominantTri dt = ref tri_dominantTris[i];
 
-    for (int i = 0; i < tri.numVerts; i++)
-    {
-        idVec3 temp;
-        float d0[5], d1[5];
-        idDrawVert* a, *b, *c;
-        dominantTri_t* dt = &tri.dominantTris[i];
+                ref DrawVert a = ref tri_verts[i];
+                ref DrawVert b = ref tri_verts[dt.v2];
+                ref DrawVert c = ref tri_verts[dt.v3];
 
-        a = tri.verts + i;
-        b = tri.verts + dt.v2;
-        c = tri.verts + dt.v3;
+                d0[0] = b.xyz.x - a.xyz.z;
+                d0[1] = b.xyz.y - a.xyz.y;
+                d0[2] = b.xyz.z - a.xyz.z;
+                d0[3] = b.st.x - a.st.x;
+                d0[4] = b.st.y - a.st.y;
 
-        d0[0] = b.xyz[0] - a.xyz[0];
-        d0[1] = b.xyz[1] - a.xyz[1];
-        d0[2] = b.xyz[2] - a.xyz[2];
-        d0[3] = b.st[0] - a.st[0];
-        d0[4] = b.st[1] - a.st[1];
+                d1[0] = c.xyz.x - a.xyz.x;
+                d1[1] = c.xyz.y - a.xyz.y;
+                d1[2] = c.xyz.z - a.xyz.z;
+                d1[3] = c.st.x - a.st.x;
+                d1[4] = c.st.y - a.st.y;
 
-        d1[0] = c.xyz[0] - a.xyz[0];
-        d1[1] = c.xyz[1] - a.xyz[1];
-        d1[2] = c.xyz[2] - a.xyz[2];
-        d1[3] = c.st[0] - a.st[0];
-        d1[4] = c.st[1] - a.st[1];
+                a.normal.x = dt.normalizationScale[2] * (d1[1] * d0[2] - d1[2] * d0[1]);
+                a.normal.y = dt.normalizationScale[2] * (d1[2] * d0[0] - d1[0] * d0[2]);
+                a.normal.z = dt.normalizationScale[2] * (d1[0] * d0[1] - d1[1] * d0[0]);
 
-        a.normal[0] = dt.normalizationScale[2] * (d1[1] * d0[2] - d1[2] * d0[1]);
-        a.normal[1] = dt.normalizationScale[2] * (d1[2] * d0[0] - d1[0] * d0[2]);
-        a.normal[2] = dt.normalizationScale[2] * (d1[0] * d0[1] - d1[1] * d0[0]);
-
-        a.tangents[0][0] = dt.normalizationScale[0] * (d0[0] * d1[4] - d0[4] * d1[0]);
-        a.tangents[0][1] = dt.normalizationScale[0] * (d0[1] * d1[4] - d0[4] * d1[1]);
-        a.tangents[0][2] = dt.normalizationScale[0] * (d0[2] * d1[4] - d0[4] * d1[2]);
+                a.tangents0.x = dt.normalizationScale[0] * (d0[0] * d1[4] - d0[4] * d1[0]);
+                a.tangents0.y = dt.normalizationScale[0] * (d0[1] * d1[4] - d0[4] * d1[1]);
+                a.tangents0.z = dt.normalizationScale[0] * (d0[2] * d1[4] - d0[4] * d1[2]);
 
 #if DERIVE_UNSMOOTHED_BITANGENT
-        // derive the bitangent for a completely orthogonal axis,
-        // instead of using the texture T vector
-        a.tangents[1][0] = dt.normalizationScale[1] * (a.normal[2] * a.tangents[0][1] - a.normal[1] * a.tangents[0][2]);
-        a.tangents[1][1] = dt.normalizationScale[1] * (a.normal[0] * a.tangents[0][2] - a.normal[2] * a.tangents[0][0]);
-        a.tangents[1][2] = dt.normalizationScale[1] * (a.normal[1] * a.tangents[0][0] - a.normal[0] * a.tangents[0][1]);
+                // derive the bitangent for a completely orthogonal axis, instead of using the texture T vector
+                a.tangents1.x = dt.normalizationScale[1] * (a.normal.z * a.tangents0.y - a.normal.y * a.tangents0.z);
+                a.tangents1.y = dt.normalizationScale[1] * (a.normal.x * a.tangents0.z - a.normal.z * a.tangents0.x);
+                a.tangents1.z = dt.normalizationScale[1] * (a.normal.y * a.tangents0.x - a.normal.x * a.tangents0.y);
 #else
-        // calculate the bitangent from the texture T vector
-        a.tangents[1][0] = dt.normalizationScale[1] * (d0[3] * d1[0] - d0[0] * d1[3]);
-        a.tangents[1][1] = dt.normalizationScale[1] * (d0[3] * d1[1] - d0[1] * d1[3]);
-        a.tangents[1][2] = dt.normalizationScale[1] * (d0[3] * d1[2] - d0[2] * d1[3]);
+                // calculate the bitangent from the texture T vector
+                a.tangents1.x = dt.normalizationScale[1] * (d0[3] * d1[0] - d0[0] * d1[3]);
+                a.tangents1.y = dt.normalizationScale[1] * (d0[3] * d1[1] - d0[1] * d1[3]);
+                a.tangents1.z = dt.normalizationScale[1] * (d0[3] * d1[2] - d0[2] * d1[3]);
 #endif
-    }
+            }
 
 #endif
-
             tri.tangentsCalculated = true;
         }
 
         // This is called once for static surfaces, and every frame for deforming surfaces. Builds tangents, normals, and face planes.
         public static void R_DeriveTangents(SrfTriangles tri, bool allocFacePlanes = true)
         {
-            int i; Plane* planes;
+            int i;
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
 
             if (tri.dominantTris != null) { R_DeriveUnsmoothedTangents(tri); return; }
-
             if (tri.tangentsCalculated) return;
 
             tr.pc.c_tangentIndexes += tri.numIndexes;
 
-            if (!tri.facePlanes && allocFacePlanes) R_AllocStaticTriSurfPlanes(tri, tri.numIndexes);
-            planes = tri.facePlanes;
+            if (tri.facePlanes.Value == null && allocFacePlanes) R_AllocStaticTriSurfPlanes(tri, tri.numIndexes);
 
 #if true
-            if (planes == null) planes = stackalloc Plane[(tri.numIndexes / 3) + Plane.ALLOC16]; planes = _alloca16(planes);
+            var planesB = tri.facePlanes?.Value ?? stackalloc Plane[(tri.numIndexes / 3) + Plane.ALLOC16];
+            fixed (Plane* planesP = planesB)
+            {
+                var planes = (Plane*)_alloca16(planesP);
 
-            Simd.DeriveTangents(planes, tri.verts, tri.numVerts, tri.indexes, tri.numIndexes);
-
+                fixed (DrawVert* vertsV = tri_verts)
+                fixed (GlIndex* indexesG = tri_indexes)
+                    Simd.DeriveTangentsi(planes, vertsV, tri.numVerts, indexesG, tri.numIndexes);
+            }
 #else
+            var planesB = tri.facePlanes?.Value
             for (i = 0; i < tri.numVerts; i++)
             {
-                tri.verts[i].normal.Zero();
-                tri.verts[i].tangents[0].Zero();
-                tri.verts[i].tangents[1].Zero();
+                tri_verts[i].normal.Zero();
+                tri_verts[i].tangents0.Zero();
+                tri_verts[i].tangents1.Zero();
             }
 
+            float* d0 = stackalloc float[5], d1 = stackalloc float[5];
             for (i = 0; i < tri.numIndexes; i += 3)
             {
                 // make face tangents
-                float d0[5], d1[5];
-                DrawVert a, b, c;
-                Vector3 temp, normal, tangents[2];
+                ref DrawVert a = ref tri_verts[tri_indexes[i + 0]];
+                ref DrawVert b = ref tri_verts[tri_indexes[i + 1]];
+                ref DrawVert c = ref tri_verts[tri_indexes[i + 2]];
 
-                a = tri.verts + tri.indexes[i + 0];
-                b = tri.verts + tri.indexes[i + 1];
-                c = tri.verts + tri.indexes[i + 2];
+                d0[0] = b.xyz.x - a.xyz.x;
+                d0[1] = b.xyz.y - a.xyz.y;
+                d0[2] = b.xyz.z - a.xyz.z;
+                d0[3] = b.st.x - a.st.x;
+                d0[4] = b.st.y - a.st.y;
 
-                d0[0] = b.xyz[0] - a.xyz[0];
-                d0[1] = b.xyz[1] - a.xyz[1];
-                d0[2] = b.xyz[2] - a.xyz[2];
-                d0[3] = b.st[0] - a.st[0];
-                d0[4] = b.st[1] - a.st[1];
-
-                d1[0] = c.xyz[0] - a.xyz[0];
-                d1[1] = c.xyz[1] - a.xyz[1];
-                d1[2] = c.xyz[2] - a.xyz[2];
-                d1[3] = c.st[0] - a.st[0];
-                d1[4] = c.st[1] - a.st[1];
+                d1[0] = c.xyz.x - a.xyz.x;
+                d1[1] = c.xyz.y - a.xyz.y;
+                d1[2] = c.xyz.z - a.xyz.z;
+                d1[3] = c.st.x - a.st.x;
+                d1[4] = c.st.y - a.st.y;
 
                 // normal
-                temp[0] = d1[1] * d0[2] - d1[2] * d0[1];
-                temp[1] = d1[2] * d0[0] - d1[0] * d0[2];
-                temp[2] = d1[0] * d0[1] - d1[1] * d0[0];
-                VectorNormalizeFast2(temp, normal);
+                Vector3 temp;
+                temp.x = d1[1] * d0[2] - d1[2] * d0[1];
+                temp.y = d1[2] * d0[0] - d1[0] * d0[2];
+                temp.z = d1[0] * d0[1] - d1[1] * d0[0];
+                VectorNormalizeFast2(temp, out var normal);
 
 #if USE_INVA
-                float area = d0[3] * d1[4] - d0[4] * d1[3];
-                float inva = area < 0.0f ? -1 : 1;      // was = 1.0f / area;
+                var area = d0[3] * d1[4] - d0[4] * d1[3];
+                var inva = area < 0f ? -1f : 1f;      // was = 1f / area;
 
-                temp[0] = (d0[0] * d1[4] - d0[4] * d1[0]) * inva;
-                temp[1] = (d0[1] * d1[4] - d0[4] * d1[1]) * inva;
-                temp[2] = (d0[2] * d1[4] - d0[4] * d1[2]) * inva;
-                VectorNormalizeFast2(temp, tangents[0]);
+                temp.x = (d0[0] * d1[4] - d0[4] * d1[0]) * inva;
+                temp.y = (d0[1] * d1[4] - d0[4] * d1[1]) * inva;
+                temp.z = (d0[2] * d1[4] - d0[4] * d1[2]) * inva;
+                VectorNormalizeFast2(temp, out var tangents0);
 
-                temp[0] = (d0[3] * d1[0] - d0[0] * d1[3]) * inva;
-                temp[1] = (d0[3] * d1[1] - d0[1] * d1[3]) * inva;
-                temp[2] = (d0[3] * d1[2] - d0[2] * d1[3]) * inva;
-                VectorNormalizeFast2(temp, tangents[1]);
+                temp.x = (d0[3] * d1[0] - d0[0] * d1[3]) * inva;
+                temp.y = (d0[3] * d1[1] - d0[1] * d1[3]) * inva;
+                temp.z = (d0[3] * d1[2] - d0[2] * d1[3]) * inva;
+                VectorNormalizeFast2(temp, out var tangents1);
 #else
-                temp[0] = (d0[0] * d1[4] - d0[4] * d1[0]);
-                temp[1] = (d0[1] * d1[4] - d0[4] * d1[1]);
-                temp[2] = (d0[2] * d1[4] - d0[4] * d1[2]);
-                VectorNormalizeFast2(temp, tangents[0]);
+                temp.x = d0[0] * d1[4] - d0[4] * d1[0];
+                temp.y = d0[1] * d1[4] - d0[4] * d1[1];
+                temp.z = d0[2] * d1[4] - d0[4] * d1[2];
+                VectorNormalizeFast2(temp, out var tangents0);
 
-                temp[0] = (d0[3] * d1[0] - d0[0] * d1[3]);
-                temp[1] = (d0[3] * d1[1] - d0[1] * d1[3]);
-                temp[2] = (d0[3] * d1[2] - d0[2] * d1[3]);
-                VectorNormalizeFast2(temp, tangents[1]);
+                temp.x = d0[3] * d1[0] - d0[0] * d1[3];
+                temp.y = d0[3] * d1[1] - d0[1] * d1[3];
+                temp.z = d0[3] * d1[2] - d0[2] * d1[3];
+                VectorNormalizeFast2(temp, out var tangents1);
 #endif
 
                 // sum up the tangents and normals for each vertex on this face
-                for (int j = 0; j < 3; j++)
+                for (var j = 0; j < 3; j++)
                 {
-                    vert = &tri.verts[tri.indexes[i + j]];
+                    ref DrawVert vert = ref tri_verts[tri_indexes[i + j]];
                     vert.normal += normal;
-                    vert.tangents[0] += tangents[0];
-                    vert.tangents[1] += tangents[1];
+                    vert.tangents0 += tangents0;
+                    vert.tangents1 += tangents1;
                 }
 
-                if (planes)
+                if (planes != null)
                 {
-                    planes.Normal() = normal;
-                    planes.FitThroughPoint(a.xyz);
+                    planes->Normal = normal;
+                    planes->FitThroughPoint(a.xyz);
                     planes++;
                 }
             }
 #endif
 
 #if false
-            if (tri.silIndexes != null)
+            if (tri_silIndexes != null)
             {
-                for (i = 0; i < tri.numVerts; i++) tri.verts[i].normal.Zero();
-                for (i = 0; i < tri.numIndexes; i++) tri.verts[tri.silIndexes[i]].normal += planes[i / 3].Normal();
-                for (i = 0; i < tri.numIndexes; i++) tri.verts[tri.indexes[i]].normal = tri.verts[tri.silIndexes[i]].normal;
+                for (i = 0; i < tri.numVerts; i++) tri_verts[i].normal.Zero();
+                for (i = 0; i < tri.numIndexes; i++) tri_verts[tri_silIndexes[i]].normal += planes[i / 3].Normal();
+                for (i = 0; i < tri.numIndexes; i++) tri_verts[tri_indexes[i]].normal = tri.verts[tri_silIndexes[i]].normal;
             }
 #else
-            var dupVerts = tri.dupVerts;
-            var verts = tri.verts;
+            var tri_dupVerts = tri.dupVerts.Value;
 
             // add the normal of a duplicated vertex to the normal of the first vertex with the same XYZ
-            for (i = 0; i < tri.numDupVerts; i++) verts[dupVerts[i * 2 + 0]].normal += verts[dupVerts[i * 2 + 1]].normal;
+            for (i = 0; i < tri.numDupVerts; i++) tri_verts[tri_dupVerts[i * 2 + 0]].normal += tri_verts[tri_dupVerts[i * 2 + 1]].normal;
 
             // copy vertex normals to duplicated vertices
-            for (i = 0; i < tri.numDupVerts; i++) verts[dupVerts[i * 2 + 1]].normal = verts[dupVerts[i * 2 + 0]].normal;
+            for (i = 0; i < tri.numDupVerts; i++) tri_verts[tri_dupVerts[i * 2 + 1]].normal = tri_verts[tri_dupVerts[i * 2 + 0]].normal;
 #endif
 
 #if false
-            // sum up both sides of the mirrored verts
-            // so the S vectors exactly mirror, and the T vectors are equal
+            var tri_mirroredVerts = tri.mirroredVerts.Value;
+
+            // sum up both sides of the mirrored verts so the S vectors exactly mirror, and the T vectors are equal
             for (i = 0; i < tri.numMirroredVerts; i++)
             {
-                DrawVert v1, v2;
+                ref DrawVert v1 = ref tri_verts[tri.numVerts - tri.numMirroredVerts + i];
+                ref DrawVert v2 = ref tri_verts[tri_mirroredVerts[i]];
 
-                v1 = &tri.verts[tri.numVerts - tri.numMirroredVerts + i];
-                v2 = &tri.verts[tri.mirroredVerts[i]];
+                v1.tangents0 -= v2.tangents0;
+                v1.tangents1 += v2.tangents1;
 
-                v1.tangents[0] -= v2.tangents[0];
-                v1.tangents[1] += v2.tangents[1];
-
-                v2.tangents[0] = vec3_origin - v1.tangents[0];
-                v2.tangents[1] = v1.tangents[1];
+                v2.tangents0 = Vector3.origin - v1.tangents0;
+                v2.tangents1 = v1.tangents1;
             }
 #endif
 
             // project the summed vectors onto the normal plane and normalize.  The tangent vectors will not necessarily be orthogonal to each other, but they will be orthogonal to the surface normal.
 #if true
-            Simd.NormalizeTangents(tri.verts, tri.numVerts);
+            fixed (DrawVert* vertsD = tri_verts) Simd.NormalizeTangents(vertsD, tri.numVerts);
 #else
             for (i = 0; i < tri.numVerts; i++)
             {
@@ -1252,7 +1241,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 }
             }
 #endif
-
             tri.tangentsCalculated = true;
             tri.facePlanesCalculated = true;
         }
@@ -1262,6 +1250,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_RemoveDuplicatedTriangles(SrfTriangles tri)
         {
             int i, j, r, a, b, c, c_removed;
+            var tri_indexes = tri.indexes.Value; var tri_silIndexes = tri.silIndexes.Value;
 
             c_removed = 0;
 
@@ -1270,16 +1259,16 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {
                 for (r = 0; r < 3; r++)
                 {
-                    a = tri.silIndexes[i + r];
-                    b = tri.silIndexes[i + (r + 1) % 3];
-                    c = tri.silIndexes[i + (r + 2) % 3];
+                    a = tri_silIndexes[i + r];
+                    b = tri_silIndexes[i + (r + 1) % 3];
+                    c = tri_silIndexes[i + (r + 2) % 3];
                     for (j = i + 3; j < tri.numIndexes; j += 3)
                     {
-                        if (tri.silIndexes[j] == a && tri.silIndexes[j + 1] == b && tri.silIndexes[j + 2] == c)
+                        if (tri_silIndexes[j] == a && tri_silIndexes[j + 1] == b && tri_silIndexes[j + 2] == c)
                         {
                             c_removed++;
-                            memmove(tri.indexes + j, tri.indexes + j + 3, (tri.numIndexes - j - 3) * sizeof(tri.indexes[0]));
-                            memmove(tri.silIndexes + j, tri.silIndexes + j + 3, (tri.numIndexes - j - 3) * sizeof(tri.silIndexes[0]));
+                            fixed (GlIndex* indexesG = tri_indexes) Unsafe.CopyBlock(indexesG + j, indexesG + j + 3, (uint)((tri.numIndexes - j - 3) * sizeof(GlIndex)));
+                            fixed (GlIndex* silIndexesG = tri_silIndexes) Unsafe.CopyBlock(silIndexesG + j, silIndexesG + j + 3, (uint)((tri.numIndexes - j - 3) * sizeof(GlIndex)));
                             tri.numIndexes -= 3;
                             j -= 3;
                         }
@@ -1294,19 +1283,20 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_RemoveDegenerateTriangles(SrfTriangles tri)
         {
             int i, a, b, c, c_removed;
+            var tri_indexes = tri.indexes.Value; var tri_silIndexes = tri.silIndexes?.Value;
 
             // check for completely degenerate triangles
             c_removed = 0;
             for (i = 0; i < tri.numIndexes; i += 3)
             {
-                a = tri.silIndexes[i];
-                b = tri.silIndexes[i + 1];
-                c = tri.silIndexes[i + 2];
+                a = tri_silIndexes[i];
+                b = tri_silIndexes[i + 1];
+                c = tri_silIndexes[i + 2];
                 if (a == b || a == c || b == c)
                 {
                     c_removed++;
-                    memmove(tri.indexes + i, tri.indexes + i + 3, (tri.numIndexes - i - 3) * sizeof(tri.indexes[0]));
-                    if (tri.silIndexes) memmove(tri.silIndexes + i, tri.silIndexes + i + 3, (tri.numIndexes - i - 3) * sizeof(tri.silIndexes[0]));
+                    fixed (GlIndex* indexesG = tri_indexes) Unsafe.CopyBlock(indexesG + i, indexesG + i + 3, (uint)((tri.numIndexes - i - 3) * sizeof(GlIndex)));
+                    if (tri_silIndexes != null) fixed (GlIndex* silIndexesG = tri_silIndexes) Unsafe.CopyBlock(silIndexesG + i, silIndexesG + i + 3, (uint)((tri.numIndexes - i - 3) * sizeof(GlIndex)));
                     tri.numIndexes -= 3;
                     i -= 3;
                 }
@@ -1316,17 +1306,18 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (c_removed != 0) common.Printf($"removed {c_removed} degenerate triangles\n");
         }
 
-        static void R_TestDegenerateTextureSpace(srfTriangles_t* tri)
+        static void R_TestDegenerateTextureSpace(SrfTriangles tri)
         {
             int i, c_degenerate;
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
 
             // check for triangles with a degenerate texture space
             c_degenerate = 0;
             for (i = 0; i < tri.numIndexes; i += 3)
             {
-                ref DrawVert a = ref tri.verts[tri.indexes[i + 0]];
-                ref DrawVert b = ref tri.verts[tri.indexes[i + 1]];
-                ref DrawVert c = ref tri.verts[tri.indexes[i + 2]];
+                ref DrawVert a = ref tri_verts[tri_indexes[i + 0]];
+                ref DrawVert b = ref tri_verts[tri_indexes[i + 1]];
+                ref DrawVert c = ref tri_verts[tri_indexes[i + 2]];
 
                 if (a.st == b.st || b.st == c.st || c.st == a.st) c_degenerate++;
             }
@@ -1336,19 +1327,20 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         public static void R_RemoveUnusedVerts(SrfTriangles tri)
         {
-            int i, index, used; int* mark;
+            int i, index, used;
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value; var tri_silIndexes = tri.silIndexes?.Value;
 
-            mark = (int*)R_ClearedStaticAlloc(tri.numVerts * sizeof( *mark) );
+            var mark = (int*)R_ClearedStaticAlloc(tri.numVerts * sizeof(int));
 
             for (i = 0; i < tri.numIndexes; i++)
             {
-                index = tri.indexes[i];
+                index = tri_indexes[i];
                 if (index < 0 || index >= tri.numVerts) common.Error("R_RemoveUnusedVerts: bad index");
                 mark[index] = 1;
 
                 if (tri.silIndexes != null)
                 {
-                    index = tri.silIndexes[i];
+                    index = tri_silIndexes[i];
                     if (index < 0 || index >= tri.numVerts) common.Error("R_RemoveUnusedVerts: bad index");
                     mark[index] = 1;
                 }
@@ -1357,7 +1349,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             used = 0;
             for (i = 0; i < tri.numVerts; i++)
             {
-                if (!mark[i]) ;
+                if (mark[i] == 0) continue;
                 mark[i] = used + 1;
                 used++;
             }
@@ -1366,16 +1358,16 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {
                 for (i = 0; i < tri.numIndexes; i++)
                 {
-                    tri.indexes[i] = mark[tri.indexes[i]] - 1;
-                    if (tri.silIndexes) tri.silIndexes[i] = mark[tri.silIndexes[i]] - 1;
+                    tri_indexes[i] = mark[tri_indexes[i]] - 1;
+                    if (tri_silIndexes != null) tri_silIndexes[i] = mark[tri_silIndexes[i]] - 1;
                 }
                 tri.numVerts = used;
 
                 for (i = 0; i < tri.numVerts; i++)
                 {
                     index = mark[i];
-                    if (!index) continue;
-                    tri.verts[index - 1] = tri.verts[i];
+                    if (index == 0) continue;
+                    tri_verts[index - 1] = tri_verts[i];
                 }
 
                 // this doesn't realloc the arrays to save the memory used by the unused verts
@@ -1397,13 +1389,15 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             newTri.numIndexes = totalIndexes;
             R_AllocStaticTriSurfVerts(newTri, newTri.numVerts);
             R_AllocStaticTriSurfIndexes(newTri, newTri.numIndexes);
+            var newTri_indexes = newTri.indexes.Value;
 
             totalVerts = 0; totalIndexes = 0;
             for (i = 0; i < numSurfaces; i++)
             {
                 tri = surfaces[i];
-                memcpy(newTri.verts + totalVerts, tri.verts, tri.numVerts * sizeof(DrawVert));
-                for (j = 0; j < tri.numIndexes; j++) newTri.indexes[totalIndexes + j] = totalVerts + tri.indexes[j];
+                var tri_indexes = tri.indexes.Value;
+                fixed (DrawVert* vertsA = newTri.verts.Value, vertsB = tri.verts.Value) Unsafe.CopyBlock(vertsA + totalVerts, vertsB, (uint)(tri.numVerts * sizeof(DrawVert)));
+                for (j = 0; j < tri.numIndexes; j++) newTri_indexes[totalIndexes + j] = totalVerts + tri_indexes[j];
                 totalVerts += tri.numVerts;
                 totalIndexes += tri.numIndexes;
             }
@@ -1413,30 +1407,24 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         // Only deals with vertexes and indexes, not silhouettes, planes, etc. Does NOT perform a cleanup triangles, so there may be duplicated verts in the result.
         public static SrfTriangles R_MergeTriangles(SrfTriangles tri1, SrfTriangles tri2)
-        {
-            SrfTriangles tris[2];
-
-            tris[0] = tri1;
-            tris[1] = tri2;
-
-            return R_MergeSurfaceList(tris, 2);
-        }
+            => R_MergeSurfaceList(new[] { tri1, tri2 }, 2);
 
         // Lit two sided surfaces need to have the triangles actually duplicated, they can't just turn on two sided lighting, because the normal and tangents are wrong on the other sides.
         // This should be called before R_CleanupTriangles
         public static void R_ReverseTriangles(SrfTriangles tri)
         {
             int i;
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
 
             // flip the normal on each vertex. If the surface is going to have generated normals, this won't matter, but if it has explicit normals, this will keep it on the correct side
-            for (i = 0; i < tri.numVerts; i++) tri.verts[i].normal = vec3_origin - tri.verts[i].normal;
+            for (i = 0; i < tri.numVerts; i++) tri_verts[i].normal = Vector3.origin - tri_verts[i].normal;
 
             // flip the index order to make them back sided
             for (i = 0; i < tri.numIndexes; i += 3)
             {
-                GlIndex temp = tri.indexes[i + 0];
-                tri.indexes[i + 0] = tri.indexes[i + 1];
-                tri.indexes[i + 1] = temp;
+                var temp = tri_indexes[i + 0];
+                tri_indexes[i + 0] = tri_indexes[i + 1];
+                tri_indexes[i + 1] = temp;
             }
         }
 
@@ -1463,39 +1451,66 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         #region DEFORMED SURFACES
 
-        public static DeformInfo R_BuildDeformInfo(int numVerts, Span<DrawVert> verts, int numIndexes, int[] indexes, bool useUnsmoothedTangents)
+        // deformable meshes precalculate as much as possible from a base frame, then generate complete srfTriangles_t from just a new set of vertexes
+        public class DeformInfo
         {
-            DeformInfo deform;
-            SrfTriangles tri;
+            public static int sizeOf = Marshal.SizeOf<DeformInfo>();
+
+            public int numSourceVerts;
+
+            // numOutputVerts may be smaller if the input had duplicated or degenerate triangles it will often be larger if the input had mirrored texture seams that needed to be busted for proper tangent spaces
+            public int numOutputVerts;
+            public DynamicElement<DrawVert> verts;
+
+            public int numMirroredVerts;
+            public DynamicElement<int> mirroredVerts;
+
+            public int numIndexes;
+            public DynamicElement<GlIndex> indexes;
+
+            public DynamicElement<GlIndex> silIndexes;
+
+            public int numDupVerts;
+            public DynamicElement<int> dupVerts;
+
+            public int numSilEdges;
+            public DynamicElement<SilEdge> silEdges;
+
+            public DynamicElement<DominantTri> dominantTris;
+        }
+
+        public static DeformInfo R_BuildDeformInfo(int numVerts, DrawVert* verts, int numIndexes, int[] indexes, bool useUnsmoothedTangents)
+        {
+            DeformInfo deform; SrfTriangles tri = new();
             int i;
-            memset(&tri, 0, sizeof(tri));
 
             tri.numVerts = numVerts;
-            R_AllocStaticTriSurfVerts(&tri, tri.numVerts);
-            Simd.Memcpy(tri.verts, verts, tri.numVerts * sizeof(tri.verts[0]));
+            R_AllocStaticTriSurfVerts(tri, tri.numVerts);
+            fixed (DrawVert* vertsD = tri.verts.Value) Simd.Memcpy(vertsD, verts, tri.numVerts * sizeof(DrawVert));
 
             tri.numIndexes = numIndexes;
-            R_AllocStaticTriSurfIndexes(&tri, tri.numIndexes);
+            R_AllocStaticTriSurfIndexes(tri, tri.numIndexes);
+            var tri_indexes = tri.indexes.Value;
 
             // don't memcpy, so we can change the index type from int to short without changing the interface
-            for (i = 0; i < tri.numIndexes; i++) tri.indexes[i] = indexes[i];
+            for (i = 0; i < tri.numIndexes; i++) tri_indexes[i] = indexes[i];
 
-            R_RangeCheckIndexes(&tri);
-            R_CreateSilIndexes(&tri);
+            R_RangeCheckIndexes(tri);
+            R_CreateSilIndexes(tri);
 
             // should we order the indexes here?
-            //R_RemoveDuplicatedTriangles(&tri);
-            //R_RemoveDegenerateTriangles(&tri);
-            //R_RemoveUnusedVerts(&tri);
-            R_IdentifySilEdges(&tri, false); // we cannot remove coplanar edges, because they can deform to silhouettes
+            //R_RemoveDuplicatedTriangles(tri);
+            //R_RemoveDegenerateTriangles(tri);
+            //R_RemoveUnusedVerts(tri);
+            R_IdentifySilEdges(tri, false); // we cannot remove coplanar edges, because they can deform to silhouettes
 
-            R_DuplicateMirroredVertexes(&tri); // split mirror points into multiple points
+            R_DuplicateMirroredVertexes(tri); // split mirror points into multiple points
 
-            R_CreateDupVerts(&tri);
+            R_CreateDupVerts(tri);
 
-            if (useUnsmoothedTangents) R_BuildDominantTris(&tri);
+            if (useUnsmoothedTangents) R_BuildDominantTris(tri);
 
-            deform = R_ClearedStaticAlloc<DeformInfo>();
+            deform = R_ClearedStaticAllocT<DeformInfo>();
 
             deform.numSourceVerts = numVerts;
             deform.numOutputVerts = tri.numVerts;
@@ -1531,19 +1546,19 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (deformInfo.dominantTris != null) triDominantTrisAllocator.Free(deformInfo.dominantTris);
             if (deformInfo.mirroredVerts != null) triMirroredVertAllocator.Free(deformInfo.mirroredVerts);
             if (deformInfo.dupVerts != null) triDupVertAllocator.Free(deformInfo.dupVerts);
-            R_StaticFree(deformInfo);
+            R_StaticFreeT(ref deformInfo);
         }
 
         public static int R_DeformInfoMemoryUsed(DeformInfo deformInfo)
         {
             var total = 0;
-            if (deformInfo.indexes != null) total += deformInfo.numIndexes * sizeof(deformInfo.indexes[0]);
-            if (deformInfo.silIndexes != null) total += deformInfo.numIndexes * sizeof(deformInfo.silIndexes[0]);
-            if (deformInfo.silEdges != null) total += deformInfo.numSilEdges * sizeof(deformInfo.silEdges[0]);
-            if (deformInfo.dominantTris != null) total += deformInfo.numSourceVerts * sizeof(deformInfo.dominantTris[0]);
-            if (deformInfo.mirroredVerts != null) total += deformInfo.numMirroredVerts * sizeof(deformInfo.mirroredVerts[0]);
-            if (deformInfo.dupVerts != null) total += deformInfo.numDupVerts * sizeof(deformInfo.dupVerts[0]);
-            total += sizeof(DeformInfo);
+            if (deformInfo.indexes != null) total += deformInfo.numIndexes * sizeof(GlIndex);
+            if (deformInfo.silIndexes != null) total += deformInfo.numIndexes * sizeof(GlIndex);
+            if (deformInfo.silEdges != null) total += deformInfo.numSilEdges * sizeof(SilEdge);
+            if (deformInfo.dominantTris != null) total += deformInfo.numSourceVerts * sizeof(DominantTri);
+            if (deformInfo.mirroredVerts != null) total += deformInfo.numMirroredVerts * sizeof(int);
+            if (deformInfo.dupVerts != null) total += deformInfo.numDupVerts * sizeof(int);
+            total += DeformInfo.sizeOf;
             return total;
         }
 

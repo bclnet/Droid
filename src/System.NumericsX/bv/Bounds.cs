@@ -9,8 +9,8 @@ namespace System.NumericsX
     {
         public static readonly Bounds zero = new(Vector3.origin, Vector3.origin);
 
-        Vector3 b0;
-        Vector3 b1;
+        public Vector3 b0;
+        public Vector3 b1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Bounds(in Bounds a)

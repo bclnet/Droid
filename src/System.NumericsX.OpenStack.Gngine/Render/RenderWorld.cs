@@ -1,16 +1,19 @@
+using System.Collections.Generic;
 using System.NumericsX.OpenStack.Gngine.Framework;
 using System.NumericsX.OpenStack.Gngine.UI;
 using Qhandle = System.Int32;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
 {
-    static partial class RenderWorldX
+    public class AreaNumRef : BlockAllocElement<AreaNumRef>
     {
-        public static int SIMD_ROUND_JOINTS(int numJoints) => (numJoints + 1) & ~1;
-        public static void SIMD_INIT_LAST_JOINT(JointMat[] joints, int numJoints)
-        {
-            if ((numJoints & 1) != 0) joints[numJoints] = joints[numJoints - 1];
-        }
+    }
+
+    public unsafe class Interaction : BlockAllocElement<Interaction>
+    {
+        internal static readonly SrfTriangles LIGHT_TRIS_DEFERRED = new();
+        internal static readonly byte* LIGHT_CULL_ALL_FRONT = (byte*)(new IntPtr(-1));
+        internal const float LIGHT_CLIP_EPSILON = 0.1f;
     }
 
     public delegate bool DeferredEntityCallback(RenderEntity e, RenderView v);
@@ -192,8 +195,14 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         PS_BLOCK_ALL = (1 << IRenderWorld.NUM_PORTAL_ATTRIBUTES) - 1
     }
 
-    public interface IRenderWorld
+    public abstract class IRenderWorld
     {
+        public static int SIMD_ROUND_JOINTS(int numJoints) => (numJoints + 1) & ~1;
+        public static void SIMD_INIT_LAST_JOINT(JointMat[] joints, int numJoints)
+        {
+            if ((numJoints & 1) != 0) joints[numJoints] = joints[numJoints - 1];
+        }
+
         public const int NUM_PORTAL_ATTRIBUTES = 3;
 
         public const string PROC_FILE_EXT = "proc";
@@ -233,139 +242,176 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public const int MAX_RENDERENTITY_GUI = 3;
 
         // The same render world can be reinitialized as often as desired a NULL or empty mapName will create an empty, single area world
-        bool InitFromMap(string mapName);
+        public abstract bool InitFromMap(string mapName);
 
         //-------------- Entity and Light Defs -----------------
 
         // entityDefs and lightDefs are added to a given world to determine what will be drawn for a rendered scene.  Most update work is defered
         // until it is determined that it is actually needed for a given view.
-        Qhandle AddEntityDef(RenderEntity re);
-        void UpdateEntityDef(Qhandle entityHandle, RenderEntity re);
-        void FreeEntityDef(Qhandle entityHandle);
-        RenderEntity GetRenderEntity(Qhandle entityHandle);
+        public abstract Qhandle AddEntityDef(RenderEntity re);
+        public abstract void UpdateEntityDef(Qhandle entityHandle, RenderEntity re);
+        public abstract void FreeEntityDef(Qhandle entityHandle);
+        public abstract RenderEntity GetRenderEntity(Qhandle entityHandle);
 
-        Qhandle AddLightDef(RenderLight rlight);
-        void UpdateLightDef(Qhandle lightHandle, RenderLight rlight);
-        void FreeLightDef(Qhandle lightHandle);
-        RenderLight GetRenderLight(Qhandle lightHandle);
+        public abstract Qhandle AddLightDef(RenderLight rlight);
+        public abstract void UpdateLightDef(Qhandle lightHandle, RenderLight rlight);
+        public abstract void FreeLightDef(Qhandle lightHandle);
+        public abstract RenderLight GetRenderLight(Qhandle lightHandle);
 
         // Force the generation of all light / surface interactions at the start of a level If this isn't called, they will all be dynamically generated
-        void GenerateAllInteractions();
+        public abstract void GenerateAllInteractions();
 
         // returns true if this area model needs portal sky to draw
-        bool CheckAreaForPortalSky(int areaNum);
+        public abstract bool CheckAreaForPortalSky(int areaNum);
 
         //-------------- Decals and Overlays  -----------------
 
         // Creates decals on all world surfaces that the winding projects onto. The projection origin should be infront of the winding plane.
         // The decals are projected onto world geometry between the winding plane and the projection origin. The decals are depth faded from the winding plane to a certain distance infront of the
         // winding plane and the same distance from the projection origin towards the winding.
-        void ProjectDecalOntoWorld(out FixedWinding winding, out Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
+        public abstract void ProjectDecalOntoWorld(out FixedWinding winding, out Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
 
         // Creates decals on static models.
-        void ProjectDecal(Qhandle entityHandle, out FixedWinding winding, out Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
+        public abstract void ProjectDecal(Qhandle entityHandle, out FixedWinding winding, out Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
 
         // Creates overlays on dynamic models.
-        void ProjectOverlay(Qhandle entityHandle, Plane[] localTextureAxis, Material material);
+        public abstract void ProjectOverlay(Qhandle entityHandle, Plane[] localTextureAxis, Material material);
 
         // Removes all decals and overlays from the given entity def.
-        void RemoveDecals(Qhandle entityHandle);
+        public abstract void RemoveDecals(Qhandle entityHandle);
 
         //-------------- Scene Rendering -----------------
 
         // some calls to material functions use the current renderview time when servicing cinematics.  this function ensures that any parms accessed (such as time) are properly set.
-        void SetRenderView(RenderView renderView);
+        public abstract void SetRenderView(RenderView renderView);
 
         // rendering a scene may actually render multiple subviews for mirrors and portals, and may render composite textures for gui console screens and light projections
         // It would also be acceptable to render a scene multiple times, for "rear view mirrors", etc
-        void RenderScene(RenderView renderView);
+        public abstract void RenderScene(RenderView renderView);
 
         //-------------- Portal Area Information -----------------
 
         // returns the number of portals
-        int NumPortals();
+        public abstract int NumPortals();
 
         // returns 0 if no portal contacts the bounds
         // This is used by the game to identify portals that are contained inside doors, so the connection between areas can be topologically
         // terminated when the door shuts.
-        Qhandle FindPortal(out Bounds b);
+        public abstract Qhandle FindPortal(out Bounds b);
 
         // doors explicitly close off portals when shut
         // multiple bits can be set to block multiple things, ie: ( PS_VIEW | PS_LOCATION | PS_AIR )
-        void SetPortalState(Qhandle portal, int blockingBits);
-        int GetPortalState(Qhandle portal);
+        public abstract void SetPortalState(Qhandle portal, int blockingBits);
+        public abstract int GetPortalState(Qhandle portal);
 
         // returns true only if a chain of portals without the given connection bits set exists between the two areas (a door doesn't separate them, etc)
-        bool AreasAreConnected(int areaNum1, int areaNum2, PortalConnection connection);
+        public abstract bool AreasAreConnected(int areaNum1, int areaNum2, PortalConnection connection);
 
         // returns the number of portal areas in a map, so game code can build information tables for the different areas
-        int NumAreas();
+        public abstract int NumAreas();
 
         // Will return -1 if the point is not in an area, otherwise it will return 0 <= value < NumAreas()
-        int PointInArea(Vector3 point);
+        public abstract int PointInArea(Vector3 point);
 
         // fills the *areas array with the numbers of the areas the bounds cover
         // returns the total number of areas the bounds cover
-        int BoundsInAreas(out Bounds bounds, int[] areas, int maxAreas);
+        public abstract int BoundsInAreas(out Bounds bounds, int[] areas, int maxAreas);
 
         // Used by the sound system to do area flowing
-        int NumPortalsInArea(int areaNum);
+        public abstract int NumPortalsInArea(int areaNum);
 
         // returns one portal from an area
-        ExitPortal GetPortal(int areaNum, int portalNum);
+        public abstract ExitPortal GetPortal(int areaNum, int portalNum);
 
         //-------------- Tracing  -----------------
 
         // Checks a ray trace against any gui surfaces in an entity, returning the fraction location of the trace on the gui surface, or -1,-1 if no hit.
         // This doesn't do any occlusion testing, simply ignoring non-gui surfaces. start / end are in global world coordinates.
-        GuiPoint GuiTrace(Qhandle entityHandle, object animator, Vector3 start, Vector3 end); // Koz added animator
+        public abstract GuiPoint GuiTrace(Qhandle entityHandle, object animator, Vector3 start, Vector3 end); // Koz added animator
 
         // Traces vs the render model, possibly instantiating a dynamic version, and returns true if something was hit
-        bool ModelTrace(out ModelTrace trace, Qhandle entityHandle, out Vector3 start, out Vector3 end, float radius);
+        public abstract bool ModelTrace(out ModelTrace trace, Qhandle entityHandle, out Vector3 start, out Vector3 end, float radius);
 
         // Traces vs the whole rendered world. FIXME: we need some kind of material flags.
-        bool Trace(out ModelTrace trace, out Vector3 start, out Vector3 end, float radius, bool skipDynamic = true, bool skipPlayer = false);
+        public abstract bool Trace(out ModelTrace trace, out Vector3 start, out Vector3 end, float radius, bool skipDynamic = true, bool skipPlayer = false);
 
         // Traces vs the world model bsp tree.
-        bool FastWorldTrace(out ModelTrace trace, out Vector3 start, out Vector3 end);
+        public abstract bool FastWorldTrace(out ModelTrace trace, out Vector3 start, out Vector3 end);
 
         //-------------- Demo Control  -----------------
 
         // Writes a loadmap command to the demo, and clears archive counters.
-        void StartWritingDemo(VFileDemo demo);
-        void StopWritingDemo();
+        public abstract void StartWritingDemo(VFileDemo demo);
+        public abstract void StopWritingDemo();
 
         // Returns true when demoRenderView has been filled in.
         // adds/updates/frees entityDefs and lightDefs based on the current demo file and returns the renderView to be used to render this frame.
         // a demo file may need to be advanced multiple times if the framerate is less than 30hz
         // demoTimeOffset will be set if a new map load command was processed before the next renderScene
-        bool ProcessDemoCommand(VFileDemo readDemo, RenderView demoRenderView, out int demoTimeOffset);
+        public abstract bool ProcessDemoCommand(VFileDemo readDemo, RenderView demoRenderView, out int demoTimeOffset);
 
         // this is used to regenerate all interactions ( which is currently only done during influences ), there may be a less expensive way to do it
-        void RegenerateWorld();
+        public abstract void RegenerateWorld();
 
         //-------------- Debug Visualization  -----------------
 
         // Line drawing for debug visualization
-        void DebugClearLines(int time);     // a time of 0 will clear all lines and text
-        void DebugLine(in Vector4 color, in Vector3 start, in Vector3 end, int lifetime = 0, bool depthTest = false);
-        void DebugArrow(in Vector4 color, in Vector3 start, in Vector3 end, int size, int lifetime = 0);
-        void DebugWinding(in Vector4 color, Winding w, in Vector3 origin, Matrix3x3 axis, int lifetime = 0, bool depthTest = false);
-        void DebugCircle(in Vector4 color, in Vector3 origin, in Vector3 dir, float radius, int numSteps, int lifetime = 0, bool depthTest = false);
-        void DebugSphere(in Vector4 color, in Sphere sphere, int lifetime = 0, bool depthTest = false);
-        void DebugBounds(in Vector4 color, in Bounds bounds, in Vector3 org = default, int lifetime = 0);
-        void DebugBox(in Vector4 color, in Box box, int lifetime = 0);
-        void DebugFrustum(in Vector4 color, Frustum frustum, bool showFromOrigin = false, int lifetime = 0);
-        void DebugCone(in Vector4 color, in Vector3 apex, in Vector3 dir, float radius1, float radius2, int lifetime = 0);
-        void DebugScreenRect(in Vector4 color, ScreenRect rect, ViewDef viewDef, int lifetime = 0);
-        void DebugAxis(in Vector3 origin, in Matrix3x3 axis);
+        public abstract void DebugClearLines(int time);     // a time of 0 will clear all lines and text
+        public abstract void DebugLine(in Vector4 color, in Vector3 start, in Vector3 end, int lifetime = 0, bool depthTest = false);
+        public abstract void DebugArrow(in Vector4 color, in Vector3 start, in Vector3 end, int size, int lifetime = 0);
+        public abstract void DebugWinding(in Vector4 color, Winding w, in Vector3 origin, Matrix3x3 axis, int lifetime = 0, bool depthTest = false);
+        public abstract void DebugCircle(in Vector4 color, in Vector3 origin, in Vector3 dir, float radius, int numSteps, int lifetime = 0, bool depthTest = false);
+        public abstract void DebugSphere(in Vector4 color, in Sphere sphere, int lifetime = 0, bool depthTest = false);
+        public abstract void DebugBounds(in Vector4 color, in Bounds bounds, in Vector3 org = default, int lifetime = 0);
+        public abstract void DebugBox(in Vector4 color, in Box box, int lifetime = 0);
+        public abstract void DebugFrustum(in Vector4 color, Frustum frustum, bool showFromOrigin = false, int lifetime = 0);
+        public abstract void DebugCone(in Vector4 color, in Vector3 apex, in Vector3 dir, float radius1, float radius2, int lifetime = 0);
+        public abstract void DebugScreenRect(in Vector4 color, ScreenRect rect, ViewDef viewDef, int lifetime = 0);
+        public abstract void DebugAxis(in Vector3 origin, in Matrix3x3 axis);
 
         // Polygon drawing for debug visualization.
-        void DebugClearPolygons(int time);      // a time of 0 will clear all polygons
-        void DebugPolygon(in Vector4 color, Winding winding, int lifeTime = 0, bool depthTest = false);
+        public abstract void DebugClearPolygons(int time);      // a time of 0 will clear all polygons
+        public abstract void DebugPolygon(in Vector4 color, Winding winding, int lifeTime = 0, bool depthTest = false);
 
         // Text drawing for debug visualization.
-        void DrawText(string text, in Vector3 origin, float scale, Vector4 color, in Matrix3x3 viewAxis, int align = 1, int lifetime = 0, bool depthTest = false);
+        public abstract void DrawText(string text, in Vector3 origin, float scale, Vector4 color, in Matrix3x3 viewAxis, int align = 1, int lifetime = 0, bool depthTest = false);
+
+        //-----------------------
+
+        public string mapName;              // ie: maps/tim_dm2.proc, written to demoFile
+        public DateTime mapTimeStamp;         // for fast reloads of the same level
+
+        public AreaNode[] areaNodes;
+        public int numAreaNodes;
+
+        public PortalArea[] portalAreas;
+        public int numPortalAreas;
+        public int connectedAreaNum;       // incremented every time a door portal state changes
+
+        public ScreenRect areaScreenRect;
+
+        public DoublePortal[] doublePortals;
+        public int numInterAreaPortals;
+
+        public List<IRenderModel> localModels = new();
+
+        public List<IRenderEntity> entityDefs = new();
+        public List<IRenderLight> lightDefs = new();
+
+        public BlockAlloc<AreaReference> areaReferenceAllocator = new(1024);
+        public BlockAlloc<Interaction> interactionAllocator = new(256);
+        public BlockAlloc<AreaNumRef> areaNumRefAllocator = new(1024);
+
+        // all light / entity interactions are referenced here for fast lookup without
+        // having to crawl the doubly linked lists.  EnntityDefs are sequential for better
+        // cache access, because the table is accessed by light in idRenderWorldLocal::CreateLightDefInteractions()
+        // Growing this table is time consuming, so we add a pad value to the number
+        // of entityDefs and lightDefs
+        public Interaction[] interactionTable;
+        public int interactionTableWidth;      // entityDefs
+        public int interactionTableHeight;     // lightDefs
+
+        public bool generateAllInteractionsCalled;
     }
 
     // --- WORLD LOCAL --- //
