@@ -4,7 +4,7 @@ using GlIndex = System.Int32;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
 {
-    public static partial class ModelX
+    public static partial class R
     {
         // shared between the renderer, game, and Maya export DLL
         public const string MD5_VERSION_STRING = "MD5Version";
@@ -12,8 +12,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public const string MD5_ANIM_EXT = "md5anim";
         public const string MD5_CAMERA_EXT = "md5camera";
         public const int MD5_VERSION = 10;
-
-        public const int SHADOW_CAP_INFINITE = 64;
     }
 
     public struct SilEdge
@@ -94,6 +92,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public VertCache ambientCache;              // DrawVert
         public VertCache lightingCache;             // lightingCache_t
         public VertCache shadowCache;               // shadowCache_t
+
+        public SrfTriangles() { }
+        public SrfTriangles(SrfTriangles clone) { }
 
         internal void memset()
         {

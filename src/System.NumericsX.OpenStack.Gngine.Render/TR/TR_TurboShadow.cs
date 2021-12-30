@@ -1,5 +1,11 @@
-using System.NumericsX;
 using GlIndex = System.Int32;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
+using static System.NumericsX.OpenStack.Gngine.Render.R;
+using static System.NumericsX.OpenStack.OpenStack;
+using static System.NumericsX.Platform;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
 {
@@ -8,13 +14,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         static int c_turboUsedVerts, c_turboUnusedVerts;
 
         // are dangling edges that are outside the light frustum still making planes?
-        public static SrfTriangles R_CreateVertexProgramTurboShadowVolume(RenderEntityLocal ent, SrfTriangles tri, RenderLightLocal light, SrfCullInfo cullInfo)
+        public static SrfTriangles R_CreateVertexProgramTurboShadowVolume(IRenderEntity ent, SrfTriangles tri, IRenderLight light, out SrfCullInfo cullInfo)
         {
-            int i, j;
-            SrfTriangles newTri;
-            SilEdge sil;
-            GlIndex[] indexes;
-            byte[] facing;
+            int i, j; SrfTriangles newTri; GlIndex[] indexes; byte[] facing;
+            var tri_indexes = tri.indexes.Value; var tri_silEdges = tri.silEdges.Value;
 
             R_CalcInteractionFacing(ent, tri, light, cullInfo);
 
@@ -25,7 +28,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             facing = cullInfo.facing;
 
             // if all the triangles are inside the light frustum
-            if (cullInfo.cullBits == LIGHT_CULL_ALL_FRONT || !r_useShadowProjectedCull.Bool)
+            if (cullInfo.cullBits == Interaction.LIGHT_CULL_ALL_FRONT || !r_useShadowProjectedCull.Bool)
             {
                 // count the number of shadowing faces
                 for (i = 0; i < numFaces; i++) numShadowingFaces += facing[i];
@@ -34,7 +37,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             else
             {
                 // make all triangles that are outside the light frustum "facing", so they won't cast shadows
-                indexes = tri.indexes;
+                indexes = tri_indexes;
                 byte* modifyFacing = cullInfo.facing;
                 byte* cullBits = cullInfo.cullBits;
 
@@ -64,12 +67,13 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             GlIndex tempIndexes = newTri.indexes;
             GlIndex shadowIndexes = newTri.indexes;
 #else
-            GlIndex tempIndexes = new GlIndex[tri.numSilEdges * 6];
-            GlIndex shadowIndexes = tempIndexes;
+            GlIndex* tempIndexes = stackalloc GlIndex[tri.numSilEdges * 6 + intX.ALLOC16]; tempIndexes = (GlIndex*)_alloca16(tempIndexes);
+            GlIndex* shadowIndexes = tempIndexes;
 #endif
 
             // create new triangles along sil planes
-            for (sil = tri.silEdges, i = tri.numSilEdges; i > 0; i--, sil++)
+            SilEdge* sil;
+            for (sil = tri_silEdges, i = tri.numSilEdges; i > 0; i--, sil++)
             {
                 int f1 = facing[sil.p1], f2 = facing[sil.p2];
 
@@ -103,15 +107,15 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // allocate memory for the indexes
             R_AllocStaticTriSurfIndexes(newTri, newTri.numIndexes);
             // copy the indexes we created for the sil planes
-            Simd.Memcpy(newTri.indexes, tempIndexes, numShadowIndexes * sizeof(tempIndexes[0]));
+            Simd.Memcpy(newTri.indexes, tempIndexes, numShadowIndexes * sizeof(GlIndex));
 #endif
 
             // these have no effect, because they extend to infinity
             newTri.bounds.Clear();
 
             // put some faces on the model and some on the distant projection
-            indexes = tri.indexes;
-            shadowIndexes = newTri.indexes + numShadowIndexes;
+            indexes = tri_indexes;
+            shadowIndexes = newTri_indexes + numShadowIndexes;
 
             for (i = 0, j = 0; i < tri.numIndexes; i += 3, j++)
             {

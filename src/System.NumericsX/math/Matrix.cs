@@ -210,10 +210,14 @@ namespace System.NumericsX
 
         public const int Dimension = 4;
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public T ToFloatPtr<T>(FloatPtr<T> callback)
-        //    => mat0.ToFloatPtr(callback);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Fixed<T>(FloatPtr<T> callback)
+            => mat0.Fixed(callback);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Fixed(FloatPtr callback)
+            => mat0.Fixed(callback);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToString(int precision = 2)
         {
             fixed (float* _ = &mat0.x) return FloatArrayToString(_, Dimension, precision);
@@ -728,10 +732,14 @@ namespace System.NumericsX
             return rotation.Vec * MathX.DEG2RAD(rotation.Angle);
         }
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public T ToFloatPtr<T>(FloatPtr<T> callback)
-        //    => mat0.ToFloatPtr(callback);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Fixed<T>(FloatPtr<T> callback)
+            => mat0.Fixed(callback);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Fixed(FloatPtr callback)
+            => mat0.Fixed(callback);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToString(int precision = 2)
         {
             fixed (float* _ = &mat0.x) return FloatArrayToString(_, Dimension, precision);
@@ -1266,10 +1274,14 @@ namespace System.NumericsX
 
         public const int Dimension = 16;
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public T ToFloatPtr<T>(FloatPtr<T> callback)
-        //    => mat0.ToFloatPtr(callback);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Fixed<T>(FloatPtr<T> callback)
+            => mat0.Fixed(callback);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Fixed(FloatPtr callback)
+            => mat0.Fixed(callback);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToString(int precision = 2)
         {
             fixed (float* _ = &mat0.x) return FloatArrayToString(_, Dimension, precision);
@@ -1758,10 +1770,14 @@ namespace System.NumericsX
 
         public const int Dimension = 25;
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public T ToFloatPtr<T>(FloatPtr<T> callback)
-        //    => mat0.ToFloatPtr(callback);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Fixed<T>(FloatPtr<T> callback)
+            => mat0.Fixed(callback);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Fixed(FloatPtr callback)
+            => mat0.Fixed(callback);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToString(int precision = 2)
         {
             fixed (float* _ = &mat0.x) return FloatArrayToString(_, Dimension, precision);
@@ -2510,10 +2526,14 @@ namespace System.NumericsX
 
         public const int Dimension = 36;
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public T ToFloatPtr<T>(FloatPtr<T> callback)
-        //    => mat0.ToFloatPtr(callback);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Fixed<T>(FloatPtr<T> callback)
+            => mat0.Fixed(callback);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Fixed(FloatPtr callback)
+            => mat0.Fixed(callback);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToString(int precision = 2)
         {
             fixed (float* _ = mat0.p) return FloatArrayToString(_, Dimension, precision);
@@ -3695,12 +3715,18 @@ namespace System.NumericsX
             return v;
         }
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public T ToFloatPtr<T>(FloatPtr<T> callback)
-        //{
-        //    fixed (float* _ = mat) return callback(_);
-        //}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Fixed<T>(FloatPtr<T> callback)
+        {
+            fixed (float* _ = mat) return callback(_);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Fixed(FloatPtr callback)
+        {
+            fixed (float* _ = mat) callback(_);
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToString(int precision = 2)
         {
             var dimension = Dimension;

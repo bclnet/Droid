@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using WaveEngine.Bindings.OpenGLES;
 using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.Gngine.Render.QGL;
+using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.OpenStack;
 
 namespace System.NumericsX.OpenStack.Gngine.Render

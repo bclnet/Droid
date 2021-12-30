@@ -275,11 +275,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         #region GL wrapper/helper functions
 
-        //        //public static void GL_SelectTexture(int unit);
-        //        public static void GL_CheckErrors();
-        //        //public static void GL_ClearStateDelta();
-        //        //public static void GL_State(int stateVector);
-        //        //public static void GL_Cull(int cullType);
+        //public static void GL_SelectTexture(int unit) => throw new NotImplementedException();
+        public static void GL_CheckErrors() => throw new NotImplementedException();
+        //public static void GL_ClearStateDelta() => throw new NotImplementedException();
+        //public static void GL_State(int stateVector) => throw new NotImplementedException();
+        //public static void GL_Cull(CT cullType) => throw new NotImplementedException();
 
         public const int GLS_SRCBLEND_ZERO = 0x00000001;
         public const int GLS_SRCBLEND_ONE = 0x0;
@@ -378,10 +378,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public const float DEFAULT_FOG_DISTANCE = 500f;
         public const int FOG_ENTER_SIZE = 64;
         public const float FOG_ENTER = (FOG_ENTER_SIZE + 1f) / (FOG_ENTER_SIZE * 2);
-
-        //int frameCount { get; }
-        //ViewDef viewDef { get; }
-        //Vector4 ambientLightVector { get; }
 
         // set up cvars and basic data structures, but don't init OpenGL, so it can also be used for dedicated servers
         public abstract void Init();

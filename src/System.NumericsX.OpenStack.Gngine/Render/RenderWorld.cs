@@ -7,13 +7,15 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 {
     public class AreaNumRef : BlockAllocElement<AreaNumRef>
     {
+        public AreaNumRef next;
+        public int areaNum;
     }
 
-    public unsafe class Interaction : BlockAllocElement<Interaction>
+    public unsafe partial class Interaction : BlockAllocElement<Interaction>
     {
-        internal static readonly SrfTriangles LIGHT_TRIS_DEFERRED = new();
-        internal static readonly byte* LIGHT_CULL_ALL_FRONT = (byte*)(new IntPtr(-1));
-        internal const float LIGHT_CLIP_EPSILON = 0.1f;
+        public static readonly SrfTriangles LIGHT_TRIS_DEFERRED = new();
+        public static readonly byte* LIGHT_CULL_ALL_FRONT = (byte*)(new IntPtr(-1));
+        public const float LIGHT_CLIP_EPSILON = 0.1f;
     }
 
     public delegate bool DeferredEntityCallback(RenderEntity e, RenderView v);

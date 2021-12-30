@@ -1,7 +1,7 @@
 #define TEST_TRACE
-using System.NumericsX;
-using System.Timers;
+using System.Diagnostics;
 using static System.NumericsX.OpenStack.OpenStack;
+using static System.NumericsX.OpenStack.Gngine.Render.R;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
 {
@@ -20,15 +20,16 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public unsafe static LocalTrace R_LocalTrace(Vector3 start, Vector3 end, float radius, SrfTriangles tri)
         {
             int i, j;
-            Plane[] planes = new Plane[4];
+            Plane* planes = stackalloc Plane[4];
             LocalTrace hit = new();
             int c_testEdges, c_testPlanes, c_intersect;
             Vector3 startDir;
             byte totalOr;
             float radiusSqr;
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value; var tri_facePlanes = tri.facePlanes.Value;
 
 #if TEST_TRACE
-            Timer trace_timer = new();
+            Stopwatch trace_timer = new();
             trace_timer.Start();
 #endif
 
@@ -47,7 +48,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             // catagorize each point against the four planes
             var cullBits = stackalloc byte[tri.numVerts];
-            Simd.TracePointCull(cullBits, totalOr, radius, planes, tri.verts, tri.numVerts);
+            fixed(DrawVert* vertsD = tri_verts) Simd.TracePointCull(cullBits, out totalOr, radius, planes, vertsD, tri.numVerts);
 
             // if we don't have points on both sides of both the ray planes, no intersection
             if (((totalOr ^ (totalOr >> 4)) & 3) != 0) { /*common.Printf("nothing crossed the trace planes\n");*/ return hit; }
@@ -58,11 +59,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // scan for triangles that cross both planes
             c_testPlanes = c_testEdges = c_intersect = 0;
 
-            radiusSqr = Square(radius);
+            radiusSqr = MathX.Square(radius);
             startDir = end - start;
 
-            if (tri.facePlanes == null || !tri.facePlanesCalculated)
-                R_DeriveFacePlanes(tri);
+            if (tri.facePlanes == null || !tri.facePlanesCalculated) R_DeriveFacePlanes(tri);
 
             for (i = 0, j = 0; i < tri.numIndexes; i += 3, j++)
             {
@@ -70,9 +70,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 Vector3 cross, edge; Vector3[] dir = new Vector3[3];
 
                 // get sidedness info for the triangle
-                triOr = cullBits[tri.indexes[i + 0]];
-                triOr |= cullBits[tri.indexes[i + 1]];
-                triOr |= cullBits[tri.indexes[i + 2]];
+                triOr = cullBits[tri_indexes[i + 0]];
+                triOr |= cullBits[tri_indexes[i + 1]];
+                triOr |= cullBits[tri_indexes[i + 2]];
 
                 // if we don't have points on both sides of both the ray planes, no intersection
                 if (((triOr ^ (triOr >> 4)) & 3) != 0) continue;
@@ -82,7 +82,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
                 c_testPlanes++;
 
-                ref Plane plane = ref tri.facePlanes[j];
+                ref Plane plane = ref tri_facePlanes[j];
                 d1 = plane.Distance(start);
                 d2 = plane.Distance(end);
 
@@ -100,52 +100,52 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
                 // see if the point is within the three edges if radius > 0 the triangle is expanded with a circle in the triangle plane
 
-                dir[0] = tri.verts[tri.indexes[i + 0]].xyz - point;
-                dir[1] = tri.verts[tri.indexes[i + 1]].xyz - point;
+                dir[0] = tri_verts[tri_indexes[i + 0]].xyz - point;
+                dir[1] = tri_verts[tri_indexes[i + 1]].xyz - point;
 
                 cross = dir[0].Cross(dir[1]);
                 d = plane.Normal * cross;
                 if (d > 0f)
                 {
                     if (radiusSqr <= 0f) continue;
-                    edge = tri.verts[tri.indexes[i + 0]].xyz - tri.verts[tri.indexes[i + 1]].xyz;
+                    edge = tri_verts[tri_indexes[i + 0]].xyz - tri_verts[tri_indexes[i + 1]].xyz;
                     edgeLengthSqr = edge.LengthSqr;
                     if (cross.LengthSqr > edgeLengthSqr * radiusSqr) continue;
                     d = edge * dir[0];
                     if (d < 0f)
                     {
-                        edge = tri.verts[tri.indexes[i + 0]].xyz - tri.verts[tri.indexes[i + 2]].xyz;
+                        edge = tri_verts[tri_indexes[i + 0]].xyz - tri_verts[tri_indexes[i + 2]].xyz;
                         d = edge * dir[0];
                         if (d < 0f && dir[0].LengthSqr > radiusSqr) continue;
                     }
                     else if (d > edgeLengthSqr)
                     {
-                        edge = tri.verts[tri.indexes[i + 1]].xyz - tri.verts[tri.indexes[i + 2]].xyz;
+                        edge = tri_verts[tri_indexes[i + 1]].xyz - tri_verts[tri_indexes[i + 2]].xyz;
                         d = edge * dir[1];
                         if (d < 0f && dir[1].LengthSqr > radiusSqr) continue;
                     }
                 }
 
-                dir[2] = tri.verts[tri.indexes[i + 2]].xyz - point;
+                dir[2] = tri_verts[tri_indexes[i + 2]].xyz - point;
 
                 cross = dir[1].Cross(dir[2]);
                 d = plane.Normal * cross;
                 if (d > 0f)
                 {
                     if (radiusSqr <= 0f) continue;
-                    edge = tri.verts[tri.indexes[i + 1]].xyz - tri.verts[tri.indexes[i + 2]].xyz;
+                    edge = tri_verts[tri_indexes[i + 1]].xyz - tri_verts[tri_indexes[i + 2]].xyz;
                     edgeLengthSqr = edge.LengthSqr;
                     if (cross.LengthSqr > edgeLengthSqr * radiusSqr) continue;
                     d = edge * dir[1];
                     if (d < 0f)
                     {
-                        edge = tri.verts[tri.indexes[i + 1]].xyz - tri.verts[tri.indexes[i + 0]].xyz;
+                        edge = tri_verts[tri_indexes[i + 1]].xyz - tri_verts[tri_indexes[i + 0]].xyz;
                         d = edge * dir[1];
                         if (d < 0f && dir[1].LengthSqr > radiusSqr) continue;
                     }
                     else if (d > edgeLengthSqr)
                     {
-                        edge = tri.verts[tri.indexes[i + 2]].xyz - tri.verts[tri.indexes[i + 0]].xyz;
+                        edge = tri_verts[tri_indexes[i + 2]].xyz - tri_verts[tri_indexes[i + 0]].xyz;
                         d = edge * dir[2];
                         if (d < 0f && dir[2].LengthSqr > radiusSqr) continue;
                     }
@@ -156,19 +156,19 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 if (d > 0f)
                 {
                     if (radiusSqr <= 0f) continue;
-                    edge = tri.verts[tri.indexes[i + 2]].xyz - tri.verts[tri.indexes[i + 0]].xyz;
+                    edge = tri_verts[tri_indexes[i + 2]].xyz - tri_verts[tri_indexes[i + 0]].xyz;
                     edgeLengthSqr = edge.LengthSqr;
                     if (cross.LengthSqr > edgeLengthSqr * radiusSqr) continue;
                     d = edge * dir[2];
                     if (d < 0f)
                     {
-                        edge = tri.verts[tri.indexes[i + 2]].xyz - tri.verts[tri.indexes[i + 1]].xyz;
+                        edge = tri_verts[tri_indexes[i + 2]].xyz - tri_verts[tri_indexes[i + 1]].xyz;
                         d = edge * dir[2];
                         if (d < 0f && dir[2].LengthSqr > radiusSqr) continue;
                     }
                     else if (d > edgeLengthSqr)
                     {
-                        edge = tri.verts[tri.indexes[i + 0]].xyz - tri.verts[tri.indexes[i + 1]].xyz;
+                        edge = tri_verts[tri_indexes[i + 0]].xyz - tri_verts[tri_indexes[i + 1]].xyz;
                         d = edge * dir[0];
                         if (d < 0f && dir[0].LengthSqr > radiusSqr) continue;
                     }
@@ -180,14 +180,14 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 hit.fraction = f;
                 hit.normal = plane.Normal;
                 hit.point = point;
-                hit.indexes[0] = tri.indexes[i];
-                hit.indexes[1] = tri.indexes[i + 1];
-                hit.indexes[2] = tri.indexes[i + 2];
+                hit.indexes[0] = tri_indexes[i];
+                hit.indexes[1] = tri_indexes[i + 1];
+                hit.indexes[2] = tri_indexes[i + 2];
             }
 
 #if TEST_TRACE
             trace_timer.Stop();
-            common.Printf($"testVerts:{tri.numVerts} c_testPlanes:{c_testPlanes} c_testEdges:{c_testEdges} c_intersect:{c_intersect} msec:{trace_timer.Milliseconds()}\n");
+            common.Printf($"testVerts:{tri.numVerts} c_testPlanes:{c_testPlanes} c_testEdges:{c_testEdges} c_intersect:{c_intersect} msec:{trace_timer.ElapsedMilliseconds}\n");
 #endif
 
             return hit;

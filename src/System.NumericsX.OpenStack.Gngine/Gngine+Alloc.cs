@@ -159,7 +159,7 @@ namespace System.NumericsX.OpenStack.Gngine
         }
 
         // This data will be automatically freed when the current frame's back end completes.
-        // This should only be called by the front end.The back end shouldn't need to allocate memory.
+        // This should only be called by the front end. The back end shouldn't need to allocate memory.
         // If we passed smpFrame in, the back end could alloc memory, because it will always be a different frameData than the front end is using.
         // All temporary data, like dynamic tesselations and local spaces are allocated here.
         // The memory will not move, but it may not be contiguous with previous allocations even from this frame.
@@ -204,6 +204,9 @@ namespace System.NumericsX.OpenStack.Gngine
 
             return &block->base_;
         }
+
+        public static T R_ClearedFrameAllocT<T>() where T : new()
+            => new();
 
         public static void* R_ClearedFrameAlloc(int bytes)
         {

@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace System.NumericsX
 {
-    public struct DrawVert
+    public unsafe struct DrawVert
     {
         // GPU half-float bit patterns
         [MethodImpl(MethodImplOptions.AggressiveInlining)] static int HF_MANTISSA(ushort x) => x & 1023;
@@ -12,7 +12,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)] static int HF_SIGN(ushort x) => (x & 32768) != 0 ? -1 : 1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe static float F16toF32(float f) //: opt
+        static float F16toF32(float f) //: opt
         {
             var x = *(ushort*)&f; //: added
             var e = HF_EXP(x);
@@ -24,7 +24,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static unsafe ushort F32toF16(float a)
+        static ushort F32toF16(float a)
         {
             var f = *(uint*)&a;
             var signbit = (f & 0x80000000) >> 16;
@@ -48,10 +48,15 @@ namespace System.NumericsX
         public byte color2;
         public byte color3;
 
+        public void SetColor(int index, byte icolor)
+        {
+            fixed (byte* c = &color0) c[index] = icolor;
+        }
+
         public DrawVert Clone()
             => (DrawVert)MemberwiseClone();
 
-        public unsafe float this[int index]
+        public float this[int index]
         {
             get
             {
@@ -79,7 +84,7 @@ namespace System.NumericsX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void LerpAll(in DrawVert a, in DrawVert b, float f)
+        public void LerpAll(in DrawVert a, in DrawVert b, float f)
         {
             xyz = a.xyz + f * (b.xyz - a.xyz);
             st = a.st + f * (b.st - a.st);
@@ -99,7 +104,7 @@ namespace System.NumericsX
             tangents0.Cross(tangents1, normal); tangents0.Normalize();
         }
 
-        public unsafe uint Color
+        public uint Color
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { fixed (byte* _ = &color0) return *(uint*)_; }

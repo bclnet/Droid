@@ -232,7 +232,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // Loads 3 point sizes, 12, 24, and 48
-        bool RegisterFont(string fontName, out FontInfoEx font)
+        static bool RegisterFont(string fontName, out FontInfoEx font)
         {
 #if BUILD_FREETYPE
             FT_Face face;

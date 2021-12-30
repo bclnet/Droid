@@ -323,7 +323,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (buffer.vbo == VBOEmpty)
             {
                 if (buffer.frontEndMemory == IntPtr.Zero) Console.WriteLine("MEMORY NULL");
-                fixed (uint* vbo = &buffer.vbo) qglGenBuffers(1, vbo);
+                qglGenBuffers(1, out buffer.vbo);
 
                 if (buffer.vbo > vboMax) vboMax = buffer.vbo;
             }
@@ -371,7 +371,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             block.frontEndMemory = Marshal.AllocHGlobal(bytes + 16);
 #endif
 
-            fixed (uint* vbo = &block.vbo) qglGenBuffers(1, vbo);
+            qglGenBuffers(1, out block.vbo);
 
             if (indexBuffer)
             {
@@ -482,12 +482,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             block.frontEndMemoryDirty = false;
 
             // Try to align, might be faster
-            unchecked
-            {
-                size += 16;
-                size &= (int)0xFFFFFFF0;
-            }
-
+            unchecked { size += 16; size &= (int)0xFFFFFFF0; }
             block.size = size;
 
             block.tag = TAG.TEMP;
@@ -641,10 +636,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 #endif
         }
 
-        const uint GL_MAP_INVALIDATE_BUFFER_BIT = 0x0008;
-        const uint GL_MAP_INVALIDATE_RANGE_BIT = 0x0004;
-        const uint GL_MAP_UNSYNCHRONIZED_BIT = 0x0020;
-        const uint GL_MAP_WRITE_BIT = 0x0002;
+        public const uint GL_MAP_INVALIDATE_BUFFER_BIT = 0x0008;
+        public const uint GL_MAP_INVALIDATE_RANGE_BIT = 0x0004;
+        public const uint GL_MAP_UNSYNCHRONIZED_BIT = 0x0020;
+        public const uint GL_MAP_WRITE_BIT = 0x0002;
 
         public unsafe void BeginBackEnd(int which)
         {

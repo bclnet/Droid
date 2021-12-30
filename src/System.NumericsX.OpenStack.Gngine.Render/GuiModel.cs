@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.Gngine.Render.R;
-using static System.NumericsX.OpenStack.Gngine.Render.TR;
 using GlIndex = System.Int32;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
@@ -121,19 +120,19 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             }
         }
 
-        void EmitSurface(GuiModelSurface surf, float[] modelMatrix, float[] modelViewMatrix, bool depthHack)
+        void EmitSurface(GuiModelSurface surf, float* modelMatrix, float* modelViewMatrix, bool depthHack)
         {
             SrfTriangles tri;
 
             if (surf.numVerts == 0) return;     // nothing in the surface
 
             // copy verts and indexes
-            tri = R_ClearedFrameAlloc<SrfTriangles>();
+            tri = R_ClearedFrameAllocT<SrfTriangles>();
 
             tri.numIndexes = surf.numIndexes;
             tri.numVerts = surf.numVerts;
-            tri.indexes = R_FrameAllocMany<GlIndex>(tri.numIndexes);
-            memcpy(tri.indexes, &indexes[surf.firstIndex], tri.numIndexes * sizeof(tri.indexes[0]));
+            tri.indexes = (GlIndex*)R_FrameAlloc(tri.numIndexes * sizeof(GlIndex));
+            memcpy(tri.indexes, &indexes[surf.firstIndex], tri.numIndexes * sizeof(GlIndex));
 
             // we might be able to avoid copying these and just let them reference the list vars but some things, like deforms and recursive guis, need to access the verts in cpu space, not just through the vertex range
             tri.verts = R_FrameAllocMany<DrawVert>(tri.numVerts);
@@ -156,13 +155,13 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             R_AddDrawSurf(tri, guiSpace, &renderEntity, surf.material, tr.viewDef.scissor);
         }
 
-        public void EmitToCurrentView(float[] modelMatrix, bool depthHack)
+        public void EmitToCurrentView(float* modelMatrix, bool depthHack)
         {
             var modelViewMatrix = stackalloc float[48];
 
-            myGlMultMatrix(modelMatrix, tr.viewDef.worldSpace.eyeViewMatrix[0], modelViewMatrix); // Left Eye
-            myGlMultMatrix(modelMatrix, tr.viewDef.worldSpace.eyeViewMatrix[1], modelViewMatrix + 16); // Right Eye
-            myGlMultMatrix(modelMatrix, tr.viewDef.worldSpace.eyeViewMatrix[2], modelViewMatrix + 32); // Center Eye
+            fixed (float* matrix = tr.viewDef.worldSpace.u.eyeViewMatrix0) myGlMultMatrix(modelMatrix, matrix, modelViewMatrix); // Left Eye
+            fixed (float* matrix = tr.viewDef.worldSpace.u.eyeViewMatrix1) myGlMultMatrix(modelMatrix, matrix, modelViewMatrix + 16); // Right Eye
+            fixed (float* matrix = tr.viewDef.worldSpace.u.eyeViewMatrix2) myGlMultMatrix(modelMatrix, matrix, modelViewMatrix + 32); // Center Eye
 
             for (var i = 0; i < surfaces.Count; i++) EmitSurface(surfaces[i], modelMatrix, modelViewMatrix, depthHack);
         }
@@ -174,7 +173,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             if (surfaces[0].numVerts == 0) return;
 
-            viewDef = R_ClearedFrameAlloc<ViewDef>();
+            viewDef = R_ClearedFrameAllocT<ViewDef>();
 
             // for gui editor
             if (tr.viewDef == null || !tr.viewDef.isEditor)
@@ -185,15 +184,15 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 tr.RenderViewToViewport(&viewDef.renderView, &viewDef.viewport);
 
                 viewDef.scissor.x1 = 0; viewDef.scissor.y1 = 0;
-                viewDef.scissor.x2 = viewDef.viewport.x2 - viewDef.viewport.x1; viewDef.scissor.y2 = viewDef.viewport.y2 - viewDef.viewport.y1;
+                viewDef.scissor.x2 = (short)(viewDef.viewport.x2 - viewDef.viewport.x1); viewDef.scissor.y2 = (short)(viewDef.viewport.y2 - viewDef.viewport.y1);
             }
             else
             {
                 viewDef.renderView.x = tr.viewDef.renderView.x; viewDef.renderView.y = tr.viewDef.renderView.y;
                 viewDef.renderView.width = tr.viewDef.renderView.width; viewDef.renderView.height = tr.viewDef.renderView.height;
 
-                viewDef.viewport.x1 = tr.viewDef.renderView.x; viewDef.viewport.x2 = tr.viewDef.renderView.x + tr.viewDef.renderView.width;
-                viewDef.viewport.y1 = tr.viewDef.renderView.y; viewDef.viewport.y2 = tr.viewDef.renderView.y + tr.viewDef.renderView.height;
+                viewDef.viewport.x1 = (short)tr.viewDef.renderView.x; viewDef.viewport.x2 = (short)(tr.viewDef.renderView.x + tr.viewDef.renderView.width);
+                viewDef.viewport.y1 = (short)tr.viewDef.renderView.y; viewDef.viewport.y2 = (short)(tr.viewDef.renderView.y + tr.viewDef.renderView.height);
 
                 viewDef.scissor.x1 = tr.viewDef.scissor.x1; viewDef.scissor.y1 = tr.viewDef.scissor.y1;
                 viewDef.scissor.x2 = tr.viewDef.scissor.x2; viewDef.scissor.y2 = tr.viewDef.scissor.y2;
@@ -210,18 +209,23 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             viewDef.projectionMatrix[14] = -1f;
             viewDef.projectionMatrix[15] = 1f;
 
-            for (var i = 0; i < 3; ++i)
-            {
-                viewDef.worldSpace.eyeViewMatrix[i][0] = 1f;
-                viewDef.worldSpace.eyeViewMatrix[i][5] = 1f;
-                viewDef.worldSpace.eyeViewMatrix[i][10] = 1f;
-                viewDef.worldSpace.eyeViewMatrix[i][15] = 1f;
-            }
+            viewDef.worldSpace.u.eyeViewMatrix0[0] = 1f;
+            viewDef.worldSpace.u.eyeViewMatrix0[5] = 1f;
+            viewDef.worldSpace.u.eyeViewMatrix0[10] = 1f;
+            viewDef.worldSpace.u.eyeViewMatrix0[15] = 1f;
+            viewDef.worldSpace.u.eyeViewMatrix1[0] = 1f;
+            viewDef.worldSpace.u.eyeViewMatrix1[5] = 1f;
+            viewDef.worldSpace.u.eyeViewMatrix1[10] = 1f;
+            viewDef.worldSpace.u.eyeViewMatrix1[15] = 1f;
+            viewDef.worldSpace.u.eyeViewMatrix2[0] = 1f;
+            viewDef.worldSpace.u.eyeViewMatrix2[5] = 1f;
+            viewDef.worldSpace.u.eyeViewMatrix2[10] = 1f;
+            viewDef.worldSpace.u.eyeViewMatrix2[15] = 1f;
 
-            viewDef.worldSpace.viewMatrix[0] = 1f;
-            viewDef.worldSpace.viewMatrix[5] = 1f;
-            viewDef.worldSpace.viewMatrix[10] = 1f;
-            viewDef.worldSpace.viewMatrix[15] = 1f;
+            viewDef.worldSpace.u.viewMatrix[0] = 1f;
+            viewDef.worldSpace.u.viewMatrix[5] = 1f;
+            viewDef.worldSpace.u.viewMatrix[10] = 1f;
+            viewDef.worldSpace.u.viewMatrix[15] = 1f;
 
             viewDef.worldSpace.modelMatrix[0] = 1f;
             viewDef.worldSpace.modelMatrix[5] = 1f;
@@ -229,14 +233,17 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             viewDef.worldSpace.modelMatrix[15] = 1f;
 
             viewDef.maxDrawSurfs = surfaces.Count;
-            viewDef.drawSurfs = (DrawSurf)R_FrameAlloc(viewDef.maxDrawSurfs * sizeof(DrawSurf));
+            viewDef.drawSurfs = (DrawSurf*)R_FrameAlloc(viewDef.maxDrawSurfs * sizeof(DrawSurf));
             viewDef.numDrawSurfs = 0;
 
             var oldViewDef = tr.viewDef;
             tr.viewDef = viewDef;
 
             // add the surfaces to this view
-            for (var i = 0; i < surfaces.Count; i++) EmitSurface(surfaces[i], viewDef.worldSpace.modelMatrix, viewDef.worldSpace.viewMatrix, false);
+            for (var i = 0; i < surfaces.Count; i++)
+                fixed (float* modelMatrixF = viewDef.worldSpace.modelMatrix)
+                fixed (float* viewMatrixF = viewDef.worldSpace.u.viewMatrix)
+                    EmitSurface(surfaces[i], modelMatrixF, viewMatrixF, false);
 
             tr.viewDef = oldViewDef;
 
@@ -288,7 +295,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         public void DrawStretchPic(DrawVert[] verts, IList<GlIndex> indexes, int vertCount, int indexCount, Material hShader, bool clip = true, float min_x = 0f, float min_y = 0f, float max_x = 640f, float max_y = 480f)
         {
-            if (!R.glConfig.isInitialized || verts == null || indexes == null || vertCount == 0 || indexCount == 0 || hShader = null) return;
+            if (!glConfig.isInitialized || verts == null || indexes == null || vertCount == 0 || indexCount == 0 || hShader = null) return;
 
             // break the current surface if we are changing to a new material
             if (hShader != surf.material)
@@ -410,7 +417,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             var vertCount = 3;
             var indexCount = 3;
 
-            if (!R.glConfig.isInitialized || material == null) return;
+            if (!glConfig.isInitialized || material == null) return;
 
             tempIndexes[0] = 1; tempIndexes[1] = 0; tempIndexes[2] = 2;
             tempVerts[0].xyz.x = p1.x; tempVerts[0].xyz.y = p1.y; tempVerts[0].xyz.z = 0;
@@ -420,9 +427,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             tempVerts[0].tangents1.x = 0; tempVerts[0].tangents1.y = 1; tempVerts[0].tangents1.z = 0;
             tempVerts[1].xyz.x = p2.x; tempVerts[1].xyz.y = p2.y; tempVerts[1].xyz.z = 0;
             tempVerts[1].st.x = t2.x; tempVerts[1].st.y = t2.y;
-            tempVerts[1].normal.x = 0;
-            tempVerts[1].normal.y = 0;
-            tempVerts[1].normal.z = 1;
+            tempVerts[1].normal.x = 0; tempVerts[1].normal.y = 0; tempVerts[1].normal.z = 1;
             tempVerts[1].tangents0.x = 1; tempVerts[1].tangents0.y = 0; tempVerts[1].tangents0.z = 0;
             tempVerts[1].tangents1.x = 0; tempVerts[1].tangents1.y = 1; tempVerts[1].tangents1.z = 0;
             tempVerts[2].xyz.x = p3.x; tempVerts[2].xyz.y = p3.y; tempVerts[2].xyz.z = 0;

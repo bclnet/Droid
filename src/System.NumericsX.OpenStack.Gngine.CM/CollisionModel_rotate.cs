@@ -5,7 +5,6 @@ namespace System.NumericsX.OpenStack.Gngine.CM
 {
     partial class CM
     {
-
         // epsilon for round-off errors in epsilon calculations
         const float CM_PL_RANGE_EPSILON = 1e-4f;
         // if the collision point is this close to the rotation axis it is not considered a collision

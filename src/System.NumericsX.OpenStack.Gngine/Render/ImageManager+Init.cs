@@ -1217,7 +1217,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             common.Printf($"all images loaded in {(end - start) * 0.001f:5.1} seconds\n");
         }
 
-        internal void AddAllocList(Image image)
+        public void AddAllocList(Image image)
         {
             // Not the bind from the backend can add an image to the list
             ISystem.EnterCriticalSection(CRITICAL_SECTION.SECTION_TWO);

@@ -7,13 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Droid", "Droid\Droid.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX", "System.NumericsX\System.NumericsX.csproj", "{D5B8C4A1-D267-46A4-8398-60E13FC1F686}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.Framework", "Gengine.Framework\Gengine.Framework.csproj", "{E1DFA2E3-57D0-425C-AF8A-40F04E3F163B}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.Gngine.Sound", "System.NumericsX.OpenStack.Gngine.Sound\System.NumericsX.OpenStack.Gngine.Sound.csproj", "{BC8872C7-6187-48D0-B5B9-B8FBF2633777}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenStack.Gngine.UI", "System.NumericsX.OpenStack.Gngine.UI\System.NumericsX.OpenStack.Gngine.UI.csproj", "{0D4423B1-60B6-4623-AD97-BB3E423AB91B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gengine.Render", "Gengine.Render\Gengine.Render.csproj", "{6AD36A58-AB17-41EF-8F88-B2F802C36D32}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.NumericsX.OpenAL", "System.NumericsX.OpenAL\System.NumericsX.OpenAL.csproj", "{ACC3CC82-EC38-4550-94E4-F7A772FAA089}"
 EndProject
@@ -49,10 +45,6 @@ Global
 		{D5B8C4A1-D267-46A4-8398-60E13FC1F686}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5B8C4A1-D267-46A4-8398-60E13FC1F686}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5B8C4A1-D267-46A4-8398-60E13FC1F686}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E1DFA2E3-57D0-425C-AF8A-40F04E3F163B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E1DFA2E3-57D0-425C-AF8A-40F04E3F163B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E1DFA2E3-57D0-425C-AF8A-40F04E3F163B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E1DFA2E3-57D0-425C-AF8A-40F04E3F163B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BC8872C7-6187-48D0-B5B9-B8FBF2633777}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BC8872C7-6187-48D0-B5B9-B8FBF2633777}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BC8872C7-6187-48D0-B5B9-B8FBF2633777}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -61,10 +53,6 @@ Global
 		{0D4423B1-60B6-4623-AD97-BB3E423AB91B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D4423B1-60B6-4623-AD97-BB3E423AB91B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0D4423B1-60B6-4623-AD97-BB3E423AB91B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6AD36A58-AB17-41EF-8F88-B2F802C36D32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6AD36A58-AB17-41EF-8F88-B2F802C36D32}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6AD36A58-AB17-41EF-8F88-B2F802C36D32}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6AD36A58-AB17-41EF-8F88-B2F802C36D32}.Release|Any CPU.Build.0 = Release|Any CPU
 		{ACC3CC82-EC38-4550-94E4-F7A772FAA089}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{ACC3CC82-EC38-4550-94E4-F7A772FAA089}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ACC3CC82-EC38-4550-94E4-F7A772FAA089}.Release|Any CPU.ActiveCfg = Release|Any CPU

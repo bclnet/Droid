@@ -43,10 +43,13 @@ namespace System.NumericsX.OpenStack.Gngine
         public static string R_GetVidModeListString(bool addCustom) => throw new NotImplementedException();
         public static string R_GetVidModeValsString(bool addCustom) => throw new NotImplementedException();
         public static string R_ClearCommandChain() => throw new NotImplementedException();
+        public static void R_AddDrawSurf(SrfTriangles tri, ViewEntity space, RenderEntity renderEntity, Material shader, in ScreenRect scissor) => throw new NotImplementedException();
 
         //: TODO-SET
-        public static Action GL_CheckErrors;
-        public static Action<int> GL_SelectTexture;
-        public static Action<FrameData> R_FreeDeferredTriSurfs;
+
+        public static Action RB_RenderView;
+        public static Action<DrawSurfsCommand> RB_DrawView;
+        public static Action R_FrameBufferStart;
+        public static Action R_FrameBufferEnd;
     }
 }

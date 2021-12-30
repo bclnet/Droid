@@ -36,9 +36,9 @@ namespace System.NumericsX
         public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get { fixed (float* p = &x) return p[index]; }
+            get { fixed (float* _ = &x) return _[index]; }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set { fixed (float* p = &x) p[index] = value; }
+            set { fixed (float* _ = &x) _[index] = value; }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 operator -(in Vector2 _)
@@ -207,12 +207,18 @@ namespace System.NumericsX
 
         public const int Dimension = 2;
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public T ToFloatPtr<T>(FloatPtr<T> callback)
-        //{
-        //    fixed (float* _ = &x) return callback(_);
-        //}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Fixed<T>(FloatPtr<T> callback)
+        {
+            fixed (float* _ = &x) return callback(_);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Fixed(FloatPtr callback)
+        {
+            fixed (float* _ = &x) callback(_);
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToString(int precision = 2)
         {
             fixed (float* _ = &x) return FloatArrayToString(_, Dimension, precision);
@@ -272,9 +278,9 @@ namespace System.NumericsX
         public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get { fixed (float* p = &x) return p[index]; }
+            get { fixed (float* _ = &x) return _[index]; }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set { fixed (float* p = &x) p[index] = value; }
+            set { fixed (float* _ = &x) _[index] = value; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -625,12 +631,18 @@ namespace System.NumericsX
         public ref Vector2 ToVec2()
             => ref reinterpret.cast_vec2(this);
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public T ToFloatPtr<T>(FloatPtr<T> callback)
-        //{
-        //    fixed (float* _ = &x) return callback(_);
-        //}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Fixed<T>(FloatPtr<T> callback)
+        {
+            fixed (float* _ = &x) return callback(_);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Fixed(FloatPtr callback)
+        {
+            fixed (float* _ = &x) callback(_);
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToString(int precision = 2)
         {
             fixed (float* _ = &x) return FloatArrayToString(_, Dimension, precision);
@@ -811,9 +823,9 @@ namespace System.NumericsX
         public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get { fixed (float* p = &x) return p[index]; }
+            get { fixed (float* _ = &x) return _[index]; }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set { fixed (float* p = &x) p[index] = value; }
+            set { fixed (float* _ = &x) _[index] = value; }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -929,12 +941,18 @@ namespace System.NumericsX
         public ref Vector3 ToVec3()
             => ref reinterpret.cast_vec3(this);
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public T ToFloatPtr<T>(FloatPtr<T> callback)
-        //{
-        //    fixed (float* _ = &x) return callback(_);
-        //}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Fixed<T>(FloatPtr<T> callback)
+        {
+            fixed (float* _ = &x) return callback(_);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Fixed(FloatPtr callback)
+        {
+            fixed (float* _ = &x) callback(_);
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToString(int precision = 2)
         {
             fixed (float* _ = &x) return FloatArrayToString(_, Dimension, precision);
@@ -967,6 +985,13 @@ namespace System.NumericsX
         public float s;
         public float t;
 
+        public Vector5(in Vector3 xyz)
+        {
+            x = xyz.x;
+            y = xyz.y;
+            z = xyz.z;
+            s = t = 0f;
+        }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector5(in Vector3 xyz, in Vector2 st)
         {
@@ -989,9 +1014,9 @@ namespace System.NumericsX
         public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get { fixed (float* p = &x) return p[index]; }
+            get { fixed (float* _ = &x) return _[index]; }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set { fixed (float* p = &x) p[index] = value; }
+            set { fixed (float* _ = &x) _[index] = value; }
         }
 
         public const int Dimension = 5;
@@ -1000,12 +1025,18 @@ namespace System.NumericsX
         public ref Vector3 ToVec3()
             => ref reinterpret.cast_vec3(this);
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public T ToFloatPtr<T>(FloatPtr<T> callback)
-        //{
-        //    fixed (float* _ = &x) return callback(_);
-        //}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Fixed<T>(FloatPtr<T> callback)
+        {
+            fixed (float* _ = &x) return callback(_);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Fixed(FloatPtr callback)
+        {
+            fixed (float* _ = &x) callback(_);
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToString(int precision = 2)
         {
             fixed (float* _ = &x) return FloatArrayToString(_, Dimension, precision);
@@ -1038,7 +1069,7 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector6(float[] a)
         {
-            fixed (float* p = this.p, a_ = a) Unsafe.CopyBlock(p, a_, 6U * sizeof(float));
+            fixed (float* _ = p, a_ = a) Unsafe.CopyBlock(_, a_, 6U * sizeof(float));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector6(float a1, float a2, float a3, float a4, float a5, float a6)
@@ -1199,15 +1230,21 @@ namespace System.NumericsX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ref Vector3 SubVec3(int index)
         {
-            fixed (float* p = this.p) return ref reinterpret.cast_vec3(p, index * 3);
+            fixed (float* _ = p) return ref reinterpret.cast_vec3(_, index * 3);
         }
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public T ToFloatPtr<T>(FloatPtr<T> callback)
-        //{
-        //    fixed (float* _ = p) return callback(_);
-        //}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Fixed<T>(FloatPtr<T> callback)
+        {
+            fixed (float* _ = p) return callback(_);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Fixed(FloatPtr callback)
+        {
+            fixed (float* _ = p) callback(_);
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToString(int precision = 2)
         {
             fixed (float* _ = p) return FloatArrayToString(_, Dimension, precision);
@@ -1240,7 +1277,7 @@ namespace System.NumericsX
 #if VECX_SIMD
             Simd.Copy16(p, a.p, a.size);
 #else
-            fixed (float* p = this.p, a_p = a.p) Unsafe.CopyBlock(p + pi, a_p + a.pi, (uint)a.size * sizeof(float));
+            fixed (float* _ = p, _p = a.p) Unsafe.CopyBlock(_ + pi, _p + a.pi, (uint)a.size * sizeof(float));
 #endif
             tempIndex = 0;
         }
@@ -1425,7 +1462,7 @@ namespace System.NumericsX
             Debug.Assert(alloced < VECX_MAX_TEMP);
             if (tempIndex + alloced > VECX_MAX_TEMP) tempIndex = 0;
             p = temp;
-            //fixed (float* p = &temp[0]) tempPtr = (int)((ulong)p + 15) & ~15;
+            //fixed (float* _ = &temp[0]) tempPtr = (int)((ulong)_ + 15) & ~15;
             pi = tempIndex;
             tempIndex += alloced;
             VECX_CLEAREND();
@@ -1451,7 +1488,7 @@ namespace System.NumericsX
 #if VECX_SIMD
             Simd.Zero16(p, size);
 #else
-            fixed (float* p = this.p) Unsafe.InitBlock(p + pi, 0, (uint)size * sizeof(float));
+            fixed (float* _ = p) Unsafe.InitBlock(_ + pi, 0, (uint)size * sizeof(float));
 #endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1461,7 +1498,7 @@ namespace System.NumericsX
 #if VECX_SIMD
             Simd.Zero16(p, length);
 #else
-            fixed (float* p = this.p) Unsafe.InitBlock(p + pi, 0, (uint)size * sizeof(float));
+            fixed (float* _ = p) Unsafe.InitBlock(_ + pi, 0, (uint)size * sizeof(float));
 #endif
         }
 
@@ -1565,31 +1602,31 @@ namespace System.NumericsX
         public ref Vector3 SubVec3(int index)
         {
             Debug.Assert(index >= 0 && index * 3 + 3 <= size);
-            fixed (float* p = this.p) return ref reinterpret.cast_vec3(p, pi + index * 3);
+            fixed (float* _ = p) return ref reinterpret.cast_vec3(_, pi + index * 3);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ref Vector6 SubVec6(int index)
         {
             Debug.Assert(index >= 0 && index * 6 + 6 <= size);
-            fixed (float* p = this.p) return ref reinterpret.cast_vec6(p, pi + index * 6);
+            fixed (float* _ = p) return ref reinterpret.cast_vec6(_, pi + index * 6);
         }
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public T ToFloatPtr<T>(FloatPtr<T> callback)
-        //{
-        //    fixed (float* _ = p) return callback(_ + pi);
-        //}
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public  void ToFloatPtr(FloatPtr callback)
-        //{
-        //    fixed (float* _ = p) callback(_ + pi);
-        //}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Fixed<T>(FloatPtr<T> callback)
+        {
+            fixed (float* _ = p) return callback(_ + pi);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Fixed(FloatPtr callback)
+        {
+            fixed (float* _ = p) callback(_ + pi);
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToString(int precision = 2)
         {
             var dimension = Dimension;
-            fixed (float* _ = p)
-                return FloatArrayToString(_ + pi, dimension, precision);
+            fixed (float* _ = p) return FloatArrayToString(_ + pi, dimension, precision);
         }
     }
 
@@ -1619,10 +1656,11 @@ namespace System.NumericsX
         public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get { fixed (float* p = &radius) return p[index]; }
+            get { fixed (float* _ = &radius) return _[index]; }
         }
 
-        public static Polar3 operator -(in Polar3 _) => new(_.radius, -_.theta, -_.phi);
+        public static Polar3 operator -(in Polar3 _)
+            => new(_.radius, -_.theta, -_.phi);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 ToVec3()

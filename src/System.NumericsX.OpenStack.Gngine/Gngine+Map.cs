@@ -1,5 +1,4 @@
 using System.NumericsX.OpenStack.Gngine.Render;
-using System.Runtime.InteropServices;
 using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.OpenStack;
 
@@ -7,7 +6,7 @@ namespace System.NumericsX.OpenStack.Gngine
 {
     unsafe static partial class Gngine
     {
-        public static bool Doom3Quest_useScreenLayer;
+        public static bool Doom3Quest_useScreenLayer => false;
 
         // performs radius cull first, then corner cull
         // Performs quick test before expensive test
@@ -81,7 +80,7 @@ namespace System.NumericsX.OpenStack.Gngine
             return false;       // not culled
         }
 
-        public static void R_AxisToModelMatrix(in Matrix3x3 axis, in Vector3 origin, float* modelMatrix)
+        public static void R_AxisToModelMatrix(in Matrix3x3 axis, in Vector3 origin, float[] modelMatrix)
         {
             modelMatrix[0] = axis[0].x;
             modelMatrix[4] = axis[1].x;
@@ -106,29 +105,38 @@ namespace System.NumericsX.OpenStack.Gngine
 
         // note that many of these assume a normalized matrix, and will not work with scaled axis
 
-        public static void R_GlobalPointToLocal(float* modelMatrix, in Vector3 i, out Vector3 o)
+        public static void R_GlobalPointToLocal(float[] modelMatrix, in Vector3 i, out Vector3 o)
         {
-            Vector3 temp = default;
-            MathX.VectorSubtract(i, &modelMatrix[12], ref temp);
+            fixed (float* matrix = modelMatrix)
+            {
+                Vector3 temp = default;
+                MathX.VectorSubtract(i, &matrix[12], ref temp);
 
-            o.x = MathX.DotProduct(temp, &modelMatrix[0]);
-            o.y = MathX.DotProduct(temp, &modelMatrix[4]);
-            o.z = MathX.DotProduct(temp, &modelMatrix[8]);
+                o.x = MathX.DotProduct(temp, &matrix[0]);
+                o.y = MathX.DotProduct(temp, &matrix[4]);
+                o.z = MathX.DotProduct(temp, &matrix[8]);
+            }
         }
 
-        public static void R_GlobalVectorToLocal(float* modelMatrix, in Vector3 i, out Vector3 o)
+        public static void R_GlobalVectorToLocal(float[] modelMatrix, in Vector3 i, out Vector3 o)
         {
-            o.x = MathX.DotProduct(i, &modelMatrix[0]);
-            o.y = MathX.DotProduct(i, &modelMatrix[4]);
-            o.z = MathX.DotProduct(i, &modelMatrix[8]);
+            fixed (float* matrix = modelMatrix)
+            {
+                o.x = MathX.DotProduct(i, &matrix[0]);
+                o.y = MathX.DotProduct(i, &matrix[4]);
+                o.z = MathX.DotProduct(i, &matrix[8]);
+            }
         }
 
-        public static void R_GlobalPlaneToLocal(float* modelMatrix, in Plane i, out Plane o)
+        public static void R_GlobalPlaneToLocal(float[] modelMatrix, in Plane i, out Plane o)
         {
-            o.a = MathX.DotProduct(i, &modelMatrix[0]);
-            o.b = MathX.DotProduct(i, &modelMatrix[4]);
-            o.c = MathX.DotProduct(i, &modelMatrix[8]);
-            o.d = i.d + modelMatrix[12] * i.a + modelMatrix[13] * i.b + modelMatrix[14] * i.c;
+            fixed (float* matrix = modelMatrix)
+            {
+                o.a = MathX.DotProduct(i, &matrix[0]);
+                o.b = MathX.DotProduct(i, &matrix[4]);
+                o.c = MathX.DotProduct(i, &matrix[8]);
+                o.d = i.d + matrix[12] * i.a + matrix[13] * i.b + matrix[14] * i.c;
+            }
         }
 
         public static void R_PointTimesMatrix(float[] modelMatrix, Vector4 i, out Vector4 o)
@@ -249,7 +257,7 @@ namespace System.NumericsX.OpenStack.Gngine
             ndc.z = (clip.c + clip.d) / (2 * clip.d);
         }
 
-        public static void R_TransformModelToClip(in Vector3 src, float[] modelMatrix, float[] projectionMatrix, out Plane eye, out Plane dst)
+        public static void R_TransformModelToClip(in Vector3 src, float* modelMatrix, float[] projectionMatrix, out Plane eye, out Plane dst)
         {
             int i; eye = default; dst = default;
 
@@ -274,10 +282,9 @@ namespace System.NumericsX.OpenStack.Gngine
             normalized.z = clip.c / clip.d;
         }
 
-        public static void R_TransposeGLMatrix(float[] i, ref float[] o) //: o = new float[16];
+        public static void R_TransposeGLMatrix(float* i, float* o) //: o = new float[16];
         {
             int i2, j;
-
             for (i2 = 0; i2 < 4; i2++) for (j = 0; j < 4; j++) o[i2 * 4 + j] = i[j * 4 + i2];
         }
 
@@ -331,11 +338,16 @@ namespace System.NumericsX.OpenStack.Gngine
                 viewerMatrix[15] = 1f;
 
                 // convert from our coordinate system (looking down X) to OpenGL's coordinate system (looking down -Z)
-                world.u.eyeView(eye, matrix => myGlMultMatrix(viewerMatrix, R_SetViewMatrix_flipMatrix, matrix));
+                world.u.eyeViewGet(eye, matrix =>
+                {
+                    //fixed (float* flipMatrixF = R_SetViewMatrix_flipMatrix) 
+                    myGlMultMatrix(viewerMatrix, R_SetViewMatrix_flipMatrix, matrix);
+                });
             }
         }
 
-        static void myGlMultMatrix(float* a, float[] b, float* o)
+        public static void myGlMultMatrix(float* a, float[] b, float* o) { fixed (float* _ = b) myGlMultMatrix(a, _, o); }
+        public static void myGlMultMatrix(float* a, float* b, float* o)
         {
             o[0 * 4 + 0] = a[0 * 4 + 0] * b[0 * 4 + 0] + a[0 * 4 + 1] * b[1 * 4 + 0] + a[0 * 4 + 2] * b[2 * 4 + 0] + a[0 * 4 + 3] * b[3 * 4 + 0];
             o[0 * 4 + 1] = a[0 * 4 + 0] * b[0 * 4 + 1] + a[0 * 4 + 1] * b[1 * 4 + 1] + a[0 * 4 + 2] * b[2 * 4 + 1] + a[0 * 4 + 3] * b[3 * 4 + 1];

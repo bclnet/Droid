@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.OpenStack;
 using GlIndex = System.Int32;
 
@@ -30,37 +31,28 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 #endif
 
-        class VertRef
+        struct VertRef
         {
-            public VertRef next;
+            public VertRef* next;
             public int tri;
         }
 
         // Reorganizes the indexes so they will take best advantage of the internal GPU vertex caches
-        public static void R_OrderIndexes(int numIndexes, GlIndex[] indexes)
+        public static void R_OrderIndexes(int numIndexes, GlIndex* indexes)
         {
-            int numTris;
-            GlIndex base_;
-            int numOldIndexes;
-            int tri;
-            int i;
-            VertRef vref, vrefs, vrefTable;
-            int numVerts;
-            int v1, v2;
-            int c_starts;
-            //int c_cost;
+            int numTris, numOldIndexes, tri, i, numVerts, v1, v2, c_starts; //int c_cost;
 
             if (!r_orderIndexes.Bool) return;
 
             // save off the original indexes
             var oldIndexes = stackalloc GlIndex[numIndexes];
-            memcpy(oldIndexes, indexes, numIndexes * sizeof(GlIndex));
+            Unsafe.CopyBlock(oldIndexes, indexes, (uint)(numIndexes * sizeof(GlIndex)));
             numOldIndexes = numIndexes;
 
             // make a table to mark the triangles when they are emited
             numTris = numIndexes / 3;
             var triangleUsed = stackalloc bool[numTris];
-            Unsafe.InitBlock(triangleUsed, 0, numTris * sizeof(bool));
+            Unsafe.InitBlock(triangleUsed, 0, (uint)(numTris * sizeof(bool)));
 
             // find the highest vertex number
             numVerts = 0;
@@ -68,10 +60,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             numVerts++;
 
             // create a table of triangles used by each vertex
-            vrefs = new VertRef[numVerts];
-            //Unsafe.InitBlock(vrefs, 0, numVerts * sizeof(VertRef) );
+            var vrefs = stackalloc VertRef*[numVerts];
+            Unsafe.InitBlock(vrefs, 0, (uint)(numVerts * sizeof(VertRef)));
 
-            vrefTable = new VertRef[numIndexes];
+            var vrefTable = stackalloc VertRef[numIndexes];
             for (i = 0; i < numIndexes; i++)
             {
                 tri = i / 3;
@@ -84,18 +76,19 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // generate new indexes
             numIndexes = 0;
             c_starts = 0;
+            VertRef* vref;
             while (numIndexes != numOldIndexes)
             {
                 // find a triangle that hasn't been used
                 for (tri = 0; tri < numTris; tri++) if (!triangleUsed[tri]) break;
-                
+
                 if (tri == numTris) common.Error("R_OrderIndexes: ran out of unused tris");
 
                 c_starts++;
                 do
                 {
                     // emit this tri
-                    base_ = oldIndexes + tri * 3;
+                    var base_ = &oldIndexes[tri * 3];
                     indexes[numIndexes + 0] = base_[0];
                     indexes[numIndexes + 1] = base_[1];
                     indexes[numIndexes + 2] = base_[2];
@@ -109,9 +102,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                         v1 = base_[i];
                         v2 = base_[(i + 1) % 3];
 
-                        for (vref = vrefs[v1]; vref!=null; vref = vref.next)
+                        for (vref = vrefs[v1]; vref != null; vref = vref->next)
                         {
-                            tri = vref.tri;
+                            tri = vref->tri;
                             if (triangleUsed[tri]) continue;
 
                             // if this triangle also uses v2, grab it
@@ -120,7 +113,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                                 oldIndexes[tri * 3 + 2] == v2)
                                 break;
                         }
-                        if (vref) break;
+                        if (vref != null) break;
                     }
 
                     // if we couldn't chain off of any verts, we need to find a new one

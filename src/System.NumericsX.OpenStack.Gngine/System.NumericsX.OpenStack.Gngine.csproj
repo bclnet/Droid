@@ -10,10 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Render\Core\Interaction.cs" />
-    <Compile Remove="Render\Core\Model+Load.cs" />
-    <Compile Remove="Render\Core\Model+Trail.cs" />
-    <Compile Remove="Render\Core\ModelDecal.cs" />
     <Compile Remove="VertexCache.cs" />
   </ItemGroup>
 

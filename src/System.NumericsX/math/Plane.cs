@@ -28,7 +28,7 @@ namespace System.NumericsX
         NONAXIAL = 9,
     }
 
-    public struct Plane
+    public unsafe struct Plane
     {
         public const int ALLOC16 = 1;
         public static Plane origin = new(0f, 0f, 0f, 0f);
@@ -72,7 +72,7 @@ namespace System.NumericsX
                 d = 0,
             };
 
-        public unsafe float this[int index]
+        public float this[int index]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { fixed (float* p = &a) return p[index]; }
@@ -350,13 +350,19 @@ namespace System.NumericsX
         public ref Vector4 ToVec4()
             => ref reinterpret.cast_vec4(this);
 
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public unsafe T ToFloatPtr<T>(FloatPtr<T> callback)
-        //{
-        //    fixed (float* _ = &a) return callback(_);
-        //}
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Fixed<T>(FloatPtr<T> callback)
+        {
+            fixed (float* _ = &a) return callback(_);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Fixed(FloatPtr callback)
+        {
+            fixed (float* _ = &a) callback(_);
+        }
 
-        public unsafe string ToString(int precision = 2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public string ToString(int precision = 2)
         {
             var dimension = Dimension;
             fixed (float* _ = &a) return FloatArrayToString(_, dimension, precision);

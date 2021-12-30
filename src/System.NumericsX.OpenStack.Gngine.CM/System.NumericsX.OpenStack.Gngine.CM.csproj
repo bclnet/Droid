@@ -13,9 +13,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="CollisionModel_files.cs" />
-    <Compile Remove="CollisionModel_load.cs" />
-    <Compile Remove="CollisionModel_translate.cs" />
     <Compile Remove="GameBearShootWindow.cs" />
     <Compile Remove="GameBustOutWindow.cs" />
     <Compile Remove="GameSSDWindow.cs" />

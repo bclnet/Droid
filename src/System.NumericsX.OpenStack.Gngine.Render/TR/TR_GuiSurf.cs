@@ -14,17 +14,18 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             var bounds = stackalloc (float x, float y)[2];
             var boundsOrg = stackalloc float[2];
             float v, area, inva; DrawVert a, b, c;
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
 
             // find the bounds of the texture
             bounds[0].x = bounds[1].x = 999999;
             bounds[0].y = bounds[1].y = -999999;
             for (var i = 0; i < tri.numVerts; i++)
             {
-                v = tri.verts[i].st.x;
+                v = tri_verts[i].st.x;
                 if (v < bounds[0].x) bounds[0].x = v;
                 if (v > bounds[1].x) bounds[1].x = v;
 
-                v = tri.verts[i].st.y;
+                v = tri_verts[i].st.y;
                 if (v < bounds[0].y) bounds[0].y = v;
                 if (v > bounds[1].y) bounds[1].y = v;
             }
@@ -34,7 +35,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             boundsOrg[1] = (float)Math.Floor((bounds[0].y + bounds[1].y) * 0.5f);
 
             // determine the world S and T vectors from the first drawSurf triangle
-            a = tri.verts[tri.indexes[0]]; b = tri.verts[tri.indexes[1]]; c = tri.verts[tri.indexes[2]];
+            a = tri_verts[tri_indexes[0]]; b = tri_verts[tri_indexes[1]]; c = tri_verts[tri_indexes[2]];
 
             MathX.VectorSubtract(b.xyz, a.xyz, d0);
             d0[3] = b.st.x - a.st.x; d0[4] = b.st.y - a.st.y;
@@ -42,7 +43,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             d1[3] = c.st.x - a.st.x; d1[4] = c.st.y - a.st.y;
 
             area = d0[3] * d1[4] - d0[4] * d1[3];
-            if (area == 0.0)
+            if (area == 0f)
             {
                 origin.Zero();
                 axis[0].Zero();
@@ -85,7 +86,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // create the new matrix to draw on this surface
             R_SurfaceToTextureAxis(drawSurf.geoFrontEnd, ref origin, axis);
 
-            float[] guiModelMatrix = new float[16], modelMatrix = new float[16];
+            float* guiModelMatrix = stackalloc float[16], modelMatrix = stackalloc float[16];
 
             guiModelMatrix[00] = axis[0].x / 640f;
             guiModelMatrix[04] = axis[1].x / 480f;

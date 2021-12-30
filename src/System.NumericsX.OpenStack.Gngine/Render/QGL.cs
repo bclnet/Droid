@@ -14,7 +14,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public const uint VBOEmpty = unchecked((uint)-1);
         public static void qglActiveTexture(TextureUnit texture) => glActiveTexture(texture);
         public static void qglAttachShader(uint program, uint shader) => glAttachShader(program, shader);
-        public static void qglBindAttribLocation(uint program, uint index, char* name) => glBindAttribLocation(program, index, name);
+        public static void qglBindAttribLocation(uint program, uint index, string name) { fixed (char* nameC = name) glBindAttribLocation(program, index, nameC); }
         public static void qglBindBuffer(BufferTargetARB target, uint buffer) => glBindBuffer(target, buffer);
         public static void qglBindFramebuffer(FramebufferTarget target, uint framebuffer) => glBindFramebuffer(target, framebuffer);
         public static void qglBindRenderbuffer(RenderbufferTarget target, uint renderbuffer) => glBindRenderbuffer(target, renderbuffer);
@@ -61,7 +61,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void qglFramebufferRenderbuffer(FramebufferTarget target, FramebufferAttachment attachment, RenderbufferTarget renderbuffertarget, uint renderbuffer) => glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer);
         public static void qglFramebufferTexture2D(FramebufferTarget target, FramebufferAttachment attachment, TextureTarget textarget, uint texture, int level) => glFramebufferTexture2D(target, attachment, textarget, texture, level);
         public static void qglFrontFace(FrontFaceDirection mode) => glFrontFace(mode);
-        public static void qglGenBuffers(int n, uint* buffers) => glGenBuffers(n, buffers);
+        public static void qglGenBuffers(int n, out uint buffers) { uint buffers_; glGenBuffers(n, &buffers_); buffers = buffers_; }
         public static void qglGenerateMipmap(TextureTarget target) => glGenerateMipmap(target);
         public static void qglGenFramebuffers(int n, uint* framebuffers) => glGenFramebuffers(n, framebuffers);
         public static void qglGenRenderbuffers(int n, uint* renderbuffers) => glGenRenderbuffers(n, renderbuffers);
@@ -69,7 +69,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void qglGetActiveAttrib(uint program, uint index, int bufSize, int* length, int* size, uint* type, char* name) => glGetActiveAttrib(program, index, bufSize, length, size, type, name);
         public static void qglGetActiveUniform(uint program, uint index, int bufSize, int* length, int* size, uint* type, char* name) => glGetActiveUniform(program, index, bufSize, length, size, type, name);
         public static void qglGetAttachedShaders(uint program, int maxCount, int* count, uint* shaders) => glGetAttachedShaders(program, maxCount, count, shaders);
-        public static int qglGetAttribLocation(uint program, char* name) => glGetAttribLocation(program, name);
+        public static int qglGetAttribLocation(uint program, string name) { fixed (char* nameC = name) return glGetAttribLocation(program, nameC); }
         public static void qglGetBooleanv(GetPName pname, bool* data) => glGetBooleanv(pname, data);
         public static void qglGetBufferParameteriv(BufferTargetARB target, uint pname, int* @params) => glGetBufferParameteriv(target, pname, @params);
         public static ErrorCode qglGetError() => glGetError();
@@ -88,7 +88,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void qglGetTexParameteriv(TextureTarget target, GetTextureParameter pname, int* @params) => glGetTexParameteriv(target, pname, @params);
         public static void qglGetUniformfv(uint program, int location, float* @params) => glGetUniformfv(program, location, @params);
         public static void qglGetUniformiv(uint program, int location, int* @params) => glGetUniformiv(program, location, @params);
-        public static int qglGetUniformLocation(uint program, char* name) => glGetUniformLocation(program, name);
+        public static int qglGetUniformLocation(uint program, string name) { fixed (char* nameC = name) return glGetUniformLocation(program, nameC); }
         public static void qglGetVertexAttribfv(uint index, uint pname, float* @params) => glGetVertexAttribfv(index, pname, @params);
         public static void qglGetVertexAttribiv(uint index, uint pname, int* @params) => glGetVertexAttribiv(index, pname, @params);
         public static void qglGetVertexAttribPointerv(uint index, uint pname, void** pointer) => glGetVertexAttribPointerv(index, pname, pointer);
@@ -110,7 +110,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void qglSampleCoverage(float value, bool invert) => glSampleCoverage(value, invert);
         public static void qglScissor(int x, int y, int width, int height) => glScissor(x, y, width, height);
         public static void qglShaderBinary(int count, uint* shaders, uint binaryformat, void* binary, int length) => glShaderBinary(count, shaders, binaryformat, binary, length);
-        public static void qglShaderSource(uint shader, int count, IntPtr @string, int* length) => glShaderSource(shader, count, @string, length);
+        public static void qglShaderSource(uint shader, int count, string @string) { fixed (char* stringC = @string) glShaderSource(shader, count, (IntPtr)stringC, null); }
         public static void qglStencilFunc(StencilFunction func, int @ref, uint mask) => glStencilFunc(func, @ref, mask);
         public static void qglStencilFuncSeparate(StencilFaceDirection face, StencilFunction func, int @ref, uint mask) => glStencilFuncSeparate(face, func, @ref, mask);
         public static void qglStencilMask(uint mask) => glStencilMask(mask);
@@ -154,5 +154,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void qglVertexAttrib4fv(uint index, float* v) => glVertexAttrib4fv(index, v);
         public static void qglVertexAttribPointer(uint index, int size, VertexAttribPointerType type, bool normalized, int stride, void* pointer) => glVertexAttribPointer(index, size, type, normalized, stride, pointer);
         public static void qglViewport(int x, int y, int width, int height) => glViewport(x, y, width, height);
+
+        //: added
+        public static uint qglGetUniformBlockIndex(uint program, string uniformBlockName) { fixed (char* uniformBlockNameC = uniformBlockName) return glGetUniformBlockIndex(program, uniformBlockNameC); }
     }
 }

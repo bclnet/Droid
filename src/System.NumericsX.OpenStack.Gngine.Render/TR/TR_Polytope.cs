@@ -1,3 +1,4 @@
+using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.OpenStack;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
@@ -39,6 +40,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             tri = R_AllocStaticTriSurf();
             R_AllocStaticTriSurfVerts(tri, numVerts);
             R_AllocStaticTriSurfIndexes(tri, numIndexes);
+            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
 
             // copy the data from the windings
             for (i = 0; i < numPlanes; i++)
@@ -47,14 +49,14 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 if (w.NumPoints == 0) continue;
                 for (j = 0; j < w.NumPoints; j++)
                 {
-                    tri.verts[tri.numVerts + j].Clear();
-                    tri.verts[tri.numVerts + j].xyz = w[j].ToVec3();
+                    tri_verts[tri.numVerts + j].Clear();
+                    tri_verts[tri.numVerts + j].xyz = w[j].ToVec3();
                 }
                 for (j = 1; j < w.NumPoints - 1; j++)
                 {
-                    tri.indexes[tri.numIndexes + 0] = tri.numVerts;
-                    tri.indexes[tri.numIndexes + 1] = tri.numVerts + j;
-                    tri.indexes[tri.numIndexes + 2] = tri.numVerts + j + 1;
+                    tri_indexes[tri.numIndexes + 0] = tri.numVerts;
+                    tri_indexes[tri.numIndexes + 1] = tri.numVerts + j;
+                    tri_indexes[tri.numIndexes + 2] = tri.numVerts + j + 1;
                     tri.numIndexes += 3;
                 }
                 tri.numVerts += w.NumPoints;

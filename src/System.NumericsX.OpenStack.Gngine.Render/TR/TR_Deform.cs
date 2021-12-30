@@ -48,10 +48,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (tr.viewDef.isMirror) leftDir = Vector3.origin - leftDir;
 
             // this srfTriangles_t and all its indexes and caches are in frame memory, and will be automatically disposed of
-            newTri = R_ClearedFrameAlloc<SrfTriangles>();
+            newTri = R_ClearedFrameAllocT<SrfTriangles>();
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
-            newTri.indexes = R_FrameAllocMany<GlIndex>(newTri.numIndexes);
+            newTri.indexes = new (GlIndex*)R_FrameAlloc(newTri.numIndexes * sizeof(GlIndex));
 
             var ac = stackalloc DrawVert[newTri.numVerts + DrawVert.ALLOC16]; ac = (DrawVert*)_alloca16(ac);
             var v = tri.verts;

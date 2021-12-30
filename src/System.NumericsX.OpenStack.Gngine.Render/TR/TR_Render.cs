@@ -17,6 +17,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             backEnd.pc.c_drawElements++;
             //backEnd.pc.c_drawIndexes += tri.numIndexes;
             //backEnd.pc.c_drawVertexes += tri.numVerts;
+            //if (tri.ambientSurface != null)
+            //{
+            //    if (tri.indexes == surf.ambientSurface.indexes) backEnd.pc.c_drawRefIndexes += tri.numIndexes;
+            //    if (tri.verts == surf.ambientSurface.verts) backEnd.pc.c_drawRefVertexes += tri.numVerts;
+            //}
             if (surf.indexCache != null)
             {
                 qglDrawElements(PrimitiveType.Triangles, surf.numIndexes, GlIndexType, vertexCache.Position(surf.indexCache));
@@ -26,7 +31,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // May not use all the indexes in the surface if caps are skipped
-        static bool RB_DrawShadowElementsWithCounters_Once = true;
+        static bool RB_DrawShadowElementsWithCounters_once = true;
         public static void RB_DrawShadowElementsWithCounters(DrawSurf surf, int numIndexes)
         {
             backEnd.pc.c_shadowElements++;
@@ -37,10 +42,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 qglDrawElements(PrimitiveType.Triangles, numIndexes, GlIndexType, vertexCache.Position(surf.indexCache));
                 backEnd.pc.c_vboIndexes += numIndexes;
             }
-            else if (RB_DrawShadowElementsWithCounters_Once) { common.Warning("Attempting to draw without index caching. This is a bug.\n"); RB_DrawShadowElementsWithCounters_Once = false; }
+            else if (RB_DrawShadowElementsWithCounters_once) { common.Warning("Attempting to draw without index caching. This is a bug.\n"); RB_DrawShadowElementsWithCounters_once = false; }
         }
 
-        public static void RB_GetShaderTextureMatrix(float* shaderRegisters, TextureStage texture, float[] matrix)
+        public static void RB_GetShaderTextureMatrix(float[] shaderRegisters, TextureStage texture, float* matrix)
         {
             matrix[0] = shaderRegisters[texture.matrix[0][0]];
             matrix[4] = shaderRegisters[texture.matrix[0][1]];
@@ -115,25 +120,25 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             GL_State(GLS_DEFAULT);
 
             // we don't have to clear the depth / stencil buffer for 2D rendering
-            if (backEnd.viewDef.viewEntitys!=null)
+            if (backEnd.viewDef.viewEntitys != null)
             {
                 qglStencilMask(0xff);
                 // some cards may have 7 bit stencil buffers, so don't assume this should be 128
                 qglClearStencil(1 << (glConfig.stencilBits - 1));
-                qglClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-                qglEnable(GL_DEPTH_TEST);
+                qglClear((uint)(AttribMask.DepthBufferBit | AttribMask.StencilBufferBit));
+                qglEnable(EnableCap.DepthTest);
             }
             else
             {
-                qglDisable(GL_DEPTH_TEST);
-                qglDisable(GL_STENCIL_TEST);
+                qglDisable(EnableCap.DepthTest);
+                qglDisable(EnableCap.StencilTest);
             }
 
-            backEnd.glState.faceCulling = -1;       // force face culling to set next time
-            GL_Cull(CT_FRONT_SIDED);
+            backEnd.glState.faceCulling = (CT)(-1);       // force face culling to set next time
+            GL_Cull(CT.FRONT_SIDED);
         }
 
-        public static void RB_SetDrawInteraction(ShaderStage surfaceStage, float* surfaceRegs, ref Image image, Vector4[] matrix, float[] color)
+        public static void RB_SetDrawInteraction(ShaderStage surfaceStage, float[] surfaceRegs, out Image image, Vector4[] matrix, float* color)
         {
             image = surfaceStage.texture.image;
             if (surfaceStage.texture.hasMatrix)
@@ -170,8 +175,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 {
                     color[i] = surfaceRegs[surfaceStage.color.registers[i]];
                     // clamp here, so card with greater range don't look different. we could perform overbrighting like we do for lights, but it doesn't currently look worth it.
-                    if (color[i] < 0) color[i] = 0;
-                    else if (color[i] > 1.0) color[i] = 1.0f;
+                    if (color[i] < 0f) color[i] = 0f;
+                    else if (color[i] > 1f) color[i] = 1f;
                 }
         }
 

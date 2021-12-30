@@ -141,22 +141,22 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
     public class NewShaderStage
     {
-        public const int MAX_FRAGMENT_IMAGES = 8;
-        const int MAX_VERTEX_PARMS = 4;
-
         public int vertexProgram;
         public int numVertexParms;
-        public int[,] vertexParms = new int[MAX_VERTEX_PARMS, 4];   // evaluated register indexes
+        public int[,] vertexParms = new int[ShaderStage.MAX_VERTEX_PARMS, 4];   // evaluated register indexes
 
         public int fragmentProgram;
         public int numFragmentProgramImages;
-        public Image[] fragmentProgramImages = new Image[MAX_FRAGMENT_IMAGES];
+        public Image[] fragmentProgramImages = new Image[ShaderStage.MAX_FRAGMENT_IMAGES];
 
         public MegaTexture megaTexture;        // handles all the binding and parameter setting
     }
 
     public class ShaderStage
     {
+        public const int MAX_FRAGMENT_IMAGES = 8;
+        public const int MAX_VERTEX_PARMS = 4;
+
         public int conditionRegister;  // if registers[conditionRegister] == 0, skip stage
         public SL lighting;           // determines which passes interact with lights
         public int drawStateBits;
@@ -201,7 +201,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         POST_PROCESS = 100   // after a screen copy to texture
     }
 
-    public enum CT
+    public enum CT : int
     {
         FRONT_SIDED,
         BACK_SIDED,
