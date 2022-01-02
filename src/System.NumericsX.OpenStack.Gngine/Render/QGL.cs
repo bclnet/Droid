@@ -73,9 +73,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void qglGetBooleanv(GetPName pname, bool* data) => glGetBooleanv(pname, data);
         public static void qglGetBufferParameteriv(BufferTargetARB target, uint pname, int* @params) => glGetBufferParameteriv(target, pname, @params);
         public static ErrorCode qglGetError() => glGetError();
-        public static void qglGetFloatv(GetPName pname, float* data) => glGetFloatv(pname, data);
+        public static void qglGetFloatv(GetPName pname, out float data) { float _; glGetFloatv(pname, &_); data = _; }
         public static void qglGetFramebufferAttachmentParameteriv(FramebufferTarget target, FramebufferAttachment attachment, FramebufferAttachmentParameterName pname, int* @params) => glGetFramebufferAttachmentParameteriv(target, attachment, pname, @params);
-        public static void qglGetIntegerv(GetPName pname, int* data) => glGetIntegerv(pname, data);
+        public static void qglGetIntegerv(GetPName pname, out int data) { int _; glGetIntegerv(pname, &_); data = _; }
         public static void qglGetProgramiv(uint program, ProgramPropertyARB pname, int* @params) => glGetProgramiv(program, pname, @params);
         public static void qglGetProgramInfoLog(uint program, int bufSize, int* length, char* infoLog) => glGetProgramInfoLog(program, bufSize, length, infoLog);
         public static void qglGetRenderbufferParameteriv(RenderbufferTarget target, RenderbufferParameterName pname, int* @params) => glGetRenderbufferParameteriv(target, pname, @params);
@@ -83,7 +83,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void qglGetShaderInfoLog(uint shader, int bufSize, int* length, char* infoLog) => glGetShaderInfoLog(shader, bufSize, length, infoLog);
         public static void qglGetShaderPrecisionFormat(ShaderType shadertype, PrecisionType precisiontype, int* range, int* precision) => glGetShaderPrecisionFormat(shadertype, precisiontype, range, precision);
         public static void qglGetShaderSource(uint shader, int bufSize, int* length, char* source) => glGetShaderSource(shader, bufSize, length, source);
-        public static byte* qglGetString(StringName name) => glGetString(name);
+        public static string qglGetString(StringName name) => new((char*)glGetString(name));
         public static void qglGetTexParameterfv(TextureTarget target, GetTextureParameter pname, float* @params) => glGetTexParameterfv(target, pname, @params);
         public static void qglGetTexParameteriv(TextureTarget target, GetTextureParameter pname, int* @params) => glGetTexParameteriv(target, pname, @params);
         public static void qglGetUniformfv(uint program, int location, float* @params) => glGetUniformfv(program, location, @params);
@@ -104,7 +104,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void qglLinkProgram(uint program) => glLinkProgram(program);
         public static void qglPixelStorei(PixelStoreParameter pname, int param) => glPixelStorei(pname, param);
         public static void qglPolygonOffset(float factor, float units) => glPolygonOffset(factor, units);
-        public static void qglReadPixels(int x, int y, int width, int height, PixelFormat format, PixelType type, void* pixels) => glReadPixels(x, y, width, height, format, type, pixels);
+        public static void qglReadPixels(int x, int y, int width, int height, PixelFormat format, VertexAttribPointerType type, void* pixels) => glReadPixels(x, y, width, height, format, (PixelType)type, pixels);
         public static void qglReleaseShaderCompiler() => glReleaseShaderCompiler();
         public static void qglRenderbufferStorage(RenderbufferTarget target, InternalFormat internalformat, int width, int height) => glRenderbufferStorage(target, internalformat, width, height);
         public static void qglSampleCoverage(float value, bool invert) => glSampleCoverage(value, invert);
@@ -154,6 +154,19 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void qglVertexAttrib4fv(uint index, float* v) => glVertexAttrib4fv(index, v);
         public static void qglVertexAttribPointer(uint index, int size, VertexAttribPointerType type, bool normalized, int stride, void* pointer) => glVertexAttribPointer(index, size, type, normalized, stride, pointer);
         public static void qglViewport(int x, int y, int width, int height) => glViewport(x, y, width, height);
+
+        //: gl
+        //public static void qglBegin(PrimitiveType type) { }
+        //public static void qglEnd() { }
+        //public static void qglVertex3f(float x, float y, float z) { }
+        //public static void qglColor3f(float x, float y, float z) { }
+        //public static void qglColor3fv(float* values) { }
+        //public static void qglPushAttrib(int attrib) { }
+        //public static void qglPushMatrix() => glPushMatrix();
+        //public static void qglPopAttrib() { }
+        //public static void qglPopMatrix() => glPopMatrix();
+        //public static void qglLoadIdentity() => glLoadIdentity();
+        //public static void qglLoadMatrixf(float* m) => glLoadMatrixf(m);
 
         //: added
         public static uint qglGetUniformBlockIndex(uint program, string uniformBlockName) { fixed (char* uniformBlockNameC = uniformBlockName) return glGetUniformBlockIndex(program, uniformBlockNameC); }

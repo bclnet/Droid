@@ -9,9 +9,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 {
     partial class R
     {
-        //public static readonly FrameData frameData = new();
-        //public static readonly BackEndState backEnd = new();
-
         const int NUM_FRAME_DATA = 2;
         static FrameData[] smpFrameData = new FrameData[NUM_FRAME_DATA];
         static volatile uint smpFrame;
@@ -49,6 +46,28 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 globalImages.BindNull();
             }
             // Last active texture is Tex0
+        }
+
+        public static void GL_CheckErrors()
+        {
+            if (r_ignoreGLErrors.Bool) return;
+
+            // check for up to 10 errors pending
+            ErrorCode err; string s;
+            for (var i = 0; i < 10; i++)
+            {
+                err = qglGetError();
+                if (err == ErrorCode.NoError) return;
+                s = err switch
+                {
+                    ErrorCode.InvalidEnum => "GL_INVALID_ENUM",
+                    ErrorCode.InvalidValue => "GL_INVALID_VALUE",
+                    ErrorCode.InvalidOperation => "GL_INVALID_OPERATION",
+                    ErrorCode.OutOfMemory => "GL_OUT_OF_MEMORY",
+                    _ => err.ToString(),
+                };
+                if (!r_ignoreGLErrors.Bool) common.Printf($"GL_CheckErrors: {s}\n");
+            }
         }
 
         public static void GL_SelectTexture(int unit)

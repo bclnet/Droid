@@ -40,7 +40,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             else if (tri.indexCache == null)
             {
                 // Build the index cache
-                vertexCache.Alloc(tri.indexes, tri.numIndexes * sizeof(GlIndex), out tri.indexCache, true);
+                fixed (GlIndex* _ = tri.indexes.Value) vertexCache.Alloc(_, tri.numIndexes * sizeof(GlIndex), out tri.indexCache, true);
 
                 // Check for errors
                 if (tri.indexCache == null) { common.Error("R_CreateIndexCache: Unable to create an index cache\n"); return false; }
@@ -58,7 +58,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             else if (tri.shadowCache == null)
             {
                 // Build the shadow cache
-                vertexCache.Alloc(tri.shadowVertexes, tri.numVerts * sizeof(ShadowCache), out tri.shadowCache, false);
+                fixed (ShadowCache* _ = tri.shadowVertexes.Value) vertexCache.Alloc(_, tri.numVerts * sizeof(ShadowCache), out tri.shadowCache, false);
 
                 // Check for errors
                 if (tri.shadowCache == null) { common.Error("R_CreatePrivateShadowCache: Unable to create a vertex cache\n"); return false; }
@@ -77,7 +77,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {
                 // Build the temporary precomputed shadow vertices
                 var temp = stackalloc ShadowCache[(tri.numVerts * 2) + ShadowCache.ALLOC16]; temp = (ShadowCache*)_alloca16(temp);
-                Simd.CreateVertexProgramShadowCache(&temp->xyz, tri.verts, tri.numVerts);
+                fixed (DrawVert* _ = tri.verts.Value) Simd.CreateVertexProgramShadowCache(&temp->xyz, _, tri.numVerts);
 
                 // Build the shadow cache
                 vertexCache.Alloc(temp, tri.numVerts * 2 * sizeof(ShadowCache), out tri.shadowCache, false);
@@ -144,7 +144,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         // If the entityDef isn't already on the viewEntity list, create a viewEntity and add it to the list with an empty scissor rect.
         // This does not instantiate dynamic models for the entity yet.
-        public static ViewEntity R_SetEntityDefViewEntity(RenderEntityLocal def)
+        public static ViewEntity R_SetEntityDefViewEntity(IRenderEntity def)
         {
             ViewEntity vModel;
 
@@ -152,7 +152,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             def.viewCount = tr.viewCount;
 
             // set the model and modelview matricies
-            vModel = R_ClearedFrameAlloc<ViewEntity>();
+            vModel = R_ClearedFrameAllocT<ViewEntity>();
             vModel.entityDef = def;
 
             // the scissorRect will be expanded as the model bounds is accepted into visible portal chains
@@ -183,7 +183,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         const float INSIDE_LIGHT_FRUSTUM_SLOP = 32;
 
         // this needs to be greater than the dist from origin to corner of near clip plane
-        static bool R_TestPointInViewLight(Vector3 org, RenderLightLocal light)
+        static bool R_TestPointInViewLight(Vector3 org, IRenderLight light)
         {
             for (var i = 0; i < 6; i++)
             {
@@ -205,7 +205,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // If the lightDef isn't already on the viewLight list, create a viewLight and add it to the list with an empty scissor rect.
-        public static ViewLight R_SetLightDefViewLight(RenderLightLocal light)
+        public static ViewLight R_SetLightDefViewLight(IRenderLight light)
         {
             ViewLight vLight;
 
@@ -213,7 +213,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             light.viewCount = tr.viewCount;
 
             // add to the view light chain
-            vLight = R_ClearedFrameAlloc<ViewLight>();
+            vLight = R_ClearedFrameAllocT<ViewLight>();
             vLight.lightDef = light;
 
             // the scissorRect will be expanded as the light bounds is accepted into visible portal chains
@@ -274,20 +274,16 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // Don't interact (but share an area) (numSurfaces = 0)
         // Entity reference bounds touches light frustum, but surfaces haven't been generated (numSurfaces = -1)
         // Shadow surfaces have been generated, but light surfaces have not.  The shadow surface may still be empty due to bounds being conservative. Both shadow and light surfaces have been generated.  Either or both surfaces may still be empty due to conservative bounds.
-        void CreateLightDefInteractions(RenderLightLocal ldef)
+        static void CreateLightDefInteractions(IRenderLight ldef)
         {
-            AreaReference eref;
-            AreaReference lref;
-            RenderEntityLocal edef;
-            PortalArea area;
-            Interaction inter;
+            AreaReference eref, lref; IRenderEntity edef; PortalArea area; Interaction inter;
 
             for (lref = ldef.references; lref != null; lref = lref.ownerNext)
             {
                 area = lref.area;
 
                 // check all the models in this area
-                for (eref = area.entityRefs.areaNext; eref != &area.entityRefs; eref = eref.areaNext)
+                for (eref = area.entityRefs.areaNext; eref != area.entityRefs; eref = eref.areaNext)
                 {
                     edef = eref.entity;
 
@@ -340,7 +336,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     }
 
                     // create a new interaction, but don't do any work other than bbox to frustum culling
-                    var inter = Interaction.AllocAndLink(edef, ldef);
+                    inter = Interaction.AllocAndLink(edef, ldef);
 
                     // do a check of the entity reference bounds against the light frustum, trying to avoid creating a viewEntity if it hasn't been already
                     float[] modelMatrix = new float[16], m;
@@ -359,13 +355,13 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         //===============================================================================================================
 
-        public static void R_LinkLightSurf(ref DrawSurf link, SrfTriangles tri, ViewEntity space, RenderLightLocal light, Material shader, ScreenRect scissor, bool viewInsideShadow)
+        public static void R_LinkLightSurf(ref DrawSurf link, SrfTriangles tri, ViewEntity space, IRenderLight light, Material shader, ScreenRect scissor, bool viewInsideShadow)
         {
             DrawSurf drawSurf;
 
             if (space == null) space = tr.viewDef.worldSpace;
 
-            drawSurf = R_FrameAlloc<DrawSurf>();
+            drawSurf = R_FrameAllocT<DrawSurf>();
             drawSurf.geoFrontEnd = tri;
             drawSurf.ambientCache = tri.ambientCache;
             drawSurf.indexCache = tri.indexCache;
@@ -394,7 +390,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 else
                 {
                     // FIXME: share with the ambient surface?
-                    var regs = R_FrameAllocMany<float>(shader.NumRegisters);
+                    var regs = (float*)R_FrameAlloc(shader.NumRegisters * sizeof(float));
                     drawSurf.shaderRegisters = regs;
                     shader.EvaluateRegisters(regs, space.entityDef.parms.shaderParms, tr.viewDef, space.entityDef.parms.referenceSound);
                 }
@@ -407,7 +403,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         static ScreenRect R_ClippedLightScissorRectangle(ViewLight vLight)
         {
             int i, j;
-            RenderLightLocal light = vLight.lightDef;
+            IRenderLight light = vLight.lightDef;
             ScreenRect r = new();
             FixedWinding w;
 
@@ -459,7 +455,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // The light screen bounds will be used to crop the scissor rect during stencil clears and interaction drawing
         static int c_clippedLight, c_unclippedLight;
 
-        ScreenRect R_CalcLightScissorRectangle(ViewLight vLight)
+        static ScreenRect R_CalcLightScissorRectangle(ViewLight vLight)
         {
             if (vLight.lightDef.parms.pointLight)
             {
@@ -520,7 +516,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_AddLightSurfaces()
         {
             ViewLight vLight;
-            RenderLightLocal light;
+            IRenderLight light;
             ViewLight ptr;
 
             // go through each visible light, possibly removing some from the list
@@ -551,7 +547,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 }
 
                 // evaluate the light shader registers
-                var lightRegs = R_FrameAllocMany<float>(lightShader.NumRegisters);
+                var lightRegs = (float*)R_FrameAlloc(lightShader.NumRegisters * sizeof(float));
                 vLight.shaderRegisters = lightRegs;
                 lightShader.EvaluateRegisters(lightRegs, light.parms.shaderParms, tr.viewDef, light.parms.referenceSound);
 
@@ -656,7 +652,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         //===============================================================================================================
 
-        public static bool R_IssueEntityDefCallback(RenderEntityLocal def)
+        public static bool R_IssueEntityDefCallback(IRenderEntity def)
         {
             bool update;
             Bounds oldBounds;
@@ -683,7 +679,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // Issues a deferred entity callback if necessary. If the model isn't dynamic, it returns the original. Returns the cached dynamic model if present, otherwise creates it and any necessary overlays
-        public static IRenderModel R_EntityDefDynamicModel(RenderEntityLocal def)
+        public static IRenderModel R_EntityDefDynamicModel(IRenderEntity def)
         {
             // allow deferred entities to construct themselves
             var callbackUpdate = def.parms.callback != null ? R_IssueEntityDefCallback(def) : false;
@@ -745,7 +741,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             float[] shaderParms;
             float[] generatedShaderParms[MAX_ENTITY_SHADER_PARMS];
 
-            DrawSurf drawSurf = R_FrameAlloc<DrawSurf>();
+            var drawSurf = R_ClearedFrameAllocT<DrawSurf>();
             drawSurf.geoFrontEnd = tri;
 
             drawSurf.ambientCache = tri.ambientCache;
@@ -889,7 +885,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         static void R_AddAmbientDrawsurfs(ViewEntity vEntity)
         {
             int i, total;
-            RenderEntityLocal def;
+            IRenderEntity def;
             SrfTriangles tri;
             IRenderModel model;
             Material shader;

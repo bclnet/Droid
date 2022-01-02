@@ -881,7 +881,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         // Finds or loads the given image, always returning a valid image pointer.
         // Loading of the image may be deferred for dynamic loading.
-        Image ImageFromFile(string name, TF filter, bool allowDownSize, TR repeat, TD depth, CF cubeMap)
+        public Image ImageFromFile(string name, TF filter, bool allowDownSize, TR repeat, TD depth, CF cubeMap = 0)
         {
             if (string.IsNullOrEmpty(name) || string.Equals(name, "default", StringComparison.OrdinalIgnoreCase) || string.Equals(name, "_default", StringComparison.OrdinalIgnoreCase)) { declManager.MediaPrint("DEFAULTED\n"); return globalImages.defaultImage; }
 

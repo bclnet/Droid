@@ -421,7 +421,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // note that it has been updated
             lastArchivedFrame = tr.frameCount;
 
-            var data0 = (int)DemoCommand.DC_DEFINE_MODEL;
+            var data0 = (int)DC.DC_DEFINE_MODEL;
             f.WriteInt(data0);
             f.WriteHashString(Name);
 

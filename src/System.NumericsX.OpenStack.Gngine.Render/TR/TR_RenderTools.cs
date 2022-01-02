@@ -1,6 +1,10 @@
 using System;
+using System.NumericsX.OpenStack.Gngine.Framework;
+using System.Runtime.CompilerServices;
+using WaveEngine.Bindings.OpenGLES;
 using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.Gngine.Render.QGL;
+using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.OpenStack;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
@@ -57,32 +61,32 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         {
             if (bounds.IsCleared) return;
 
-            TR(GL_LINE_LOOP);
-            TR(bounds[0][0], bounds[0][1], bounds[0][2]);
-            TR(bounds[0][0], bounds[1][1], bounds[0][2]);
-            TR(bounds[1][0], bounds[1][1], bounds[0][2]);
-            TR(bounds[1][0], bounds[0][1], bounds[0][2]);
-            TR();
-            TR(GL_LINE_LOOP);
-            TR(bounds[0][0], bounds[0][1], bounds[1][2]);
-            TR(bounds[0][0], bounds[1][1], bounds[1][2]);
-            TR(bounds[1][0], bounds[1][1], bounds[1][2]);
-            TR(bounds[1][0], bounds[0][1], bounds[1][2]);
-            TR();
+            qglBegin(PrimitiveType.LineLoop);
+            qglVertex3f(bounds[0].x, bounds[0].y, bounds[0].z);
+            qglVertex3f(bounds[0].x, bounds[1].y, bounds[0].z);
+            qglVertex3f(bounds[1].x, bounds[1].y, bounds[0].z);
+            qglVertex3f(bounds[1].x, bounds[0].y, bounds[0].z);
+            qglEnd();
+            qglBegin(PrimitiveType.LineLoop);
+            qglVertex3f(bounds[0].x, bounds[0].y, bounds[1].z);
+            qglVertex3f(bounds[0].x, bounds[1].y, bounds[1].z);
+            qglVertex3f(bounds[1].x, bounds[1].y, bounds[1].z);
+            qglVertex3f(bounds[1].x, bounds[0].y, bounds[1].z);
+            qglEnd();
 
-            TR(GL_LINES);
-            TR(bounds[0][0], bounds[0][1], bounds[0][2]);
-            TR(bounds[0][0], bounds[0][1], bounds[1][2]);
+            qglBegin(PrimitiveType.Lines);
+            qglVertex3f(bounds[0].x, bounds[0].y, bounds[0].z);
+            qglVertex3f(bounds[0].x, bounds[0].y, bounds[1].z);
 
-            TR(bounds[0][0], bounds[1][1], bounds[0][2]);
-            TR(bounds[0][0], bounds[1][1], bounds[1][2]);
+            qglVertex3f(bounds[0].x, bounds[1].y, bounds[0].z);
+            qglVertex3f(bounds[0].x, bounds[1].y, bounds[1].z);
 
-            TR(bounds[1][0], bounds[0][1], bounds[0][2]);
-            TR(bounds[1][0], bounds[0][1], bounds[1][2]);
+            qglVertex3f(bounds[1].x, bounds[0].y, bounds[0].z);
+            qglVertex3f(bounds[1].x, bounds[0].y, bounds[1].z);
 
-            TR(bounds[1][0], bounds[1][1], bounds[0][2]);
-            TR(bounds[1][0], bounds[1][1], bounds[1][2]);
-            TR();
+            qglVertex3f(bounds[1].x, bounds[1].y, bounds[0].z);
+            qglVertex3f(bounds[1].x, bounds[1].y, bounds[1].z);
+            qglEnd();
         }
 
         static void RB_SimpleSurfaceSetup(DrawSurf drawSurf)
@@ -99,9 +103,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {
                 backEnd.currentScissor = drawSurf.scissorRect;
                 qglScissor(backEnd.viewDef.viewport.x1 + backEnd.currentScissor.x1,
-                            backEnd.viewDef.viewport.y1 + backEnd.currentScissor.y1,
-                            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-                            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
+                    backEnd.viewDef.viewport.y1 + backEnd.currentScissor.y1,
+                    backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+                    backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
             }
         }
 
@@ -112,9 +116,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             backEnd.currentScissor = backEnd.viewDef.scissor;
             qglScissor(backEnd.viewDef.viewport.x1 + backEnd.currentScissor.x1,
-                        backEnd.viewDef.viewport.y1 + backEnd.currentScissor.y1,
-                        backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-                        backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
+                backEnd.viewDef.viewport.y1 + backEnd.currentScissor.y1,
+                backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+                backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
         }
 
 
@@ -124,15 +128,15 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             qglPushMatrix();
             qglPushAttrib(GL_ALL_ATTRIB_BITS);
             qglLoadIdentity();
-            qglDisable(GL_TEXTURE_2D);
-            qglDisable(GL_DEPTH_TEST);
-            qglDisable(GL_CULL_FACE);
-            qglDisable(GL_SCISSOR_TEST);
-            qglBegin(GL_POLYGON);
-            qglVertex3f(-20, -20, -10);
-            qglVertex3f(20, -20, -10);
-            qglVertex3f(20, 20, -10);
-            qglVertex3f(-20, 20, -10);
+            qglDisable(EnableCap.Texture2d);
+            qglDisable(EnableCap.DepthTest);
+            qglDisable(EnableCap.CullFace);
+            qglDisable(EnableCap.ScissorTest);
+            qglBegin((PrimitiveType)99);
+            qglVertex3f(-20f, -20f, -10f);
+            qglVertex3f(20f, -20f, -10f);
+            qglVertex3f(20f, 20f, -10f);
+            qglVertex3f(-20f, 20f, -10f);
             qglEnd();
             qglPopAttrib();
             qglPopMatrix();
@@ -141,7 +145,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         static void RB_ShowDestinationAlpha()
         {
             GL_State(GLS_SRCBLEND_DST_ALPHA | GLS_DSTBLEND_ZERO | GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS);
-            qglColor3f(1, 1, 1);
+            qglColor3f(1f, 1f, 1f);
             RB_PolygonClear();
         }
 
@@ -150,10 +154,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         {
             int i; int* counts = stackalloc int[256]; byte* stencilReadback;
 
-            memset(counts, 0, sizeof(counts));
+            Unsafe.InitBlock(counts, 0, 256 * sizeof(int));
 
             stencilReadback = (byte*)R_StaticAlloc(glConfig.vidWidth * glConfig.vidHeight);
-            qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback);
+            qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, PixelFormat.StencilIndex, VertexAttribPointerType.UnsignedByte, stencilReadback);
 
             for (i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++) counts[stencilReadback[i]]++;
 
@@ -169,9 +173,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         {
             int i, count; byte* stencilReadback;
 
-
             stencilReadback = (byte*)R_StaticAlloc(glConfig.vidWidth * glConfig.vidHeight);
-            qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback);
+            qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, PixelFormat.StencilIndex, VertexAttribPointerType.UnsignedByte, stencilReadback);
 
             count = 0;
             for (i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++) count += stencilReadback[i];
@@ -179,37 +182,37 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             R_StaticFree(stencilReadback);
 
             // print some stats (not supposed to do from back end in SMP...)
-            common.Printf("overdraw: %5.1f\n", (float)count / (glConfig.vidWidth * glConfig.vidHeight));
+            common.Printf($"overdraw: {(float)count / (glConfig.vidWidth * glConfig.vidHeight):5.1}\n");
         }
 
         // Sets the screen colors based on the contents of the stencil buffer.  Stencil of 0 = black, 1 = red, 2 = green, 3 = blue, ..., 7+ = white
         static float[][] R_ColorByStencilBuffer_colors = {
-            new []{ 0f,0f,0f},
-            new []{ 1f,0f,0f},
-            new []{ 0f,1f,0f},
-            new []{ 0f,0f,1f},
-            new []{ 0f,1f,1f},
-            new []{ 1f,0f,1f},
-            new []{ 1f,1f,0f},
-            new[] { 1f,1f,1f},
+            new [] { 0f,0f,0f},
+            new [] { 1f,0f,0f},
+            new [] { 0f,1f,0f},
+            new [] { 0f,0f,1f},
+            new [] { 0f,1f,1f},
+            new [] { 1f,0f,1f},
+            new [] { 1f,1f,0f},
+            new [] { 1f,1f,1f},
         };
         static void R_ColorByStencilBuffer()
         {
             // clear color buffer to white (>6 passes)
-            qglClearColor(1, 1, 1, 1);
-            qglDisable(GL_SCISSOR_TEST);
-            qglClear(GL_COLOR_BUFFER_BIT);
+            qglClearColor(1f, 1f, 1f, 1f);
+            qglDisable(EnableCap.ScissorTest);
+            qglClear((uint)AttribMask.ColorBufferBit);
 
             // now draw color for each stencil value
-            qglStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+            qglStencilOp(StencilOp.Keep, StencilOp.Keep, StencilOp.Keep);
             for (var i = 0; i < 6; i++)
             {
-                qglColor3fv(R_ColorByStencilBuffer_colors[i]);
-                qglStencilFunc(GL_EQUAL, i, 255);
+                fixed (float* _ = R_ColorByStencilBuffer_colors[i]) qglColor3fv(_);
+                qglStencilFunc(StencilFunction.Equal, i, 255);
                 RB_PolygonClear();
             }
 
-            qglStencilFunc(GL_ALWAYS, 0, 255);
+            qglStencilFunc(StencilFunction.Always, 0, 255);
         }
 
         //======================================================================
@@ -233,7 +236,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 for (surf = vLight.globalInteractions; surf != null; surf = surf.nextOnLight) interactions++;
             }
 
-            var newDrawSurfs = R_FrameAllocMany<DrawSurf>(numDrawSurfs + interactions);
+            var newDrawSurfs = (DrawSurf**)R_FrameAlloc(numDrawSurfs + interactions * sizeof(DrawSurf));
 
             for (i = 0; i < numDrawSurfs; i++)
             {
@@ -274,8 +277,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             if (!r_showIntensity.Bool) return;
 
-            colorReadback = R_StaticAllocMany<byte>(glConfig.vidWidth * glConfig.vidHeight * 4);
-            qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_RGBA, GL_UNSIGNED_BYTE, colorReadback);
+            colorReadback = (byte*)R_StaticAlloc(glConfig.vidWidth * glConfig.vidHeight * 4);
+            qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, PixelFormat.Rgba, VertexAttribPointerType.UnsignedByte, colorReadback);
 
             c = glConfig.vidWidth * glConfig.vidHeight * 4;
             for (i = 0; i < c; i += 4)
@@ -300,7 +303,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             globalImages.BindNull();
             qglMatrixMode(GL_MODELVIEW);
 
-            qglDrawPixels(glConfig.vidWidth, glConfig.vidHeight, GL_RGBA, GL_UNSIGNED_BYTE, colorReadback);
+            qglDrawPixels(glConfig.vidWidth, glConfig.vidHeight, PixelFormat.Rgba, VertexAttribPointerType.UnsignedByte, colorReadback);
 
             R_StaticFree(colorReadback);
         }
@@ -330,7 +333,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             depthReadback = R_StaticAlloc(glConfig.vidWidth * glConfig.vidHeight * 4);
             memset(depthReadback, 0, glConfig.vidWidth * glConfig.vidHeight * 4);
 
-            qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_DEPTH_COMPONENT, GL_FLOAT, depthReadback);
+            qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_DEPTH_COMPONENT, VertexAttribPointerType.Float, depthReadback);
 
 #if false
             for (i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++)
@@ -340,7 +343,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             }
 #endif
 
-            qglDrawPixels(glConfig.vidWidth, glConfig.vidHeight, GL_RGBA, GL_UNSIGNED_BYTE, depthReadback);
+            qglDrawPixels(glConfig.vidWidth, glConfig.vidHeight, PixelFormat.Rgba, VertexAttribPointerType.UnsignedByte, depthReadback);
             R_StaticFree(depthReadback);
         }
 
@@ -355,15 +358,15 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             RB_SimpleWorldSetup();
             qglClearStencil(0);
-            qglClear(GL_STENCIL_BUFFER_BIT);
+            qglClear((uint)AttribMask.StencilBufferBit);
 
-            qglEnable(GL_STENCIL_TEST);
+            qglEnable(EnableCap.StencilTest);
 
             // optionally count everything through walls
-            if (r_showLightCount.Integer >= 2) qglStencilOp(GL_KEEP, GL_INCR, GL_INCR);
-            else qglStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
+            if (r_showLightCount.Integer >= 2) qglStencilOp(StencilOp.Keep, StencilOp.Incr, StencilOp.Incr);
+            else qglStencilOp(StencilOp.Keep, StencilOp.Keep, StencilOp.Incr);
 
-            qglStencilFunc(GL_ALWAYS, 1, 255);
+            qglStencilFunc(StencilFunction.Always, 1, 255);
 
             globalImages.defaultImage.Bind();
 
@@ -375,7 +378,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                         if (!surf.geo.ambientCache) continue;
 
                         var ac = (DrawVert*)vertexCache.Position(surf.geo.ambientCache);
-                        qglVertexPointer(3, GL_FLOAT, sizeof(idDrawVert), &ac.xyz);
+                        qglVertexPointer(3, GL_FLOAT, sizeof(DrawVert), &ac.xyz);
                         RB_DrawElementsWithCounters(surf.geo);
                     }
 
@@ -395,15 +398,15 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // clear all triangle edges to black
             qglDisableClientState(GL_TEXTURE_COORD_ARRAY);
             globalImages.BindNull();
-            qglDisable(GL_TEXTURE_2D);
-            qglDisable(GL_STENCIL_TEST);
+            qglDisable(EnableCap.Texture2d);
+            qglDisable(EnableCap.StencilTest);
 
             qglColor3f(0, 0, 0);
 
             GL_State(GLS_POLYMODE_LINE);
 
-            GL_Cull(CT_TWO_SIDED);
-            qglDisable(GL_DEPTH_TEST);
+            GL_Cull(CT.TWO_SIDED);
+            qglDisable(EnableCap.DepthTest);
 
             RB_RenderDrawSurfListWithFunction(backEnd.viewDef.drawSurfs, backEnd.viewDef.numDrawSurfs, RB_T_RenderTriangleSurface);
 
@@ -414,7 +417,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             for (vLight = backEnd.viewDef.viewLights; vLight != null; vLight = vLight.next)
                 for (i = 0; i < 2; i++)
-                    for (surf = i != 0 ? vLight.localShadows : vLight.globalShadows; surf != null; surf = (drawSurf_t*)surf.nextOnLight)
+                    for (surf = i != 0 ? vLight.localShadows : vLight.globalShadows; surf != null; surf = (DrawSurf*)surf.nextOnLight)
                     {
                         RB_SimpleSurfaceSetup(surf);
 
@@ -438,11 +441,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                         qglEnd();
                     }
 
-            qglEnable(GL_DEPTH_TEST);
+            qglEnable(EnableCap.DepthTest);
 
             GL_State(GLS_DEFAULT);
             qglColor3f(1, 1, 1);
-            GL_Cull(CT_FRONT_SIDED);
+            GL_Cull(CT.FRONT_SIDED);
         }
 
 
@@ -456,20 +459,20 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             GL_State(GLS_DEFAULT);
 
             qglClearStencil(0);
-            qglClear(GL_STENCIL_BUFFER_BIT);
+            qglClear((uint)AttribMask.StencilBufferBit);
 
-            qglEnable(GL_STENCIL_TEST);
+            qglEnable(EnableCap.StencilTest);
 
-            qglStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+            qglStencilOp(StencilOp.Keep, StencilOp.Incr, StencilOp.Incr);
 
-            qglStencilFunc(GL_ALWAYS, 1, 255);
+            qglStencilFunc(StencilFunction.Always, 1, 255);
 
             globalImages.defaultImage.Bind();
 
             // draw both sides
-            GL_Cull(CT_TWO_SIDED);
+            GL_Cull(CT.TWO_SIDED);
 
-            for (vLight = backEnd.viewDef.viewLights; vLight; vLight = vLight.next)
+            for (vLight = backEnd.viewDef.viewLights; vLight != null; vLight = vLight.next)
                 for (i = 0; i < 2; i++)
                     for (surf = i != 0 ? vLight.localShadows : vLight.globalShadows; surf != null; surf = surf.nextOnLight)
                     {
@@ -502,7 +505,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             if (r_showShadowCount.Integer >= 2) RB_CountStencilBuffer();
 
-            GL_Cull(CT_FRONT_SIDED);
+            GL_Cull(CT.FRONT_SIDED);
         }
 
         static void RB_T_RenderTriangleSurfaceAsLines(DrawSurf surf)
@@ -511,7 +514,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             if (!tri.verts) return;
 
-            qglBegin(GL_LINES);
+            qglBegin(PrimitiveType.Lines);
             for (var i = 0; i < tri.numIndexes; i += 3)
                 for (var j = 0; j < 3; j++)
                 {
@@ -708,7 +711,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // Shade materials that are using unsmoothed tangents
         static void RB_ShowUnsmoothedTangents(DrawSurf[] drawSurfs, int numDrawSurfs)
         {
-            int i, j;            DrawSurf drawSurf;            SrfTriangles tri;
+            int i, j; DrawSurf drawSurf; SrfTriangles tri;
 
             if (!r_showUnsmoothedTangents.Bool) return;
 

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using static System.NumericsX.OpenStack.Gngine.Gngine;
-using static System.NumericsX.OpenStack.Gngine.Render.R;
 using GlIndex = System.Int32;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
@@ -66,7 +66,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             for (j = 0; j < i; j++)
             {
                 ref GuiModelSurface surf = ref surfaces[j];
-                demo.WriteInt((int &)surf.material);
+                demo.WriteInt(0);
                 demo.WriteFloat(surf.color[0]);
                 demo.WriteFloat(surf.color[1]);
                 demo.WriteFloat(surf.color[2]);
@@ -107,7 +107,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             for (j = 0; j < i; j++)
             {
                 ref GuiModelSurface surf = ref surfaces[j];
-                demo.ReadInt((int &)surf.material);
+                demo.ReadInt(out _);
                 demo.ReadFloat(out surf.color[0]);
                 demo.ReadFloat(out surf.color[1]);
                 demo.ReadFloat(out surf.color[2]);
@@ -127,8 +127,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (surf.numVerts == 0) return;     // nothing in the surface
 
             // copy verts and indexes
-            tri = R_ClearedFrameAllocT<SrfTriangles>();
-
+            tri = new();
             tri.numIndexes = surf.numIndexes;
             tri.numVerts = surf.numVerts;
             tri.indexes = (GlIndex*)R_FrameAlloc(tri.numIndexes * sizeof(GlIndex));
@@ -152,7 +151,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             guiSpace.weaponDepthHack = depthHack;
 
             // add the surface, which might recursively create another gui
-            R_AddDrawSurf(tri, guiSpace, &renderEntity, surf.material, tr.viewDef.scissor);
+            R_AddDrawSurf(tri, guiSpace, renderEntity, surf.material, tr.viewDef.scissor);
         }
 
         public void EmitToCurrentView(float* modelMatrix, bool depthHack)
@@ -181,7 +180,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 viewDef.renderView.x = 0; viewDef.renderView.y = 0;
                 viewDef.renderView.width = R.SCREEN_WIDTH; viewDef.renderView.height = R.SCREEN_HEIGHT;
 
-                tr.RenderViewToViewport(&viewDef.renderView, &viewDef.viewport);
+                tr.RenderViewToViewport(viewDef.renderView, out viewDef.viewport);
 
                 viewDef.scissor.x1 = 0; viewDef.scissor.y1 = 0;
                 viewDef.scissor.x2 = (short)(viewDef.viewport.x2 - viewDef.viewport.x1); viewDef.scissor.y2 = (short)(viewDef.viewport.y2 - viewDef.viewport.y1);
@@ -233,7 +232,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             viewDef.worldSpace.modelMatrix[15] = 1f;
 
             viewDef.maxDrawSurfs = surfaces.Count;
-            viewDef.drawSurfs = (DrawSurf*)R_FrameAlloc(viewDef.maxDrawSurfs * sizeof(DrawSurf));
+            viewDef.drawSurfs = new DrawSurf[viewDef.maxDrawSurfs];
             viewDef.numDrawSurfs = 0;
 
             var oldViewDef = tr.viewDef;
@@ -275,7 +274,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             s.numVerts = 0; s.firstVert = verts.Count;
 
             surfaces.Add(s);
-            this.surf = surfaces[^1];
+            surf = surfaces[^1];
         }
 
         // these calls are forwarded from the renderer
@@ -293,9 +292,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             surf.color[3] = a;
         }
 
-        public void DrawStretchPic(DrawVert[] verts, IList<GlIndex> indexes, int vertCount, int indexCount, Material hShader, bool clip = true, float min_x = 0f, float min_y = 0f, float max_x = 640f, float max_y = 480f)
+        public void DrawStretchPic(DrawVert* dverts, GlIndex* dindexes, int vertCount, int indexCount, Material hShader, bool clip = true, float min_x = 0f, float min_y = 0f, float max_x = 640f, float max_y = 480f)
         {
-            if (!glConfig.isInitialized || verts == null || indexes == null || vertCount == 0 || indexCount == 0 || hShader = null) return;
+            if (!glConfig.isInitialized || dverts == null || dindexes == null || vertCount == 0 || indexCount == 0 || hShader == null) return;
 
             // break the current surface if we are changing to a new material
             if (hShader != surf.material)
@@ -315,9 +314,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 for (i = 0; i < indexCount; i += 3)
                 {
                     w.Clear();
-                    w.AddPoint(new Vector5(verts[indexes[i]].xyz.x, verts[indexes[i]].xyz.y, verts[indexes[i]].xyz.z, verts[indexes[i]].st.x, verts[indexes[i]].st.y));
-                    w.AddPoint(new Vector5(verts[indexes[i + 1]].xyz.x, verts[indexes[i + 1]].xyz.y, verts[indexes[i + 1]].xyz.z, verts[indexes[i + 1]].st.x, verts[indexes[i + 1]].st.y));
-                    w.AddPoint(new Vector5(verts[indexes[i + 2]].xyz.x, verts[indexes[i + 2]].xyz.y, verts[indexes[i + 2]].xyz.z, verts[indexes[i + 2]].st.x, verts[indexes[i + 2]].st.y));
+                    w.AddPoint(new Vector5(dverts[dindexes[i]].xyz.x, dverts[dindexes[i]].xyz.y, dverts[dindexes[i]].xyz.z, dverts[dindexes[i]].st.x, dverts[dindexes[i]].st.y));
+                    w.AddPoint(new Vector5(dverts[dindexes[i + 1]].xyz.x, dverts[dindexes[i + 1]].xyz.y, dverts[dindexes[i + 1]].xyz.z, dverts[dindexes[i + 1]].st.x, dverts[dindexes[i + 1]].st.y));
+                    w.AddPoint(new Vector5(dverts[dindexes[i + 2]].xyz.x, dverts[dindexes[i + 2]].xyz.y, dverts[dindexes[i + 2]].xyz.z, dverts[dindexes[i + 2]].st.x, dverts[dindexes[i + 2]].st.y));
 
                     for (j = 0; j < 3; j++) if (w[j].x < min_x || w[j].x > max_x || w[j].y < min_y || w[j].y > max_y) break;
                     if (j < 3)
@@ -344,27 +343,26 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
                     for (j = 2; j < w.NumPoints; j++)
                     {
-                        this.indexes.Add(numVerts - surf.firstVert);
-                        this.indexes.Add(numVerts + j - 1 - surf.firstVert);
-                        this.indexes.Add(numVerts + j - surf.firstVert);
+                        indexes.Add(numVerts - surf.firstVert);
+                        indexes.Add(numVerts + j - 1 - surf.firstVert);
+                        indexes.Add(numVerts + j - surf.firstVert);
                         surf.numIndexes += 3;
                     }
                 }
             }
             else
             {
-                var numVerts = this.verts.Count;
+                var numVerts = verts.Count;
                 var numIndexes = indexes.Count;
 
-                this.verts.AssureSize(numVerts + vertCount);
-                this.indexes.AssureSize(numIndexes + indexCount);
+                verts.AssureSize(numVerts + vertCount);
+                indexes.AssureSize(numIndexes + indexCount);
 
                 surf.numVerts += vertCount;
                 surf.numIndexes += indexCount;
 
-                for (var i = 0; i < indexCount; i++) this.indexes[numIndexes + i] = numVerts + indexes[i] - surf.firstVert;
-
-                memcpy(&this.verts[numVerts], verts, vertCount * sizeof(verts[0]));
+                for (var i = 0; i < indexCount; i++) indexes[numIndexes + i] = numVerts + dindexes[i] - surf.firstVert;
+                fixed (DrawVert* _ = &verts.Ptr()[numVerts]) Unsafe.CopyBlock(_, dverts, (uint)(vertCount * sizeof(DrawVert)));
             }
         }
 
@@ -406,7 +404,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             verts[3].tangents0.x = 1; verts[3].tangents0.y = 0; verts[3].tangents0.z = 0;
             verts[3].tangents1.x = 0; verts[3].tangents1.y = 1; verts[3].tangents1.z = 0;
 
-            DrawStretchPic(&verts[0], &indexes[0], 4, 6, hShader, false, 0f, 0f, 640f, 480f);
+            DrawStretchPic(verts, indexes, 4, 6, hShader, false, 0f, 0f, 640f, 480f);
         }
 
         // x/y/w/h are in the 0,0 to 640,480 range
@@ -454,8 +452,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             surf.numIndexes += indexCount;
 
             for (var i = 0; i < indexCount; i++) indexes[numIndexes + i] = numVerts + tempIndexes[i] - surf.firstVert;
-
-            memcpy(&verts[numVerts], tempVerts, vertCount * sizeof(verts[0]));
+            fixed (DrawVert* _ = &verts.Ptr()[numVerts]) Unsafe.CopyBlock(_, tempVerts, (uint)(vertCount * sizeof(DrawVert)));
         }
     }
 }

@@ -263,7 +263,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             public byte pixel_size, attributes;
         }
 
-        internal static void R_WriteTGA(string filename, byte* data, int width, int height, bool flipVertical = false)
+        public static void R_WriteTGA(string filename, byte* data, int width, int height, bool flipVertical = false)
         {
             var bufferSize = width * height * 4 + 18;
             const int imgStart = 18;

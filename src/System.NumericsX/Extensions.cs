@@ -46,7 +46,7 @@ namespace System.NumericsX
 
     #region stringX
 
-    public static class stringX
+    public unsafe static class stringX
     {
         #region Color
 
@@ -70,7 +70,7 @@ namespace System.NumericsX
             new(0f, 0f, 0f, 1f),
         };
 
-        public unsafe static bool IsColor(byte* s, void* till) => s[0] == '^' && s != till && s[1] != ' ';
+        public static bool IsColor(byte* s, void* till) => s[0] == '^' && s != till && s[1] != ' ';
         public static bool IsColor(byte[] s, int offset) => s[offset + 0] == '^' && s.Length < offset && s[offset + 1] != ' ';
         public static bool IsColor(StringBuilder s, int offset) => s[offset + 0] == '^' && s.Length < offset && s[offset + 1] != ' ';
         public static bool IsColor(string s, int offset) => s[offset + 0] == '^' && s.Length < offset && s[offset + 1] != ' ';

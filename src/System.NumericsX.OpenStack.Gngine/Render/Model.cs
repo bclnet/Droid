@@ -58,9 +58,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public DynamicElement<DrawVert> verts;  // vertices, allocated with special allocator
 
         public int numIndexes;                  // for shadows, this has both front and rear end caps and silhouette planes
-        public DynamicElement<GlIndex> indexes;               // indexes, allocated with special allocator
+        public DynamicElement<GlIndex> indexes; // indexes, allocated with special allocator
 
-        public DynamicElement<GlIndex> silIndexes;            // indexes changed to be the first vertex with same XYZ, ignoring normal and texcoords
+        public DynamicElement<GlIndex> silIndexes;  // indexes changed to be the first vertex with same XYZ, ignoring normal and texcoords
 
         public int numMirroredVerts;            // this many verts at the end of the vert list are tangent mirrors
         public DynamicElement<int> mirroredVerts;             // tri->mirroredVerts[0] is the mirror of tri->numVerts - tri->numMirroredVerts + 0

@@ -98,7 +98,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {0,0,255,128},
         };
 
-        void SetImageFilterAndRepeat()
+        public void SetImageFilterAndRepeat()
         {
             // set the minimize / maximize filtering
             switch (filter)

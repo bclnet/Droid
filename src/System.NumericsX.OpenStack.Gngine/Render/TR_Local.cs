@@ -63,23 +63,23 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             => x1 > x2 || y1 > y2;
     }
 
-    public enum DemoCommand
+    public enum DC
     {
-        DC_BAD,
-        DC_RENDERVIEW,
-        DC_UPDATE_ENTITYDEF,
-        DC_DELETE_ENTITYDEF,
-        DC_UPDATE_LIGHTDEF,
-        DC_DELETE_LIGHTDEF,
-        DC_LOADMAP,
-        DC_CROP_RENDER,
-        DC_UNCROP_RENDER,
-        DC_CAPTURE_RENDER,
-        DC_END_FRAME,
-        DC_DEFINE_MODEL,
-        DC_SET_PORTAL_STATE,
-        DC_UPDATE_SOUNDOCCLUSION,
-        DC_GUI_MODEL
+        BAD,
+        RENDERVIEW,
+        UPDATE_ENTITYDEF,
+        DELETE_ENTITYDEF,
+        UPDATE_LIGHTDEF,
+        DELETE_LIGHTDEF,
+        LOADMAP,
+        CROP_RENDER,
+        UNCROP_RENDER,
+        CAPTURE_RENDER,
+        END_FRAME,
+        DEFINE_MODEL,
+        SET_PORTAL_STATE,
+        UPDATE_SOUNDOCCLUSION,
+        GUI_MODEL
     }
 
     #region SURFACES
@@ -429,6 +429,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
     public class DrawSurfsCommand : EmptyCommand
     {
         public ViewDef viewDef;
+
+        internal void Set(DrawSurfsCommand lockSurfacesCmd)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class CopyRenderCommand : EmptyCommand
@@ -499,6 +504,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public int c_entityUpdates, c_lightUpdates, c_entityReferences, c_lightReferences;
         public int c_guiSurfs;
         public int frontEndMsec;       // sum of time in all RE_RenderScene's in a frame
+
+        internal void memset()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     unsafe partial class R
@@ -537,6 +547,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public int c_vboIndexes;
 
         public int msec;           // total msec for backend run
+
+        internal void memset()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     // all state modified by the back end is separated from the front end state
@@ -555,6 +570,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public GLstate glState;
 
         public int c_copyFrameBuffer;
+
+        internal void memset()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     unsafe partial class R
@@ -568,9 +588,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         public int x, y, width, height; // these are in physical, OpenGL Y-at-bottom pixels
     }
-
-    #region DRAW_GLSL
-    // NB: Specific to GLSL shader stuff
 
     public class ShaderProgram
     {
@@ -629,6 +646,4 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             throw new NotImplementedException();
         }
     }
-
-    #endregion
 }

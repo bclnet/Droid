@@ -1,14 +1,17 @@
 using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.OpenStack;
+using static System.NumericsX.OpenStack.Gngine.Gngine;
+using static System.NumericsX.Platform;
+using GlIndex = System.Int32;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
 {
-    unsafe partial class TRX
+    unsafe partial class TR
     {
         // Modifies the shaderParms on all the lights so the level designers can easily test different color schemes
         public static void R_ModulateLights_f(CmdArgs args)
         {
-            if (!tr.primaryWorld) return;
+            if (tr.primaryWorld == null) return;
             if (args.Count != 4) { common.Printf("usage: modulateLights <redFloat> <greenFloat> <blueFloat>\n"); return; }
 
             var modulate = stackalloc float[3];
@@ -18,9 +21,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             var count = 0;
             for (i = 0; i < tr.primaryWorld.lightDefs.Count; i++)
             {
-                RenderLightLocal light;
-
-                light = tr.primaryWorld.lightDefs[i];
+                var light = tr.primaryWorld.lightDefs[i];
                 if (light != null)
                 {
                     count++;
@@ -33,7 +34,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         //======================================================================================
 
         // Creates all needed model references in portal areas, chaining them to both the area and the entityDef. Bumps tr.viewCount.
-        public static void R_CreateEntityRefs(RenderEntityLocal def)
+        public static void R_CreateEntityRefs(IRenderEntity def)
         {
             int i; Vector3 v; var transformed = stackalloc Vector3[8];
 
@@ -55,7 +56,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 v.x = def.referenceBounds[i & 1][0];
                 v.y = def.referenceBounds[(i >> 1) & 1][1];
                 v.z = def.referenceBounds[(i >> 2) & 1][2];
-                R_LocalPointToGlobal(def.modelMatrix, v, transformed[i]);
+                R_LocalPointToGlobal(def.modelMatrix, v, out transformed[i]);
             }
 
             // bump the view count so we can tell if an area already has a reference
@@ -140,7 +141,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             for (i = 0; i < 6; i++) { frustum[i] = -frustum[i]; frustum[i].d /= frustum[i].Normalize(); }
         }
 
-        static void R_FreeLightDefFrustum(RenderLightLocal ldef)
+        static void R_FreeLightDefFrustum(IRenderLight ldef)
         {
             // free the frustum tris
             if (ldef.frustumTris != null)
@@ -153,7 +154,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // Fills everything in based on light.parms
-        public static void R_DeriveLightData(RenderLightLocal light)
+        public static void R_DeriveLightData(IRenderLight light)
         {
             int i;
 
@@ -176,10 +177,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             else
             {
                 // point light
-                memset(light.lightProject, 0, sizeof(light.lightProject));
-                light.lightProject[0].a = 0.5f / light.parms.lightRadius[0];
-                light.lightProject[1].b = 0.5f / light.parms.lightRadius[1];
-                light.lightProject[3].c = 0.5f / light.parms.lightRadius[2];
+                Array.Clear(light.lightProject, 0, light.lightProject.Length);
+                light.lightProject[0].a = 0.5f / light.parms.lightRadius.x;
+                light.lightProject[1].b = 0.5f / light.parms.lightRadius.y;
+                light.lightProject[3].c = 0.5f / light.parms.lightRadius.z;
                 light.lightProject[0].d = 0.5f;
                 light.lightProject[1].d = 0.5f;
                 light.lightProject[2].d = 1.0f;
@@ -192,8 +193,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // rotate the light planes and projections by the axis
             R_AxisToModelMatrix(light.parms.axis, light.parms.origin, light.modelMatrix);
 
-            for (i = 0; i < 6; i++) { var temp = light.frustum[i]; R_LocalPlaneToGlobal(light.modelMatrix, temp, light.frustum[i]); }
-            for (i = 0; i < 4; i++) { var temp = light.lightProject[i]; R_LocalPlaneToGlobal(light.modelMatrix, temp, light.lightProject[i]); }
+            for (i = 0; i < 6; i++) { var temp = light.frustum[i]; R_LocalPlaneToGlobal(light.modelMatrix, temp, out light.frustum[i]); }
+            for (i = 0; i < 4; i++) { var temp = light.lightProject[i]; R_LocalPlaneToGlobal(light.modelMatrix, temp, out light.lightProject[i]); }
 
             // adjust global light origin for off center projections and parallel projections we are just faking parallel by making it a very far off center for now
             if (light.parms.parallel)
@@ -213,7 +214,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         const int MAX_LIGHT_VERTS = 40;
-        public static void R_CreateLightRefs(RenderLightLocal light)
+        public static void R_CreateLightRefs(IRenderLight light)
         {
             int i; SrfTriangles tri; var points = stackalloc Vector3[MAX_LIGHT_VERTS];
 
@@ -244,7 +245,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // Called by the editor and dmap to operate on light volumes
-        void R_RenderLightFrustum(RenderLight renderLight, Plane[] lightFrustum)
+        static void R_RenderLightFrustum(RenderLight renderLight, Plane[] lightFrustum)
         {
             RenderLightLocal fakeLight = new();
 
@@ -261,7 +262,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         //=================================================================================
 
-        static bool WindingCompletelyInsideLight(Winding w, RenderLightLocal ldef)
+        static bool WindingCompletelyInsideLight(Winding w, IRenderLight ldef)
         {
             int i, j;
 
@@ -275,10 +276,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // When a fog light is created or moved, see if it completely encloses any portals, which may allow them to be fogged closed.
-        public static void R_CreateLightDefFogPortals(RenderLightLocal ldef)
+        public static void R_CreateLightDefFogPortals(IRenderLight ldef)
         {
-            AreaReference lref;
-            PortalArea area;
+            AreaReference lref; PortalArea area;
 
             ldef.foggedPortals = null;
 
@@ -293,11 +293,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 area = lref.area;
 
                 Portal prt; DoublePortal dp;
-                for (prt = area.portals; prt; prt = prt.next)
+                for (prt = area.portals; prt != null; prt = prt.next)
                 {
                     dp = prt.doublePortal;
                     // we only handle a single fog volume covering a portal this will never cause incorrect drawing, but it may fail to cull a portal
-                    if (dp.fogLight) continue;
+                    if (dp.fogLight != null) continue;
                     if (WindingCompletelyInsideLight(prt.w, ldef))
                     {
                         dp.fogLight = ldef;
@@ -309,7 +309,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // Frees all references and lit surfaces from the light
-        public static void R_FreeLightDefDerivedData(RenderLightLocal ldef)
+        public static void R_FreeLightDefDerivedData(IRenderLight ldef)
         {
             AreaReference lref, nextRef;
 
@@ -337,7 +337,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // Used by both RE_FreeEntityDef and RE_UpdateEntityDef Does not actually free the entityDef.
-        public static void R_FreeEntityDefDerivedData(RenderEntityLocal def, bool keepDecals, bool keepCachedDynamicModel)
+        public static void R_FreeEntityDefDerivedData(IRenderEntity def, bool keepDecals, bool keepCachedDynamicModel)
         {
             int i;
             AreaReference next;
@@ -380,7 +380,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // If we know the reference bounds stays the same, we only need to do this on entity update, not the full R_FreeEntityDefDerivedData
-        public static void R_ClearEntityDefDynamicModel(RenderEntityLocal def)
+        public static void R_ClearEntityDefDynamicModel(IRenderEntity def)
         {
             // free all the interaction surfaces
             for (var inter = def.firstInteraction; inter != null && !inter.IsEmpty; inter = inter.entityNext) inter.FreeSurfaces();
@@ -389,7 +389,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (def.dynamicModel != null) def.dynamicModel = null;
         }
 
-        public static void R_FreeEntityDefDecals(RenderEntityLocal def)
+        public static void R_FreeEntityDefDecals(IRenderEntity def)
         {
             while (def.decals != null)
             {
@@ -399,10 +399,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             }
         }
 
-        public static void R_FreeEntityDefFadedDecals(RenderEntityLocal def, int time)
+        public static void R_FreeEntityDefFadedDecals(IRenderEntity def, int time)
             => def.decals = RenderModelDecal.RemoveFadedDecals(def.decals, time);
 
-        public static void R_FreeEntityDefOverlay(RenderEntityLocal def)
+        public static void R_FreeEntityDefOverlay(IRenderEntity def)
         {
             if (def.overlay != null) { RenderModelOverlay.Free(def.overlay); def.overlay = null; }
         }

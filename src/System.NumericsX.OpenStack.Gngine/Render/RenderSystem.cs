@@ -75,7 +75,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public string name;
     }
 
-    public static partial class R
+    public unsafe static partial class R
     {
         // font support
         public const int GLYPH_START = 0;
@@ -93,20 +93,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public const int SCREEN_WIDTH = 640;
         public const int SCREEN_HEIGHT = 480;
 
-        // functions mainly intended for editor and dmap integration
-
-        // returns the frustum planes in world space
-        public static void RenderLightFrustum(RenderLight renderLight, Plane[] lightFrustum) => throw new NotImplementedException();
-
-        // for use by dmap to do the carving-on-light-boundaries and for the editor for display
-        public static void LightProjectionMatrix(Vector3 origin, Plane rearPlane, Vector4[] mat) => throw new NotImplementedException();
-
-        // used by the view shot taker
-        public static void ScreenshotFilename(ref int lastNumber, string base_, out string fileName) => throw new NotImplementedException();
-    }
-
-    unsafe partial class R
-    {
         #region cvars
 
         // cvars
@@ -275,12 +261,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         #region GL wrapper/helper functions
 
-        //public static void GL_SelectTexture(int unit) => throw new NotImplementedException();
-        public static void GL_CheckErrors() => throw new NotImplementedException();
-        //public static void GL_ClearStateDelta() => throw new NotImplementedException();
-        //public static void GL_State(int stateVector) => throw new NotImplementedException();
-        //public static void GL_Cull(CT cullType) => throw new NotImplementedException();
-
         public const int GLS_SRCBLEND_ZERO = 0x00000001;
         public const int GLS_SRCBLEND_ONE = 0x0;
         public const int GLS_SRCBLEND_DST_COLOR = 0x00000003;
@@ -370,7 +350,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         #endregion
     }
 
-    public abstract class IRenderSystem
+    public unsafe abstract class IRenderSystem
     {
         // everything that is needed by the backend needs to be double buffered to allow it to run in parallel on a dual cpu machine
         public const int SMP_FRAMES = 1;
@@ -399,7 +379,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         // allocate a renderWorld to be used for drawing
         public abstract IRenderWorld AllocRenderWorld();
-        public abstract void FreeRenderWorld(IRenderWorld rw);
+        public abstract void FreeRenderWorld(ref IRenderWorld rw);
 
         // All data that will be used in a level should be registered before rendering any frames to prevent disk hits,
         // but they can still be registered at a later time if necessary.
@@ -410,22 +390,22 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public abstract bool RegisterFont(string fontName, FontInfoEx font);
 
         // GUI drawing just involves shader parameter setting and axial image subsections
-        public abstract void SetColor(Vector4 rgba);
+        public abstract void SetColor(in Vector4 rgba);
         public abstract void SetColor4(float r, float g, float b, float a);
         public abstract void SetHudOpacity(float opacity);
 
-        public abstract void DrawStretchPic(DrawVert[] verts, GlIndex[] indexes, int vertCount, int indexCount, Material material, bool clip = true, float min_x = 0f, float min_y = 0f, float max_x = 640f, float max_y = 480f);
+        public abstract void DrawStretchPic(DrawVert* verts, GlIndex* indexes, int vertCount, int indexCount, Material material, bool clip = true, float min_x = 0f, float min_y = 0f, float max_x = 640f, float max_y = 480f);
         public abstract void DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, Material material);
 
         public abstract void DrawStretchTri(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 t1, Vector2 t2, Vector2 t3, Material material);
-        public abstract void GlobalToNormalizedDeviceCoordinates(Vector3 global, Vector3 ndc);
+        public abstract void GlobalToNormalizedDeviceCoordinates(in Vector3 global, out Vector3 ndc);
         public abstract void GetGLSettings(out int width, out int height);
         public abstract void PrintMemInfo(MemInfo mi);
 
         public abstract void DrawSmallChar(int x, int y, int ch, Material material);
-        public abstract void DrawSmallStringExt(int x, int y, string s, Vector4 setColor, bool forceColor, Material material);
+        public abstract void DrawSmallStringExt(int x, int y, string s, in Vector4 setColor, bool forceColor, Material material);
         public abstract void DrawBigChar(int x, int y, int ch, Material material);
-        public abstract void DrawBigStringExt(int x, int y, string s, Vector4 setColor, bool forceColor, Material material);
+        public abstract void DrawBigStringExt(int x, int y, string s, in Vector4 setColor, bool forceColor, Material material);
 
         // dump all 2D drawing so far this frame to the demo file
         public abstract void WriteDemoPics();
@@ -465,12 +445,18 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // the image has to be already loaded ( most straightforward way would be through a FindMaterial )
         // texture filter / mipmapping / repeat won't be modified by the upload
         // returns false if the image wasn't found
-        public abstract bool UploadImage(string imageName, byte[] data, int width, int height);
+        public abstract bool UploadImage(string imageName, byte* data, int width, int height);
 
         public abstract void DirectFrameBufferStart();
         public abstract void DirectFrameBufferEnd();
 
         // fields
+
+        public abstract void Clear();
+        public abstract void SetBackEndRenderer();          // sets tr.backEndRenderer based on cvars
+        public abstract void RenderViewToViewport(RenderView renderView, out ScreenRect viewport);
+
+        public XThreadInfo renderThread;
 
         public bool multithreadActive = false;
 
@@ -548,5 +534,19 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // DG: remember the original glConfig.vidWidth/Height values that get overwritten in BeginFrame() so they can be reset in EndFrame() (Editors tend to mess up the viewport by using BeginFrame())
         public int origWidth;
         public int origHeight;
+    }
+
+    unsafe static partial class R
+    {
+        // functions mainly intended for editor and dmap integration
+
+        // returns the frustum planes in world space
+        public static void RenderLightFrustum(RenderLight renderLight, Plane[] lightFrustum) => throw new NotImplementedException();
+
+        // for use by dmap to do the carving-on-light-boundaries and for the editor for display
+        public static void LightProjectionMatrix(Vector3 origin, Plane rearPlane, Vector4[] mat) => throw new NotImplementedException();
+
+        // used by the view shot taker
+        public static void ScreenshotFilename(ref int lastNumber, string base_, out string fileName) => throw new NotImplementedException();
     }
 }

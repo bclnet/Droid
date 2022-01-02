@@ -8,6 +8,7 @@ namespace System.NumericsX.OpenStack
 
     public class CmdArgs
     {
+        public static readonly CmdArgs Empty = new();
         const int MAX_COMMAND_ARGS = 64;
 
         int argc; // number of arguments

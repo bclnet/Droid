@@ -335,7 +335,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public abstract bool ModelTrace(out ModelTrace trace, Qhandle entityHandle, out Vector3 start, out Vector3 end, float radius);
 
         // Traces vs the whole rendered world. FIXME: we need some kind of material flags.
-        public abstract bool Trace(out ModelTrace trace, out Vector3 start, out Vector3 end, float radius, bool skipDynamic = true, bool skipPlayer = false);
+        public abstract bool Trace(out ModelTrace trace, in Vector3 start, in Vector3 end, float radius, bool skipDynamic = true, bool skipPlayer = false);
 
         // Traces vs the world model bsp tree.
         public abstract bool FastWorldTrace(out ModelTrace trace, out Vector3 start, out Vector3 end);

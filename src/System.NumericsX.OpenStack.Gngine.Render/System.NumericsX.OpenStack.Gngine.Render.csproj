@@ -27,7 +27,6 @@
     <Compile Remove="Model+Load.cs" />
     <Compile Remove="Model+Trail.cs" />
     <Compile Remove="ModelManagerLocal.cs" />
-    <Compile Remove="RenderSystemLocal.cs" />
     <Compile Remove="TR\TR_Deform.cs" />
     <Compile Remove="TR\TR_GuiSurf.cs" />
     <Compile Remove="TR\TR_Light.cs" />
