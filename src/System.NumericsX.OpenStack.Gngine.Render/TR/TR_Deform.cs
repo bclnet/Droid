@@ -51,7 +51,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             newTri = R_ClearedFrameAllocT<SrfTriangles>();
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
-            newTri.indexes = new (GlIndex*)R_FrameAlloc(newTri.numIndexes * sizeof(GlIndex));
+            newTri.indexes = new GlIndex[newTri.numIndexes];
 
             var ac = stackalloc DrawVert[newTri.numVerts + DrawVert.ALLOC16]; ac = (DrawVert*)_alloca16(ac);
             var v = tri.verts;
@@ -108,11 +108,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             R_GlobalPointToLocal(surf.space.modelMatrix, tr.viewDef.renderView.vieworg, out var localView);
 
             // this srfTriangles_t and all its indexes and caches are in frame memory, and will be automatically disposed of
-            var newTri = R_ClearedFrameAlloc<SrfTriangles>();
+            var newTri = new SrfTriangles();
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
-            newTri.indexes = R_FrameAllocMany<GlIndex>(newTri.numIndexes);
-            fixed (void* d = newTri.indexes, s = tri.indexes) Unsafe.CopyBlock(d, s, (uint)(newTri.numIndexes * sizeof(GlIndex)));
+            newTri.indexes = new GlIndex[newTri.numIndexes];
+            fixed (void* _d = newTri.indexes, _s = tri.indexes) Unsafe.CopyBlock(_d, _s, (uint)(newTri.numIndexes * sizeof(GlIndex)));
 
             var ac = stackalloc DrawVert[newTri.numVerts + DrawVert.ALLOC16]; ac = (DrawVert*)_alloca16(ac);
 
@@ -254,10 +254,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (tri.numVerts != 4 || tri.numIndexes != 6) { common.DPrintf("R_FlareDeform: not a single quad\n"); return; }
 
             // this srfTriangles_t and all its indexes and caches are in frame memory, and will be automatically disposed of
-            newTri = R_ClearedFrameAlloc<SrfTriangles>();
+            newTri = new SrfTriangles();
             newTri.numVerts = 16;
             newTri.numIndexes = 18 * 3;
-            newTri.indexes = R_FrameAllocMany<GlIndex>(newTri.numIndexes);
+            newTri.indexes = new GlIndex[newTri.numIndexes];
 
             var ac = stackalloc DrawVert[newTri.numVerts + DrawVert.ALLOC16]; ac = (DrawVert*)_alloca16(ac);
 
@@ -380,7 +380,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             tri = surf.geoFrontEnd;
 
             // this srfTriangles_t and all its indexes and caches are in frame memory, and will be automatically disposed of
-            newTri = R_ClearedFrameAlloc<SrfTriangles>();
+            newTri = new SrfTriangles();
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
             newTri.indexes = tri.indexes;
@@ -405,7 +405,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             tri = surf.geoFrontEnd;
 
             // this SrfTriangles and all its indexes and caches are in frame memory, and will be automatically disposed of
-            newTri = R_ClearedFrameAlloc<SrfTriangles>();
+            newTri = new SrfTriangles();
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
             newTri.indexes = tri.indexes;
@@ -432,7 +432,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             tri = surf.geoFrontEnd;
 
             // this SrfTriangles and all its indexes and caches are in frame memory, and will be automatically disposed of
-            newTri = R_ClearedFrameAlloc<SrfTriangles>();
+            newTri = new SrfTriangles();
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
             newTri.indexes = tri.indexes;
@@ -536,11 +536,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             // this SrfTriangles and all its indexes and caches are in frame memory, and will be automatically disposed of
             // the surface cannot have more indexes or verts than the original
-            newTri = R_ClearedFrameAlloc<SrfTriangles>();
+            newTri = new SrfTriangles();
             //Unsafe.InitBlockUnaligned(newTri, 0, 0);
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
-            newTri.indexes = R_FrameAllocMany<GlIndex>(tri.numIndexes);
+            newTri.indexes = new GlIndex[tri.numIndexes];
             var ac = stackalloc DrawVert[tri.numVerts + DrawVert.ALLOC16]; ac = (DrawVert*)_alloca16(ac);
 
             newTri.numIndexes = 0;
@@ -622,8 +622,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
 #if false
             // the entire system has faded out
-            if (renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] && viewDef.renderView.time * 0.001f >= renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME])
-                return;
+            if (renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] && viewDef.renderView.time * 0.001f >= renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME]) return;
 #endif
 
             // calculate the area of all the triangles
@@ -666,11 +665,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     // allocate a srfTriangles in temp memory that can hold all the particles
                     SrfTriangles tri;
 
-                    tri = R_ClearedFrameAlloc<SrfTriangles>();
+                    tri = new SrfTriangles();
                     tri.numVerts = 4 * count;
                     tri.numIndexes = 6 * count;
-                    tri.verts = R_FrameAllocMany<DrawVert>(tri.numVerts);
-                    tri.indexes = R_FrameAllocMany<GlIndex>(tri.numIndexes);
+                    tri.verts = new DrawVert[tri.numVerts];
+                    tri.indexes = new GlIndex[tri.numIndexes];
 
                     // just always draw the particles
                     tri.bounds = stage.bounds;

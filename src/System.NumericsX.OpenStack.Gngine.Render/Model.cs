@@ -208,7 +208,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {
                 var surf = surfaces[i];
                 var tri = surf.geometry;
-                var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+                var tri_verts = tri.verts; var tri_indexes = tri.indexes;
                 for (var j = 0; j < tri.numIndexes; j += 3)
                 {
                     var area = Winding.TriangleArea(tri_verts[tri_indexes[j]].xyz, tri_verts[tri_indexes[j + 1]].xyz, tri_verts[tri_indexes[j + 2]].xyz);
@@ -390,7 +390,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 surf.shader = declManager.FindMaterial(f.ReadHashString());
 
                 var tri = R_AllocStaticTriSurf();
-                var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+                var tri_verts = tri.verts; var tri_indexes = tri.indexes;
                 f.ReadInt(out tri.numIndexes);
                 R_AllocStaticTriSurfIndexes(tri, tri.numIndexes);
                 for (j = 0; j < tri.numIndexes; ++j) f.ReadInt(out tri_indexes[j]);
@@ -421,7 +421,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // note that it has been updated
             lastArchivedFrame = tr.frameCount;
 
-            var data0 = (int)DC.DC_DEFINE_MODEL;
+            var data0 = (int)DC.DEFINE_MODEL;
             f.WriteInt(data0);
             f.WriteHashString(Name);
 
@@ -433,7 +433,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 f.WriteHashString(surf.shader.Name);
 
                 var tri = surf.geometry;
-                var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+                var tri_verts = tri.verts; var tri_indexes = tri.indexes;
                 f.WriteInt(tri.numIndexes);
                 for (j = 0; j < tri.numIndexes; ++j) f.WriteInt(tri_indexes[j]);
                 f.WriteInt(tri.numVerts);
@@ -457,7 +457,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         static void AddCubeFace(SrfTriangles tri, Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4)
         {
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes;
             tri_verts[tri.numVerts + 0].Clear();
             tri_verts[tri.numVerts + 0].xyz = v1 * 8;
             tri_verts[tri.numVerts + 0].st.x = 0;

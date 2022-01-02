@@ -1,3 +1,5 @@
+using System.NumericsX.OpenStack.Gngine.UI;
+using System.Runtime.CompilerServices;
 using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.OpenStack;
@@ -22,7 +24,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 if (needsLighting && !tri.tangentsCalculated) R_DeriveTangents(tri);
 
                 // Build the ambient cache
-                vertexCache.Alloc(tri.verts, tri.numVerts * sizeof(DrawVert), out tri.ambientCache, false);
+                fixed (DrawVert* _ = tri.verts) vertexCache.Alloc(_, tri.numVerts * sizeof(DrawVert), out tri.ambientCache, false);
 
                 // Check for errors
                 if (tri.ambientCache == null) { common.Error("R_CreateAmbientCache: Unable to create an ambient cache\n"); return false; }
@@ -40,7 +42,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             else if (tri.indexCache == null)
             {
                 // Build the index cache
-                fixed (GlIndex* _ = tri.indexes.Value) vertexCache.Alloc(_, tri.numIndexes * sizeof(GlIndex), out tri.indexCache, true);
+                fixed (GlIndex* _ = tri.indexes) vertexCache.Alloc(_, tri.numIndexes * sizeof(GlIndex), out tri.indexCache, true);
 
                 // Check for errors
                 if (tri.indexCache == null) { common.Error("R_CreateIndexCache: Unable to create an index cache\n"); return false; }
@@ -58,7 +60,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             else if (tri.shadowCache == null)
             {
                 // Build the shadow cache
-                fixed (ShadowCache* _ = tri.shadowVertexes.Value) vertexCache.Alloc(_, tri.numVerts * sizeof(ShadowCache), out tri.shadowCache, false);
+                fixed (ShadowCache* _ = tri.shadowVertexes) vertexCache.Alloc(_, tri.numVerts * sizeof(ShadowCache), out tri.shadowCache, false);
 
                 // Check for errors
                 if (tri.shadowCache == null) { common.Error("R_CreatePrivateShadowCache: Unable to create a vertex cache\n"); return false; }
@@ -77,7 +79,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {
                 // Build the temporary precomputed shadow vertices
                 var temp = stackalloc ShadowCache[(tri.numVerts * 2) + ShadowCache.ALLOC16]; temp = (ShadowCache*)_alloca16(temp);
-                fixed (DrawVert* _ = tri.verts.Value) Simd.CreateVertexProgramShadowCache(&temp->xyz, _, tri.numVerts);
+                fixed (DrawVert* _ = tri.verts) Simd.CreateVertexProgramShadowCache(&temp->xyz, _, tri.numVerts);
 
                 // Build the shadow cache
                 vertexCache.Alloc(temp, tri.numVerts * 2 * sizeof(ShadowCache), out tri.shadowCache, false);
@@ -166,14 +168,15 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             // we may not have a viewDef if we are just creating shadows at entity creation time
             if (tr.viewDef != null)
-            {
-                myGlMultMatrix(vModel.modelMatrix, tr.viewDef.worldSpace.u.eyeViewMatrix0, vModel.u.eyeViewMatrix0);
-                myGlMultMatrix(vModel.modelMatrix, tr.viewDef.worldSpace.u.eyeViewMatrix1, vModel.u.eyeViewMatrix1);
-                myGlMultMatrix(vModel.modelMatrix, tr.viewDef.worldSpace.u.eyeViewMatrix2, vModel.u.eyeViewMatrix2);
+                fixed (float* a = vModel.modelMatrix)
+                {
+                    fixed (float* b = tr.viewDef.worldSpace.u.eyeViewMatrix0, c = vModel.u.eyeViewMatrix0) myGlMultMatrix(a, b, c);
+                    fixed (float* b = tr.viewDef.worldSpace.u.eyeViewMatrix1, c = vModel.u.eyeViewMatrix1) myGlMultMatrix(a, b, c);
+                    fixed (float* b = tr.viewDef.worldSpace.u.eyeViewMatrix2, c = vModel.u.eyeViewMatrix2) myGlMultMatrix(a, b, c);
 
-                vModel.next = tr.viewDef.viewEntitys;
-                tr.viewDef.viewEntitys = vModel;
-            }
+                    vModel.next = tr.viewDef.viewEntitys;
+                    tr.viewDef.viewEntitys = vModel;
+                }
 
             def.viewEntity = vModel;
 
@@ -257,102 +260,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             return vLight;
         }
 
-        // When a lightDef is determined to effect the view (contact the frustum and non-0 light), it will check to make sure that it has interactions for all the entityDefs that it might possibly contact.
-        //
-        // This does not guarantee that all possible interactions for this light are generated, only that the ones that may effect the current view are generated. so it does need to be called every view.
-        //
-        // This does not cause entityDefs to create dynamic models, all work is done on the referenceBounds.
-        // 
-        // All entities that have non-empty interactions with viewLights will have viewEntities made for them and be put on the viewEntity list,
-        // even if their surfaces aren't visible, because they may need to cast shadows.
-        //
-        // Interactions are usually removed when a entityDef or lightDef is modified, unless the change is known to not effect them, so there is no danger of getting a stale interaction, we just need to
-        // check that needed ones are created.
-        //
-        // An interaction can be at several levels:
-        //
-        // Don't interact (but share an area) (numSurfaces = 0)
-        // Entity reference bounds touches light frustum, but surfaces haven't been generated (numSurfaces = -1)
-        // Shadow surfaces have been generated, but light surfaces have not.  The shadow surface may still be empty due to bounds being conservative. Both shadow and light surfaces have been generated.  Either or both surfaces may still be empty due to conservative bounds.
-        static void CreateLightDefInteractions(IRenderLight ldef)
-        {
-            AreaReference eref, lref; IRenderEntity edef; PortalArea area; Interaction inter;
-
-            for (lref = ldef.references; lref != null; lref = lref.ownerNext)
-            {
-                area = lref.area;
-
-                // check all the models in this area
-                for (eref = area.entityRefs.areaNext; eref != area.entityRefs; eref = eref.areaNext)
-                {
-                    edef = eref.entity;
-
-                    // if the entity doesn't have any light-interacting surfaces, we could skip this, but we don't want to instantiate dynamic models yet, so we can't check that on most things
-
-                    // if the entity isn't viewed
-                    if (tr.viewDef != null && edef.viewCount != tr.viewCount)
-                    {
-                        // if the light doesn't cast shadows, skip
-                        if (!ldef.lightShader.LightCastsShadows) continue;
-                        // if we are suppressing its shadow in this view, skip
-                        if (!r_skipSuppress.Bool)
-                        {
-                            if (edef.parms.suppressShadowInViewID != 0 && edef.parms.suppressShadowInViewID == tr.viewDef.renderView.viewID) continue;
-                            if (edef.parms.suppressShadowInLightID != 0 && edef.parms.suppressShadowInLightID == ldef.parms.lightId) continue;
-                        }
-                    }
-
-                    // some big outdoor meshes are flagged to not create any dynamic interactions when the level designer knows that nearby moving lights shouldn't actually hit them
-                    if (edef.parms.noDynamicInteractions && edef.world.generateAllInteractionsCalled) continue;
-
-                    // if any of the edef's interaction match this light, we don't
-                    // need to consider it.
-                    if (r_useInteractionTable.Bool && this.interactionTable != null)
-                    {
-                        // allocating these tables may take several megs on big maps, but it saves 3% to 5% of the CPU time.  The table is updated at interaction::AllocAndLink() and interaction::UnlinkAndFree()
-                        var index = ldef.index * this.interactionTableWidth + edef.index;
-                        inter = this.interactionTable[index];
-                        if (inter != null)
-                        {
-                            // if this entity wasn't in view already, the scissor rect will be empty, so it will only be used for shadow casting
-                            if (!inter.IsEmpty) R_SetEntityDefViewEntity(edef);
-                            continue;
-                        }
-                    }
-                    else
-                    {
-                        // scan the doubly linked lists, which may have several dozen entries
-                        // we could check either model refs or light refs for matches, but it is assumed that there will be less lights in an area than models
-                        // so the entity chains should be somewhat shorter (they tend to be fairly close).
-                        for (inter = edef.firstInteraction; inter != null; inter = inter.entityNext) if (inter.lightDef == ldef) break;
-
-                        // if we already have an interaction, we don't need to do anything
-                        if (inter != null)
-                        {
-                            // if this entity wasn't in view already, the scissor rect will be empty, so it will only be used for shadow casting
-                            if (!inter.IsEmpty) R_SetEntityDefViewEntity(edef);
-                            continue;
-                        }
-                    }
-
-                    // create a new interaction, but don't do any work other than bbox to frustum culling
-                    inter = Interaction.AllocAndLink(edef, ldef);
-
-                    // do a check of the entity reference bounds against the light frustum, trying to avoid creating a viewEntity if it hasn't been already
-                    float[] modelMatrix = new float[16], m;
-
-                    if (edef.viewCount == tr.viewCount) m = edef.viewEntity.modelMatrix;
-                    else { R_AxisToModelMatrix(edef.parms.axis, edef.parms.origin, modelMatrix); m = modelMatrix; }
-
-                    if (R_CullLocalBox(edef.referenceBounds, m, 6, ldef.frustum)) { inter.MakeEmpty(); continue; }
-
-                    // we will do a more precise per-surface check when we are checking the entity
-                    // if this entity wasn't in view already, the scissor rect will be empty, so it will only be used for shadow casting
-                    R_SetEntityDefViewEntity(edef);
-                }
-            }
-        }
-
         //===============================================================================================================
 
         public static void R_LinkLightSurf(ref DrawSurf link, SrfTriangles tri, ViewEntity space, IRenderLight light, Material shader, ScreenRect scissor, bool viewInsideShadow)
@@ -361,7 +268,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             if (space == null) space = tr.viewDef.worldSpace;
 
-            drawSurf = R_FrameAllocT<DrawSurf>();
+            drawSurf = new DrawSurf();
             drawSurf.geoFrontEnd = tri;
             drawSurf.ambientCache = tri.ambientCache;
             drawSurf.indexCache = tri.indexCache;
@@ -389,8 +296,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 if (constRegs != null) drawSurf.shaderRegisters = constRegs;
                 else
                 {
-                    // FIXME: share with the ambient surface?
-                    var regs = (float*)R_FrameAlloc(shader.NumRegisters * sizeof(float));
+                    var regs = new float[shader.NumRegisters]; // FIXME: share with the ambient surface?
                     drawSurf.shaderRegisters = regs;
                     shader.EvaluateRegisters(regs, space.entityDef.parms.shaderParms, tr.viewDef, space.entityDef.parms.referenceSound);
                 }
@@ -428,7 +334,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 // project these points to the screen and add to bounds
                 for (j = 0; j < w.NumPoints; j++)
                 {
-                    R_TransformModelToClip(w[j].ToVec3(), tr.viewDef.worldSpace.u.eyeViewMatrix2, tr.viewDef.projectionMatrix, out var eye, out var clip);
+                    Plane eye, clip;
+                    fixed (float* _ = tr.viewDef.worldSpace.u.eyeViewMatrix2) R_TransformModelToClip(w[j].ToVec3(), _, tr.viewDef.projectionMatrix, out eye, out clip);
 
                     if (clip.d <= 0.01f) clip.d = 0.01f;
 
@@ -473,7 +380,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             var tri = vLight.lightDef.frustumTris;
             for (var i = 0; i < tri.numVerts; i++)
             {
-                R_TransformModelToClip(tri.verts[i].xyz, tr.viewDef.worldSpace.u.eyeViewMatrix2, tr.viewDef.projectionMatrix, out var eye, out var clip);
+                Plane eye, clip;
+                fixed (float* _ = tr.viewDef.worldSpace.u.eyeViewMatrix2) R_TransformModelToClip(tri.verts[i].xyz, _, tr.viewDef.projectionMatrix, out eye, out clip);
 
                 // if it is near clipped, clip the winding polygons to the view frustum
                 if (clip.d <= 1)
@@ -513,6 +421,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // Calc the light shader values, removing any light from the viewLight list if it is determined to not have any visible effect due to being flashed off or turned off.
         // Adds entities to the viewEntity list if they are needed for shadow casting. Add any precomputed shadow volumes.
         // Removes lights from the viewLights list if they are completely turned off, or completely off screen. Create any new interactions needed between the viewLights and the viewEntitys due to game movement
+        static Random R_AddLightSurfaces_random = new();
         public static void R_AddLightSurfaces()
         {
             ViewLight vLight;
@@ -547,7 +456,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 }
 
                 // evaluate the light shader registers
-                var lightRegs = (float*)R_FrameAlloc(lightShader.NumRegisters * sizeof(float));
+                var lightRegs = new float[lightShader.NumRegisters];
                 vLight.shaderRegisters = lightRegs;
                 lightShader.EvaluateRegisters(lightRegs, light.parms.shaderParms, tr.viewDef, light.parms.referenceSound);
 
@@ -562,21 +471,22 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                         // ignore stages that fail the condition
                         if (lightRegs[lightStage.conditionRegister] == 0) continue;
 
-                        var registers = lightStage.color.registers;
+                        fixed (int* registers = lightStage.color.registers)
+                        {
+                            // snap tiny values to zero to avoid lights showing up with the wrong color
+                            if (lightRegs[registers[0]] < 0.001f) lightRegs[registers[0]] = 0f;
+                            if (lightRegs[registers[1]] < 0.001f) lightRegs[registers[1]] = 0f;
+                            if (lightRegs[registers[2]] < 0.001f) lightRegs[registers[2]] = 0f;
 
-                        // snap tiny values to zero to avoid lights showing up with the wrong color
-                        if (lightRegs[registers[0]] < 0.001f) lightRegs[registers[0]] = 0f;
-                        if (lightRegs[registers[1]] < 0.001f) lightRegs[registers[1]] = 0f;
-                        if (lightRegs[registers[2]] < 0.001f) lightRegs[registers[2]] = 0f;
+                            // FIXME:	when using the following values the light shows up bright red when using nvidia drivers/hardware this seems to have been fixed ?
+                            //lightRegs[registers[0]] = 1.5143074e-005f;
+                            //lightRegs[registers[1]] = 1.5483369e-005f;
+                            //lightRegs[registers[2]] = 1.7014690e-005f;
 
-                        // FIXME:	when using the following values the light shows up bright red when using nvidia drivers/hardware this seems to have been fixed ?
-                        //lightRegs[registers[0]] = 1.5143074e-005f;
-                        //lightRegs[registers[1]] = 1.5483369e-005f;
-                        //lightRegs[registers[2]] = 1.7014690e-005f;
-
-                        if (lightRegs[registers[0]] > 0f ||
-                            lightRegs[registers[1]] > 0f ||
-                            lightRegs[registers[2]] > 0f) break;
+                            if (lightRegs[registers[0]] > 0f ||
+                                lightRegs[registers[1]] > 0f ||
+                                lightRegs[registers[2]] > 0f) break;
+                        }
                     }
                     if (lightStageNum == lightShader.NumStages)
                     {
@@ -609,8 +519,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
                 // if we are doing a soft-shadow novelty test, regenerate the light with a random offset every time
                 if (r_lightSourceRadius.Float != 0f)
-                    for (var i = 0; i < 3; i++)
-                        light.globalLightOrigin[i] += r_lightSourceRadius.Float * (-1 + 2 * (rand() & 0xfff) / (float)0xfff);
+                    for (var i = 0; i < 3; i++) light.globalLightOrigin[i] += r_lightSourceRadius.Float * (-1 + 2 * (R_AddLightSurfaces_random.Next() & 0xfff) / (float)0xfff);
 
                 // create interactions with all entities the light may touch, and add viewEntities that may cast shadows, even if they aren't directly visible.  Any real work
                 // will be deferred until we walk through the viewEntities
@@ -645,7 +554,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     vertexCache.Touch(tri.shadowCache);
                     vertexCache.Touch(tri.indexCache);
 
-                    R_LinkLightSurf(vLight.globalShadows, tri, null, light, null, vLight.scissorRect, true); // FIXME?
+                    R_LinkLightSurf(ref vLight.globalShadows, tri, null, light, null, vLight.scissorRect, true); // FIXME?
                 }
             }
         }
@@ -655,7 +564,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static bool R_IssueEntityDefCallback(IRenderEntity def)
         {
             bool update;
-            Bounds oldBounds;
+            Bounds oldBounds = default;
             var checkBounds = r_checkBounds.Bool;
 
             if (checkBounds) oldBounds = def.referenceBounds;
@@ -726,7 +635,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // set model depth hack value
             if (def.dynamicModel != null && model.DepthHack != 0f && tr.viewDef != null)
             {
-                R_TransformModelToClip(def.parms.origin, tr.viewDef.worldSpace.u.eyeViewMatrix2, tr.viewDef.projectionMatrix, out var eye, out var clip);
+                Plane eye, clip;
+                fixed (float* _ = tr.viewDef.worldSpace.u.eyeViewMatrix2) R_TransformModelToClip(def.parms.origin, _, tr.viewDef.projectionMatrix, out eye, out clip);
                 R_TransformClipToDevice(clip, tr.viewDef, out var ndc);
                 def.parms.modelDepthHack = model.DepthHack * (1f - ndc.z);
             }
@@ -735,11 +645,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             return def.dynamicModel;
         }
 
-        static float R_AddDrawSurf_refRegs[MAX_EXPRESSION_REGISTERS];  // don't put on stack, or VC++ will do a page touch
+        static float[] R_AddDrawSurf_refRegs = new float[MAX_EXPRESSION_REGISTERS];  // don't put on stack, or VC++ will do a page touch
         public static void R_AddDrawSurf(SrfTriangles tri, ViewEntity space, RenderEntity renderEntity, Material shader, ScreenRect scissor)
         {
             float[] shaderParms;
-            float[] generatedShaderParms[MAX_ENTITY_SHADER_PARMS];
+            var generatedShaderParms = new float[Material.MAX_ENTITY_SHADER_PARMS];
 
             var drawSurf = R_ClearedFrameAllocT<DrawSurf>();
             drawSurf.geoFrontEnd = tri;
@@ -768,11 +678,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {
                 var old = tr.viewDef.drawSurfs;
                 int count;
-
                 if (tr.viewDef.maxDrawSurfs == 0) { tr.viewDef.maxDrawSurfs = INITIAL_DRAWSURFS; count = 0; }
-                else { count = tr.viewDef.maxDrawSurfs * sizeof(tr.viewDef.drawSurfs[0]); tr.viewDef.maxDrawSurfs *= 2; }
-                tr.viewDef.drawSurfs = R_FrameAllocMany<DrawSurf>(tr.viewDef.maxDrawSurfs);
-                memcpy(tr.viewDef.drawSurfs, old, count);
+                else { count = tr.viewDef.maxDrawSurfs; tr.viewDef.maxDrawSurfs *= 2; }
+                tr.viewDef.drawSurfs = new DrawSurf[tr.viewDef.maxDrawSurfs];
+                UnsafeX.ArrayCopy(tr.viewDef.drawSurfs, old, count);
             }
             tr.viewDef.drawSurfs[tr.viewDef.numDrawSurfs] = drawSurf;
             tr.viewDef.numDrawSurfs++;
@@ -783,7 +692,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (constRegs != null) drawSurf.shaderRegisters = constRegs;
             else
             {
-                var regs = R_FrameAllocMany<float>(shader.NumRegisters);
+                var regs = new float[shader.NumRegisters];
                 drawSurf.shaderRegisters = regs;
 
                 // a reference shader will take the calculated stage color value from another shader and use that for the parm0-parm3 of the current shader, which allows a stage of
@@ -794,7 +703,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     renderEntity.referenceShader.EvaluateRegisters(R_AddDrawSurf_refRegs, renderEntity.shaderParms, tr.viewDef, renderEntity.referenceSound);
                     var pStage = renderEntity.referenceShader.GetStage(0);
 
-                    memcpy(generatedShaderParms, renderEntity.shaderParms, sizeof(generatedShaderParms));
+                    UnsafeX.ArrayCopy(generatedShaderParms, renderEntity.shaderParms, renderEntity.shaderParms.Length);
                     generatedShaderParms[0] = R_AddDrawSurf_refRegs[pStage.color.registers[0]];
                     generatedShaderParms[1] = R_AddDrawSurf_refRegs[pStage.color.registers[1]];
                     generatedShaderParms[2] = R_AddDrawSurf_refRegs[pStage.color.registers[2]];
@@ -804,9 +713,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 // evaluate with the entityDef's shader parms
                 else shaderParms = renderEntity.shaderParms;
 
-                float oldFloatTime = 0f;
-                int oldTime = 0;
-
+                var oldFloatTime = 0f;
+                var oldTime = 0;
                 if (space.entityDef != null && space.entityDef.parms.timeGroup != 0)
                 {
                     oldFloatTime = tr.viewDef.floatTime;
@@ -832,12 +740,14 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             switch (shader.Texgen)
             {
                 case TG.WOBBLESKY_CUBE: R_WobbleskyTexGen(drawSurf, tr.viewDef.renderView.vieworg); break;
+                // Be sure to init the wobbleTransform to identity for cube-map based surfaces that does not use it (it will be passed to the shader)
                 case TG.SKYBOX_CUBE:
                 case TG.DIFFUSE_CUBE:
                 case TG.REFLECT_CUBE:
-                    // Be sure to init the wobbleTransform to identity for cube-map based surfaces that does not use it
-                    // (it will be passed to the shader)
-                    memcpy(&drawSurf.wobbleTransform, Matrix4x4.identity.ToFloatPtr(), sizeof(drawSurf.wobbleTransform)); break;
+                    Matrix4x4.identity.Fixed(matrix =>
+                    {
+                        fixed (float* _ = drawSurf.wobbleTransform) Unsafe.CopyBlock(_, matrix, 16 * sizeof(float));
+                    }); break;
                 default: break;
             }
 
@@ -848,28 +758,23 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             else
             {
                 var guiNum = shader.EntityGui - 1;
-                if (guiNum >= 0 && guiNum < MAX_RENDERENTITY_GUI) gui = renderEntity.gui[guiNum];
+                if (guiNum >= 0 && guiNum < IRenderWorld.MAX_RENDERENTITY_GUI) gui = renderEntity.gui[guiNum];
                 if (gui == null) gui = shader.GlobalGui;
             }
 
             if (gui != null)
             {
                 // force guis on the fast time
-                float oldFloatTime;
-                int oldTime;
-
-                oldFloatTime = tr.viewDef.floatTime;
-                oldTime = tr.viewDef.renderView.time;
+                var oldFloatTime = tr.viewDef.floatTime;
+                var oldTime = tr.viewDef.renderView.time;
 
                 tr.viewDef.floatTime = game.GetTimeGroupTime(1) * 0.001f;
                 tr.viewDef.renderView.time = game.GetTimeGroupTime(1);
 
-                Bounds ndcBounds;
-
-                if (!R_PreciseCullSurface(drawSurf, ndcBounds))
+                if (!R_PreciseCullSurface(drawSurf, out var ndcBounds))
                 {
                     // did we ever use this to forward an entity color to a gui that didn't set color?
-                    // memcpy( tr.guiShaderParms, shaderParms, sizeof( tr.guiShaderParms ) );
+                    //UnsafeX.ArrayCopy(tr.guiShaderParms, shaderParms, shaderParms.Length);
                     R_RenderGuiSurf(gui, drawSurf);
                 }
 
@@ -891,7 +796,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             Material shader;
 
             def = vEntity.entityDef;
-            model = def.dynamicModel != null ? def.dynamicModel : def.parms.hModel;
+            model = def.dynamicModel ?? def.parms.hModel;
 
             // add all the surfaces
             total = model.NumSurfaces;
@@ -928,7 +833,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
                 if (!R_CullLocalBox(tri.bounds, vEntity.modelMatrix, 5, tr.viewDef.frustum))
                 {
-
                     def.visibleCount = tr.viewCount;
 
                     // make sure we have an ambient cache
@@ -1028,9 +932,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 if (tr.viewDef.isXraySubview)
                 {
                     if (vEntity.entityDef.parms.xrayIndex == 2)
-                        for (inter = vEntity.entityDef.firstInteraction; inter != null && !inter.IsEmpty; inter = next)
+                        for (inter = (Interaction)vEntity.entityDef.firstInteraction; inter != null && !inter.IsEmpty; inter = next)
                         {
-                            next = inter.entityNext;
+                            next = (Interaction)inter.entityNext;
                             if (inter.lightDef.viewCount != tr.viewCount) continue;
                             inter.AddActiveInteraction();
                         }
@@ -1038,9 +942,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 else
                 {
                     // all empty interactions are at the end of the list so once the first is encountered all the remaining interactions are empty
-                    for (inter = vEntity.entityDef.firstInteraction; inter != null && !inter.IsEmpty; inter = next)
+                    for (inter = (Interaction)vEntity.entityDef.firstInteraction; inter != null && !inter.IsEmpty; inter = next)
                     {
-                        next = inter.entityNext;
+                        next = (Interaction)inter.entityNext;
 
                         // skip any lights that aren't currently visible this is run after any lights that are turned off have already been removed from the viewLights list, and had their viewCount cleared
                         if (inter.lightDef.viewCount != tr.viewCount) continue;
@@ -1084,6 +988,105 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     for (surf = vLight.translucentInteractions; surf != null; surf = surf.nextOnLight) surfRect.Union(surf.scissorRect);
 
                     vLight.scissorRect.Intersect(surfRect);
+                }
+            }
+        }
+    }
+
+    unsafe partial class RenderWorldLocal
+    {
+        // When a lightDef is determined to effect the view (contact the frustum and non-0 light), it will check to make sure that it has interactions for all the entityDefs that it might possibly contact.
+        //
+        // This does not guarantee that all possible interactions for this light are generated, only that the ones that may effect the current view are generated. so it does need to be called every view.
+        //
+        // This does not cause entityDefs to create dynamic models, all work is done on the referenceBounds.
+        // 
+        // All entities that have non-empty interactions with viewLights will have viewEntities made for them and be put on the viewEntity list,
+        // even if their surfaces aren't visible, because they may need to cast shadows.
+        //
+        // Interactions are usually removed when a entityDef or lightDef is modified, unless the change is known to not effect them, so there is no danger of getting a stale interaction, we just need to
+        // check that needed ones are created.
+        //
+        // An interaction can be at several levels:
+        //
+        // Don't interact (but share an area) (numSurfaces = 0)
+        // Entity reference bounds touches light frustum, but surfaces haven't been generated (numSurfaces = -1)
+        // Shadow surfaces have been generated, but light surfaces have not.  The shadow surface may still be empty due to bounds being conservative. Both shadow and light surfaces have been generated.  Either or both surfaces may still be empty due to conservative bounds.
+        public void CreateLightDefInteractions(IRenderLight ldef)
+        {
+            AreaReference eref, lref; IRenderEntity edef; PortalArea area; Interaction inter;
+
+            for (lref = ldef.references; lref != null; lref = lref.ownerNext)
+            {
+                area = lref.area;
+
+                // check all the models in this area
+                for (eref = area.entityRefs.areaNext; eref != area.entityRefs; eref = eref.areaNext)
+                {
+                    edef = eref.entity;
+
+                    // if the entity doesn't have any light-interacting surfaces, we could skip this, but we don't want to instantiate dynamic models yet, so we can't check that on most things
+
+                    // if the entity isn't viewed
+                    if (tr.viewDef != null && edef.viewCount != tr.viewCount)
+                    {
+                        // if the light doesn't cast shadows, skip
+                        if (!ldef.lightShader.LightCastsShadows) continue;
+                        // if we are suppressing its shadow in this view, skip
+                        if (!r_skipSuppress.Bool)
+                        {
+                            if (edef.parms.suppressShadowInViewID != 0 && edef.parms.suppressShadowInViewID == tr.viewDef.renderView.viewID) continue;
+                            if (edef.parms.suppressShadowInLightID != 0 && edef.parms.suppressShadowInLightID == ldef.parms.lightId) continue;
+                        }
+                    }
+
+                    // some big outdoor meshes are flagged to not create any dynamic interactions when the level designer knows that nearby moving lights shouldn't actually hit them
+                    if (edef.parms.noDynamicInteractions && edef.world.generateAllInteractionsCalled) continue;
+
+                    // if any of the edef's interaction match this light, we don't
+                    // need to consider it.
+                    if (r_useInteractionTable.Bool && this.interactionTable != null)
+                    {
+                        // allocating these tables may take several megs on big maps, but it saves 3% to 5% of the CPU time.  The table is updated at interaction::AllocAndLink() and interaction::UnlinkAndFree()
+                        var index = ldef.index * this.interactionTableWidth + edef.index;
+                        inter = this.interactionTable[index];
+                        if (inter != null)
+                        {
+                            // if this entity wasn't in view already, the scissor rect will be empty, so it will only be used for shadow casting
+                            if (!inter.IsEmpty) R_SetEntityDefViewEntity(edef);
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        // scan the doubly linked lists, which may have several dozen entries
+                        // we could check either model refs or light refs for matches, but it is assumed that there will be less lights in an area than models
+                        // so the entity chains should be somewhat shorter (they tend to be fairly close).
+                        for (inter = (Interaction)edef.firstInteraction; inter != null; inter = (Interaction)inter.entityNext) if (inter.lightDef == ldef) break;
+
+                        // if we already have an interaction, we don't need to do anything
+                        if (inter != null)
+                        {
+                            // if this entity wasn't in view already, the scissor rect will be empty, so it will only be used for shadow casting
+                            if (!inter.IsEmpty) R_SetEntityDefViewEntity(edef);
+                            continue;
+                        }
+                    }
+
+                    // create a new interaction, but don't do any work other than bbox to frustum culling
+                    inter = Interaction.AllocAndLink(edef, ldef);
+
+                    // do a check of the entity reference bounds against the light frustum, trying to avoid creating a viewEntity if it hasn't been already
+                    float[] modelMatrix = new float[16], m;
+
+                    if (edef.viewCount == tr.viewCount) m = edef.viewEntity.modelMatrix;
+                    else { R_AxisToModelMatrix(edef.parms.axis, edef.parms.origin, modelMatrix); m = modelMatrix; }
+
+                    if (R_CullLocalBox(edef.referenceBounds, m, 6, ldef.frustum)) { inter.MakeEmpty(); continue; }
+
+                    // we will do a more precise per-surface check when we are checking the entity
+                    // if this entity wasn't in view already, the scissor rect will be empty, so it will only be used for shadow casting
+                    R_SetEntityDefViewEntity(edef);
                 }
             }
         }

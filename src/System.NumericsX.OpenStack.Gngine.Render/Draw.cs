@@ -432,7 +432,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         {
             // Get the projection matrix
             var localProjectionMatrix = stackalloc float[16];
-            fixed (float* projectionMatrixF = backEnd.viewDef.projectionMatrix) Unsafe.CopyBlock(localProjectionMatrix, projectionMatrixF, sizeof(float) * 16);
+            fixed (float* _ = backEnd.viewDef.projectionMatrix) Unsafe.CopyBlock(localProjectionMatrix, _, sizeof(float) * 16);
 
             // Quick and dirty hacks on the projection matrix
             if (weaponDepthHack) localProjectionMatrix[14] = backEnd.viewDef.projectionMatrix[14] * 0.25f;
@@ -533,9 +533,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 backEnd.currentScissor = surf.scissorRect;
                 if ((backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1) < 0f || (backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1) < 0f) backEnd.currentScissor = backEnd.viewDef.scissor;
                 qglScissor(backEnd.viewDef.viewport.x1 + backEnd.currentScissor.x1,
-                           backEnd.viewDef.viewport.y1 + backEnd.currentScissor.y1,
-                           backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-                           backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
+                    backEnd.viewDef.viewport.y1 + backEnd.currentScissor.y1,
+                    backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+                    backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
             }
 
             inter.surf = surf;
@@ -894,9 +894,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                         backEnd.currentScissor = vLight.scissorRect;
                         if ((backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1) < 0f || (backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1) < 0f) backEnd.currentScissor = backEnd.viewDef.scissor;
                         qglScissor(backEnd.viewDef.viewport.x1 + backEnd.currentScissor.x1,
-                                   backEnd.viewDef.viewport.y1 + backEnd.currentScissor.y1,
-                                   backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-                                   backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
+                            backEnd.viewDef.viewport.y1 + backEnd.currentScissor.y1,
+                            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+                            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
                     }
 
                     qglClear((uint)AttribMask.StencilBufferBit);
@@ -1323,9 +1323,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     backEnd.currentScissor = drawSurf.scissorRect;
                     if ((backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1) < 0f || (backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1) < 0f) backEnd.currentScissor = backEnd.viewDef.scissor;
                     qglScissor(backEnd.viewDef.viewport.x1 + backEnd.currentScissor.x1,
-                               backEnd.viewDef.viewport.y1 + backEnd.currentScissor.y1,
-                               backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-                               backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
+                        backEnd.viewDef.viewport.y1 + backEnd.currentScissor.y1,
+                        backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+                        backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
                 }
 
                 ////////////////////
@@ -1388,9 +1388,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 backEnd.currentScissor = surf.scissorRect;
                 if ((backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1) < 0f || (backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1) < 0f) backEnd.currentScissor = backEnd.viewDef.scissor;
                 qglScissor(backEnd.viewDef.viewport.x1 + backEnd.currentScissor.x1,
-                           backEnd.viewDef.viewport.y1 + backEnd.currentScissor.y1,
-                           backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-                           backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
+                    backEnd.viewDef.viewport.y1 + backEnd.currentScissor.y1,
+                    backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+                    backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
             }
 
             // set polygon offset if necessary
@@ -1889,8 +1889,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             ////////////////////////
 
             int i;
-            float* color = stackalloc float[4],
-                matrix = stackalloc float[16];
+            float* color = stackalloc float[4], matrix = stackalloc float[16];
             for (i = 0; i < lightShader.NumStages; i++)
             {
                 var stage = lightShader.GetStage(i);
@@ -1952,7 +1951,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             return;
 
             if (r_skipFogLights.Bool || backEnd.viewDef.isXraySubview) return; // dont fog in xray mode
-
 
             /////////////////////////////////////////////
             // GL setup for the current pass

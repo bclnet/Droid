@@ -77,7 +77,7 @@ namespace System.NumericsX.OpenStack.Gngine.UI
             CommonInit();
         }
         public void Dispose()
-            => renderSystem.FreeRenderWorld(world);
+            => renderSystem.FreeRenderWorld(ref world);
 
         void BuildAnimation(int time)
         {

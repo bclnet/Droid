@@ -11,17 +11,29 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public int areaNum;
     }
 
-    public unsafe partial class Interaction : BlockAllocElement<Interaction>
+    public unsafe partial class InteractionBase : BlockAllocElement<InteractionBase>
     {
         public static readonly SrfTriangles LIGHT_TRIS_DEFERRED = new();
         public static readonly byte* LIGHT_CULL_ALL_FRONT = (byte*)(new IntPtr(-1));
         public const float LIGHT_CLIP_EPSILON = 0.1f;
+
+        // get space from here, if null, it is a pre-generated shadow volume from dmap
+        public IRenderEntity entityDef;
+        public IRenderLight lightDef;
+
+        public InteractionBase lightNext;               // for lightDef chains
+        public InteractionBase lightPrev;
+        public InteractionBase entityNext;              // for entityDef chains
+        public InteractionBase entityPrev;
     }
 
     public delegate bool DeferredEntityCallback(RenderEntity e, RenderView v);
 
     public class RenderEntity
     {
+        public RenderEntity() { }
+        public RenderEntity(RenderEntity s) { }
+
         public IRenderModel hModel;              // this can only be null if callback is set
 
         public int entityNum;
@@ -88,10 +100,18 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public int forceUpdate;            // force an update (NOTE: not a bool to keep this struct a multiple of 4 bytes)
         public int timeGroup;
         public int xrayIndex;
+
+        public int memcmp(RenderEntity parms)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class RenderLight
     {
+        public RenderLight() { }
+        public RenderLight(RenderLight s) { }
+
         public Matrix3x3 axis;                // rotation vectors, must be unit length
         public Vector3 origin;
 
@@ -159,7 +179,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
     }
 
     // exitPortal_t is returned by idRenderWorld::GetPortal()
-    public struct ExitPortal
+    public class ExitPortal
     {
         public int[] areas;       // areas connected by this portal
         public Winding w;             // winding points have counter clockwise ordering seen from areas[0]
@@ -197,7 +217,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         PS_BLOCK_ALL = (1 << IRenderWorld.NUM_PORTAL_ATTRIBUTES) - 1
     }
 
-    public abstract class IRenderWorld
+    public unsafe abstract class IRenderWorld
     {
         public static int SIMD_ROUND_JOINTS(int numJoints) => (numJoints + 1) & ~1;
         public static void SIMD_INIT_LAST_JOINT(JointMat[] joints, int numJoints)
@@ -310,14 +330,14 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public abstract bool AreasAreConnected(int areaNum1, int areaNum2, PortalConnection connection);
 
         // returns the number of portal areas in a map, so game code can build information tables for the different areas
-        public abstract int NumAreas();
+        public abstract int NumAreas { get; }
 
         // Will return -1 if the point is not in an area, otherwise it will return 0 <= value < NumAreas()
-        public abstract int PointInArea(Vector3 point);
+        public abstract int PointInArea(in Vector3 point);
 
         // fills the *areas array with the numbers of the areas the bounds cover
         // returns the total number of areas the bounds cover
-        public abstract int BoundsInAreas(out Bounds bounds, int[] areas, int maxAreas);
+        public abstract int BoundsInAreas(in Bounds bounds, int[] areas, int maxAreas);
 
         // Used by the sound system to do area flowing
         public abstract int NumPortalsInArea(int areaNum);
@@ -329,16 +349,16 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         // Checks a ray trace against any gui surfaces in an entity, returning the fraction location of the trace on the gui surface, or -1,-1 if no hit.
         // This doesn't do any occlusion testing, simply ignoring non-gui surfaces. start / end are in global world coordinates.
-        public abstract GuiPoint GuiTrace(Qhandle entityHandle, object animator, Vector3 start, Vector3 end); // Koz added animator
+        public abstract GuiPoint GuiTrace(Qhandle entityHandle, object animator, in Vector3 start, in Vector3 end); // Koz added animator
 
         // Traces vs the render model, possibly instantiating a dynamic version, and returns true if something was hit
-        public abstract bool ModelTrace(out ModelTrace trace, Qhandle entityHandle, out Vector3 start, out Vector3 end, float radius);
+        public abstract bool ModelTrace(out ModelTrace trace, Qhandle entityHandle, in Vector3 start, in Vector3 end, float radius);
 
         // Traces vs the whole rendered world. FIXME: we need some kind of material flags.
         public abstract bool Trace(out ModelTrace trace, in Vector3 start, in Vector3 end, float radius, bool skipDynamic = true, bool skipPlayer = false);
 
         // Traces vs the world model bsp tree.
-        public abstract bool FastWorldTrace(out ModelTrace trace, out Vector3 start, out Vector3 end);
+        public abstract bool FastWorldTrace(out ModelTrace trace, in Vector3 start, in Vector3 end);
 
         //-------------- Demo Control  -----------------
 
@@ -401,7 +421,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public List<IRenderLight> lightDefs = new();
 
         public BlockAlloc<AreaReference> areaReferenceAllocator = new(1024);
-        public BlockAlloc<Interaction> interactionAllocator = new(256);
+        public BlockAlloc<InteractionBase> interactionAllocator = new(256);
         public BlockAlloc<AreaNumRef> areaNumRefAllocator = new(1024);
 
         // all light / entity interactions are referenced here for fast lookup without
@@ -409,7 +429,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // cache access, because the table is accessed by light in idRenderWorldLocal::CreateLightDefInteractions()
         // Growing this table is time consuming, so we add a pad value to the number
         // of entityDefs and lightDefs
-        public Interaction[] interactionTable;
+        public InteractionBase[] interactionTable;
         public int interactionTableWidth;      // entityDefs
         public int interactionTableHeight;     // lightDefs
 
@@ -457,15 +477,15 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
     partial class R
     {
-        const int CHILDREN_HAVE_MULTIPLE_AREAS = -2;
-        const int AREANUM_SOLID = -1;
+        public const int CHILDREN_HAVE_MULTIPLE_AREAS = -2;
+        public const int AREANUM_SOLID = -1;
     }
 
-    public struct AreaNode
+    public class AreaNode
     {
-        Plane plane;
-        int children0;        // negative numbers are (-1 - areaNumber), 0 = solid
-        int children1;        // negative numbers are (-1 - areaNumber), 0 = solid
-        int commonChildrenArea; // if all children are either solid or a single area, this is the area number, else CHILDREN_HAVE_MULTIPLE_AREAS
+        public Plane plane;
+        public int children0;        // negative numbers are (-1 - areaNumber), 0 = solid
+        public int children1;        // negative numbers are (-1 - areaNumber), 0 = solid
+        public int commonChildrenArea; // if all children are either solid or a single area, this is the area number, else CHILDREN_HAVE_MULTIPLE_AREAS
     }
 }

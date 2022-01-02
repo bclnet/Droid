@@ -7,7 +7,7 @@ using GlIndex = System.Int32;
 
 namespace System.NumericsX.OpenStack.Gngine.UI
 {
-    public class DeviceContext
+    public unsafe class DeviceContext
     {
         public const int VIRTUAL_WIDTH = 640;
         public const int VIRTUAL_HEIGHT = 480;
@@ -341,8 +341,8 @@ namespace System.NumericsX.OpenStack.Gngine.UI
 
         public void DrawStretchPic(float x, float y, float w, float h, float s0, float t0, float s1, float t1, Material material)
         {
-            var indexes = new GlIndex[] { 3, 0, 2, 2, 0, 1 };
-            var verts = new DrawVert[4];
+            var indexes = stackalloc GlIndex[] { 3, 0, 2, 2, 0, 1 };
+            var verts = stackalloc DrawVert[4];
             verts[0].xyz.x = x; verts[0].xyz.y = y; verts[0].xyz.z = 0;
             verts[0].st.x = s0; verts[0].st.y = t0;
             verts[0].normal.x = 0; verts[0].normal.y = 0; verts[0].normal.z = 1;
@@ -401,8 +401,8 @@ namespace System.NumericsX.OpenStack.Gngine.UI
 
         public void DrawStretchPicRotated(float x, float y, float w, float h, float s0, float t0, float s1, float t1, Material material, float angle = 0f)
         {
-            var indexes = new GlIndex[] { 3, 0, 2, 2, 0, 1 };
-            var verts = new DrawVert[4];
+            var indexes = stackalloc GlIndex[] { 3, 0, 2, 2, 0, 1 };
+            var verts = stackalloc DrawVert[4];
             verts[0].xyz.x = x; verts[0].xyz.y = y; verts[0].xyz.z = 0;
             verts[0].st.x = s0; verts[0].st.y = t0;
             verts[0].normal.x = 0; verts[0].normal.y = 0; verts[0].normal.z = 1;

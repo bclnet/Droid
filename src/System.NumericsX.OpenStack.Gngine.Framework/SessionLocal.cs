@@ -59,13 +59,13 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
         const int MAX_LOGGED_USERCMDS = 60 * 60 * 60;   // one hour of single player, 15 minutes of four player
 
         // The render world and sound world used for this session.
-        IRenderWorld rw; IRenderWorld ISession.rw => rw;
-        ISoundWorld sw; ISoundWorld ISession.sw => sw;
+        //IRenderWorld rw; // IRenderWorld ISession.rw => rw;
+        //ISoundWorld sw; // ISoundWorld ISession.sw => sw;
 
         // The renderer and sound system will write changes to writeDemo. Demos can be recorded and played at the same time when splicing.
-        VFileDemo readDemo;
-        VFileDemo writeDemo;
-        int renderdemoVersion;
+        //VFileDemo readDemo;
+        //VFileDemo writeDemo;
+        //int renderdemoVersion;
 
         public SessionLocal()
         {
@@ -81,7 +81,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
         /// <summary>
         /// Called in an orderly fashion at system startup, so commands, cvars, files, etc are all available
         /// </summary>
-        public void Init()
+        public override void Init()
         {
             common.Printf("----- Initializing Session -----\n");
 
@@ -160,7 +160,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             ReadCDKey();
         }
 
-        public void Shutdown()
+        public override void Shutdown()
         {
             int i;
 
@@ -200,7 +200,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
         /// <summary>
         /// called on errors and game exits
         /// </summary>
-        public void Stop()
+        public override void Stop()
         {
             ClearWipe();
 
@@ -222,7 +222,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             SetGUI(null, null);
         }
 
-        public void UpdateScreen(bool outOfSequence = true)
+        public override void UpdateScreen(bool outOfSequence = true)
         {
 #if true //_WIN32
 
@@ -248,7 +248,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             insideUpdateScreen = false;
         }
 
-        public void PacifierUpdate()
+        public override void PacifierUpdate()
         {
             if (!insideExecuteMapChange) return;
 
@@ -276,7 +276,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             AsyncNetwork.server.PacifierUpdate();
         }
 
-        public void Frame()
+        public override void Frame()
         {
             if (C.com_asyncSound.Integer == 0) soundSystem.AsyncUpdateWrite(SysW.Milliseconds);
 
@@ -462,7 +462,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             => AsyncNetwork.IsActive;
 
         static string ProcessEvent_cmd;
-        public bool ProcessEvent(SysEvent ev)
+        public override bool ProcessEvent(SysEvent ev)
         {
             // hitting escape anywhere brings up the menu
             // DG: but shift-escape should bring up console instead so ignore that
@@ -506,7 +506,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             return false;
         }
 
-        public void SetPlayingSoundWorld()
+        public override void SetPlayingSoundWorld()
             => soundSystem.PlayingSoundWorld = guiActive != null && (guiActive == guiMainMenu || guiActive == guiIntro || guiActive == guiLoading || (guiActive == guiMsg && !mapSpawned))
                 ? menuSoundWorld
                 : sw;
@@ -515,13 +515,13 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
         /// this is used by the sound system when an OnDemand sound is loaded, so the game action doesn't advance and get things out of sync
         /// </summary>
         /// <param name="msec">The msec.</param>
-        public void TimeHitch(int msec)
+        public override void TimeHitch(int msec)
             => timeHitch += msec;
 
-        public int SaveGameVersion
+        public override int SaveGameVersion
             => savegameVersion;
 
-        public string CurrentMapName
+        public override string CurrentMapName
             => currentMapName;
 
         //=====================================
@@ -606,11 +606,11 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
 #endif
         }
 
-        public void PlayIntroGui() { }
+        public static void PlayIntroGui() { }
 
-        public void LoadSession(string name) { }
+        public static void LoadSession(string name) { }
 
-        public void SaveSession(string name) { }
+        public static void SaveSession(string name) { }
 
         // called by Draw when the scene to scene wipe is still running
         /// <summary>
@@ -672,7 +672,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             wipeStartTic = wipeStopTic + 1;
         }
 
-        public void ShowLoadingGui()
+        public static void ShowLoadingGui()
         {
             if (com_ticNumber == 0) return;
             console.Close();
@@ -719,7 +719,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             }
         }
 
-        public string GetAutoSaveName(string mapName)
+        public static string GetAutoSaveName(string mapName)
         {
             var mapDecl = declManager.FindType(DECL.MAPDEF, mapName, false);
             var mapDef = (DeclEntityDef)mapDecl;
@@ -728,7 +728,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             return $"^3AutoSave:^0 {mapName}";
         }
 
-        public string GetSaveMapName(string mapName)
+        public static string GetSaveMapName(string mapName)
         {
             var mapDecl = declManager.FindType(DECL.MAPDEF, mapName, false);
             var mapDef = (DeclEntityDef)mapDecl;
@@ -995,7 +995,6 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
         public int lastDemoTic;
         public bool syncNextGameFrame;
 
-
         public bool aviCaptureMode;        // if true, screenshots will be taken and sound captured
         public string aviDemoShortName; //
         public float aviDemoFrameCount;
@@ -1101,8 +1100,6 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
 
             authMsg = "";
         }
-
-
 
         /// <summary>
         /// Graphs yaw angle for testing smoothness

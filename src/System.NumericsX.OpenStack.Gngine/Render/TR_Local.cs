@@ -1,6 +1,5 @@
 #define USE_TRI_DATA_ALLOCATOR
 using System.Runtime.InteropServices;
-// using GlIndex = System.Int32;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
 {
@@ -171,8 +170,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public ViewLight viewLight;
 
         public AreaReference references;                // each area the light is present in will have a lightRef
-        public Interaction firstInteraction;        // doubly linked list
-        public Interaction lastInteraction;
+        public InteractionBase firstInteraction;        // doubly linked list
+        public InteractionBase lastInteraction;
 
         public DoublePortal foggedPortals;
     }
@@ -217,8 +216,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         //public RenderModelOverlay overlay;              // blood overlays on animated models
 
         public AreaReference entityRefs;                // chain of all references
-        public Interaction firstInteraction;        // doubly linked list
-        public Interaction lastInteraction;
+        public InteractionBase firstInteraction;        // doubly linked list
+        public InteractionBase lastInteraction;
 
         public bool needsPortalSky;
     }
@@ -305,7 +304,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         public ViewEntity_Union u;
 
-        internal void memset()
+        public void memset()
         {
             throw new NotImplementedException();
         }
@@ -430,7 +429,12 @@ namespace System.NumericsX.OpenStack.Gngine.Render
     {
         public ViewDef viewDef;
 
-        internal void Set(DrawSurfsCommand lockSurfacesCmd)
+        public void Set(DrawSurfsCommand lockSurfacesCmd)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void memset()
         {
             throw new NotImplementedException();
         }
@@ -448,7 +452,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
     unsafe partial class R
     {
         // this is the inital allocation for max number of drawsurfs in a given view, but it will automatically grow if needed
-        const int INITIAL_DRAWSURFS = 0x4000;
+        public const int INITIAL_DRAWSURFS = 0x4000;
     }
 
     // a request for frame memory will never fail (until malloc fails), but it may force the allocation of a new memory block that will be discontinuous with the existing memory
@@ -505,7 +509,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public int c_guiSurfs;
         public int frontEndMsec;       // sum of time in all RE_RenderScene's in a frame
 
-        internal void memset()
+        public void memset()
         {
             throw new NotImplementedException();
         }
@@ -513,7 +517,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
     unsafe partial class R
     {
-        const int MAX_MULTITEXTURE_UNITS = 8;
+        public const int MAX_MULTITEXTURE_UNITS = 8;
     }
 
     public struct GLstate
@@ -571,7 +575,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         public int c_copyFrameBuffer;
 
-        internal void memset()
+        public void memset()
         {
             throw new NotImplementedException();
         }

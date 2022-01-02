@@ -262,7 +262,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             for (var i = 0; i < tri.numVerts; i++)
             {
-                ref DrawVert v = ref tri.verts.Value[i];
+                ref DrawVert v = ref tri.verts[i];
                 if (v.st.x <= origin.st.x && v.st.y <= origin.st.y) origin = v;
                 if (v.st.x >= axis[0].st.x && v.st.y <= axis[0].st.y) axis[0] = v;
                 if (v.st.x <= axis[1].st.x && v.st.y >= axis[1].st.y) axis[1] = v;
@@ -450,8 +450,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     fileHandle.Seek(tileNum * tileBytes, FS_SEEK.SET);
                     fileHandle.Read(oldBlock, tileBytes);
 
-                    for (var yy = 0; yy < tileSize; yy++)
-                        Unsafe.CopyBlock(pic + ((y * tileSize + yy) * width * tileSize + x * tileSize) * 4, oldBlock + yy * tileSize * 4, (uint)(tileSize * 4));
+                    for (var yy = 0; yy < tileSize; yy++) Unsafe.CopyBlock(pic + ((y * tileSize + yy) * width * tileSize + x * tileSize) * 4, oldBlock + yy * tileSize * 4, (uint)(tileSize * 4));
                 }
             Image.R_WriteTGA(outName, pic, width * tileSize, height * tileSize, false);
             R_StaticFree(pic);

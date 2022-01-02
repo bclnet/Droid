@@ -215,7 +215,7 @@ namespace System.NumericsX.OpenStack
         public static void InitNetworking() => throw new NotImplementedException();
         public static void ShutdownNetworking() => throw new NotImplementedException();
 
-        public static void CreateThread(object function, object parms, out XThreadInfo info, string name) => throw new NotImplementedException();
+        public static void CreateThread(Func<object, int> function, object parms, out XThreadInfo info, string name) => throw new NotImplementedException();
         public static void DestroyThread(ref XThreadInfo info) => throw new NotImplementedException(); // sets threadHandle back to 0
 
         // find the name of the calling thread

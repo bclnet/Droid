@@ -298,45 +298,41 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         //        public static void R_Init();
         //        public static void R_InitOpenGL();
-
         //        //public static void R_DoneFreeType();
-
         //        public static void R_SetColorMappings();
-
         //        public static void R_ScreenShot_f(CmdArgs args);
-
         //        public static bool R_CheckExtension(string name);
 
         #endregion
 
         #region IMPLEMENTATION SPECIFIC FUNCTIONS
 
-        //        public struct GlimpParms
-        //        {
-        //            public int width;
-        //            public int height;
-        //            public bool fullScreen;
-        //            public bool stereo;
-        //            public int displayHz;
-        //            public int multiSamples;
-        //        }
+        public struct GlimpParms
+        {
+            public int width;
+            public int height;
+            public bool fullScreen;
+            public bool stereo;
+            public int displayHz;
+            public int multiSamples;
+        }
 
-        //        public static bool GLimp_Init(GlimpParms parms);
-        //        // If the desired mode can't be set satisfactorily, false will be returned. The renderer will then reset the glimpParms to "safe mode" of 640x480 fullscreen and try again.  If that also fails, the error will be fatal.
+        // If the desired mode can't be set satisfactorily, false will be returned. The renderer will then reset the glimpParms to "safe mode" of 640x480 fullscreen and try again.  If that also fails, the error will be fatal.
+        public static bool GLimp_Init(GlimpParms parms) => throw new NotImplementedException();
 
-        //        public static bool GLimp_SetScreenParms(GlimpParms parms);
-        //        // will set up gl up with the new parms
+        // will set up gl up with the new parms
+        public static bool GLimp_SetScreenParms(GlimpParms parms) => throw new NotImplementedException();
 
-        //        public static void GLimp_Shutdown();
-        //        // Destroys the rendering context, closes the window, resets the resolution, and resets the gamma ramps.
+        // Destroys the rendering context, closes the window, resets the resolution, and resets the gamma ramps.
+        public static void GLimp_Shutdown() => throw new NotImplementedException();
 
         public static void GLimp_SetupFrame(int a) => throw new NotImplementedException();
 
+        // Calls the system specific swapbuffers routine, and may also perform other system specific cvar checks that happen every frame. This will not be called if 'r_drawBuffer GL_FRONT'
         public static void GLimp_SwapBuffers() => throw new NotImplementedException();
-        //        // Calls the system specific swapbuffers routine, and may also perform other system specific cvar checks that happen every frame. This will not be called if 'r_drawBuffer GL_FRONT'
 
-        //        public static void GLimp_SetGamma(ushort[] red, ushort[] green, ushort[] blue);
-        //        // Sets the hardware gamma ramps for gamma and brightness adjustment. These are now taken as 16 bit values, so we can take full advantage of dacs with >8 bits of precision
+        // Sets the hardware gamma ramps for gamma and brightness adjustment. These are now taken as 16 bit values, so we can take full advantage of dacs with >8 bits of precision
+        //public static void GLimp_SetGamma(ushort[] red, ushort[] green, ushort[] blue);
 
         //        const int GRAB_ENABLE = 1 << 0;
         //        const int GRAB_REENABLE = 1 << 1;
@@ -442,8 +438,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public abstract void CaptureRenderToFile(string fileName, bool fixAlpha = false);
         public abstract void UnCrop();
 
-        // the image has to be already loaded ( most straightforward way would be through a FindMaterial )
-        // texture filter / mipmapping / repeat won't be modified by the upload
+        // the image has to be already loaded ( most straightforward way would be through a FindMaterial ) texture filter / mipmapping / repeat won't be modified by the upload
         // returns false if the image wasn't found
         public abstract bool UploadImage(string imageName, byte* data, int width, int height);
 
@@ -453,8 +448,22 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // fields
 
         public abstract void Clear();
-        public abstract void SetBackEndRenderer();          // sets tr.backEndRenderer based on cvars
+        //public abstract void SetBackEndRenderer(); // sets tr.backEndRenderer based on cvars
         public abstract void RenderViewToViewport(RenderView renderView, out ScreenRect viewport);
+
+        // The backend task
+        //public abstract void BackendThreadTask();
+        // The backend thread
+        public abstract void BackendThread();
+        // Start (and create) the back thread
+        //public abstract void BackendThreadExecute();
+        // Wait for backend thread to finish
+        public abstract void BackendThreadWait();
+        public abstract void BackendThreadShutdown();
+        // Call this to render the current command buffer. If you pass is pixels it will block and perform a glReadPixels
+        //public abstract void RenderCommands(RenderCrop pixelsCrop, byte* pixels);
+        // Static runner to start thread
+        //static int BackendThreadRunner(void* localRenderSystem);
 
         public XThreadInfo renderThread;
 
@@ -525,11 +534,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         public RenderCrop[] renderCrops = new RenderCrop[RenderCrop.MAX_RENDER_CROPS];
         public int currentRenderCrop;
-
-        // GUI drawing variables for surface creation
-        public int guiRecursionLevel;      // to prevent infinite overruns
-        //public GuiModel guiModel;
-        //public GuiModel demoGuiModel;
 
         // DG: remember the original glConfig.vidWidth/Height values that get overwritten in BeginFrame() so they can be reset in EndFrame() (Editors tend to mess up the viewport by using BeginFrame())
         public int origWidth;

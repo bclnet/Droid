@@ -40,8 +40,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public RenderModelDecal()
         {
             tri = new();
-            tri.verts = new(verts);
-            tri.indexes = new(indexes);
+            tri.verts = verts;
+            tri.indexes = indexes;
             material = null;
             nextDecal = null;
         }
@@ -165,7 +165,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 if (!localInfo.force && !surf.shader.AllowOverlays) continue;
 
                 var stri = surf.geometry;
-                var stri_verts = stri.verts.Value; var stri_indexes = stri.indexes.Value; var stri_facePlanes = stri.facePlanes.Value;
+                var stri_verts = stri.verts; var stri_indexes = stri.indexes; var stri_facePlanes = stri.facePlanes;
 
                 // if the triangle bounds do not overlap with projection bounds
                 if (!localInfo.projectionBounds.IntersectsBounds(stri.bounds)) continue;
@@ -249,7 +249,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     if (newNumIndexes != i)
                         for (j = 0; j < 3; j++)
                         {
-                            decals.tri.indexes.Value[newNumIndexes + j] = decals.tri.indexes.Value[i + j];
+                            decals.tri.indexes[newNumIndexes + j] = decals.tri.indexes[i + j];
                             decals.indexStartTime[newNumIndexes + j] = decals.indexStartTime[i + j];
                         }
                     newNumIndexes += 3;
@@ -261,13 +261,13 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             decals.tri.numIndexes = newNumIndexes;
 
             var inUse = stackalloc int[MAX_DECAL_VERTS];
-            for (i = 0; i < decals.tri.numIndexes; i++) inUse[decals.tri.indexes.Value[i]] = 1;
+            for (i = 0; i < decals.tri.numIndexes; i++) inUse[decals.tri.indexes[i]] = 1;
 
             newNumVerts = 0;
             for (i = 0; i < decals.tri.numVerts; i++)
             {
                 if (inUse[i] == 0) continue;
-                var decals_tri_verts = decals.tri.verts.Value;
+                var decals_tri_verts = decals.tri.verts;
                 decals_tri_verts[newNumVerts] = decals_tri_verts[i];
                 decals.vertDepthFade[newNumVerts] = decals.vertDepthFade[i];
                 inUse[i] = newNumVerts;
@@ -275,7 +275,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             }
             decals.tri.numVerts = newNumVerts;
 
-            for (i = 0; i < decals.tri.numIndexes; i++) { var decals_tri_indexes = decals.tri.indexes.Value; decals_tri_indexes[i] = inUse[decals_tri_indexes[i]]; }
+            for (i = 0; i < decals.tri.numIndexes; i++) { var decals_tri_indexes = decals.tri.indexes; decals_tri_indexes[i] = inUse[decals_tri_indexes[i]]; }
 
             return decals;
         }
@@ -286,7 +286,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             int i, j, maxTime; float f; DecalInfo decalInfo;
 
             if (tri.numIndexes == 0) return;
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes;
 
             // fade down all the verts with time
             decalInfo = material.DecalInfo;
@@ -339,7 +339,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         void AddWinding(in Winding w, Material decalMaterial, Plane[] fadePlanes, float fadeDepth, int startTime)
         {
             int i; float invFadeDepth, fade; DecalInfo decalInfo;
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes;
 
             if ((material == null || material == decalMaterial) && tri.numVerts + w.NumPoints < MAX_DECAL_VERTS && tri.numIndexes + (w.NumPoints - 2) * 3 < MAX_DECAL_INDEXES)
             {

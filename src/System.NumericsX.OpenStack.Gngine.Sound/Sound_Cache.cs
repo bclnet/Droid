@@ -187,8 +187,8 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
         public WaveformatEx objectInfo;         // what are we caching
         public int objectSize;                  // size of waveform in samples, excludes the header
         public int objectMemSize;               // object size in memory
-        public DynamicElement<byte> nonCacheData;             // if it's not cached
-        public DynamicElement<byte> amplitudeData;                // precomputed min,max amplitude pairs
+        public byte[] nonCacheData;             // if it's not cached
+        public byte[] amplitudeData;                // precomputed min,max amplitude pairs
         public int openalBuffer;                // openal buffer
         public bool hardwareBuffer;
         public bool defaultSound;
@@ -251,7 +251,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
             nonCacheData = SoundCache.soundCacheAllocator.Alloc(objectMemSize);
 
-            fixed (byte* valueB = nonCacheData.Value)
+            fixed (byte* valueB = nonCacheData)
             {
                 var ncd = (short*)valueB;
                 for (var i = 0; i < Simd.MIXBUFFER_SAMPLES; i++)
@@ -268,7 +268,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             if (AL.GetError() != ALError.NoError) common.Error("SoundCache: error generating OpenAL hardware buffer");
 
             AL.GetError();
-            AL.BufferData(openalBuffer, objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, ref nonCacheData.Value[0], objectMemSize, objectInfo.nSamplesPerSec);
+            AL.BufferData(openalBuffer, objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, ref nonCacheData[0], objectMemSize, objectInfo.nSamplesPerSec);
             if (AL.GetError() != ALError.NoError) { common.Warning("SoundCache: error loading data into OpenAL hardware buffer"); }
             else hardwareBuffer = true;
 
@@ -298,7 +298,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
             objectMemSize = fh.MemorySize;
 
             nonCacheData = SoundCache.soundCacheAllocator.Alloc(objectMemSize);
-            fixed (byte* nonCacheData_ = nonCacheData.Value) fh.Read(nonCacheData_, objectMemSize, null);
+            fixed (byte* nonCacheData_ = nonCacheData) fh.Read(nonCacheData_, objectMemSize, null);
 
             // optionally convert it to 22kHz to save memory
             CheckForDownSample();
@@ -313,7 +313,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 if (AL.IsBuffer(openalBuffer))
                 {
                     AL.GetError();
-                    AL.BufferData(openalBuffer, objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, ref nonCacheData.Value[0], objectMemSize, objectInfo.nSamplesPerSec);
+                    AL.BufferData(openalBuffer, objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, ref nonCacheData[0], objectMemSize, objectInfo.nSamplesPerSec);
                     if (AL.GetError() != ALError.NoError) { common.Warning("SoundCache: error loading data into OpenAL hardware buffer"); hardwareBuffer = false; }
                     else hardwareBuffer = true;
                 }
@@ -328,7 +328,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                     {
                         var decoder = ISampleDecoder.Alloc();
                         var destData = SoundCache.soundCacheAllocator.Alloc((LengthIn44kHzSamples + 1) * sizeof(float));
-                        fixed (byte* destDataB = destData.Value)
+                        fixed (byte* destDataB = destData)
                         {
                             var destDataF = (float*)destDataB;
                             var destDataS = (short*)destDataB;
@@ -360,7 +360,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                                 }
 
                             AL.GetError();
-                            AL.BufferData(openalBuffer, objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, ref destData.Value[0], objectSize * sizeof(short), objectInfo.nSamplesPerSec);
+                            AL.BufferData(openalBuffer, objectInfo.nChannels == 1 ? ALFormat.Mono16 : ALFormat.Stereo16, ref destData[0], objectSize * sizeof(short), objectInfo.nSamplesPerSec);
                             if (AL.GetError() != ALError.NoError) { common.Warning("SoundCache: error loading data into OpenAL hardware buffer"); hardwareBuffer = false; }
                             else hardwareBuffer = true;
 
@@ -412,7 +412,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 return;
             var shortSamples = objectSize >> 1;
             var converted = SoundCache.soundCacheAllocator.Alloc(shortSamples * sizeof(short));
-            fixed (byte* nonCacheDataB = nonCacheData.Value, convertedB = converted.Value)
+            fixed (byte* nonCacheDataB = nonCacheData, convertedB = converted)
             {
                 var nonCacheDataS = (short*)nonCacheDataB;
                 var convertedS = (short*)convertedB;
@@ -440,7 +440,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
 
             if (objectSize == 0 || offset < 0 || offset > objectSize * sizeof(short) || nonCacheData == null) { output = default; position = 0; size = 0; return false; }
 
-            output = (nonCacheData.Value, offset);
+            output = (nonCacheData, offset);
             position = 0;
             size = objectSize * sizeof(short) - offset;
             if (size > SCACHE_SIZE) size = SCACHE_SIZE;

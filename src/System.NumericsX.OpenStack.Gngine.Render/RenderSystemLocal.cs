@@ -104,11 +104,14 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             tr.lockSurfacesCmd.viewDef.worldSpace = parms.worldSpace;
 
-            // update the view origin and axis, and all
-            // the entity matricies
+            // update the view origin and axis, and all the entity matricies
             for (vModel = tr.lockSurfacesCmd.viewDef.viewEntitys; vModel != null; vModel = vModel.next)
-                for (var eye = 0; eye < 3; ++eye)
-                    myGlMultMatrix(vModel.modelMatrix, tr.lockSurfacesCmd.viewDef.worldSpace.u.eyeViewMatrix[eye], vModel.u.eyeViewMatrix[eye]);
+                fixed (float* a = vModel.modelMatrix)
+                {
+                    fixed (float* b = tr.lockSurfacesCmd.viewDef.worldSpace.u.eyeViewMatrix0, c = vModel.u.eyeViewMatrix0) myGlMultMatrix(a, b, c);
+                    fixed (float* b = tr.lockSurfacesCmd.viewDef.worldSpace.u.eyeViewMatrix1, c = vModel.u.eyeViewMatrix1) myGlMultMatrix(a, b, c);
+                    fixed (float* b = tr.lockSurfacesCmd.viewDef.worldSpace.u.eyeViewMatrix2, c = vModel.u.eyeViewMatrix2) myGlMultMatrix(a, b, c);
+                }
 
             // add the stored off surface commands again
             cmd = R_GetCommandBuffer<DrawSurfsCommand>();
@@ -155,7 +158,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         // x/y/w/h are in the 0,0 to 640,480 range
         public override void DrawStretchTri(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 t1, Vector2 t2, Vector2 t3, Material material)
-            => tr.guiModel.DrawStretchTri(p1, p2, p3, t1, t2, t3, material);
+            => guiModel.DrawStretchTri(p1, p2, p3, t1, t2, t3, material);
 
         public override void GlobalToNormalizedDeviceCoordinates(in Vector3 global, out Vector3 ndc)
             => R_GlobalToNormalizedDeviceCoordinates(global, out ndc);
@@ -304,26 +307,22 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         public override void WriteDemoPics()
         {
-            session.writeDemo.WriteInt(DS.RENDER);
-            session.writeDemo.WriteInt(DC.GUI_MODEL);
+            session.writeDemo.WriteInt((int)VFileDemo.DS.RENDER);
+            session.writeDemo.WriteInt((int)DC.GUI_MODEL);
             guiModel.WriteToDemo(session.writeDemo);
         }
 
         public override void DrawDemoPics()
             => demoGuiModel.EmitFullScreen();
 
-        //void GLimp_ActivateContext();
-        //void GLimp_DeactivateContext();
-
         public static int BackendThreadRunner(object localRenderSystem)
         {
             var local = (IRenderSystem)localRenderSystem;
             local.BackendThread();
-
             return 0;
         }
 
-        public void BackendThreadWait()
+        public override void BackendThreadWait()
         {
             while (!backendFinished)
             {
@@ -333,7 +332,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             }
         }
 
-        public void BackendThread()
+        public override void BackendThread()
         {
             GLimp_ActivateContext();
 
@@ -423,7 +422,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             else BackendThreadTask();
         }
 
-        public void BackendThreadShutdown()
+        public override void BackendThreadShutdown()
         {
             Console.WriteLine("Shutting down backend thread");
 
@@ -571,7 +570,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // This automatically halves sizes until it fits in the current window size, so if you specify a power of two size for a texture copy, it may be shrunk down, but still valid.
-        public override void CropRenderSize(int width, int height, bool makePowerOfTwo, bool forceDimensions)
+        public override void CropRenderSize(int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false)
         {
             if (!glConfig.isInitialized) return;
 
@@ -613,10 +612,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             while (width > glConfig.vidWidth) width >>= 1;
             while (height > glConfig.vidHeight) height >>= 1;
 
-            var rc = renderCrops[currentRenderCrop];
             if (currentRenderCrop == RenderCrop.MAX_RENDER_CROPS) common.Error("RenderSystemLocal::CropRenderSize: currentRenderCrop == MAX_RENDER_CROPS");
             currentRenderCrop++;
-            rc = renderCrops[currentRenderCrop];
+            var rc = renderCrops[currentRenderCrop];
             rc.x = 0;
             rc.y = 0;
             rc.width = width;
@@ -685,7 +683,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             // include extra space for OpenGL padding to word boundaries
             var c = (rc.width + 4) * rc.height;
-            byte* data = (byte*)R_StaticAlloc(c * 4);
+            var data = new byte[c * 4];
 
             // This will render the commands and will block untill finished and has the pixel data
             RenderCommands(rc, data);
@@ -701,7 +699,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             Image.R_WriteTGA(fileName, data2, rc.width, rc.height, true);
 
-            R_StaticFree(data);
             R_StaticFree(data2);
         }
 

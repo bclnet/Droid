@@ -6,6 +6,7 @@ using static System.NumericsX.OpenStack.Gngine.Gngine;
 using static System.NumericsX.OpenStack.Gngine.Render.QGL;
 using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.Gngine.Render.TR;
+using static System.NumericsX.OpenStack.Gngine.Render.Interaction;
 using static System.NumericsX.OpenStack.OpenStack;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
@@ -157,7 +158,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // If glConfig.isInitialized is false, no rendering can take place, but all renderSystem functions will still operate properly, notably the material
         // and model information functions.
         static bool R_InitOpenGL_gotContext = false;
-        static void R_InitOpenGL()
+        public static void R_InitOpenGL()
         {
             //GLint temp;
             int i;
@@ -250,7 +251,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             common.Printf("----- OpenGL Initialization complete-----\n");
         }
 
-
         // Reload the material displayed by r_showSurfaceInfo
         static void R_ReloadSurface_f(CmdArgs args)
         {
@@ -280,62 +280,50 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // Display the given image centered on the screen.
         // testimage <number>
         // testimage <filename>
-        //static void R_TestImage_f(CmdArgs args)
-        //{
-        //    int imageNum;
+        static void R_TestImage_f(CmdArgs args)
+        {
+            int imageNum;
 
-        //    if (tr.testVideo != null) tr.testVideo = null;
-        //    tr.testImage = null;
-
-        //    if (args.Count != 2) return;
-
-        //    if (stringX.IsNumeric(args[1]))
-        //    {
-        //        imageNum = intX.Parse(args[1]);
-        //        if (imageNum >= 0 && imageNum < globalImages.images.Count) tr.testImage = globalImages.images[imageNum];
-        //    }
-        //    else tr.testImage = globalImages.ImageFromFile(args[1], Image.TF.DEFAULT, false, Image.TR.REPEAT, Image.TD.DEFAULT);
-        //}
-
-
-        // Plays the cinematic file in a testImage
-        /*void R_TestVideo_f( const idCmdArgs &args ) {
-            if ( tr.testVideo ) {
-                delete tr.testVideo;
-                tr.testVideo = null;
-            }
+            if (tr.testVideo != null) tr.testVideo = null;
             tr.testImage = null;
 
-            if ( args.Argc() < 2 ) {
-                return;
+            if (args.Count != 2) return;
+
+            if (stringX.IsNumeric(args[1]))
+            {
+                imageNum = intX.Parse(args[1]);
+                if (imageNum >= 0 && imageNum < globalImages.images.Count) tr.testImage = globalImages.images[imageNum];
             }
+            else tr.testImage = globalImages.ImageFromFile(args[1], Image.TF.DEFAULT, false, Image.TR.REPEAT, Image.TD.DEFAULT);
+        }
+
+        // Plays the cinematic file in a testImage
+        static void R_TestVideo_f(CmdArgs args)
+        {
+            if (tr.testVideo != null) tr.testVideo = null;
+            tr.testImage = null;
+
+            if (args.Count < 2) return;
 
             tr.testImage = globalImages.ImageFromFile("_scratch", Image.TF.DEFAULT, false, Image.TR.REPEAT, Image.TD.DEFAULT);
-            tr.testVideo = idCinematic::Alloc();
-            tr.testVideo.InitFromFile( args.Argv( 1 ), true );
+            tr.testVideo = Cinematic.Alloc();
+            tr.testVideo.InitFromFile(args[1], true);
 
-            cinData_t	cin;
-            cin = tr.testVideo.ImageForTime( 0 );
-            if ( !cin.image ) {
-                delete tr.testVideo;
-                tr.testVideo = null;
-                tr.testImage = null;
-                return;
-            }
+            var cin = tr.testVideo.ImageForTime(0);
+            if (cin.image == null) { tr.testVideo = null; tr.testImage = null; return; }
 
-            common.Printf( "%i x %i images\n", cin.imageWidth, cin.imageHeight );
+            common.Printf($"{cin.imageWidth} x {cin.imageHeight} images\n");
 
-            int	len = tr.testVideo.AnimationLength();
-            common.Printf( "%5.1f seconds of video\n", len * 0.001 );
+            var len = tr.testVideo.AnimationLength;
+            common.Printf($"{len * 0.001f:5.1} seconds of video\n");
 
-            tr.testVideoStartTime = tr.primaryRenderView.time * 0.001;
+            tr.testVideoStartTime = tr.primaryRenderView.time * 0.001f;
 
             // try to play the matching wav file
-            idStr	wavString = args.Argv( ( args.Argc() == 2 ) ? 1 : 2 );
-            wavString.StripFileExtension();
-            wavString = wavString + ".wav";
-            session.sw.PlayShaderDirectly( wavString.c_str() );
-        }*/
+            var wavString = args[args.Count == 2 ? 1 : 2];
+            wavString = $"{PathX.StripFileExtension(wavString)}.wav";
+            session.sw.PlayShaderDirectly(wavString);
+        }
 
         // Prints a list of the materials sorted by surface area
         static void R_ReportSurfaceAreas_f(CmdArgs args)
@@ -709,7 +697,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         //============================================================================
 
-        static float RB_overbright;
         static void R_SetColorMappings()
         {
             RB_overbright = (r_brightness.Float * 2) - 1;
@@ -816,7 +803,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             soundSystem.SetMute(false);
         }
 
-        static void R_InitMaterials()
+        public static void R_InitMaterials()
         {
             tr.defaultMaterial = declManager.FindMaterial("_default", false);
             if (tr.defaultMaterial != null) common.FatalError("_default material not found");
@@ -835,7 +822,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         static void R_SizeDown_f(CmdArgs args)
             => r_screenFraction.Integer = r_screenFraction.Integer - 10 < 10 ? 10 : r_screenFraction.Integer - 10;
 
-
         // this is called from the main thread
         static void R_TouchGui_f(CmdArgs args)
         {
@@ -848,9 +834,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
 
         // update latched cvars here
-        static void R_InitCvars() { }
+        public static void R_InitCvars() { }
 
-        static void R_InitCommands()
+        public static void R_InitCommands()
         {
             //cmdSystem.AddCommand("MakeMegaTexture", idMegaTexture::MakeMegaTexture_f, CMD_FL.RENDERER | CMD_FL.CHEAT, "processes giant images");
             cmdSystem.AddCommand("sizeUp", R_SizeUp_f, CMD_FL.RENDERER, "makes the rendered view larger");
@@ -864,8 +850,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             cmdSystem.AddCommand("benchmark", R_Benchmark_f, CMD_FL.RENDERER, "benchmark");
             cmdSystem.AddCommand("gfxInfo", GfxInfo_f, CMD_FL.RENDERER, "show graphics info");
             cmdSystem.AddCommand("modulateLights", R_ModulateLights_f, CMD_FL.RENDERER | CMD_FL.CHEAT, "modifies shader parms on all lights");
-            //cmdSystem.AddCommand("testImage", R_TestImage_f, CMD_FL.RENDERER | CMD_FL.CHEAT, "displays the given image centered on screen", idCmdSystem::ArgCompletion_ImageName);
-            //cmdSystem.AddCommand("testVideo", R_TestVideo_f, CMD_FL.RENDERER | CMD_FL.CHEAT, "displays the given cinematic", idCmdSystem::ArgCompletion_VideoName);
+            cmdSystem.AddCommand("testImage", R_TestImage_f, CMD_FL.RENDERER | CMD_FL.CHEAT, "displays the given image centered on screen", CmdArgs.ArgCompletion_ImageName);
+            cmdSystem.AddCommand("testVideo", R_TestVideo_f, CMD_FL.RENDERER | CMD_FL.CHEAT, "displays the given cinematic", CmdArgs.ArgCompletion_VideoName);
             cmdSystem.AddCommand("reportSurfaceAreas", R_ReportSurfaceAreas_f, CMD_FL.RENDERER, "lists all used materials sorted by surface area");
             cmdSystem.AddCommand("reportImageDuplication", R_ReportImageDuplication_f, CMD_FL.RENDERER, "checks all referenced images for duplications");
             cmdSystem.AddCommand("regenerateWorld", R_RegenerateWorld_f, CMD_FL.RENDERER, "regenerates all interactions");
@@ -881,6 +867,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
     public unsafe partial class RenderSystemLocal : IRenderSystem
     {
+        // GUI drawing variables for surface creation
+        public int guiRecursionLevel;      // to prevent infinite overruns
+        public GuiModel guiModel;
+        public GuiModel demoGuiModel;
+
         // TakeScreenshot
         // Move to tr_imagefiles.c...
         // Will automatically tile render large screen shots if necessary
@@ -952,16 +943,16 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             sortOffset = 0;
             worlds.Clear();
             primaryWorld = null;
-            memset(&primaryRenderView, 0, sizeof(primaryRenderView));
+            primaryRenderView.memset();
             primaryView = null;
             defaultMaterial = null;
             testImage = null;
             ambientCubeImage = null;
             viewDef = null;
-            memset(&pc, 0, sizeof(pc));
-            memset(&lockSurfacesCmd, 0, sizeof(lockSurfacesCmd));
-            memset(&identitySpace, 0, sizeof(identitySpace));
-            memset(renderCrops, 0, sizeof(renderCrops));
+            pc.memset();
+            lockSurfacesCmd.memset();
+            identitySpace.memset();
+            Array.Clear(renderCrops, 0, renderCrops.Length);
             currentRenderCrop = 0;
             guiRecursionLevel = 0;
             guiModel = null;

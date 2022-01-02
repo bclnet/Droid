@@ -9,7 +9,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
     unsafe partial class TR
     {
         const DrawElementsType GlIndexType = DrawElementsType.UnsignedInt;
-        const float RB_overbright = 1;
+        static float RB_overbright = 1;
 
         static bool RB_DrawElementsWithCounters_Once = true;
         public static void RB_DrawElementsWithCounters(DrawSurf surf)

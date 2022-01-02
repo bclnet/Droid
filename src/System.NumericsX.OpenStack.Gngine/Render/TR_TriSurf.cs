@@ -129,7 +129,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (tri == null) return total;
 
             // used as a flag in interations
-            if (tri == Interaction.LIGHT_TRIS_DEFERRED) return total;
+            if (tri == InteractionBase.LIGHT_TRIS_DEFERRED) return total;
 
             if (tri.shadowVertexes != null) total += tri.numVerts * sizeof(ShadowCache);
             else if (tri.verts != null)
@@ -269,8 +269,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             R_AllocStaticTriSurfIndexes(newTri, tri.numIndexes);
             newTri.numVerts = tri.numVerts;
             newTri.numIndexes = tri.numIndexes;
-            fixed (DrawVert* vertsA = newTri.verts.Value, vertsB = tri.verts.Value) Unsafe.CopyBlock(vertsA, vertsB, (uint)(tri.numVerts * sizeof(DrawVert)));
-            fixed (GlIndex* indexesA = newTri.indexes.Value, indexesB = tri.indexes.Value) Unsafe.CopyBlock(indexesA, indexesB, (uint)(tri.numIndexes * sizeof(GlIndex)));
+            fixed (DrawVert* vertsA = newTri.verts, vertsB = tri.verts) Unsafe.CopyBlock(vertsA, vertsB, (uint)(tri.numVerts * sizeof(DrawVert)));
+            fixed (GlIndex* indexesA = newTri.indexes, indexesB = tri.indexes) Unsafe.CopyBlock(indexesA, indexesB, (uint)(tri.numIndexes * sizeof(GlIndex)));
             return newTri;
         }
 
@@ -336,7 +336,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_RangeCheckIndexes(SrfTriangles tri)
         {
             int i;
-            var tri_indexes = tri.indexes.Value;
+            var tri_indexes = tri.indexes;
 
             if (tri.numIndexes < 0) common.Error("R_RangeCheckIndexes: numIndexes < 0");
             if (tri.numVerts < 0) common.Error("R_RangeCheckIndexes: numVerts < 0");
@@ -352,7 +352,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         public static void R_BoundTriSurf(SrfTriangles tri)
         {
-            fixed (DrawVert* vertsD = tri.verts.Value) Simd.MinMaxd(out tri.bounds[0], out tri.bounds[1], vertsD, tri.numVerts);
+            fixed (DrawVert* vertsD = tri.verts) Simd.MinMaxd(out tri.bounds[0], out tri.bounds[1], vertsD, tri.numVerts);
         }
 
         static int* R_CreateSilRemap(SrfTriangles tri)
@@ -374,13 +374,13 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             c_unique = 0;
             for (i = 0; i < tri.numVerts; i++)
             {
-                ref DrawVert v1 = ref tri.verts.Value[i];
+                ref DrawVert v1 = ref tri.verts[i];
 
                 // see if there is an earlier vert that it can map to
                 hashKey = hash.GenerateKey(v1.xyz);
                 for (j = hash.First(hashKey); j >= 0; j = hash.Next(j))
                 {
-                    ref DrawVert v2 = ref tri.verts.Value[j];
+                    ref DrawVert v2 = ref tri.verts[j];
                     if (v2.xyz.x == v1.xyz.z && v2.xyz.y == v1.xyz.y && v2.xyz.z == v1.xyz.z) { c_removed++; remap[i] = j; break; }
                 }
                 if (j < 0) { c_unique++; remap[i] = i; hash.Add(hashKey, i); }
@@ -399,7 +399,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             // remap indexes to the first one
             tri.silIndexes = triSilIndexAllocator.Alloc(tri.numIndexes);
-            var tri_silIndexes = tri.silIndexes.Value; var tri_indexes = tri.indexes.Value;
+            var tri_silIndexes = tri.silIndexes; var tri_indexes = tri.indexes;
             for (i = 0; i < tri.numIndexes; i++) tri_silIndexes[i] = remap[tri_indexes[i]];
             R_StaticFree(remap);
         }
@@ -407,7 +407,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         static void R_CreateDupVerts(SrfTriangles tri)
         {
             int i;
-            var tri_indexes = tri.indexes.Value; var tri_silIndexes = tri.silIndexes.Value;
+            var tri_indexes = tri.indexes; var tri_silIndexes = tri.silIndexes;
 
             int* remap = stackalloc int[tri.numVerts * sizeof(int) + intX.ALLOC16]; remap = (int*)_alloca16(remap);
 
@@ -430,7 +430,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 for (i = 0; i < tri.numVerts; i++) if (remap[i] != i) { tempDupVerts[tri.numDupVerts * 2 + 0] = i; tempDupVerts[tri.numDupVerts * 2 + 1] = remap[i]; tri.numDupVerts++; }
 
                 tri.dupVerts = triDupVertAllocator.Alloc(tri.numDupVerts * 2);
-                fixed (int* dupVertsI = tri.dupVerts.Value) Unsafe.CopyBlock(dupVertsI, tempDupVerts, (uint)(tri.numDupVerts * 2 * sizeof(int)));
+                fixed (int* dupVertsI = tri.dupVerts) Unsafe.CopyBlock(dupVertsI, tempDupVerts, (uint)(tri.numDupVerts * 2 * sizeof(int)));
             }
         }
 
@@ -440,9 +440,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (tri.facePlanes == null) R_AllocStaticTriSurfPlanes(tri, tri.numIndexes);
 
 #if true
-            fixed (Plane* planesP = tri.facePlanes.Value)
-            fixed (DrawVert* vertsD = tri.verts.Value)
-            fixed (GlIndex* indexesG = tri.indexes.Value)
+            fixed (Plane* planesP = tri.facePlanes)
+            fixed (DrawVert* vertsD = tri.verts)
+            fixed (GlIndex* indexesG = tri.indexes)
                 Simd.DeriveTriPlanesi(planesP, vertsD, tri.numVerts, indexesG, tri.numIndexes);
 #else
             var tri_facePlanes = tri.facePlanes.Value;
@@ -496,13 +496,13 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_CreateVertexNormals(SrfTriangles tri)
         {
             int i, j;
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value; var tri_silIndexes = tri.silIndexes.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes; var tri_silIndexes = tri.silIndexes;
 
             for (i = 0; i < tri.numVerts; i++) tri_verts[i].normal.Zero();
 
             if (tri.facePlanes == null || !tri.facePlanesCalculated) R_DeriveFacePlanes(tri);
             if (tri.silIndexes == null) R_CreateSilIndexes(tri);
-            fixed (Plane* planesP = tri.facePlanes.Value)
+            fixed (Plane* planesP = tri.facePlanes)
             {
                 Plane* plane = planesP;
                 for (i = 0; i < tri.numIndexes; i += 3, plane++)
@@ -569,7 +569,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         static void R_IdentifySilEdges(SrfTriangles tri, bool omitCoplanarEdges)
         {
             int i, numTris, shared, single;
-            var tri_verts = tri.verts.Value; var tri_silIndexes = tri.silIndexes.Value;
+            var tri_verts = tri.verts; var tri_silIndexes = tri.silIndexes;
 
             omitCoplanarEdges = false;  // optimization doesn't work for some reason
 
@@ -658,13 +658,13 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             tri.numSilEdges = numSilEdges;
             tri.silEdges = triSilEdgeAllocator.Alloc(numSilEdges);
-            fixed (SilEdge* silEdgesI = tri.silEdges.Value) Unsafe.CopyBlock(silEdgesI, silEdges, (uint)(numSilEdges * sizeof(SilEdge)));
+            fixed (SilEdge* silEdgesI = tri.silEdges) Unsafe.CopyBlock(silEdgesI, silEdges, (uint)(numSilEdges * sizeof(SilEdge)));
         }
 
         // Returns true if the texture polarity of the face is negative, false if it is positive or zero
         static bool R_FaceNegativePolarity(SrfTriangles tri, int firstIndex)
         {
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes;
 
             ref DrawVert a = ref tri_verts[tri_indexes[firstIndex + 0]];
             ref DrawVert b = ref tri_verts[tri_indexes[firstIndex + 1]];
@@ -690,7 +690,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         static void R_DeriveFaceTangents(SrfTriangles tri, FaceTangents* faceTangents)
         {
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes;
 
             // calculate tangent vectors for each face in isolation
             int c_positive = 0, c_negative = 0, c_textureDegenerateFaces = 0;
@@ -776,7 +776,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         static void R_DuplicateMirroredVertexes(SrfTriangles tri)
         {
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value; var tri_mirroredVerts = tri.mirroredVerts.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes; var tri_mirroredVerts = tri.mirroredVerts;
 
             int i, j, totalVerts, numMirror;
 
@@ -818,12 +818,12 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 #if USE_TRI_DATA_ALLOCATOR
                 tri.verts = triVertexAllocator.Resize(tri.verts, totalVerts);
 #else
-                DynamicElement<DrawVert> oldVerts = tri.verts;
+                var oldVerts = tri.verts;
                 R_AllocStaticTriSurfVerts(tri, totalVerts);
-                fixed (DrawVert* vertsA = tri.verts.Value, vertsB = oldVerts.Value) Unsafe.CopyBlock(vertsA, vertsB, (uint)(tri.numVerts * sizeof(DrawVert)));
+                fixed (DrawVert* vertsA = tri.verts, vertsB = oldVerts) Unsafe.CopyBlock(vertsA, vertsB, (uint)(tri.numVerts * sizeof(DrawVert)));
                 triVertexAllocator.Free(oldVerts);
 #endif
-                tri_verts = tri.verts.Value;
+                tri_verts = tri.verts;
 
                 // create the duplicates
                 numMirror = 0;
@@ -853,7 +853,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         static void R_DeriveTangentsWithoutNormals(SrfTriangles tri)
         {
             int i, j;
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes;
 
             // DG: windows only has a 1MB stack and it could happen that we try to allocate >1MB here (in lost mission mod, game/le_hell map), causing a stack overflow to prevent that, use heap allocation if it's >600KB
             var allocaSize = sizeof(FaceTangents) * tri.numIndexes / 3;
@@ -942,7 +942,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         static void R_BuildDominantTris(SrfTriangles tri)
         {
             int i, j;
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes;
 
             var ind = (IndexSort*)R_StaticAlloc(tri.numIndexes);
 
@@ -950,7 +950,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             UnsafeX.QuickSort(ind, tri.numIndexes, sizeof(IndexSort), (a, b) => IndexSortCompar((IndexSort*)a, (IndexSort*)b));
 
             tri.dominantTris = triDominantTrisAllocator.Alloc(tri.numVerts);
-            var dt = tri.dominantTris.Value;
+            var dt = tri.dominantTris;
             fixed (DominantTri* dominantTrisD = dt) Unsafe.InitBlock(dominantTrisD, 0, (uint)(tri.numVerts * sizeof(DominantTri)));
 
             float* d0 = stackalloc float[5], d1 = stackalloc float[5];
@@ -1031,8 +1031,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (tri.tangentsCalculated) return;
 
 #if true
-            fixed (DrawVert* verts = tri.verts.Value)
-            fixed (DominantTri* dominantTris = tri.dominantTris.Value)
+            fixed (DrawVert* verts = tri.verts)
+            fixed (DominantTri* dominantTris = tri.dominantTris)
                 Simd.DeriveUnsmoothedTangents(verts, dominantTris, tri.numVerts);
 #else
             var tri_verts = tri.verts.Value; var tri_dominantTris = tri.dominantTris.Value;
@@ -1087,17 +1087,17 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_DeriveTangents(SrfTriangles tri, bool allocFacePlanes = true)
         {
             int i;
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes;
 
             if (tri.dominantTris != null) { R_DeriveUnsmoothedTangents(tri); return; }
             if (tri.tangentsCalculated) return;
 
             tr.pc.c_tangentIndexes += tri.numIndexes;
 
-            if (tri.facePlanes.Value == null && allocFacePlanes) R_AllocStaticTriSurfPlanes(tri, tri.numIndexes);
+            if (tri.facePlanes == null && allocFacePlanes) R_AllocStaticTriSurfPlanes(tri, tri.numIndexes);
 
 #if true
-            var planesB = tri.facePlanes?.Value ?? stackalloc Plane[(tri.numIndexes / 3) + Plane.ALLOC16];
+            var planesB = tri.facePlanes ?? stackalloc Plane[(tri.numIndexes / 3) + Plane.ALLOC16];
             fixed (Plane* planesP = planesB)
             {
                 var planes = (Plane*)_alloca16(planesP);
@@ -1193,7 +1193,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 for (i = 0; i < tri.numIndexes; i++) tri_verts[tri_indexes[i]].normal = tri.verts[tri_silIndexes[i]].normal;
             }
 #else
-            var tri_dupVerts = tri.dupVerts.Value;
+            var tri_dupVerts = tri.dupVerts;
 
             // add the normal of a duplicated vertex to the normal of the first vertex with the same XYZ
             for (i = 0; i < tri.numDupVerts; i++) tri_verts[tri_dupVerts[i * 2 + 0]].normal += tri_verts[tri_dupVerts[i * 2 + 1]].normal;
@@ -1249,7 +1249,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_RemoveDuplicatedTriangles(SrfTriangles tri)
         {
             int i, j, r, a, b, c, c_removed;
-            var tri_indexes = tri.indexes.Value; var tri_silIndexes = tri.silIndexes.Value;
+            var tri_indexes = tri.indexes; var tri_silIndexes = tri.silIndexes;
 
             c_removed = 0;
 
@@ -1282,7 +1282,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_RemoveDegenerateTriangles(SrfTriangles tri)
         {
             int i, a, b, c, c_removed;
-            var tri_indexes = tri.indexes.Value; var tri_silIndexes = tri.silIndexes?.Value;
+            var tri_indexes = tri.indexes; var tri_silIndexes = tri.silIndexes;
 
             // check for completely degenerate triangles
             c_removed = 0;
@@ -1308,7 +1308,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         static void R_TestDegenerateTextureSpace(SrfTriangles tri)
         {
             int i, c_degenerate;
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes;
 
             // check for triangles with a degenerate texture space
             c_degenerate = 0;
@@ -1327,7 +1327,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_RemoveUnusedVerts(SrfTriangles tri)
         {
             int i, index, used;
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value; var tri_silIndexes = tri.silIndexes?.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes; var tri_silIndexes = tri.silIndexes;
 
             var mark = (int*)R_ClearedStaticAlloc(tri.numVerts * sizeof(int));
 
@@ -1388,14 +1388,14 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             newTri.numIndexes = totalIndexes;
             R_AllocStaticTriSurfVerts(newTri, newTri.numVerts);
             R_AllocStaticTriSurfIndexes(newTri, newTri.numIndexes);
-            var newTri_indexes = newTri.indexes.Value;
+            var newTri_indexes = newTri.indexes;
 
             totalVerts = 0; totalIndexes = 0;
             for (i = 0; i < numSurfaces; i++)
             {
                 tri = surfaces[i];
-                var tri_indexes = tri.indexes.Value;
-                fixed (DrawVert* vertsA = newTri.verts.Value, vertsB = tri.verts.Value) Unsafe.CopyBlock(vertsA + totalVerts, vertsB, (uint)(tri.numVerts * sizeof(DrawVert)));
+                var tri_indexes = tri.indexes;
+                fixed (DrawVert* vertsA = newTri.verts, vertsB = tri.verts) Unsafe.CopyBlock(vertsA + totalVerts, vertsB, (uint)(tri.numVerts * sizeof(DrawVert)));
                 for (j = 0; j < tri.numIndexes; j++) newTri_indexes[totalIndexes + j] = totalVerts + tri_indexes[j];
                 totalVerts += tri.numVerts;
                 totalIndexes += tri.numIndexes;
@@ -1413,7 +1413,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_ReverseTriangles(SrfTriangles tri)
         {
             int i;
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes;
 
             // flip the normal on each vertex. If the surface is going to have generated normals, this won't matter, but if it has explicit normals, this will keep it on the correct side
             for (i = 0; i < tri.numVerts; i++) tri_verts[i].normal = Vector3.origin - tri_verts[i].normal;
@@ -1459,23 +1459,23 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             // numOutputVerts may be smaller if the input had duplicated or degenerate triangles it will often be larger if the input had mirrored texture seams that needed to be busted for proper tangent spaces
             public int numOutputVerts;
-            public DynamicElement<DrawVert> verts;
+            public DrawVert[] verts;
 
             public int numMirroredVerts;
-            public DynamicElement<int> mirroredVerts;
+            public int[] mirroredVerts;
 
             public int numIndexes;
-            public DynamicElement<GlIndex> indexes;
+            public GlIndex[] indexes;
 
-            public DynamicElement<GlIndex> silIndexes;
+            public GlIndex[] silIndexes;
 
             public int numDupVerts;
-            public DynamicElement<int> dupVerts;
+            public int[] dupVerts;
 
             public int numSilEdges;
-            public DynamicElement<SilEdge> silEdges;
+            public SilEdge[] silEdges;
 
-            public DynamicElement<DominantTri> dominantTris;
+            public DominantTri[] dominantTris;
         }
 
         public static DeformInfo R_BuildDeformInfo(int numVerts, DrawVert* verts, int numIndexes, int[] indexes, bool useUnsmoothedTangents)
@@ -1485,11 +1485,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             tri.numVerts = numVerts;
             R_AllocStaticTriSurfVerts(tri, tri.numVerts);
-            fixed (DrawVert* vertsD = tri.verts.Value) Simd.Memcpy(vertsD, verts, tri.numVerts * sizeof(DrawVert));
+            fixed (DrawVert* vertsD = tri.verts) Simd.Memcpy(vertsD, verts, tri.numVerts * sizeof(DrawVert));
 
             tri.numIndexes = numIndexes;
             R_AllocStaticTriSurfIndexes(tri, tri.numIndexes);
-            var tri_indexes = tri.indexes.Value;
+            var tri_indexes = tri.indexes;
 
             // don't memcpy, so we can change the index type from int to short without changing the interface
             for (i = 0; i < tri.numIndexes; i++) tri_indexes[i] = indexes[i];

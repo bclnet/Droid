@@ -6,7 +6,7 @@ using static System.NumericsX.OpenStack.OpenStack;
 
 namespace System.NumericsX.OpenStack.Gngine.Framework
 {
-    partial class SessionLocal
+   unsafe partial class SessionLocal
     {
         static void Session_RescanSI_f(CmdArgs args)
         {

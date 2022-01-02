@@ -57,5 +57,8 @@ namespace System.NumericsX
 
             return result;
         }
+
+        public static void ArrayCopy<T>(T[] dst, T[] src, int count)
+            => Array.Copy(src, dst, count);
     }
 }

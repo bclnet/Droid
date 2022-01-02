@@ -29,8 +29,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public SrfCullInfo cullInfo;
     }
 
-    public unsafe partial class Interaction : BlockAllocElement<Interaction>
+    public unsafe partial class Interaction : InteractionBase //BlockAllocElement<Interaction>
     {
+        public const int sizeOf = 0;
+
         // this may be 0 if the light and entity do not actually intersect -1 = an untested interaction
         public int numSurfaces;
 
@@ -38,15 +40,6 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // be present as a surfaceInteraction_t with a null ambientTris, but
         // possibly having a shader to specify the shadow sorting order
         public SurfaceInteraction[] surfaces;
-
-        // get space from here, if null, it is a pre-generated shadow volume from dmap
-        public IRenderEntity entityDef;
-        public IRenderLight lightDef;
-
-        public Interaction lightNext;               // for lightDef chains
-        public Interaction lightPrev;
-        public Interaction entityNext;              // for entityDef chains
-        public Interaction entityPrev;
 
         public Interaction()
         {
@@ -70,7 +63,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             var renderWorld = edef.world;
 
-            var interaction = renderWorld.interactionAllocator.Alloc();
+            var interaction = (Interaction)renderWorld.interactionAllocator.Alloc();
 
             // link and initialize
             interaction.dynamicModelFrameCount = 0;
@@ -306,8 +299,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // actually create the interaction if needed, building light and shadow surfaces as needed
             if (IsDeferred) CreateInteraction(model);
 
-            fixed (float* matrix = vEntity.modelMatrix) R_GlobalPointToLocal(matrix, lightDef.globalLightOrigin, out localLightOrigin);
-            fixed (float* matrix = vEntity.modelMatrix) R_GlobalPointToLocal(matrix, tr.viewDef.renderView.vieworg, out localViewOrigin);
+            fixed (float* _ = vEntity.modelMatrix) R_GlobalPointToLocal(_, lightDef.globalLightOrigin, out localLightOrigin);
+            fixed (float* _ = vEntity.modelMatrix) R_GlobalPointToLocal(_, tr.viewDef.renderView.vieworg, out localViewOrigin);
 
             // calculate the scissor as the intersection of the light and model rects
             // this is used for light triangles, but not for shadow triangles
@@ -537,6 +530,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         // try to determine if the entire interaction, including shadows, is guaranteed to be outside the view frustum
         static Vector4[] CullInteractionByViewFrustum_colors = { colorRed, colorGreen, colorBlue, colorYellow, colorMagenta, colorCyan, colorWhite, colorPurple };
+
         bool CullInteractionByViewFrustum(Frustum viewFrustum)
         {
             if (!r_useInteractionCulling.Bool) return false;
@@ -618,7 +612,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         }
     }
 
-    unsafe partial class R
+    unsafe partial class TR
     {
         // Determines which triangles of the surface are facing towards the light origin.
         // The facing array should be allocated with one extra index than the number of surface triangles, which will be used to handle dangling edge silhouettes.
@@ -627,7 +621,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (cullInfo.facing != null) return;
 
             Vector3 localLightOrigin;
-            fixed (float* modelMatrixF = ent.modelMatrix) R_GlobalPointToLocal(modelMatrixF, light.globalLightOrigin, out localLightOrigin);
+            R_GlobalPointToLocal(ent.modelMatrix, light.globalLightOrigin, out localLightOrigin);
 
             var numFaces = tri.numIndexes / 3;
 
@@ -639,7 +633,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             var planeSide = stackalloc float[numFaces + floatX.ALLOC16]; planeSide = (float*)_alloca16(planeSide);
 
             // exact geometric cull against face
-            fixed (Plane* facePlanesP = tri.facePlanes.Value) Simd.Dotcp(planeSide, localLightOrigin, facePlanesP, numFaces);
+            fixed (Plane* facePlanesP = tri.facePlanes) Simd.Dotcp(planeSide, localLightOrigin, facePlanesP, numFaces);
             Simd.CmpGE(cullInfo.facing, planeSide, 0f, numFaces);
 
             cullInfo.facing[numFaces] = 1;  // for dangling edges to reference
@@ -658,7 +652,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // cull the triangle surface bounding box
             for (i = 0; i < 6; i++)
             {
-                fixed (float* modelMatrixF = ent.modelMatrix) R_GlobalPlaneToLocal(modelMatrixF, -light.frustum[i], out cullInfo.localClipPlanes[i]);
+                R_GlobalPlaneToLocal(ent.modelMatrix, -light.frustum[i], out cullInfo.localClipPlanes[i]);
 
                 // get front bits for the whole surface
                 if (tri.bounds.PlaneDistance(cullInfo.localClipPlanes[i]) >= Interaction.LIGHT_CLIP_EPSILON) frontBits |= 1 << i;
@@ -676,7 +670,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {
                 // if completely infront of this clipping plane
                 if ((frontBits & (1 << i)) != 0) continue;
-                fixed (DrawVert* vertsD = tri.verts.Value) Simd.Dotpd(planeSide, cullInfo.localClipPlanes[i], vertsD, tri.numVerts);
+                fixed (DrawVert* vertsD = tri.verts) Simd.Dotpd(planeSide, cullInfo.localClipPlanes[i], vertsD, tri.numVerts);
                 Simd.CmpLTb(cullInfo.cullBits, (byte)i, planeSide, Interaction.LIGHT_CLIP_EPSILON, tri.numVerts);
             }
         }
@@ -792,7 +786,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             int c_backfaced, c_distance;
             Bounds bounds = default;
             bool includeBackFaces; int faceNum;
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes;
 
             tr.pc.c_createLightTris++;
             c_backfaced = 0;
@@ -835,7 +829,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     R_AllocStaticTriSurfIndexes(newTri, tri.numIndexes);
 
                     // back face cull the individual triangles
-                    indexes = newTri.indexes.Value;
+                    indexes = newTri.indexes;
                     var facing = cullInfo.facing;
                     for (faceNum = 0, i = 0; i < tri.numIndexes; i += 3, faceNum++)
                     {
@@ -862,7 +856,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 R_AllocStaticTriSurfIndexes(newTri, tri.numIndexes);
 
                 // cull individual triangles
-                indexes = newTri.indexes.Value;
+                indexes = newTri.indexes;
                 var facing = cullInfo.facing;
                 var cullBits = cullInfo.cullBits;
                 for (faceNum = i = 0; i < tri.numIndexes; i += 3, faceNum++)
@@ -922,7 +916,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 if (def.firstInteraction == null) continue;
                 entities++;
 
-                for (var inter = def.firstInteraction; inter != null; inter = inter.entityNext)
+                for (var inter = (Interaction)def.firstInteraction; inter != null; inter = (Interaction)inter.entityNext)
                 {
                     interactions++;
                     total += inter.MemoryUsed;

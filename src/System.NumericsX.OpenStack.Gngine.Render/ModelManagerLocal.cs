@@ -264,9 +264,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             var sortIndex = new int[localModelManager.models.Count];
             for (i = 0; i < localModelManager.models.Count; i++) sortIndex[i] = i;
             for (i = 0; i < localModelManager.models.Count - 1; i++)
-                for (j = i + 1; j < localModelManager.models.Count; j++)
-                    if (models[sortIndex[i]].Memory < models[sortIndex[j]].Memory)
-                        Swap(ref sortIndex[i], ref sortIndex[j]);
+                for (j = i + 1; j < localModelManager.models.Count; j++) if (models[sortIndex[i]].Memory < models[sortIndex[j]].Memory) Swap(ref sortIndex[i], ref sortIndex[j]);
 
             // print next
             for (i = 0; i < models.Length; i++)

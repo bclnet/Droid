@@ -373,7 +373,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                 if (ISampleDecoder.decoderMemoryAllocator.FreeBlockMemory < ISampleDecoder.MIN_OGGVORBIS_MEMORY) return 0;
 
                 if (sample.nonCacheData == null) { Debug.Assert(false); failed = true; return 0; } // this should never happen
-                file.SetData(sample.nonCacheData.Value, sample.objectMemSize);
+                file.SetData(sample.nonCacheData, sample.objectMemSize);
                 if (OggVorbis.ov_openFile(file, ogg) < 0) { failed = true; return 0; }
                 lastFormat = WAVE_FORMAT_TAG.OGG;
                 lastSample = sample;

@@ -6,7 +6,7 @@ using static System.NumericsX.OpenStack.OpenStack;
 
 namespace System.NumericsX.OpenStack.Gngine.Framework
 {
-    partial class SessionLocal
+    unsafe partial class SessionLocal
     {
         static readonly string CDKEY_FILEPATH = $"../{Config.BASE_GAMEDIR}/{Config.CDKEY_FILE}";
         static readonly string XPKEY_FILEPATH = $"../{Config.BASE_GAMEDIR}/{Config.XPKEY_FILE}";
@@ -34,7 +34,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
         bool authWaitBox;
         string authMsg;
 
-        public unsafe void ReadCDKey()
+        public override void ReadCDKey()
         {
             var buffer = stackalloc char[32];
             cdkey_state = CDKEY.UNKNOWN;
@@ -70,7 +70,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             }
         }
 
-        public void WriteCDKey()
+        public override void WriteCDKey()
         {
             var filename = CDKEY_FILEPATH;
             // OpenFileWrite advertises creating directories to the path if needed, but that won't work with a '..' in the path occasionally on windows, but mostly on Linux and OSX, the fs_configpath/base may not exist in full
@@ -88,7 +88,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             fileSystem.CloseFile(f);
         }
 
-        public string GetCDKey(bool xp)
+        public override string GetCDKey(bool xp)
             => !xp ? cdkey
             : xpkey_state == CDKEY.OK || xpkey_state == CDKEY.CHECKING ? xpkey
             : null;
@@ -101,7 +101,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
         /// <param name="netConnect">if set to <c>true</c> [net connect].</param>
         /// <param name="offline_valid">The offline valid.</param>
         /// <returns></returns>
-        public unsafe bool CheckKey(string key, bool netConnect, bool[] offline_valid)
+        public override bool CheckKey(string key, bool netConnect, bool[] offline_valid)
         {
             throw new NotImplementedException();
             //var lkey = new char[2][CDKEY_BUF_LEN];
@@ -181,7 +181,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
         /// </summary>
         /// <param name="strict">if set to <c>true</c> [strict].</param>
         /// <returns></returns>
-        public bool CDKeysAreValid(bool strict)
+        public override bool CDKeysAreValid(bool strict)
         {
             int i; var emitAuth = false;
 
@@ -208,7 +208,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             else return (cdkey_state == CDKEY.OK || cdkey_state == CDKEY.CHECKING) && (xpkey_state == CDKEY.OK || xpkey_state == CDKEY.CHECKING || xpkey_state == CDKEY.NA);
         }
 
-        public void ClearCDKey(bool[] valid)
+        public override void ClearCDKey(bool[] valid)
         {
             if (!valid[0]) { cdkey = ""; cdkey_state = CDKEY.UNKNOWN; }
             // if a key was in checking and not explicitely asked for clearing, put it back to ok
@@ -219,10 +219,10 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             WriteCDKey();
         }
 
-        public bool WaitingForGameAuth
+        public override bool WaitingForGameAuth
             => authEmitTimeout != 0;
 
-        public void CDKeysAuthReply(bool valid, string auth_msg)
+        public override void CDKeysAuthReply(bool valid, string auth_msg)
         {
             // close the wait box
             if (authWaitBox) { StopBox(); authWaitBox = false; }

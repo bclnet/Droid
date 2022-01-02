@@ -22,7 +22,7 @@ namespace System.NumericsX
         {
             this.baseBlockSize = baseBlockSize;
             this.minBlockSize = minBlockSize;
-            this.sizeofT = Marshal.SizeOf<T>();
+            this.sizeofT = 0;
             this.factory = num => Enumerable.Repeat(new T(), num).ToArray();
             Clear();
         }
@@ -43,7 +43,7 @@ namespace System.NumericsX
         public void SetLockMemory(bool @lock) { }
         public void FreeEmptyBaseBlocks() { }
 
-        public DynamicElement<T> Alloc(int num)
+        public T[] Alloc(int num)
         {
             numAllocs++;
 
@@ -51,11 +51,11 @@ namespace System.NumericsX
 
             numUsedBlocks++;
             usedBlockMemory += num * sizeofT;
-            var block = new DynamicElement<T> { Value = factory(num) }; //block.Memory = block.Value.AsMemory();
+            var block = factory(num);
             return block;
         }
 
-        public DynamicElement<T> Resize(DynamicElement<T> ptr, int num)
+        public T[] Resize(T[] ptr, int num)
         {
             numResizes++;
             if (ptr == null) return Alloc(num);
@@ -65,14 +65,14 @@ namespace System.NumericsX
             return ptr;
         }
 
-        public void Free(DynamicElement<T> ptr)
+        public void Free(T[] ptr)
         {
             numFrees++;
             if (ptr == null) return;
             if (ptr is IDisposable ptr1) ptr1.Dispose();
         }
 
-        public string CheckMemory(DynamicElement<T> ptr) => null;
+        public string CheckMemory(T[] ptr) => null;
 
         public int NumBaseBlocks => 0;
         public int BaseBlockMemory => 0;

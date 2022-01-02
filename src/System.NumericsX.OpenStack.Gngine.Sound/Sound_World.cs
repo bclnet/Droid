@@ -1687,7 +1687,7 @@ namespace System.NumericsX.OpenStack.Gngine.Sound
                         // when the amplitudeData is present use that fill a dummy sourceBuffer this is to allow for amplitude based effect on hardware audio solutions
                         if (looping) offset %= size;
                         if (offset < size)
-                            fixed (byte* amplitudeDataB = amplitudeData.Value)
+                            fixed (byte* amplitudeDataB = amplitudeData)
                             {
                                 var amplitudeDataS = (short*)amplitudeDataB;
                                 for (j = 0; j < AMPLITUDE_SAMPLES; j++) sourceBuffer[j] = (j & 1) != 0 ? amplitudeDataS[offset / 512 * 2] : amplitudeDataS[offset / 512 * 2 + 1];

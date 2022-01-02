@@ -207,12 +207,12 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     newSurf.geometry = R_AllocStaticTriSurf();
                     R_AllocStaticTriSurfVerts(newSurf.geometry, numVerts);
                     R_AllocStaticTriSurfIndexes(newSurf.geometry, numIndexes);
-                    fixed (DrawVert* vertsD = newSurf.geometry.verts.Value) Simd.Memset(vertsD, 0, numVerts * sizeof(DrawVert));
+                    fixed (DrawVert* vertsD = newSurf.geometry.verts) Simd.Memset(vertsD, 0, numVerts * sizeof(DrawVert));
                 }
                 else R_FreeStaticTriSurfVertexCaches(newSurf.geometry);
 
                 newTri = newSurf.geometry;
-                var newTri_verts = newTri.verts.Value; var newTri_indexes = newTri.indexes.Value;
+                var newTri_verts = newTri.verts; var newTri_indexes = newTri.indexes;
                 numVerts = numIndexes = 0;
 
                 for (i = 0; i < materials[k].surfaces.Count; i++)
@@ -238,7 +238,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                     numIndexes += surf.numIndexes;
 
                     // copy vertices
-                    var baseSurf_geometry_verts = baseSurf.geometry.verts.Value;
+                    var baseSurf_geometry_verts = baseSurf.geometry.verts;
                     for (j = 0; j < surf.numVerts; j++)
                     {
                         var overlayVert = surf.verts[j];

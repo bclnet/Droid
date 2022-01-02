@@ -450,9 +450,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             int i, j;
 
             int* temp = (int*)R_StaticAlloc(width * width * 4);
-            for (i = 0; i < width; i++)
-                for (j = 0; j < width; j++)
-                    *(temp + i * width + j) = *((int*)data + j * width + i);
+            for (i = 0; i < width; i++) for (j = 0; j < width; j++) *(temp + i * width + j) = *((int*)data + j * width + i);
             Unsafe.CopyBlock(data, temp, (uint)(width * width * 4));
             R_StaticFree((byte*)temp);
         }

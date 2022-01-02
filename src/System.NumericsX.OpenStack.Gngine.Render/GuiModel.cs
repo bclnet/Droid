@@ -130,24 +130,23 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             tri = new();
             tri.numIndexes = surf.numIndexes;
             tri.numVerts = surf.numVerts;
-            tri.indexes = (GlIndex*)R_FrameAlloc(tri.numIndexes * sizeof(GlIndex));
-            memcpy(tri.indexes, &indexes[surf.firstIndex], tri.numIndexes * sizeof(GlIndex));
+            tri.indexes = new GlIndex[tri.numIndexes];
+            UnsafeX.CopyBlockT(ref tri.indexes[0], ref indexes.Ptr()[surf.firstIndex], tri.numIndexes * sizeof(GlIndex));
 
             // we might be able to avoid copying these and just let them reference the list vars but some things, like deforms and recursive guis, need to access the verts in cpu space, not just through the vertex range
-            tri.verts = R_FrameAllocMany<DrawVert>(tri.numVerts);
-            memcpy(tri.verts, &verts[surf.firstVert], tri.numVerts * sizeof(tri.verts[0]));
+            tri.verts = new DrawVert[tri.numVerts];
+            UnsafeX.CopyBlockT(ref tri.verts[0], ref verts.Ptr()[surf.firstVert], tri.numVerts * sizeof(DrawVert));
 
             // move the verts to the vertex cache
-            tri.ambientCache = vertexCache.AllocFrameTemp(tri.verts, tri.numVerts * sizeof(tri.verts[0]), false);
+            tri.ambientCache = vertexCache.AllocFrameTemp(tri.verts, tri.numVerts * sizeof(DrawVert), false);
             tri.indexCache = vertexCache.AllocFrameTemp(tri.indexes, tri.numIndexes * sizeof(GlIndex), true);
 
-            RenderEntity renderEntity;
-            memset(&renderEntity, 0, sizeof(renderEntity));
-            memcpy(renderEntity.shaderParms, surf.color, sizeof(surf.color));
+            RenderEntity renderEntity = new();
+            UnsafeX.CopyBlockT(ref renderEntity.shaderParms[0], surf.color, 4 * sizeof(float));
 
-            var guiSpace = (ViewEntity)R_ClearedFrameAlloc(sizeof(ViewEntity));
-            memcpy(guiSpace.modelMatrix, modelMatrix, sizeof(guiSpace.modelMatrix));
-            memcpy(guiSpace.viewMatrix, modelViewMatrix, sizeof(guiSpace.viewMatrix));
+            var guiSpace = new ViewEntity();
+            UnsafeX.CopyBlockT(ref guiSpace.modelMatrix[0], modelMatrix, 16 * sizeof(float));
+            fixed (float* _ = guiSpace.u.viewMatrix) Unsafe.CopyBlock(_, modelViewMatrix, 48 * sizeof(float));
             guiSpace.weaponDepthHack = depthHack;
 
             // add the surface, which might recursively create another gui

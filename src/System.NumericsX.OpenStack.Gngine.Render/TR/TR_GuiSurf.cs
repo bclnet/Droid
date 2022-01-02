@@ -14,7 +14,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             var bounds = stackalloc (float x, float y)[2];
             var boundsOrg = stackalloc float[2];
             float v, area, inva; DrawVert a, b, c;
-            var tri_verts = tri.verts.Value; var tri_indexes = tri.indexes.Value;
+            var tri_verts = tri.verts; var tri_indexes = tri.indexes;
 
             // find the bounds of the texture
             bounds[0].x = bounds[1].x = 999999;
@@ -74,12 +74,13 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_RenderGuiSurf(IUserInterface gui, DrawSurf drawSurf)
         {
             Vector3 origin = default; Vector3* axis = stackalloc Vector3[3];
+            var tr_ = (RenderSystemLocal)tr;
 
             // for testing the performance hit
             if (r_skipGuiShaders.Integer == 1) return;
 
             // don't allow an infinite recursion loop
-            if (tr.guiRecursionLevel == 4) return;
+            if (tr_.guiRecursionLevel == 4) return;
 
             tr.pc.c_guiSurfs++;
 
@@ -110,15 +111,15 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             myGlMultMatrix(guiModelMatrix, drawSurf.space.modelMatrix, modelMatrix);
 
-            tr.guiRecursionLevel++;
+            tr_.guiRecursionLevel++;
 
             // call the gui, which will call the 2D drawing functions
-            tr.guiModel.Clear();
+            tr_.guiModel.Clear();
             gui.Redraw(tr.viewDef.renderView.time);
-            tr.guiModel.EmitToCurrentView(modelMatrix, drawSurf.space.weaponDepthHack);
-            tr.guiModel.Clear();
+            tr_.guiModel.EmitToCurrentView(modelMatrix, drawSurf.space.weaponDepthHack);
+            tr_.guiModel.Clear();
 
-            tr.guiRecursionLevel--;
+            tr_.guiRecursionLevel--;
         }
 
         // Reloads any guis that have had their file timestamps changed. An optional "all" parameter will cause all models to reload, even if they are not out of date.

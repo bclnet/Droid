@@ -524,7 +524,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             fixed (char* imageProg2B = imageProg2)
             {
                 var imageProg2BEnd = imageProg2B + imageProg.Length;
-                fixed (byte* dds = Encoding.ASCII.GetBytes("dds/")) Unsafe.CopyBlock(fileName2, dds, 4);
+                fixed (char* dds = "dds/") Unsafe.CopyBlock(fileName2, dds, 4);
                 var f = imageProg2B + 4;
                 // convert all illegal characters to underscores. this could conceivably produce a duplicated mapping, but we aren't going to worry about it
                 var depth = 0;

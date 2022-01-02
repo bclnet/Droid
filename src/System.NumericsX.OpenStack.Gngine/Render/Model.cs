@@ -55,25 +55,25 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public bool deformedSurface;            // if true, indexes, silIndexes, mirrorVerts, and silEdges are pointers into the original surface, and should not be freed
 
         public int numVerts;                    // number of vertices
-        public DynamicElement<DrawVert> verts;  // vertices, allocated with special allocator
+        public DrawVert[] verts;  // vertices, allocated with special allocator
 
         public int numIndexes;                  // for shadows, this has both front and rear end caps and silhouette planes
-        public DynamicElement<GlIndex> indexes; // indexes, allocated with special allocator
+        public GlIndex[] indexes; // indexes, allocated with special allocator
 
-        public DynamicElement<GlIndex> silIndexes;  // indexes changed to be the first vertex with same XYZ, ignoring normal and texcoords
+        public GlIndex[] silIndexes;  // indexes changed to be the first vertex with same XYZ, ignoring normal and texcoords
 
         public int numMirroredVerts;            // this many verts at the end of the vert list are tangent mirrors
-        public DynamicElement<int> mirroredVerts;             // tri->mirroredVerts[0] is the mirror of tri->numVerts - tri->numMirroredVerts + 0
+        public int[] mirroredVerts;             // tri->mirroredVerts[0] is the mirror of tri->numVerts - tri->numMirroredVerts + 0
 
         public int numDupVerts;                 // number of duplicate vertexes
-        public DynamicElement<int> dupVerts;                  // pairs of the number of the first vertex and the number of the duplicate vertex
+        public int[] dupVerts;                  // pairs of the number of the first vertex and the number of the duplicate vertex
 
         public int numSilEdges;                 // number of silhouette edges
-        public DynamicElement<SilEdge> silEdges;              // silhouette edges
+        public SilEdge[] silEdges;              // silhouette edges
 
-        public DynamicElement<Plane> facePlanes;              // [numIndexes/3] plane equations
+        public Plane[] facePlanes;              // [numIndexes/3] plane equations
 
-        public DynamicElement<DominantTri> dominantTris;      // [numVerts] for deformed surface fast tangent calculation
+        public DominantTri[] dominantTris;      // [numVerts] for deformed surface fast tangent calculation
 
         public int numShadowIndexesNoFrontCaps; // shadow volumes with front caps omitted
         public int numShadowIndexesNoCaps;      // shadow volumes with the front and rear caps omitted
@@ -81,7 +81,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public int shadowCapPlaneBits;          // bits 0-5 are set when that plane of the interacting light has triangles projected on it, which means that if the view is on the outside of that
                                                 // plane, we need to draw the rear caps of the shadow volume turboShadows will have SHADOW_CAP_INFINITE
 
-        public DynamicElement<ShadowCache> shadowVertexes;    // these will be copied to shadowCache when it is going to be drawn. these are NULL when vertex programs are available
+        public ShadowCache[] shadowVertexes;    // these will be copied to shadowCache when it is going to be drawn. these are NULL when vertex programs are available
 
         public SrfTriangles ambientSurface;       // for light interactions, point back at the original surface that generated the interaction, which we will get the ambientCache from
 

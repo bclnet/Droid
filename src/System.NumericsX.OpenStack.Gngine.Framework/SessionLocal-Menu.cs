@@ -11,7 +11,7 @@ using static System.NumericsX.OpenStack.OpenStack;
 
 namespace System.NumericsX.OpenStack.Gngine.Framework
 {
-    partial class SessionLocal
+    unsafe partial class SessionLocal
     {
         public static CVar gui_configServerRate = new("gui_configServerRate", "0", CVAR.GUI | CVAR.ARCHIVE | CVAR.ROM | CVAR.INTEGER, "");
 
@@ -21,7 +21,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
         public IUserInterface ActiveMenu
             => guiActive;
 
-        public void StartMenu(bool playIntro = false)
+        public override void StartMenu(bool playIntro = false)
         {
             if (guiActive == guiMainMenu)
                 return;
@@ -43,7 +43,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             console.Close();
         }
 
-        public void SetGUI(IUserInterface gui, HandleGuiCommand handle)
+        public override void SetGUI(IUserInterface gui, HandleGuiCommand handle)
         {
             guiActive = gui;
             guiHandle = handle;
@@ -71,7 +71,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             if (sw != null && sw.IsPaused) sw.UnPause();
         }
 
-        public void GetSaveGameList(out List<string> fileList, out List<(int ix, DateTime ts)> fileTimes)
+        public static void GetSaveGameList(out List<string> fileList, out List<(int ix, DateTime ts)> fileTimes)
         {
             fileTimes = new();
             // NOTE: no fs_game_base for savegames
@@ -159,7 +159,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             guiMainMenu.SetStateInt($"skin{skinId}", 1);
         }
 
-        public void SetPbMenuGuiVars() { }
+        public static void SetPbMenuGuiVars() { }
 
         public void SetMainMenuGuiVars()
         {
@@ -405,52 +405,15 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
                     else AsyncNetwork.client.serverList.NetScan();
                     continue;
                 }
-                if (string.Equals(cmd, "FilterServers", StringComparison.OrdinalIgnoreCase))
-                {
-                    AsyncNetwork.client.serverList.ApplyFilter();
-                    continue;
-                }
-                if (string.Equals(cmd, "sortServerName", StringComparison.OrdinalIgnoreCase))
-                {
-                    AsyncNetwork.client.serverList.SetSorting(ServerSort.SORT_SERVERNAME);
-                    continue;
-                }
-                if (string.Equals(cmd, "sortGame", StringComparison.OrdinalIgnoreCase))
-                {
-                    AsyncNetwork.client.serverList.SetSorting(ServerSort.SORT_GAME);
-                    continue;
-                }
-                if (string.Equals(cmd, "sortPlayers", StringComparison.OrdinalIgnoreCase))
-                {
-                    AsyncNetwork.client.serverList.SetSorting(ServerSort.SORT_PLAYERS);
-                    continue;
-                }
-                if (string.Equals(cmd, "sortPing", StringComparison.OrdinalIgnoreCase))
-                {
-                    AsyncNetwork.client.serverList.SetSorting(ServerSort.SORT_PING);
-                    continue;
-                }
-                if (string.Equals(cmd, "sortGameType", StringComparison.OrdinalIgnoreCase))
-                {
-                    AsyncNetwork.client.serverList.SetSorting(ServerSort.SORT_GAMETYPE);
-                    continue;
-                }
-                if (string.Equals(cmd, "sortMap", StringComparison.OrdinalIgnoreCase))
-                {
-                    AsyncNetwork.client.serverList.SetSorting(ServerSort.SORT_MAP);
-                    continue;
-                }
-                if (string.Equals(cmd, "serverList", StringComparison.OrdinalIgnoreCase))
-                {
-                    AsyncNetwork.client.serverList.GUIUpdateSelected();
-                    continue;
-                }
-                if (string.Equals(cmd, "LANConnect", StringComparison.OrdinalIgnoreCase))
-                {
-                    var sel = guiActive.State.GetInt("serverList_selid_0");
-                    cmdSystem.BufferCommandText(CMD_EXEC.NOW, $"Connect {sel}\n");
-                    return;
-                }
+                if (string.Equals(cmd, "FilterServers", StringComparison.OrdinalIgnoreCase)) { AsyncNetwork.client.serverList.ApplyFilter(); continue; }
+                if (string.Equals(cmd, "sortServerName", StringComparison.OrdinalIgnoreCase)) { AsyncNetwork.client.serverList.SetSorting(ServerSort.SORT_SERVERNAME); continue; }
+                if (string.Equals(cmd, "sortGame", StringComparison.OrdinalIgnoreCase)) { AsyncNetwork.client.serverList.SetSorting(ServerSort.SORT_GAME); continue; }
+                if (string.Equals(cmd, "sortPlayers", StringComparison.OrdinalIgnoreCase)) { AsyncNetwork.client.serverList.SetSorting(ServerSort.SORT_PLAYERS); continue; }
+                if (string.Equals(cmd, "sortPing", StringComparison.OrdinalIgnoreCase)) { AsyncNetwork.client.serverList.SetSorting(ServerSort.SORT_PING); continue; }
+                if (string.Equals(cmd, "sortGameType", StringComparison.OrdinalIgnoreCase)) { AsyncNetwork.client.serverList.SetSorting(ServerSort.SORT_GAMETYPE); continue; }
+                if (string.Equals(cmd, "sortMap", StringComparison.OrdinalIgnoreCase)) { AsyncNetwork.client.serverList.SetSorting(ServerSort.SORT_MAP); continue; }
+                if (string.Equals(cmd, "serverList", StringComparison.OrdinalIgnoreCase)) { AsyncNetwork.client.serverList.GUIUpdateSelected(); continue; }
+                if (string.Equals(cmd, "LANConnect", StringComparison.OrdinalIgnoreCase)) { var sel = guiActive.State.GetInt("serverList_selid_0"); cmdSystem.BufferCommandText(CMD_EXEC.NOW, $"Connect {sel}\n"); return; }
                 if (string.Equals(cmd, "MAPScan", StringComparison.OrdinalIgnoreCase))
                 {
                     var gametype = cvarSystem.GetCVarString("si_gameType");
@@ -545,27 +508,10 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
                     cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "SpawnServer\n");
                     return;
                 }
-                if (string.Equals(cmd, "mpSkin", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (args.Count - icmd >= 1)
-                    {
-                        cvarSystem.SetCVarString("ui_skin", args[icmd++]);
-                        SetMainMenuSkin();
-                    }
-                    continue;
-                }
-                if (string.Equals(cmd, "close", StringComparison.OrdinalIgnoreCase))
-                {
-                    // if we aren't in a game, the menu can't be closed
-                    if (mapSpawned) ExitMenu();
-                    continue;
-                }
-                if (string.Equals(cmd, "resetdefaults", StringComparison.OrdinalIgnoreCase))
-                {
-                    cmdSystem.BufferCommandText(CMD_EXEC.NOW, "exec default.cfg");
-                    guiMainMenu.SetKeyBindingNames();
-                    continue;
-                }
+                if (string.Equals(cmd, "mpSkin", StringComparison.OrdinalIgnoreCase)) { if (args.Count - icmd >= 1) { cvarSystem.SetCVarString("ui_skin", args[icmd++]); SetMainMenuSkin(); } continue; }
+                // if we aren't in a game, the menu can't be closed
+                if (string.Equals(cmd, "close", StringComparison.OrdinalIgnoreCase)) { if (mapSpawned) ExitMenu(); continue; }
+                if (string.Equals(cmd, "resetdefaults", StringComparison.OrdinalIgnoreCase)) { cmdSystem.BufferCommandText(CMD_EXEC.NOW, "exec default.cfg"); guiMainMenu.SetKeyBindingNames(); continue; }
                 if (string.Equals(cmd, "bind", StringComparison.OrdinalIgnoreCase))
                 {
                     if (args.Count - icmd >= 2)
@@ -588,11 +534,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
                     }
                     continue;
                 }
-                if (string.Equals(cmd, "music", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (args.Count - icmd >= 1) menuSoundWorld.PlayShaderDirectly(args[icmd++], 2);
-                    continue;
-                }
+                if (string.Equals(cmd, "music", StringComparison.OrdinalIgnoreCase)) { if (args.Count - icmd >= 1) menuSoundWorld.PlayShaderDirectly(args[icmd++], 2); continue; }
                 // triggered from mainmenu or mpmain
                 if (string.Equals(cmd, "sound", StringComparison.OrdinalIgnoreCase))
                 {
@@ -632,20 +574,12 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
                 if (string.Equals(cmd, "video", StringComparison.OrdinalIgnoreCase))
                 {
                     var vcmd = args.Count - icmd >= 1 ? args[icmd++] : null;
-                    if (string.Equals(vcmd, "restart", StringComparison.OrdinalIgnoreCase))
-                    {
-                        guiActive.HandleNamedEvent("cvar write render");
-                        cmdSystem.BufferCommandText(CMD_EXEC.NOW, "vid_restart\n");
-                    }
+                    if (string.Equals(vcmd, "restart", StringComparison.OrdinalIgnoreCase)) { guiActive.HandleNamedEvent("cvar write render"); cmdSystem.BufferCommandText(CMD_EXEC.NOW, "vid_restart\n"); }
                     continue;
                 }
                 if (string.Equals(cmd, "clearBind", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (args.Count - icmd >= 1)
-                    {
-                        KeyInput.UnbindBinding(args[icmd++]);
-                        guiMainMenu.SetKeyBindingNames();
-                    }
+                    if (args.Count - icmd >= 1) { KeyInput.UnbindBinding(args[icmd++]); guiMainMenu.SetKeyBindingNames(); }
                     continue;
                 }
                 // FIXME: obsolete
@@ -682,33 +616,12 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
                     }
                     continue;
                 }
-                if (string.Equals(cmd, "loadBinds", StringComparison.OrdinalIgnoreCase))
-                {
-                    guiMainMenu.SetKeyBindingNames();
-                    continue;
-                }
-                if (string.Equals(cmd, "systemCvars", StringComparison.OrdinalIgnoreCase))
-                {
-                    guiActive.HandleNamedEvent("cvar read render");
-                    guiActive.HandleNamedEvent("cvar read sound");
-                    continue;
-                }
-                if (string.Equals(cmd, "SetCDKey", StringComparison.OrdinalIgnoreCase))
-                {
-                    // we can't do this from inside the HandleMainMenuCommands code, otherwise the message box stuff gets confused
-                    cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "promptKey\n");
-                    continue;
-                }
-                if (string.Equals(cmd, "CheckUpdate", StringComparison.OrdinalIgnoreCase))
-                {
-                    AsyncNetwork.client.SendVersionCheck();
-                    continue;
-                }
-                if (string.Equals(cmd, "CheckUpdate2", StringComparison.OrdinalIgnoreCase))
-                {
-                    AsyncNetwork.client.SendVersionCheck(true);
-                    continue;
-                }
+                if (string.Equals(cmd, "loadBinds", StringComparison.OrdinalIgnoreCase)) { guiMainMenu.SetKeyBindingNames(); continue; }
+                if (string.Equals(cmd, "systemCvars", StringComparison.OrdinalIgnoreCase)) { guiActive.HandleNamedEvent("cvar read render"); guiActive.HandleNamedEvent("cvar read sound"); continue; }
+                // we can't do this from inside the HandleMainMenuCommands code, otherwise the message box stuff gets confused
+                if (string.Equals(cmd, "SetCDKey", StringComparison.OrdinalIgnoreCase)) { cmdSystem.BufferCommandText(CMD_EXEC.APPEND, "promptKey\n"); continue; }
+                if (string.Equals(cmd, "CheckUpdate", StringComparison.OrdinalIgnoreCase)) { AsyncNetwork.client.SendVersionCheck(); continue; }
+                if (string.Equals(cmd, "CheckUpdate2", StringComparison.OrdinalIgnoreCase)) { AsyncNetwork.client.SendVersionCheck(true); continue; }
                 if (string.Equals(cmd, "checkKeys", StringComparison.OrdinalIgnoreCase))
                 {
 #if ID_ENFORCE_KEY
@@ -743,27 +656,10 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             {
                 var cmd = args[i++];
 
-                if (string.Equals(cmd, "chatactive", StringComparison.OrdinalIgnoreCase))
-                {
-                    //chat.chatMode = CHAT_GLOBAL;
-                    continue;
-                }
-                if (string.Equals(cmd, "chatabort", StringComparison.OrdinalIgnoreCase))
-                {
-                    //chat.chatMode = CHAT_NONE;
-                    continue;
-                }
-                if (string.Equals(cmd, "netready", StringComparison.OrdinalIgnoreCase))
-                {
-                    var b = cvarSystem.GetCVarBool("ui_ready");
-                    cvarSystem.SetCVarBool("ui_ready", !b);
-                    continue;
-                }
-                if (string.Equals(cmd, "netstart", StringComparison.OrdinalIgnoreCase))
-                {
-                    cmdSystem.BufferCommandText(CMD_EXEC.NOW, "netcommand start\n");
-                    continue;
-                }
+                if (string.Equals(cmd, "chatactive", StringComparison.OrdinalIgnoreCase)) {                    /*chat.chatMode = CHAT_GLOBAL;*/                    continue; }
+                if (string.Equals(cmd, "chatabort", StringComparison.OrdinalIgnoreCase)) {                    /*chat.chatMode = CHAT_NONE;*/                    continue; }
+                if (string.Equals(cmd, "netready", StringComparison.OrdinalIgnoreCase)) { var b = cvarSystem.GetCVarBool("ui_ready"); cvarSystem.SetCVarBool("ui_ready", !b); continue; }
+                if (string.Equals(cmd, "netstart", StringComparison.OrdinalIgnoreCase)) { cmdSystem.BufferCommandText(CMD_EXEC.NOW, "netcommand start\n"); continue; }
             }
         }
 
@@ -802,8 +698,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             }
             else if (guiHandle != null)
             {
-                if (guiHandle(menuCommand) != null)
-                    return;
+                if (guiHandle(menuCommand) != null) return;
             }
             else if (!doIngame) common.DPrintf($"SessionLocal::DispatchCommand: no dispatch found for command '{menuCommand}'\n");
 
@@ -825,7 +720,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             DispatchCommand(guiActive, menuCommand);
         }
 
-        public void GuiFrameEvents()
+        public override void GuiFrameEvents()
         {
             // stop generating move and button commands when a local console or menu is active running here so SP, async networking and no game all go through it
             usercmdGen.InhibitUsercmd(INHIBIT.SESSION, console.Active || guiActive != null);
@@ -848,7 +743,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             return true;
         }
 
-        public string MessageBox(MSG type, string message, string title = null, bool wait = false, string fire_yes = null, string fire_no = null, bool network = false)
+        public override string MessageBox(MSG type, string message, string title = null, bool wait = false, string fire_yes = null, string fire_no = null, bool network = false)
         {
             common.DPrintf($"MessageBox: {title} - {message}\n");
             if (!BoxDialogSanityCheck()) return null;
@@ -955,7 +850,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             return null;
         }
 
-        public void DownloadProgressBox(BackgroundDownload bgl, string title, int progress_start = 0, int progress_end = 100)
+        public override void DownloadProgressBox(BackgroundDownload bgl, string title, int progress_start = 0, int progress_end = 100)
         {
             int dlnow = 0, dltotal = 0, lapsed;
             var startTime = SysW.Milliseconds;
@@ -1017,10 +912,9 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             }
         }
 
-        public void StopBox()
+        public override void StopBox()
         {
-            if (guiActive == guiMsg)
-                HandleMsgCommands("stop");
+            if (guiActive == guiMsg) HandleMsgCommands("stop");
         }
 
         public void HandleMsgCommands(string menuCommand)
@@ -1035,11 +929,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
                 msgRunning = false;
                 msgRetIndex = -1;
             }
-            if (msgIgnoreButtons)
-            {
-                common.DPrintf("MessageBox HandleMsgCommands 1st frame ignore\n");
-                return;
-            }
+            if (msgIgnoreButtons) { common.DPrintf("MessageBox HandleMsgCommands 1st frame ignore\n"); return; }
             if (string.Equals(menuCommand, "mid", StringComparison.OrdinalIgnoreCase) || string.Equals(menuCommand, "left", StringComparison.OrdinalIgnoreCase))
             {
                 guiActive = guiMsgRestore;
@@ -1145,7 +1035,7 @@ namespace System.NumericsX.OpenStack.Gngine.Framework
             }
         }
 
-        public void SetCDKeyGuiVars()
+        public override void SetCDKeyGuiVars()
         {
             if (guiMainMenu == null) return;
             guiMainMenu.SetStateString("str_d3key_state", common.LanguageDictGetString($"#str_071{(86 + cdkey_state)}"));
