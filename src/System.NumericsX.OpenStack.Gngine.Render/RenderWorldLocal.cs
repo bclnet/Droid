@@ -1,14 +1,10 @@
 using System.Diagnostics;
 using System.NumericsX.OpenStack.Gngine.Framework;
 using System.NumericsX.OpenStack.System;
-using System.Threading;
-using WaveEngine.Bindings.OpenGLES;
 using static System.NumericsX.OpenStack.Gngine.Gngine;
-using static System.NumericsX.OpenStack.Gngine.Render.QGL;
 using static System.NumericsX.OpenStack.Gngine.Render.R;
 using static System.NumericsX.OpenStack.Gngine.Render.TR;
 using static System.NumericsX.OpenStack.OpenStack;
-using GlIndex = System.Int32;
 using Qhandle = System.Int32;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
@@ -17,7 +13,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
     {
         static void R_ListRenderLightDefs_f(CmdArgs args)
         {
-            int i; RenderLightLocal ldef;
+            int i; IRenderLight ldef;
 
             if (tr.primaryWorld == null) return;
 
@@ -25,7 +21,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             for (i = 0; i < tr.primaryWorld.lightDefs.Count; i++)
             {
                 ldef = tr.primaryWorld.lightDefs[i];
-                if (!ldef) { common.Printf("%4i: FREED\n", i); continue; }
+                if (ldef == null) { common.Printf($"{i,4}: FREED\n"); continue; }
 
                 // count up the interactions
                 var iCount = 0;
@@ -46,7 +42,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         static void R_ListRenderEntityDefs_f(CmdArgs args)
         {
-            int i; RenderEntityLocal mdef;
+            int i; IRenderEntity mdef;
 
             if (tr.primaryWorld == null) return;
 
@@ -55,7 +51,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             for (i = 0; i < tr.primaryWorld.entityDefs.Count; i++)
             {
                 mdef = tr.primaryWorld.entityDefs[i];
-                if (!mdef) { common.Printf("{i,4}: FREED\n"); continue; }
+                if (mdef == null) { common.Printf($"{i,4}: FREED\n"); continue; }
 
                 // count up the interactions
                 var iCount = 0;
@@ -103,17 +99,17 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             //RB_ClearDebugText(0);
         }
 
-        public override void ResizeInteractionTable()
+        public void ResizeInteractionTable()
         {
             // we overflowed the interaction table, so dump it. we may want to resize this in the future if it turns out to be common
             common.Printf("RenderWorldLocal::ResizeInteractionTable: overflowed interactionTableWidth, dumping\n");
             interactionTable = null;
         }
 
-        Qhandle AddEntityDef(RenderEntity re)
+        public override Qhandle AddEntityDef(RenderEntity re)
         {
             // try and reuse a free spotd
-            int entityHandle = entityDefs.FindNull();
+            var entityHandle = entityDefs.FindIndex(x => x == null);
             if (entityHandle == -1)
             {
                 entityHandle = entityDefs.Add_(null);
@@ -196,15 +192,14 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             R_CreateEntityRefs(def);
         }
 
-
         // Frees all references and lit surfaces from the model, and NULL's out it's entry in the world list
         public override void FreeEntityDef(Qhandle entityHandle)
         {
-            RenderEntityLocal def;
+            IRenderEntity def;
             if (entityHandle < 0 || entityHandle >= entityDefs.Count) { common.Printf("RenderWorld::FreeEntityDef: handle {entityHandle} > {entityDefs.Count}\n"); return; }
 
             def = entityDefs[entityHandle];
-            if (!def) { common.Printf($"RenderWorld::FreeEntityDef: handle {entityHandle} is NULL\n"); return; }
+            if (def == null) { common.Printf($"RenderWorld::FreeEntityDef: handle {entityHandle} is NULL\n"); return; }
 
             R_FreeEntityDefDerivedData(def, false, false);
 
@@ -218,9 +213,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             entityDefs[entityHandle] = null;
         }
 
-        public override IRenderEntity GetRenderEntity(Qhandle entityHandle)
+        public override RenderEntity GetRenderEntity(Qhandle entityHandle)
         {
-            RenderEntityLocal def;
+            IRenderEntity def;
 
             if (entityHandle < 0 || entityHandle >= entityDefs.Count) { common.Printf($"RenderWorld::GetRenderEntity: invalid handle {entityHandle} [0, {entityDefs.Count}]\n"); return null; }
 
@@ -230,10 +225,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             return def.parms;
         }
 
-        public override Qhandle AddLightDef(IRenderLight rlight)
+        public override Qhandle AddLightDef(RenderLight rlight)
         {
             // try and reuse a free spot
-            int lightHandle = lightDefs.FindNull();
+            var lightHandle = lightDefs.FindIndex(x => x == null);
 
             if (lightHandle == -1)
             {
@@ -306,12 +301,12 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // Frees all references and lit surfaces from the light, and NULL's out it's entry in the world list
         public override void FreeLightDef(Qhandle lightHandle)
         {
-            RenderLightLocal light;
+            IRenderLight light;
 
             if (lightHandle < 0 || lightHandle >= lightDefs.Count) { common.Printf($"RenderWorld::FreeLightDef: invalid handle {lightHandle} [0, {lightDefs.Count}]\n"); return; }
 
             light = lightDefs[lightHandle];
-            if (!light) { common.Printf($"RenderWorld::FreeLightDef: handle {lightHandle} is NULL\n", ); return; }
+            if (light == null) { common.Printf($"RenderWorld::FreeLightDef: handle {lightHandle} is NULL\n"); return; }
 
             R_FreeLightDefDerivedData(light);
 
@@ -322,7 +317,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
         public override RenderLight GetRenderLight(Qhandle lightHandle)
         {
-            RenderLightLocal def;
+            IRenderLight def;
 
             if (lightHandle < 0 || lightHandle >= lightDefs.Count) { common.Printf($"RenderWorld::GetRenderLight: handle {lightHandle} > {lightDefs.Count}\n"); return null; }
 
@@ -345,7 +340,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (!RenderModelDecal.CreateProjectionInfo(out info, winding, projectionOrigin, parallel, fadeDepth, material, startTime)) return;
 
             // get the world areas touched by the projection volume
-            numAreas = BoundsInAreas(out info.projectionBounds, areas, 10);
+            numAreas = BoundsInAreas(info.projectionBounds, areas, 10);
 
             // check all areas for models
             for (i = 0; i < numAreas; i++)
@@ -355,13 +350,13 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 // check all models in this area
                 for (ref_ = area.entityRefs.areaNext; ref_ != area.entityRefs; ref_ = ref_.areaNext)
                 {
-                    def = ref_.entity;
+                    def = (RenderEntityLocal)ref_.entity;
 
                     // completely ignore any dynamic or callback models
                     model = def.parms.hModel;
                     if (model == null || model.IsDynamicModel != DynamicModel.DM_STATIC || def.parms.callback != null) continue;
 
-                    if (def.parms.customShader != null && !def.parms.customShader.AllowOverlays()) continue;
+                    if (def.parms.customShader != null && !def.parms.customShader.AllowOverlays) continue;
 
                     Bounds bounds = default;
                     bounds.FromTransformedBounds(model.Bounds(def.parms), def.parms.origin, def.parms.axis);
@@ -385,7 +380,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             if (entityHandle < 0 || entityHandle >= entityDefs.Count) { common.Error($"RenderWorld::ProjectOverlay: index = {entityHandle}"); return; }
 
-            var def = entityDefs[entityHandle];
+            var def = (RenderEntityLocal)entityDefs[entityHandle];
             if (def == null) return;
 
             var model = def.parms.hModel;
@@ -407,11 +402,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             def.decals.CreateDecal(model, localInfo);
         }
 
-        public override void ProjectOverlay(Qhandle entityHandle, in Plane[] localTextureAxis, Material material)
+        public override void ProjectOverlay(Qhandle entityHandle, Plane[] localTextureAxis, Material material)
         {
             if (entityHandle < 0 || entityHandle >= entityDefs.Count) { common.Error($"RenderWorld::ProjectOverlay: index = {entityHandle}"); return; }
 
-            var def = entityDefs[entityHandle];
+            var def = (RenderEntityLocal)entityDefs[entityHandle];
             if (def == null) return;
 
             var refEnt = def.parms;
@@ -443,6 +438,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // Rendering a scene may require multiple views to be rendered to handle mirrors,
         public override void RenderScene(RenderView renderView)
         {
+            var tr_ = (RenderSystemLocal)tr;
             if (!glConfig.isInitialized) return;
 
             // skip front end rendering work, which will result in only gui drawing
@@ -451,8 +447,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (renderView.fov_x <= 0 || renderView.fov_y <= 0) common.Error($"RenderWorld::RenderScene: bad FOVs: {renderView.fov_x}, {renderView.fov_y}");
 
             // close any gui drawing
-            tr.guiModel.EmitFullScreen();
-            tr.guiModel.Clear();
+            tr_.guiModel.EmitFullScreen();
+            tr_.guiModel.Clear();
 
             var startTime = SysW.Milliseconds;
 
@@ -463,7 +459,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (tr.takingScreenshot) parms.renderView.forceUpdate = true;
 
             // set up viewport, adjusted for resolution and OpenGL style 0 at the bottom
-            tr.RenderViewToViewport(parms.renderView, parms.viewport);
+            tr.RenderViewToViewport(parms.renderView, out parms.viewport);
 
             // the scissor bounds may be shrunk in subviews even if
             // the viewport stays the same
@@ -513,7 +509,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             tr.pc.frontEndMsec += endTime - startTime;
 
             // prepare for any 2D drawing after this
-            ((RenderSystemLocal)tr).guiModel.Clear();
+            tr_.guiModel.Clear();
         }
 
         public override int NumAreas
@@ -799,7 +795,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public override bool Trace(out ModelTrace trace, in Vector3 start, in Vector3 end, float radius, bool skipDynamic = true, bool skipPlayer = false)
         {
             AreaReference ref_;
-            RenderEntityLocal def;
+            IRenderEntity def;
             PortalArea area;
             IRenderModel model;
             SrfTriangles tri;
@@ -856,7 +852,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                         if (model == null) continue;   // can happen with particle systems, which don't instantiate without a valid view
                     }
 
-                    bounds.FromTransformedBounds(model.Bounds(&def.parms), def.parms.origin, def.parms.axis);
+                    bounds.FromTransformedBounds(model.Bounds(def.parms), def.parms.origin, def.parms.axis);
 
                     // if the model bounds do not overlap with the trace bounds
                     if (!traceBounds.IntersectsBounds(bounds) || !bounds.LineIntersection(start, trace.point)) continue;
@@ -902,7 +898,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                             R_LocalPointToGlobal(modelMatrix, localTrace.point, out trace.point);
                             trace.normal = localTrace.normal * def.parms.axis;
                             trace.material = shader;
-                            trace.entity = &def.parms;
+                            trace.entity = def.parms;
                             trace.jointNumber = model.NearestJoint(j, localTrace.indexes[0], localTrace.indexes[1], localTrace.indexes[2]);
 
                             traceBounds.Clear();
@@ -966,7 +962,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         */
 
         // This is called by R_PushVolumeIntoTree and also directly for the world model references that are precalculated.
-        void AddEntityRefToArea(IRenderEntity def, PortalArea area)
+        public void AddEntityRefToArea(IRenderEntity def, PortalArea area)
         {
             if (def == null) common.Error("RenderWorldLocal::AddEntityRefToArea: NULL def");
             var ref_ = areaReferenceAllocator.Alloc();
@@ -1039,7 +1035,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
                 interactionTableWidth = entityDefs.Count + 100;
                 interactionTableHeight = lightDefs.Count + 100;
                 var size = interactionTableWidth * interactionTableHeight;
-                interactionTable = new InteractionBase[size];
+                interactionTable = new IInteraction[size];
 
                 var count = 0;
                 for (var i = 0; i < lightDefs.Count; i++)
@@ -1224,407 +1220,256 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             }
         }
 
-        
-        void DebugWinding( const idVec4 &color, const idWinding &w, const idVec3 &origin, const idMat3 &axis, const int lifetime, const bool depthTest)
-{
-    int i;
-        idVec3 point, lastPoint;
-
-    if (w.GetNumPoints() < 2)
-    {
-        return;
-    }
-
-    lastPoint = origin + w[w.GetNumPoints() - 1].ToVec3() * axis;
-    for (i = 0; i<w.GetNumPoints(); i++)
-    {
-        point = origin + w[i].ToVec3() * axis;
-        DebugLine(color, lastPoint, point, lifetime, depthTest);
-        lastPoint = point;
-    }
-}
-
-/*
-====================
-idRenderWorldLocal::DebugCircle
-====================
-*/
-void idRenderWorldLocal::DebugCircle( const idVec4 &color, const idVec3 &origin, const idVec3 &dir, const float radius, const int numSteps, const int lifetime, const bool depthTest)
-{
-    int i;
-    float a;
-    idVec3 left, up, point, lastPoint;
-
-    dir.OrthogonalBasis(left, up);
-    left *= radius;
-    up *= radius;
-    lastPoint = origin + up;
-    for (i = 1; i <= numSteps; i++)
-    {
-        a = idMath::TWO_PI * i / numSteps;
-        point = origin + idMath::Sin16(a) * left + idMath::Cos16(a) * up;
-        DebugLine(color, lastPoint, point, lifetime, depthTest);
-        lastPoint = point;
-    }
-}
-
-/*
-============
-idRenderWorldLocal::DebugSphere
-============
-*/
-void idRenderWorldLocal::DebugSphere( const idVec4 &color, const idSphere &sphere, const int lifetime, const bool depthTest /*_D3XP*/ )
-{
-    int i, j, n, num;
-    float s, c;
-    idVec3 p, lastp, *lastArray;
-
-    num = 360 / 15;
-    lastArray = (idVec3*)_alloca16(num * sizeof(idVec3));
-    lastArray[0] = sphere.GetOrigin() + idVec3(0, 0, sphere.GetRadius());
-    for (n = 1; n < num; n++)
-    {
-        lastArray[n] = lastArray[0];
-    }
-
-    for (i = 15; i <= 360; i += 15)
-    {
-        s = idMath::Sin16(DEG2RAD(i));
-        c = idMath::Cos16(DEG2RAD(i));
-        lastp[0] = sphere.GetOrigin()[0];
-        lastp[1] = sphere.GetOrigin()[1] + sphere.GetRadius() * s;
-        lastp[2] = sphere.GetOrigin()[2] + sphere.GetRadius() * c;
-        for (n = 0, j = 15; j <= 360; j += 15, n++)
+        public override void DebugWinding(in Vector4 color, Winding w, in Vector3 origin, in Matrix3x3 axis, int lifetime = 0, bool depthTest = false)
         {
-            p[0] = sphere.GetOrigin()[0] + idMath::Sin16(DEG2RAD(j)) * sphere.GetRadius() * s;
-            p[1] = sphere.GetOrigin()[1] + idMath::Cos16(DEG2RAD(j)) * sphere.GetRadius() * s;
-            p[2] = lastp[2];
+            if (w.NumPoints < 2) return;
 
-            DebugLine(color, lastp, p, lifetime, depthTest);
-            DebugLine(color, lastp, lastArray[n], lifetime, depthTest);
-
-            lastArray[n] = lastp;
-            lastp = p;
-        }
-    }
-}
-
-/*
-====================
-idRenderWorldLocal::DebugBounds
-====================
-*/
-void idRenderWorldLocal::DebugBounds( const idVec4 &color, const idBounds &bounds, const idVec3 &org, const int lifetime)
-{
-    int i;
-    idVec3 v[8];
-
-    if (bounds.IsCleared())
-    {
-        return;
-    }
-
-    for (i = 0; i < 8; i++)
-    {
-        v[i][0] = org[0] + bounds[(i ^ (i >> 1)) & 1][0];
-        v[i][1] = org[1] + bounds[(i >> 1) & 1][1];
-        v[i][2] = org[2] + bounds[(i >> 2) & 1][2];
-    }
-    for (i = 0; i < 4; i++)
-    {
-        DebugLine(color, v[i], v[(i + 1) & 3], lifetime);
-        DebugLine(color, v[4 + i], v[4 + ((i + 1) & 3)], lifetime);
-        DebugLine(color, v[i], v[4 + i], lifetime);
-    }
-}
-
-/*
-====================
-idRenderWorldLocal::DebugBox
-====================
-*/
-void idRenderWorldLocal::DebugBox( const idVec4 &color, const idBox &box, const int lifetime)
-{
-    int i;
-    idVec3 v[8];
-
-    box.ToPoints(v);
-    for (i = 0; i < 4; i++)
-    {
-        DebugLine(color, v[i], v[(i + 1) & 3], lifetime);
-        DebugLine(color, v[4 + i], v[4 + ((i + 1) & 3)], lifetime);
-        DebugLine(color, v[i], v[4 + i], lifetime);
-    }
-}
-
-/*
-================
-idRenderWorldLocal::DebugFrustum
-================
-*/
-void idRenderWorldLocal::DebugFrustum( const idVec4 &color, const idFrustum &frustum, const bool showFromOrigin, const int lifetime)
-{
-    int i;
-    idVec3 v[8];
-
-    frustum.ToPoints(v);
-
-    if (frustum.GetNearDistance() > 0f)
-    {
-        for (i = 0; i < 4; i++)
-        {
-            DebugLine(color, v[i], v[(i + 1) & 3], lifetime);
-        }
-        if (showFromOrigin)
-        {
-            for (i = 0; i < 4; i++)
+            var lastPoint = origin + w[w.NumPoints - 1].ToVec3() * axis;
+            for (var i = 0; i < w.NumPoints; i++)
             {
-                DebugLine(color, frustum.GetOrigin(), v[i], lifetime);
+                var point = origin + w[i].ToVec3() * axis;
+                DebugLine(color, lastPoint, point, lifetime, depthTest);
+                lastPoint = point;
             }
         }
-    }
-    for (i = 0; i < 4; i++)
-    {
-        DebugLine(color, v[4 + i], v[4 + ((i + 1) & 3)], lifetime);
-        DebugLine(color, v[i], v[4 + i], lifetime);
-    }
-}
 
-/*
-============
-idRenderWorldLocal::DebugCone
-
-  dir is the cone axis
-  radius1 is the radius at the apex
-  radius2 is the radius at apex+dir
-============
-*/
-void idRenderWorldLocal::DebugCone( const idVec4 &color, const idVec3 &apex, const idVec3 &dir, float radius1, float radius2, const int lifetime)
-{
-    int i;
-    idMat3 axis;
-    idVec3 top, p1, p2, lastp1, lastp2, d;
-
-    axis[2] = dir;
-    axis[2].Normalize();
-    axis[2].NormalVectors(axis[0], axis[1]);
-    axis[1] = -axis[1];
-
-    top = apex + dir;
-    lastp2 = top + radius2 * axis[1];
-
-    if (radius1 == 0f)
-    {
-        for (i = 20; i <= 360; i += 20)
+        public override void DebugCircle(in Vector4 color, in Vector3 origin, in Vector3 dir, float radius, int numSteps, int lifetime = 0, bool depthTest = false)
         {
-            d = idMath::Sin16(DEG2RAD(i)) * axis[0] + idMath::Cos16(DEG2RAD(i)) * axis[1];
-            p2 = top + d * radius2;
-            DebugLine(color, lastp2, p2, lifetime);
-            DebugLine(color, p2, apex, lifetime);
-            lastp2 = p2;
+            dir.OrthogonalBasis(out var left, out var up);
+            left *= radius;
+            up *= radius;
+            var lastPoint = origin + up;
+            for (var i = 1; i <= numSteps; i++)
+            {
+                var a = MathX.TWO_PI * i / numSteps;
+                var point = origin + MathX.Sin16(a) * left + MathX.Cos16(a) * up;
+                DebugLine(color, lastPoint, point, lifetime, depthTest);
+                lastPoint = point;
+            }
+        }
+
+        public override void DebugSphere(in Vector4 color, in Sphere sphere, int lifetime = 0, bool depthTest = false)
+        {
+            int i, j, n; float s, c; Vector3 p, lastp;
+
+            var num = 360 / 15;
+            var lastArray = stackalloc Vector3[num];
+            lastArray[0] = sphere.Origin + new Vector3(0, 0, sphere.Radius);
+            for (n = 1; n < num; n++) lastArray[n] = lastArray[0];
+
+            for (i = 15; i <= 360; i += 15)
+            {
+                s = MathX.Sin16(MathX.DEG2RAD(i));
+                c = MathX.Cos16(MathX.DEG2RAD(i));
+                lastp.x = sphere.Origin.x;
+                lastp.y = sphere.Origin.y + sphere.Radius * s;
+                lastp.z = sphere.Origin.z + sphere.Radius * c;
+                for (n = 0, j = 15; j <= 360; j += 15, n++)
+                {
+                    p.x = sphere.Origin.x + MathX.Sin16(MathX.DEG2RAD(j)) * sphere.Radius * s;
+                    p.y = sphere.Origin.y + MathX.Cos16(MathX.DEG2RAD(j)) * sphere.Radius * s;
+                    p.z = lastp.z;
+
+                    DebugLine(color, lastp, p, lifetime, depthTest);
+                    DebugLine(color, lastp, lastArray[n], lifetime, depthTest);
+
+                    lastArray[n] = lastp;
+                    lastp = p;
+                }
+            }
+        }
+
+        public override void DebugBounds(in Vector4 color, in Bounds bounds, in Vector3 org, int lifetime = 0)
+        {
+            int i;
+            var v = stackalloc Vector3[8];
+
+            if (bounds.IsCleared) return;
+
+            for (i = 0; i < 8; i++)
+            {
+                v[i].x = org.x + bounds[(i ^ (i >> 1)) & 1].x;
+                v[i].y = org.y + bounds[(i >> 1) & 1].y;
+                v[i].z = org.z + bounds[(i >> 2) & 1].z;
+            }
+            for (i = 0; i < 4; i++)
+            {
+                DebugLine(color, v[i], v[(i + 1) & 3], lifetime);
+                DebugLine(color, v[4 + i], v[4 + ((i + 1) & 3)], lifetime);
+                DebugLine(color, v[i], v[4 + i], lifetime);
+            }
+        }
+
+        public override void DebugBox(in Vector4 color, in Box box, int lifetime = 0)
+        {
+            box.ToPoints(out var v);
+            for (var i = 0; i < 4; i++)
+            {
+                DebugLine(color, v[i], v[(i + 1) & 3], lifetime);
+                DebugLine(color, v[4 + i], v[4 + ((i + 1) & 3)], lifetime);
+                DebugLine(color, v[i], v[4 + i], lifetime);
+            }
+        }
+
+        public override void DebugFrustum(in Vector4 color, Frustum frustum, bool showFromOrigin, int lifetime = 0)
+        {
+            int i;
+
+            frustum.ToPoints(out var v);
+
+            if (frustum.NearDistance > 0f)
+            {
+                for (i = 0; i < 4; i++) DebugLine(color, v[i], v[(i + 1) & 3], lifetime);
+                if (showFromOrigin) for (i = 0; i < 4; i++) DebugLine(color, frustum.Origin, v[i], lifetime);
+            }
+            for (i = 0; i < 4; i++)
+            {
+                DebugLine(color, v[4 + i], v[4 + ((i + 1) & 3)], lifetime);
+                DebugLine(color, v[i], v[4 + i], lifetime);
+            }
+        }
+
+
+        // dir is the cone axis
+        // radius1 is the radius at the apex
+        // radius2 is the radius at apex+dir
+        public override void DebugCone(in Vector4 color, in Vector3 apex, in Vector3 dir, float radius1, float radius2, int lifetime = 0)
+        {
+            int i; Vector3 top, p1, p2, lastp1, lastp2, d;
+            Matrix3x3 axis = default;
+
+            axis[2] = dir;
+            axis[2].Normalize();
+            axis[2].NormalVectors(out axis[0], out axis[1]);
+            axis[1] = -axis[1];
+
+            top = apex + dir;
+            lastp2 = top + radius2 * axis[1];
+
+            if (radius1 == 0f)
+            {
+                for (i = 20; i <= 360; i += 20)
+                {
+                    d = MathX.Sin16(MathX.DEG2RAD(i)) * axis[0] + MathX.Cos16(MathX.DEG2RAD(i)) * axis[1];
+                    p2 = top + d * radius2;
+                    DebugLine(color, lastp2, p2, lifetime);
+                    DebugLine(color, p2, apex, lifetime);
+                    lastp2 = p2;
+                }
+            }
+            else
+            {
+                lastp1 = apex + radius1 * axis[1];
+                for (i = 20; i <= 360; i += 20)
+                {
+                    d = MathX.Sin16(MathX.DEG2RAD(i)) * axis[0] + MathX.Cos16(MathX.DEG2RAD(i)) * axis[1];
+                    p1 = apex + d * radius1;
+                    p2 = top + d * radius2;
+                    DebugLine(color, lastp1, p1, lifetime);
+                    DebugLine(color, lastp2, p2, lifetime);
+                    DebugLine(color, p1, p2, lifetime);
+                    lastp1 = p1;
+                    lastp2 = p2;
+                }
+            }
+        }
+
+        public override void DebugAxis(in Vector3 origin, in Matrix3x3 axis)
+        {
+            var start = origin;
+            var end = start + axis[0] * 20f; DebugArrow(colorWhite, start, end, 2);
+            end = start + axis[0] * -20f; DebugArrow(colorWhite, start, end, 2);
+            end = start + axis[1] * +20f; DebugArrow(colorGreen, start, end, 2);
+            end = start + axis[1] * -20f; DebugArrow(colorGreen, start, end, 2);
+            end = start + axis[2] * +20f; DebugArrow(colorBlue, start, end, 2);
+            end = start + axis[2] * -20f; DebugArrow(colorBlue, start, end, 2);
+        }
+
+        public override void DebugClearPolygons(int time)
+        {
+            //RB_ClearDebugPolygons(time);
+        }
+
+        public override void DebugPolygon(in Vector4 color, Winding winding, int lifeTime = 0, bool depthTest = false)
+        {
+            //RB_AddDebugPolygon(color, winding, lifeTime, depthTest );
+        }
+
+        public override void DebugScreenRect(in Vector4 color, ScreenRect rect, ViewDef viewDef, int lifetime = 0)
+        {
+            int i;
+            float centerx, centery, dScale, hScale, vScale;
+            Bounds bounds;
+            var p = stackalloc Vector3[4];
+
+            centerx = (viewDef.viewport.x2 - viewDef.viewport.x1) * 0.5f;
+            centery = (viewDef.viewport.y2 - viewDef.viewport.y1) * 0.5f;
+
+            dScale = r_znear.Float + 1f;
+            hScale = dScale * MathX.Tan16(MathX.DEG2RAD(viewDef.renderView.fov_x * 0.5f));
+            vScale = dScale * MathX.Tan16(MathX.DEG2RAD(viewDef.renderView.fov_y * 0.5f));
+
+            bounds.b0.x = bounds.b1.x = dScale;
+            bounds.b0.y = -(rect.x1 - centerx) / centerx * hScale;
+            bounds.b1.y = -(rect.x2 - centerx) / centerx * hScale;
+            bounds.b0.z = (rect.y1 - centery) / centery * vScale;
+            bounds.b1.z = (rect.y2 - centery) / centery * vScale;
+
+            for (i = 0; i < 4; i++)
+            {
+                p[i].x = bounds[0][0];
+                p[i].y = bounds[(i ^ (i >> 1)) & 1].y;
+                p[i].z = bounds[(i >> 1) & 1].z;
+                p[i] = viewDef.renderView.vieworg + p[i] * viewDef.renderView.viewaxis;
+            }
+            for (i = 0; i < 4; i++) DebugLine(color, p[i], p[(i + 1) & 3], lifetime);
+        }
+
+        // returns the length of the given text
+        public float DrawTextLength(string text, float scale, int len)
+        {
+            //return RB_DrawTextLength(text, scale, len);
+            return 0;
+        }
+
+        // oriented on the viewaxis
+        // align can be 0-left, 1-center (default), 2-right
+        public override void DrawText(string text, in Vector3 origin, float scale, in Vector4 color, in Matrix3x3 viewAxis, int align = 1, int lifetime = 0, bool depthTest = false)
+        {
+            //RB_AddDebugText(text, origin, scale, color, viewAxis, align, lifetime, depthTest);
+        }
+
+        public override void RegenerateWorld()
+        {
+            R_RegenerateWorld_f(CmdArgs.Empty);
+        }
+
+        public bool R_GlobalShaderOverride(ref Material shader)
+        {
+            if (!shader.IsDrawn) return false;
+            if (tr.primaryRenderView.globalMaterial != null) { shader = tr.primaryRenderView.globalMaterial; return true; }
+            if (!string.IsNullOrEmpty(r_materialOverride.String)) { shader = declManager.FindMaterial(r_materialOverride.String); return true; }
+            return false;
+        }
+
+        public Material R_RemapShaderBySkin(Material shader, DeclSkin skin, Material customShader)
+        {
+
+            if (shader == null) return null;
+
+            // never remap surfaces that were originally nodraw, like collision hulls
+            if (!shader.IsDrawn) return shader;
+
+            if (customShader != null)
+            {
+                // this is sort of a hack, but cause deformed surfaces to map to empty surfaces, so the item highlight overlay doesn't highlight the autosprite surface
+                if (shader.Deform != 0) return null;
+                return customShader;
+            }
+
+            if (skin == null || shader == null) return shader;
+
+            return skin.RemapShaderBySkin(shader);
         }
     }
-    else
-    {
-        lastp1 = apex + radius1 * axis[1];
-        for (i = 20; i <= 360; i += 20)
-        {
-            d = idMath::Sin16(DEG2RAD(i)) * axis[0] + idMath::Cos16(DEG2RAD(i)) * axis[1];
-            p1 = apex + d * radius1;
-            p2 = top + d * radius2;
-            DebugLine(color, lastp1, p1, lifetime);
-            DebugLine(color, lastp2, p2, lifetime);
-            DebugLine(color, p1, p2, lifetime);
-            lastp1 = p1;
-            lastp2 = p2;
-        }
-    }
-}
-
-/*
-================
-idRenderWorldLocal::DebugAxis
-================
-*/
-void idRenderWorldLocal::DebugAxis( const idVec3 &origin, const idMat3 &axis )
-{
-    idVec3 start = origin;
-    idVec3 end = start + axis[0] * 20f;
-    DebugArrow(colorWhite, start, end, 2);
-    end = start + axis[0] * -20f;
-    DebugArrow(colorWhite, start, end, 2);
-    end = start + axis[1] * +20f;
-    DebugArrow(colorGreen, start, end, 2);
-    end = start + axis[1] * -20f;
-    DebugArrow(colorGreen, start, end, 2);
-    end = start + axis[2] * +20f;
-    DebugArrow(colorBlue, start, end, 2);
-    end = start + axis[2] * -20f;
-    DebugArrow(colorBlue, start, end, 2);
-}
-
-/*
-====================
-idRenderWorldLocal::DebugClearPolygons
-====================
-*/
-void idRenderWorldLocal::DebugClearPolygons(int time)
-{
-    //RB_ClearDebugPolygons( time );
-}
-
-/*
-====================
-idRenderWorldLocal::DebugPolygon
-====================
-*/
-void idRenderWorldLocal::DebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime, const bool depthTest)
-{
-    //RB_AddDebugPolygon( color, winding, lifeTime, depthTest );
-}
-
-/*
-================
-idRenderWorldLocal::DebugScreenRect
-================
-*/
-void idRenderWorldLocal::DebugScreenRect( const idVec4 &color, const idScreenRect &rect, const viewDef_t* viewDef, const int lifetime)
-{
-    int i;
-    float centerx, centery, dScale, hScale, vScale;
-    idBounds bounds;
-    idVec3 p[4];
-
-    centerx = (viewDef.viewport.x2 - viewDef.viewport.x1) * 0.5f;
-    centery = (viewDef.viewport.y2 - viewDef.viewport.y1) * 0.5f;
-
-    dScale = r_znear.GetFloat() + 1f;
-    hScale = dScale * idMath::Tan16(DEG2RAD(viewDef.renderView.fov_x * 0.5f));
-    vScale = dScale * idMath::Tan16(DEG2RAD(viewDef.renderView.fov_y * 0.5f));
-
-    bounds[0][0] = bounds[1][0] = dScale;
-    bounds[0][1] = -(rect.x1 - centerx) / centerx * hScale;
-    bounds[1][1] = -(rect.x2 - centerx) / centerx * hScale;
-    bounds[0][2] = (rect.y1 - centery) / centery * vScale;
-    bounds[1][2] = (rect.y2 - centery) / centery * vScale;
-
-    for (i = 0; i < 4; i++)
-    {
-        p[i].x = bounds[0][0];
-        p[i].y = bounds[(i ^ (i >> 1)) & 1].y;
-        p[i].z = bounds[(i >> 1) & 1].z;
-        p[i] = viewDef.renderView.vieworg + p[i] * viewDef.renderView.viewaxis;
-    }
-    for (i = 0; i < 4; i++)
-    {
-        DebugLine(color, p[i], p[(i + 1) & 3], false);
-    }
-}
-
-/*
-================
-idRenderWorldLocal::DrawTextLength
-
-  returns the length of the given text
-================
-*/
-float idRenderWorldLocal::DrawTextLength( const char* text, float scale, int len)
-{
-    //return RB_DrawTextLength( text, scale, len );
-    return 0;
-}
-
-/*
-================
-idRenderWorldLocal::DrawText
-
-  oriented on the viewaxis
-  align can be 0-left, 1-center (default), 2-right
-================
-*/
-void idRenderWorldLocal::DrawText( const char* text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align, const int lifetime, const bool depthTest)
-{
-    //RB_AddDebugText( text, origin, scale, color, viewAxis, align, lifetime, depthTest );
-}
-
-/*
-===============
-idRenderWorldLocal::RegenerateWorld
-===============
-*/
-void idRenderWorldLocal::RegenerateWorld()
-{
-    R_RegenerateWorld_f(idCmdArgs());
-}
-
-/*
-===============
-R_GlobalShaderOverride
-===============
-*/
-bool R_GlobalShaderOverride( const idMaterial** shader)
-{
-
-    if (!(*shader).IsDrawn())
-    {
-        return false;
-    }
-
-    if (tr.primaryRenderView.globalMaterial)
-    {
-        *shader = tr.primaryRenderView.globalMaterial;
-        return true;
-    }
-
-    if (r_materialOverride.GetString()[0] != '\0')
-    {
-        *shader = declManager.FindMaterial(r_materialOverride.GetString());
-        return true;
-    }
-
-    return false;
-}
-
-/*
-===============
-R_RemapShaderBySkin
-===============
-*/
-const idMaterial* R_RemapShaderBySkin( const idMaterial * shader, const idDeclSkin * skin, const idMaterial * customShader ) {
-
-    if (!shader)
-    {
-        return NULL;
-    }
-
-    // never remap surfaces that were originally nodraw, like collision hulls
-    if (!shader.IsDrawn())
-    {
-        return shader;
-    }
-
-    if (customShader)
-    {
-        // this is sort of a hack, but cause deformed surfaces to map to empty surfaces,
-        // so the item highlight overlay doesn't highlight the autosprite surface
-        if (shader.Deform())
-        {
-            return NULL;
-        }
-        return const_cast<idMaterial*>(customShader);
-    }
-
-    if (!skin || !shader)
-    {
-        return const_cast<idMaterial*>(shader);
-    }
-
-    return skin.RemapShaderBySkin(shader);
-}
-
-
-}
-    public unsafe partial class RenderWorldLocal : IRenderWorld
-{
-}
 }

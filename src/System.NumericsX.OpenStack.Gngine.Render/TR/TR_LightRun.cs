@@ -14,8 +14,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (tr.primaryWorld == null) return;
             if (args.Count != 4) { common.Printf("usage: modulateLights <redFloat> <greenFloat> <blueFloat>\n"); return; }
 
-            var modulate = stackalloc float[3];
             int i;
+            var modulate = stackalloc float[3];
             for (i = 0; i < 3; i++) modulate[i] = floatX.Parse(args[i + 1]);
 
             var count = 0;
@@ -36,7 +36,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // Creates all needed model references in portal areas, chaining them to both the area and the entityDef. Bumps tr.viewCount.
         public static void R_CreateEntityRefs(IRenderEntity def)
         {
-            int i; Vector3 v; var transformed = stackalloc Vector3[8];
+            int i; Vector3 v;
+            var transformed = stackalloc Vector3[8];
 
             if (def.parms.hModel == null) def.parms.hModel = renderModelManager.DefaultModel();
 
@@ -46,7 +47,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             // some models, like empty particles, may not need to be added at all
             if (def.referenceBounds.IsCleared) return;
 
-            if (R.r_showUpdates.Bool && (
+            if (r_showUpdates.Bool && (
                 def.referenceBounds[1].x - def.referenceBounds[0].x > 1024 ||
                 def.referenceBounds[1].y - def.referenceBounds[0].y > 1024))
                 common.Printf($"big entityRef: {def.referenceBounds[1].x - def.referenceBounds[0].x},{def.referenceBounds[1].y - def.referenceBounds[0].y}\n");
@@ -389,20 +390,20 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (def.dynamicModel != null) def.dynamicModel = null;
         }
 
-        public static void R_FreeEntityDefDecals(IRenderEntity def)
+        public static void R_FreeEntityDefDecals(RenderEntityLocal def)
         {
             while (def.decals != null)
             {
                 var next = def.decals.Next();
-                RenderModelDecal.Free(def.decals);
+                RenderModelDecal.Free(ref def.decals);
                 def.decals = next;
             }
         }
 
-        public static void R_FreeEntityDefFadedDecals(IRenderEntity def, int time)
+        public static void R_FreeEntityDefFadedDecals(RenderEntityLocal def, int time)
             => def.decals = RenderModelDecal.RemoveFadedDecals(def.decals, time);
 
-        public static void R_FreeEntityDefOverlay(IRenderEntity def)
+        public static void R_FreeEntityDefOverlay(RenderEntityLocal def)
         {
             if (def.overlay != null) { RenderModelOverlay.Free(def.overlay); def.overlay = null; }
         }
@@ -412,22 +413,22 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_FreeDerivedData()
         {
             int i, j;
-            RenderWorldLocal rw;
-            RenderEntityLocal def;
-            RenderLightLocal light;
+            IRenderWorld rw;
+            IRenderEntity def;
+            IRenderLight light;
 
             for (j = 0; j < tr.worlds.Count; j++)
             {
                 rw = tr.worlds[j];
 
-                for (i = 0; i < rw.entityDefs.Num(); i++)
+                for (i = 0; i < rw.entityDefs.Count; i++)
                 {
                     def = rw.entityDefs[i];
                     if (def == null) continue;
                     R_FreeEntityDefDerivedData(def, false, false);
                 }
 
-                for (i = 0; i < rw.lightDefs.Num(); i++)
+                for (i = 0; i < rw.lightDefs.Count; i++)
                 {
                     light = rw.lightDefs[i];
                     if (light == null) continue;
@@ -439,8 +440,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static void R_CheckForEntityDefsUsingModel(IRenderModel model)
         {
             int i, j;
-            RenderWorldLocal rw;
-            RenderEntityLocal def;
+            IRenderWorld rw;
+            IRenderEntity def;
 
             for (j = 0; j < tr.worlds.Count; j++)
             {
@@ -460,25 +461,25 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         {
             int i, j;
             RenderWorldLocal rw;
-            RenderEntityLocal def;
-            RenderLightLocal light;
+            IRenderEntity def;
+            IRenderLight light;
 
             // let the interaction generation code know this shouldn't be optimized for a particular view
             tr.viewDef = null;
 
             for (j = 0; j < tr.worlds.Count; j++)
             {
-                rw = tr.worlds[j];
-                for (i = 0; i < rw.entityDefs.Num(); i++)
+                rw = (RenderWorldLocal)tr.worlds[j];
+                for (i = 0; i < rw.entityDefs.Count; i++)
                 {
                     def = rw.entityDefs[i];
                     if (def == null) continue;
                     // the world model entities are put specifically in a single area, instead of just pushing their bounds into the tree
-                    if (i < rw.numPortalAreas) rw.AddEntityRefToArea(def, &rw.portalAreas[i]);
+                    if (i < rw.numPortalAreas) rw.AddEntityRefToArea(def, rw.portalAreas[i]);
                     else R_CreateEntityRefs(def);
                 }
 
-                for (i = 0; i < rw.lightDefs.Num(); i++)
+                for (i = 0; i < rw.lightDefs.Count; i++)
                 {
                     light = rw.lightDefs[i];
                     if (light == null) continue;

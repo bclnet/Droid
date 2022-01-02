@@ -4,97 +4,33 @@ using System.Runtime.InteropServices;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
 {
-
     public class RenderLightLocal : IRenderLight
     {
         public RenderLightLocal() => throw new NotImplementedException();
 
-        public void FreeRenderLight() => throw new NotImplementedException();
-        public void UpdateRenderLight(RenderLight re, bool forceUpdate = false) => throw new NotImplementedException();
-        public void GetRenderLight(RenderLight re) => throw new NotImplementedException();
-        public void ForceUpdate() => throw new NotImplementedException();
-        public int Index => 0;
-
-        //public RenderLight parms;                    // specification
-        //public bool lightHasMoved;         // the light has changed its position since it was first added, so the prelight model is not valid
-        //public float[] modelMatrix = new float[16];      // this is just a rearrangement of parms.axis and parms.origin
-        //public RenderWorldLocal world;
-        //public int index;                  // in world lightdefs
-        //public int areaNum;                // if not -1, we may be able to cull all the light's interactions if !viewDef->connectedAreas[areaNum]
-        //public int lastModifiedFrameNum;   // to determine if it is constantly changing, and should go in the dynamic frame memory, or kept in the cached memory
-        //public bool archived;              // for demo writing
-
-        //// derived information
-        //public Plane[] lightProject = new Plane[4];
-
-        //public Material lightShader;          // guaranteed to be valid, even if parms.shader isn't
-        //public Image falloffImage;
-
-        //public Vector3 globalLightOrigin;       // accounting for lightCenter and parallel
-
-        //public Plane[] frustum = new Plane[6];             // in global space, positive side facing out, last two are front/back
-        //public Winding[] frustumWindings = new Winding[6];      // used for culling
-        //public SrfTriangles frustumTris;            // triangulated frustumWindings[]
-
-        //public int numShadowFrustums;      // one for projected lights, usually six for point lights
-        //public ShadowFrustum[] shadowFrustums = new ShadowFrustum[6];
-
-        //public int viewCount;              // if == tr.viewCount, the light is on the viewDef->viewLights list
-        //public ViewLight viewLight;
-
-        //public AreaReference references;                // each area the light is present in will have a lightRef
-        //public Interaction firstInteraction;        // doubly linked list
-        //public Interaction lastInteraction;
-
-        //public DoublePortal foggedPortals;
+        public override void FreeRenderLight() => throw new NotImplementedException();
+        public override void UpdateRenderLight(RenderLight re, bool forceUpdate = false) => throw new NotImplementedException();
+        public override void GetRenderLight(RenderLight re) => throw new NotImplementedException();
+        public override void ForceUpdate() => throw new NotImplementedException();
+        public override int Index => 0;
     }
 
     public class RenderEntityLocal : IRenderEntity
     {
         public RenderEntityLocal() => throw new NotImplementedException();
 
-        public void FreeRenderEntity() => throw new NotImplementedException();
-        public void UpdateRenderEntity(RenderEntity re, bool forceUpdate = false) => throw new NotImplementedException();
-        public void GetRenderEntity(RenderEntity re) => throw new NotImplementedException();
-        public void ForceUpdate() => throw new NotImplementedException();
-        public int Index => 0;
+        public override void FreeRenderEntity() => throw new NotImplementedException();
+        public override void UpdateRenderEntity(RenderEntity re, bool forceUpdate = false) => throw new NotImplementedException();
+        public override void GetRenderEntity(RenderEntity re) => throw new NotImplementedException();
+        public override void ForceUpdate() => throw new NotImplementedException();
+        public override int Index => 0;
 
         // overlays are extra polygons that deform with animating models for blood and damage marks
-        public void ProjectOverlay(Plane[] localTextureAxis, Material material) => throw new NotImplementedException();
-        public void RemoveDecals() => throw new NotImplementedException();
+        public override void ProjectOverlay(Plane[] localTextureAxis, Material material) => throw new NotImplementedException();
+        public override void RemoveDecals() => throw new NotImplementedException();
 
-        //public RenderEntity parms;
-
-        //public float[] modelMatrix = new float[16];      // this is just a rearrangement of parms.axis and parms.origin
-
-        //public RenderWorldLocal world;
-        //public int index;                  // in world entityDefs
-
-        //public int lastModifiedFrameNum;   // to determine if it is constantly changing, and should go in the dynamic frame memory, or kept in the cached memory
-        //public bool archived;              // for demo writing
-
-        //public IRenderModel dynamicModel;            // if parms.model->IsDynamicModel(), this is the generated data
-        //public int dynamicModelFrameCount; // continuously animating dynamic models will recreate dynamicModel if this doesn't == tr.viewCount
-        //public IRenderModel cachedDynamicModel;
-
-        //public Bounds referenceBounds;       // the local bounds used to place entityRefs, either from parms or a model
-
-        //// a viewEntity_t is created whenever a idRenderEntityLocal is considered for inclusion in a given view, even if it turns out to not be visible
-        //public int viewCount;              // if tr.viewCount == viewCount, viewEntity is valid, but the entity may still be off screen
-        //public ViewEntity viewEntity;                // in frame temporary memory
-
-        //public int visibleCount;
-        //// if tr.viewCount == visibleCount, at least one ambient surface has actually been added by R_AddAmbientDrawsurfs
-        //// note that an entity could still be in the view frustum and not be visible due to portal passing
-
-        //public RenderModelDecal decals;                 // chain of decals that have been projected on this model
-        //public RenderModelOverlay overlay;              // blood overlays on animated models
-
-        //public AreaReference entityRefs;                // chain of all references
-        //public Interaction firstInteraction;        // doubly linked list
-        //public Interaction lastInteraction;
-
-        //public bool needsPortalSky;
+        public RenderModelDecal decals;                 // chain of decals that have been projected on this model
+        public RenderModelOverlay overlay;              // blood overlays on animated models
     }
 
 
@@ -511,218 +447,11 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
     //        #endregion
 
-    //        #region SCENE GENERATION
-
-    //        const int NUM_FRAME_DATA = 2;
-    //        static FrameData[] smpFrameData = new FrameData[NUM_FRAME_DATA];
-    //        static volatile uint smpFrame;
-    //        const int MEMORY_BLOCK_SIZE = 0x100000;
-
-    //        public static void R_InitFrameData()
-    //        {
-    //            int size;
-    //            FrameData frame;
-    //            FrameMemoryBlock block;
-
-    //            R_ShutdownFrameData();
-
-    //            for (var n = 0; n < NUM_FRAME_DATA; n++)
-    //            {
-    //                smpFrameData[n] = new FrameData();
-    //                frame = smpFrameData[n];
-    //                size = MEMORY_BLOCK_SIZE;
-    //                block = (FrameMemoryBlock)Mem_Alloc(size + sizeof(block));
-    //                if (block == null) common.FatalError("R_InitFrameData: Mem_Alloc() failed");
-    //                block.size = size;
-    //                block.used = 0;
-    //                block.next = null;
-    //                frame.memory = block;
-    //                frame.memoryHighwater = 0;
-    //            }
-
-    //            smpFrame = 0;
-    //            frameData = smpFrameData[0];
-
-    //            R_ToggleSmpFrame();
-    //        }
-
-    //        public static void R_ShutdownFrameData()
-    //        {
-    //            FrameData frame;
-    //            FrameMemoryBlock block;
-
-    //            for (var n = 0; n < NUM_FRAME_DATA; n++)
-    //            {
-    //                // free any current data
-    //                frame = smpFrameData[n];
-    //                if (frame == null) continue;
-
-    //                R_FreeDeferredTriSurfs(frame);
-
-    //                FrameMemoryBlock nextBlock;
-    //                for (block = frame.memory; block != null; block = nextBlock)
-    //                {
-    //                    nextBlock = block.next;
-    //                    Mem_Free(block);
-    //                }
-    //                Mem_Free(frame);
-    //                smpFrameData[n] = null;
-    //            }
-    //            frameData = null;
-    //        }
-
-    //        public static int R_CountFrameData()
-    //        {
-    //            FrameData frame;
-    //            FrameMemoryBlock block;
-    //            int count;
-
-    //            count = 0;
-    //            frame = frameData;
-    //            for (block = frame.memory; block != null; block = block.next)
-    //            {
-    //                count += block.used;
-    //                if (block == frame.alloc) break;
-    //            }
-
-    //            // note if this is a new highwater mark
-    //            if (count > frame.memoryHighwater) frame.memoryHighwater = count;
-
-    //            return count;
-    //        }
-
-    //        public static void R_ToggleSmpFrame()
-    //        {
-    //            if (r_lockSurfaces.Bool) return;
-
-    //            smpFrame++;
-    //            frameData = smpFrameData[smpFrame % NUM_FRAME_DATA];
-
-    //            R_FreeDeferredTriSurfs(frameData);
-
-    //            // clear frame-temporary data
-    //            FrameData frame;
-    //            FrameMemoryBlock block;
-
-    //            // update the highwater mark
-    //            R_CountFrameData();
-
-    //            frame = frameData;
-
-    //            // reset the memory allocation to the first block
-    //            frame.alloc = frame.memory;
-
-    //            // clear all the blocks
-    //            for (block = frame.memory; block != null; block = block.next) block.used = 0;
-
-    //            R_ClearCommandChain();
-    //        }
-
-    //        // This data will be automatically freed when the current frame's back end completes.
-    //        // This should only be called by the front end. The back end shouldn't need to allocate memory.
-    //        // If we passed smpFrame in, the back end could alloc memory, because it will always be a different frameData than the front end is using.
-    //        // All temporary data, like dynamic tesselations and local spaces are allocated here.
-    //        // The memory will not move, but it may not be contiguous with previous allocations even from this frame.
-    //        // The memory is NOT zero filled.
-    //        // Should part of this be inlined in a macro?
-    //        public static T R_FrameAlloc<T>()
-    //        {
-    //            FrameData frame;
-    //            FrameMemoryBlock block;
-    //            byte[] buf;
-
-    //            bytes = (bytes + 16) & ~15;
-    //            // see if it can be satisfied in the current block
-    //            frame = frameData;
-    //            block = frame.alloc;
-
-    //            if (block.size - block.used >= bytes)
-    //            {
-    //                buf = block.base_ + block.used;
-    //                block.used += bytes;
-    //                return buf;
-    //            }
-
-    //            // advance to the next memory block if available
-    //            block = block.next;
-    //            // create a new block if we are at the end of the chain
-    //            if (block == null)
-    //            {
-    //                int size;
-
-    //                size = MEMORY_BLOCK_SIZE;
-    //                block = (FrameMemoryBlock)Mem_Alloc(size + sizeof(block));
-    //                if (block == null) common.FatalError("R_FrameAlloc: Mem_Alloc() failed");
-    //                block.size = size;
-    //                block.used = 0;
-    //                block.next = null;
-    //                frame.alloc.next = block;
-    //            }
-
-    //            // we could fix this if we needed to...
-    //            if (bytes > block.size) common.FatalError($"R_FrameAlloc of {bytes} exceeded MEMORY_BLOCK_SIZE");
-
-    //            frame.alloc = block;
-
-    //            block.used = bytes;
-
-    //            return block.base;
-    //        }
-
-    //        public static T[] R_FrameAllocMany<T>(int count);
-
-    //        public static T R_ClearedFrameAlloc<T>();
-
-    //        public static T[] R_ClearedFrameAllocMany<T>(int count);
-
-    //        // This does nothing at all, as the frame data is reused every frame and can only be stack allocated.
-    //        // The only reason for it's existance is so functions that can use either static or frame memory can set function pointers to both alloc and free.
-    //        public static void R_FrameFree<T>(ref T data) { }
-
+    //     
     //        public static void R_DirectFrameBufferStart();
 
     //        public static void R_DirectFrameBufferEnd();
 
-    //        public static T R_StaticAlloc<T>()     // just malloc with error checking
-    //        {
-    //            void* buf;
-
-    //            tr.pc.c_alloc++;
-
-    //            tr.staticAllocCount += bytes;
-
-    //            buf = Mem_Alloc(bytes);
-
-    //            // don't exit on failure on zero length allocations since the old code didn't
-    //            if (buf == null && (bytes != 0)) common.FatalError($"R_StaticAlloc failed on {bytes} bytes");
-    //            return buf;
-    //        }
-
-    //        public static T R_ClearedStaticAlloc<T>()  // with memset
-    //        {
-    //            void* buf;
-
-    //            buf = R_StaticAlloc(bytes);
-    //            Simd.Memset(buf, 0, bytes);
-    //            return buf;
-    //        }
-
-    //        public static T[] R_ClearedStaticAllocMany<T>(int count)  // with memset
-    //        {
-    //            void* buf;
-
-    //            buf = R_StaticAlloc(bytes);
-    //            Simd.Memset(buf, 0, bytes);
-    //            return buf;
-    //        }
-
-    //        public static void R_StaticFree<T>(ref T data)
-    //        {
-    //            tr.pc.c_free++;
-    //            Mem_Free(data);
-    //        }
-
-    //        #endregion
 
     //        #region TR_BACKEND (TR_Backend.cs)
 

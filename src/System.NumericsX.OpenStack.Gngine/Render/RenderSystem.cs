@@ -240,7 +240,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public static CVar r_debugArrowStep = new("r_debugArrowStep", "120", CVAR.RENDERER | CVAR.ARCHIVE | CVAR.INTEGER, "step size of arrow cone line rotation in degrees", 0, 120);         // step size of arrow cone line rotation in degrees
         public static CVar r_debugPolygonFilledd = new("r_debugPolygonFilled", "1", CVAR.RENDERER | CVAR.BOOL, "draw a filled polygon");
 
-        //public static CVar r_materialOverride = new("r_materialOverride", "", CVAR.RENDERER, "overrides all materials", CmdArgs.ArgCompletion_Decl<DECL_MATERIAL>);       // override all materials
+        public static CVar r_materialOverride = new("r_materialOverride", "", CVAR.RENDERER, "overrides all materials"); //:TODO, CmdArgs.ArgCompletion_Decl<DECL_MATERIAL>);       // override all materials
 
         public static CVar r_debugRenderToTexture = new("r_debugRenderToTexture", "0", CVAR.RENDERER | CVAR.INTEGER, "");
 

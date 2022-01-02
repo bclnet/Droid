@@ -14,14 +14,14 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         static int c_turboUsedVerts, c_turboUnusedVerts;
 
         // are dangling edges that are outside the light frustum still making planes?
-        public static SrfTriangles R_CreateVertexProgramTurboShadowVolume(IRenderEntity ent, SrfTriangles tri, IRenderLight light, out SrfCullInfo cullInfo)
+        public static SrfTriangles R_CreateVertexProgramTurboShadowVolume(IRenderEntity ent, SrfTriangles tri, IRenderLight light, ref SrfCullInfo cullInfo)
         {
-            int i, j; SrfTriangles newTri; GlIndex[] indexes; byte[] facing;
-            var tri_indexes = tri.indexes.Value; var tri_silEdges = tri.silEdges.Value;
+            int i, j; SrfTriangles newTri; GlIndex[] indexes; byte* facing;
+            var tri_indexes = tri.indexes; var tri_silEdges = tri.silEdges;
 
-            R_CalcInteractionFacing(ent, tri, light, cullInfo);
+            R_CalcInteractionFacing(ent, tri, light, ref cullInfo);
 
-            if (r_useShadowProjectedCull.Bool) R_CalcInteractionCullBits(ent, tri, light, cullInfo);
+            if (r_useShadowProjectedCull.Bool) R_CalcInteractionCullBits(ent, tri, light, ref cullInfo);
 
             var numFaces = tri.numIndexes / 3;
             var numShadowingFaces = 0;
@@ -38,8 +38,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             {
                 // make all triangles that are outside the light frustum "facing", so they won't cast shadows
                 indexes = tri_indexes;
-                byte* modifyFacing = cullInfo.facing;
-                byte* cullBits = cullInfo.cullBits;
+                var modifyFacing = cullInfo.facing;
+                var cullBits = cullInfo.cullBits;
 
                 for (j = i = 0; i < tri.numIndexes; i += 3, j++)
                     if (modifyFacing[j] == 0)
@@ -72,7 +72,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 #endif
 
             // create new triangles along sil planes
-            SilEdge* sil;
+            SilEdge sil;
             for (sil = tri_silEdges, i = tri.numSilEdges; i > 0; i--, sil++)
             {
                 int f1 = facing[sil.p1], f2 = facing[sil.p2];
@@ -115,7 +115,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
             // put some faces on the model and some on the distant projection
             indexes = tri_indexes;
-            shadowIndexes = newTri_indexes + numShadowIndexes;
+            shadowIndexes = newTri.indexes + numShadowIndexes;
 
             for (i = 0, j = 0; i < tri.numIndexes; i += 3, j++)
             {

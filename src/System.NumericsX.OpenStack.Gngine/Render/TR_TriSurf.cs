@@ -129,7 +129,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
             if (tri == null) return total;
 
             // used as a flag in interations
-            if (tri == InteractionBase.LIGHT_TRIS_DEFERRED) return total;
+            if (tri == IInteraction.LIGHT_TRIS_DEFERRED) return total;
 
             if (tri.shadowVertexes != null) total += tri.numVerts * sizeof(ShadowCache);
             else if (tri.verts != null)

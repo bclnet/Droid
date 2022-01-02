@@ -170,8 +170,8 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public ViewLight viewLight;
 
         public AreaReference references;                // each area the light is present in will have a lightRef
-        public InteractionBase firstInteraction;        // doubly linked list
-        public InteractionBase lastInteraction;
+        public IInteraction firstInteraction;        // doubly linked list
+        public IInteraction lastInteraction;
 
         public DoublePortal foggedPortals;
     }
@@ -212,12 +212,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // if tr.viewCount == visibleCount, at least one ambient surface has actually been added by R_AddAmbientDrawsurfs
         // note that an entity could still be in the view frustum and not be visible due to portal passing
 
-        //public RenderModelDecal decals;                 // chain of decals that have been projected on this model
-        //public RenderModelOverlay overlay;              // blood overlays on animated models
-
         public AreaReference entityRefs;                // chain of all references
-        public InteractionBase firstInteraction;        // doubly linked list
-        public InteractionBase lastInteraction;
+        public IInteraction firstInteraction;        // doubly linked list
+        public IInteraction lastInteraction;
 
         public bool needsPortalSky;
     }

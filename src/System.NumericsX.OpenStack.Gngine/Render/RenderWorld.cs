@@ -1,32 +1,12 @@
 using System.Collections.Generic;
 using System.NumericsX.OpenStack.Gngine.Framework;
 using System.NumericsX.OpenStack.Gngine.UI;
+using static System.NumericsX.OpenStack.Gngine.Render.R;
+using static System.NumericsX.OpenStack.OpenStack;
 using Qhandle = System.Int32;
 
 namespace System.NumericsX.OpenStack.Gngine.Render
 {
-    public class AreaNumRef : BlockAllocElement<AreaNumRef>
-    {
-        public AreaNumRef next;
-        public int areaNum;
-    }
-
-    public unsafe partial class InteractionBase : BlockAllocElement<InteractionBase>
-    {
-        public static readonly SrfTriangles LIGHT_TRIS_DEFERRED = new();
-        public static readonly byte* LIGHT_CULL_ALL_FRONT = (byte*)(new IntPtr(-1));
-        public const float LIGHT_CLIP_EPSILON = 0.1f;
-
-        // get space from here, if null, it is a pre-generated shadow volume from dmap
-        public IRenderEntity entityDef;
-        public IRenderLight lightDef;
-
-        public InteractionBase lightNext;               // for lightDef chains
-        public InteractionBase lightPrev;
-        public InteractionBase entityNext;              // for entityDef chains
-        public InteractionBase entityPrev;
-    }
-
     public delegate bool DeferredEntityCallback(RenderEntity e, RenderView v);
 
     public class RenderEntity
@@ -153,6 +133,9 @@ namespace System.NumericsX.OpenStack.Gngine.Render
 
     public class RenderView
     {
+        public RenderView() { }
+        public RenderView(RenderView s) { }
+
         // player views will set this to a non-zero integer for model suppress / allow subviews (mirrors, cameras, etc) will always clear it to zero
         public int viewID;
 
@@ -291,10 +274,10 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // Creates decals on all world surfaces that the winding projects onto. The projection origin should be infront of the winding plane.
         // The decals are projected onto world geometry between the winding plane and the projection origin. The decals are depth faded from the winding plane to a certain distance infront of the
         // winding plane and the same distance from the projection origin towards the winding.
-        public abstract void ProjectDecalOntoWorld(out FixedWinding winding, out Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
+        public abstract void ProjectDecalOntoWorld(FixedWinding winding, in Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
 
         // Creates decals on static models.
-        public abstract void ProjectDecal(Qhandle entityHandle, out FixedWinding winding, out Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
+        public abstract void ProjectDecal(Qhandle entityHandle, FixedWinding winding, in Vector3 projectionOrigin, bool parallel, float fadeDepth, Material material, int startTime);
 
         // Creates overlays on dynamic models.
         public abstract void ProjectOverlay(Qhandle entityHandle, Plane[] localTextureAxis, Material material);
@@ -381,7 +364,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public abstract void DebugClearLines(int time);     // a time of 0 will clear all lines and text
         public abstract void DebugLine(in Vector4 color, in Vector3 start, in Vector3 end, int lifetime = 0, bool depthTest = false);
         public abstract void DebugArrow(in Vector4 color, in Vector3 start, in Vector3 end, int size, int lifetime = 0);
-        public abstract void DebugWinding(in Vector4 color, Winding w, in Vector3 origin, Matrix3x3 axis, int lifetime = 0, bool depthTest = false);
+        public abstract void DebugWinding(in Vector4 color, Winding w, in Vector3 origin, in Matrix3x3 axis, int lifetime = 0, bool depthTest = false);
         public abstract void DebugCircle(in Vector4 color, in Vector3 origin, in Vector3 dir, float radius, int numSteps, int lifetime = 0, bool depthTest = false);
         public abstract void DebugSphere(in Vector4 color, in Sphere sphere, int lifetime = 0, bool depthTest = false);
         public abstract void DebugBounds(in Vector4 color, in Bounds bounds, in Vector3 org = default, int lifetime = 0);
@@ -396,7 +379,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public abstract void DebugPolygon(in Vector4 color, Winding winding, int lifeTime = 0, bool depthTest = false);
 
         // Text drawing for debug visualization.
-        public abstract void DrawText(string text, in Vector3 origin, float scale, Vector4 color, in Matrix3x3 viewAxis, int align = 1, int lifetime = 0, bool depthTest = false);
+        public abstract void DrawText(string text, in Vector3 origin, float scale, in Vector4 color, in Matrix3x3 viewAxis, int align = 1, int lifetime = 0, bool depthTest = false);
 
         //-----------------------
 
@@ -421,7 +404,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         public List<IRenderLight> lightDefs = new();
 
         public BlockAlloc<AreaReference> areaReferenceAllocator = new(1024);
-        public BlockAlloc<InteractionBase> interactionAllocator = new(256);
+        public BlockAlloc<IInteraction> interactionAllocator = new(256);
         public BlockAlloc<AreaNumRef> areaNumRefAllocator = new(1024);
 
         // all light / entity interactions are referenced here for fast lookup without
@@ -429,7 +412,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
         // cache access, because the table is accessed by light in idRenderWorldLocal::CreateLightDefInteractions()
         // Growing this table is time consuming, so we add a pad value to the number
         // of entityDefs and lightDefs
-        public InteractionBase[] interactionTable;
+        public IInteraction[] interactionTable;
         public int interactionTableWidth;      // entityDefs
         public int interactionTableHeight;     // lightDefs
 
@@ -441,7 +424,7 @@ namespace System.NumericsX.OpenStack.Gngine.Render
     // assume any lightDef or entityDef index above this is an internal error
     partial class R
     {
-        const int LUDICROUS_INDEX = 10000;
+        public const int LUDICROUS_INDEX = 10000;
     }
 
     public class Portal
